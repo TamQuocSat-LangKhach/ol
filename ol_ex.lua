@@ -90,6 +90,12 @@ Fk:loadTranslationTable{
   ["ol_ex__qimou"] = "奇谋",
   [":ol_ex__qimou"] = "限定技，出牌阶段，你可以失去X点体力，本回合内与其他角色计算距离-X且可以多使用X张杀。",
   ["@qimou-turn"] = "奇谋",
+
+  ["$ol_ex__kuanggu1"] = "反骨狂傲，彰显本色！",
+  ["$ol_ex__kuanggu2"] = "只有战场，能让我感到兴奋！",
+  ["$ol_ex__qimou1"] = "为了胜利，可以出其不意！",
+  ["$ol_ex__qimou2"] = "勇战不如奇谋。",
+  ["~ol_ex__weiyan"] = "这次失败，意料之中……",
 }
 
 return extension
