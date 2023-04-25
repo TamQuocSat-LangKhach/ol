@@ -23,6 +23,26 @@ local iceSlashSkill = fk.CreateActiveSkill{
     })
   end
 }
+local IceDamageSkill = fk.CreateTriggerSkill{
+  name = "ice_damage_skill",
+  global = true,
+  mute = true,
+  events = {fk.DamageCaused},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and data.damageType == fk.IceDamage and (not data.chain) and not data.to:isNude()
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local to = data.to
+    for i = 1, 2 do
+      if to:isNude() then break end
+      local card = room:askForCardChosen(player, to, "he", self.name)
+      room:throwCard(card, self.name, to, player)
+    end
+    return true
+  end
+}
+Fk:addSkill(IceDamageSkill)
 local iceSlash = fk.CreateBasicCard{
   name = "ice__slash",
   skill = iceSlashSkill,
@@ -99,6 +119,7 @@ Fk:loadTranslationTable{
   ["variation"] = "应变",
 
   ["ice__slash"] = "冰杀",
+  ["ice_damage_skill"] = "冰杀",
   ["unexpectation"] = "出其不意",
   ["unexpectation_skill"] = "出其不意",
   ["foresight"] = "洞烛先机",
