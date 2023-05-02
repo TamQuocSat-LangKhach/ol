@@ -1567,7 +1567,145 @@ Fk:loadTranslationTable{
 }
 
 --卑弥呼 2018.6.8
---鲁芝 2018.7.5
+
+local luzhi = General(extension, "luzhiw", "wei", 3)
+local qingzhong = fk.CreateTriggerSkill{
+  name = "qingzhong",
+  anim_type = "drawcard",
+  events = {fk.EventPhaseStart},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self.name) and player.phase == Player.Play
+  end,
+  on_use = function(self, event, target, player, data)
+    player:drawCards(2, self.name)
+  end,
+
+  refresh_events = {fk.EventPhaseEnd},
+  can_refresh = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self.name) and player:usedSkillTimes(self.name, Player.HistoryPhase) > 0 and not player:isKongcheng()
+  end,
+  on_refresh = function(self, event, target, player, data)
+    local room = player.room
+    local n = #player.player_cards[Player.Hand]
+    for _, p in ipairs(room:getOtherPlayers(player)) do
+      if #p.player_cards[Player.Hand] < n then
+        n = #p.player_cards[Player.Hand]
+      end
+    end
+    local targets = {}
+    for _, p in ipairs(room:getOtherPlayers(player)) do
+      if #p.player_cards[Player.Hand] == n then
+        table.insert(targets, p.id)
+      end
+    end
+    local to
+    if #targets == 0 then
+      return
+    elseif #targets == 1 then
+      to = targets[1]
+    else
+      local tos = room:askForChoosePlayers(player, targets, 1, 1, "#qingzhong-choose", self.name)
+      if #tos > 0 then
+        to = tos[1]
+      else
+        to = table.random(targets)
+      end
+    end
+    local cards1 = table.clone(player.player_cards[Player.Hand])
+    local cards2 = table.clone(room:getPlayerById(to).player_cards[Player.Hand])
+    local move1 = {
+      from = player.id,
+      ids = cards1,
+      toArea = Card.Processing,
+      moveReason = fk.ReasonExchange,
+      proposer = player.id,
+      skillName = self.name,
+      moveVisible = false,  --FIXME: this is still visible! same problem with dimeng!
+    }
+    local move2 = {
+      from = to,
+      ids = cards2,
+      toArea = Card.Processing,
+      moveReason = fk.ReasonExchange,
+      proposer = player.id,
+      skillName = self.name,
+      moveVisible = false,
+    }
+    room:moveCards(move1, move2)
+    local move3 = {
+      ids = cards1,
+      fromArea = Card.Processing,
+      to = to,
+      toArea = Card.PlayerHand,
+      moveReason = fk.ReasonExchange,
+      proposer = player.id,
+      skillName = self.name,
+      moveVisible = false,
+    }
+    local move4 = {
+      ids = cards2,
+      fromArea = Card.Processing,
+      to = player.id,
+      toArea = Card.PlayerHand,
+      moveReason = fk.ReasonExchange,
+      proposer = player.id,
+      skillName = self.name,
+      moveVisible = false,
+    }
+    room:moveCards(move3, move4)
+  end,
+}
+local weijing = fk.CreateViewAsSkill{
+  name = "weijing",
+  pattern = "slash",
+  card_filter = function(self, to_select, selected)
+    return false
+  end,
+  view_as = function(self, cards)
+    if Self:usedSkillTimes(self.name, Player.HistoryRound) > 0 or Self:usedSkillTimes("#weijing_record", Player.HistoryRound) > 0 then return end
+    local card = Fk:cloneCard("slash")
+    card.skillName = self.name
+    return card
+  end,
+}
+local weijing_record = fk.CreateTriggerSkill{
+  name = "#weijing_record",
+  events = {fk.AskForCardUse, fk.AskForCardResponse},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self.name) and
+    player:usedSkillTimes(self.name, Player.HistoryRound) == 0 and player:usedSkillTimes("weijing", Player.HistoryRound) == 0 and
+    (data.cardName == "jink" or (data.pattern and Exppattern:Parse(data.pattern):matchExp("jink|0|nosuit|none")))
+  end,
+  on_use = function(self, event, target, player, data)
+    if event == fk.AskForCardUse then
+      data.result = {
+        from = player.id,
+        card = Fk:cloneCard(data.cardName),
+      }
+      data.result.card.skillName = "weijing"
+      if data.eventData then
+        data.result.toCard = data.eventData.toCard
+        data.result.responseToEvent = data.eventData.responseToEvent
+      end
+    else
+      data.result = Fk:cloneCard(data.cardName)
+      data.result.skillName = "weijing"
+    end
+    return true
+  end
+}
+weijing:addRelatedSkill(weijing_record)
+luzhi:addSkill(qingzhong)
+luzhi:addSkill(weijing)
+Fk:loadTranslationTable{
+  ["luzhiw"] = "鲁芝",
+  ["qingzhong"] = "清忠",
+  [":qingzhong"] = "出牌阶段开始时，你可以摸两张牌，然后本阶段结束时，你与一名全场手牌数最少的其他角色交换手牌。",
+  ["weijing"] = "卫境",
+  [":weijing"] = "每轮限一次，当你需要使用【杀】或【闪】时，你可以视为使用之。",
+  ["#qingzhong-choose"] = "清忠：选择一名手牌数最少的其他角色，与其交换手牌",
+  ["#weijing_record"] = "卫境",
+}
 
 --鲍三娘
 Fk:loadTranslationTable{
@@ -2129,6 +2267,8 @@ local tairan = fk.CreateTriggerSkill{
   can_trigger = function(self, event, target, player, data)
     if target == player and player:hasSkill(self.name) then
       if player.phase == Player.Finish then
+        player.room:setPlayerMark(player, "tairan_hp", 0)
+        player.room:setPlayerMark(player, "tairan_cards", 0)
         return player:isWounded() or #player.player_cards[Player.Hand] < player.maxHp
       elseif player.phase == Player.Play then
         return player:getMark("tairan_hp") > 0 or player:getMark("tairan_cards") ~= 0
@@ -3263,12 +3403,8 @@ local daojie = fk.CreateTriggerSkill{
   frequency = Skill.Compulsory,
   events = {fk.CardUseFinished},
   can_trigger = function(self, event, target, player, data)
-    if target == player and player:hasSkill(self.name) then
-      if player:getMark("daojie-turn") == 0 and
-        table.contains({"amazing_grace", "collateral", "dismantlement", "ex_nihilo", "god_salvation", "indulgence", "nullification", "snatch", "iron_chain", "supply_shortage"}, data.card.name) then
-        return true
-      end
-    end
+    return target == player and player:hasSkill(self.name) and player:getMark("daojie-turn") == 0 and
+      data.card.type == Card.TypeTrick and not data.card.is_damage_card
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
@@ -3356,24 +3492,25 @@ local zhanding = fk.CreateViewAsSkill{
     c:addSubcards(cards)
     return c
   end,
-  --[[enabled_at_response = function (self, player)
-    return false  FIXME: response use
-  end,]]
+  before_use = function(self, player, use)
+    if player:getMaxCards() > 0 then
+      Fk:currentRoom():addPlayerMark(player, "MinusMaxCards", 1)  --TODO: this global MaxCardsSkill is in tenyear_sp, move it
+    end
+  end,
+  enabled_at_response = function(self, player, response)
+    return player:hasSkill(self.name) and not response
+  end,
 }
 local zhanding_record = fk.CreateTriggerSkill{
   name = "#zhanding_record",
   anim_type = "offensive",
 
-  refresh_events = {fk.AfterCardUseDeclared, fk.Damage, fk.CardUseFinished},
+  refresh_events = {fk.Damage, fk.CardUseFinished},
   can_refresh = function(self, event, target, player, data)
     return target == player and player:hasSkill(self.name) and data.card and table.contains(data.card.skillNames, "zhanding")
   end,
   on_refresh = function(self, event, target, player, data)
-    if event == fk.AfterCardUseDeclared then
-      if player:getMaxCards() > 0 then
-        player.room:addPlayerMark(player, "MinusMaxCards", 1)  --TODO: this global MaxCardsSkill is in tenyear_sp, move it
-      end
-    elseif event == fk.Damage then
+    if event == fk.Damage then
       data.card.extra_data = {"zhanding"}
     else
       if data.card.extra_data and data.card.extra_data[1] == "zhanding" then
@@ -3940,6 +4077,78 @@ Fk:loadTranslationTable{
   ["kangrui_damage"] = "本回合下次造成伤害+1，造成伤害后本回合手牌上限改为0",
 }
 
+local maxiumatie = General(extension, "maxiumatie", "qun", 4)
+local kenshang = fk.CreateViewAsSkill{
+  name = "kenshang",
+  pattern = "slash",
+  card_filter = function(self, to_select, selected)
+    return true
+  end,
+  view_as = function(self, cards)
+    if #cards == 0 then return end
+    local c = Fk:cloneCard("slash")
+    c.skillName = self.name
+    c:addSubcards(cards)
+    return c
+  end,
+  before_use = function(self, player, use)
+    local room = Fk:currentRoom()
+    if not table.every(room:getOtherPlayers(player), function (p) return player:inMyAttackRange(p) end) and
+      room:askForSkillInvoke(player, self.name, nil, "#kenshang-invoke") then
+      table.forEach(TargetGroup:getRealTargets(use.tos), function (id)
+        TargetGroup:removeTarget(use.tos, id)
+      end)
+      for _, p in ipairs(room:getOtherPlayers(player)) do
+        if not player:inMyAttackRange(p) then
+          TargetGroup:pushTargets(use.tos, p.id)
+        end
+      end
+    end
+  end,
+  enabled_at_response = function(self, player, response)
+    return player:hasSkill(self.name) and not response
+  end,
+}
+local kenshang_record = fk.CreateTriggerSkill{
+  name = "#kenshang_record",
+
+  refresh_events = {fk.Damage, fk.CardUseFinished},
+  can_refresh = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self.name) and data.card and table.contains(data.card.skillNames, "kenshang")
+  end,
+  on_refresh = function(self, event, target, player, data)
+    local room = player.room
+    if event == fk.Damage then
+      room:addPlayerMark(player, "kenshang", data.damage)
+    else
+      if player:getMark("kenshang") > 0 then
+        if #data.card.subcards > player:getMark("kenshang") then
+          player:drawCards(player:getMark("kenshang"), "kenshang")
+        else
+          local skills = {}
+          for _, skill in ipairs(player.player_skills) do
+            if not skill.attached_equip then
+              table.insert(skills, skill.name)
+            end
+          end
+          local choice = room:askForChoice(player, skills, "kenshang")
+          room:handleAddLoseSkills(player, "-"..choice, nil, true, false)
+        end
+        room:setPlayerMark(player, "kenshang", 0)
+      end
+    end
+  end,
+}
+kenshang:addRelatedSkill(kenshang_record)
+maxiumatie:addSkill("mashu")
+maxiumatie:addSkill(kenshang)
+Fk:loadTranslationTable{
+  ["maxiumatie"] = "马休马铁",
+  ["kenshang"] = "垦伤",
+  [":kenshang"] = "你可以将任意张牌当【杀】使用，然后可以将目标改为所有你攻击范围外的角色。若这些牌数大于X，你摸X张牌，否则你失去一个技能。（X为以此法使用【杀】造成的伤害）",
+  ["#kenshang-invoke"] = "垦伤：你可以将目标改为所有你攻击范围外的角色",
+}
+
 local zhujun = General(extension, "ol__zhujun", "qun", 4)
 local cuipo = fk.CreateTriggerSkill{
   name = "cuipo",
@@ -3947,7 +4156,8 @@ local cuipo = fk.CreateTriggerSkill{
   frequency = Skill.Compulsory,
   events = {fk.DamageCaused},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name) and data.card and player:getMark("@cuipo-turn") == #Fk:translate(data.card.trueName)/3
+    return target == player and player:hasSkill(self.name) and data.card and not data.chain and
+      player:getMark("@cuipo-turn") == #Fk:translate(data.card.trueName)/3
   end,
   on_use = function(self, event, target, player, data)
     data.damage = data.damage + 1
@@ -4048,7 +4258,6 @@ Fk:loadTranslationTable{
 --用间篇专属 
 --1v1 及原稿 牛金 何进 韩遂 向宠 孙翊 朵思大王 注诣
 --凯撒
---神貂蝉
 --官盗：文钦 孟达 群曹操 孙寒华
 --台版：曹昂 夏侯霸 祖茂 曹洪 马良 丁奉
 return extension
