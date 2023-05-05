@@ -2,32 +2,32 @@
 
 local extension = Package:new("variation", Package.CardPack)
 
-local slash = Fk:cloneCard("slash")
 extension:addCards{
-  slash:clone(Card.Diamond, 6),
-  slash:clone(Card.Diamond, 7),
-  slash:clone(Card.Diamond, 9),
-  slash:clone(Card.Diamond, 13),
-  slash:clone(Card.Heart, 10),
-  slash:clone(Card.Heart, 10),
-  slash:clone(Card.Heart, 11),
-  slash:clone(Card.Club, 6),
-  slash:clone(Card.Club, 7),
-  slash:clone(Card.Club, 8),
-  slash:clone(Card.Club, 11),
-  slash:clone(Card.Club, 8),
-  slash:clone(Card.Spade, 9),
-  slash:clone(Card.Spade, 9),
-  slash:clone(Card.Spade, 10),
-  slash:clone(Card.Spade, 10),
-  slash:clone(Card.Club, 2),
-  slash:clone(Card.Club, 3),
-  slash:clone(Card.Club, 4),
-  slash:clone(Card.Club, 5),
-  slash:clone(Card.Club, 11),
-  slash:clone(Card.Diamond, 8),
+  Fk:cloneCard("slash", Card.Diamond, 6),
+  Fk:cloneCard("slash", Card.Diamond, 7),
+  Fk:cloneCard("slash", Card.Diamond, 9),
+  Fk:cloneCard("slash", Card.Diamond, 13),
+  Fk:cloneCard("slash", Card.Heart, 10),
+  Fk:cloneCard("slash", Card.Heart, 10),
+  Fk:cloneCard("slash", Card.Heart, 11),
+  Fk:cloneCard("slash", Card.Club, 6),
+  Fk:cloneCard("slash", Card.Club, 7),
+  Fk:cloneCard("slash", Card.Club, 8),
+  Fk:cloneCard("slash", Card.Club, 11),
+  Fk:cloneCard("slash", Card.Club, 8),
+  Fk:cloneCard("slash", Card.Spade, 9),
+  Fk:cloneCard("slash", Card.Spade, 9),
+  Fk:cloneCard("slash", Card.Spade, 10),
+  Fk:cloneCard("slash", Card.Spade, 10),
+  Fk:cloneCard("slash", Card.Club, 2),
+  Fk:cloneCard("slash", Card.Club, 3),
+  Fk:cloneCard("slash", Card.Club, 4),
+  Fk:cloneCard("slash", Card.Club, 5),
+  Fk:cloneCard("slash", Card.Club, 11),
+  Fk:cloneCard("slash", Card.Diamond, 8),
 }
 
+local slash = Fk:cloneCard("slash")
 local iceSlashSkill = fk.CreateActiveSkill{
   name = "ice__slash_skill",
   max_phase_use_time = 1,
@@ -80,82 +80,69 @@ extension:addCards{
   iceSlash:clone(Card.Spade, 8),
 }
 
-local thunderSlash = Fk:cloneCard("thunder__slash")
 extension:addCards{
-  thunderSlash:clone(Card.Spade, 4),
-  thunderSlash:clone(Card.Spade, 5),
-  thunderSlash:clone(Card.Spade, 6),
-  thunderSlash:clone(Card.Club, 5),
-  thunderSlash:clone(Card.Club, 6),
-  thunderSlash:clone(Card.Club, 7),
-  thunderSlash:clone(Card.Club, 8),
-  thunderSlash:clone(Card.Club, 9),
-  thunderSlash:clone(Card.Club, 9),
-  thunderSlash:clone(Card.Club, 10),
-  thunderSlash:clone(Card.Club, 10),
-}
+  Fk:cloneCard("thunder__slash", Card.Spade, 4),
+  Fk:cloneCard("thunder__slash", Card.Spade, 5),
+  Fk:cloneCard("thunder__slash", Card.Spade, 6),
+  Fk:cloneCard("thunder__slash", Card.Club, 5),
+  Fk:cloneCard("thunder__slash", Card.Club, 6),
+  Fk:cloneCard("thunder__slash", Card.Club, 7),
+  Fk:cloneCard("thunder__slash", Card.Club, 8),
+  Fk:cloneCard("thunder__slash", Card.Club, 9),
+  Fk:cloneCard("thunder__slash", Card.Club, 9),
+  Fk:cloneCard("thunder__slash", Card.Club, 10),
+  Fk:cloneCard("thunder__slash", Card.Club, 10),
 
-local fireSlash = Fk:cloneCard("fire__slash")
-extension:addCards{
-  fireSlash:clone(Card.Heart, 4),
-  fireSlash:clone(Card.Heart, 7),
-  fireSlash:clone(Card.Diamond, 5),
-  fireSlash:clone(Card.Heart, 10),
-  fireSlash:clone(Card.Diamond, 4),
-  fireSlash:clone(Card.Diamond, 10),
-}
+  Fk:cloneCard("fire__slash", Card.Heart, 4),
+  Fk:cloneCard("fire__slash", Card.Heart, 7),
+  Fk:cloneCard("fire__slash", Card.Diamond, 5),
+  Fk:cloneCard("fire__slash", Card.Heart, 10),
+  Fk:cloneCard("fire__slash", Card.Diamond, 4),
+  Fk:cloneCard("fire__slash", Card.Diamond, 10),
 
-local jink = Fk:cloneCard("jink")
-extension:addCards{
-  jink:clone(Card.Diamond, 11),
-  jink:clone(Card.Diamond, 3),
-  jink:clone(Card.Diamond, 5),
-  jink:clone(Card.Diamond, 6),
-  jink:clone(Card.Diamond, 7),
-  jink:clone(Card.Diamond, 8),
-  jink:clone(Card.Diamond, 9),
-  jink:clone(Card.Diamond, 10),
-  jink:clone(Card.Diamond, 11),
-  jink:clone(Card.Heart, 13),
-  jink:clone(Card.Heart, 8),
-  jink:clone(Card.Heart, 9),
-  jink:clone(Card.Heart, 11),
-  jink:clone(Card.Heart, 12),
-  jink:clone(Card.Diamond, 6),
-  jink:clone(Card.Diamond, 7),
-  jink:clone(Card.Diamond, 8),
-  jink:clone(Card.Diamond, 10),
-  jink:clone(Card.Diamond, 11),
-  jink:clone(Card.Heart, 2),
-  jink:clone(Card.Heart, 2),
-  jink:clone(Card.Diamond, 2),
-  jink:clone(Card.Diamond, 2),
-  jink:clone(Card.Diamond, 4),
-}
+  Fk:cloneCard("jink", Card.Diamond, 11),
+  Fk:cloneCard("jink", Card.Diamond, 3),
+  Fk:cloneCard("jink", Card.Diamond, 5),
+  Fk:cloneCard("jink", Card.Diamond, 6),
+  Fk:cloneCard("jink", Card.Diamond, 7),
+  Fk:cloneCard("jink", Card.Diamond, 8),
+  Fk:cloneCard("jink", Card.Diamond, 9),
+  Fk:cloneCard("jink", Card.Diamond, 10),
+  Fk:cloneCard("jink", Card.Diamond, 11),
+  Fk:cloneCard("jink", Card.Heart, 13),
+  Fk:cloneCard("jink", Card.Heart, 8),
+  Fk:cloneCard("jink", Card.Heart, 9),
+  Fk:cloneCard("jink", Card.Heart, 11),
+  Fk:cloneCard("jink", Card.Heart, 12),
+  Fk:cloneCard("jink", Card.Diamond, 6),
+  Fk:cloneCard("jink", Card.Diamond, 7),
+  Fk:cloneCard("jink", Card.Diamond, 8),
+  Fk:cloneCard("jink", Card.Diamond, 10),
+  Fk:cloneCard("jink", Card.Diamond, 11),
+  Fk:cloneCard("jink", Card.Heart, 2),
+  Fk:cloneCard("jink", Card.Heart, 2),
+  Fk:cloneCard("jink", Card.Diamond, 2),
+  Fk:cloneCard("jink", Card.Diamond, 2),
+  Fk:cloneCard("jink", Card.Diamond, 4),
 
-local peach = Fk:cloneCard("peach")
-extension:addCards{
-  peach:clone(Card.Diamond, 12),
-  peach:clone(Card.Heart, 3),
-  peach:clone(Card.Heart, 4),
-  peach:clone(Card.Heart, 6),
-  peach:clone(Card.Heart, 7),
-  peach:clone(Card.Heart, 8),
-  peach:clone(Card.Heart, 9),
-  peach:clone(Card.Heart, 12),
-  peach:clone(Card.Heart, 5),
-  peach:clone(Card.Heart, 6),
-  peach:clone(Card.Diamond, 2),
-  peach:clone(Card.Diamond, 3),
-}
+  Fk:cloneCard("peach", Card.Diamond, 12),
+  Fk:cloneCard("peach", Card.Heart, 3),
+  Fk:cloneCard("peach", Card.Heart, 4),
+  Fk:cloneCard("peach", Card.Heart, 6),
+  Fk:cloneCard("peach", Card.Heart, 7),
+  Fk:cloneCard("peach", Card.Heart, 8),
+  Fk:cloneCard("peach", Card.Heart, 9),
+  Fk:cloneCard("peach", Card.Heart, 12),
+  Fk:cloneCard("peach", Card.Heart, 5),
+  Fk:cloneCard("peach", Card.Heart, 6),
+  Fk:cloneCard("peach", Card.Diamond, 2),
+  Fk:cloneCard("peach", Card.Diamond, 3),
 
-local analeptic = Fk:cloneCard("analeptic")
-extension:addCards{
-  analeptic:clone(Card.Diamond, 9),
-  analeptic:clone(Card.Spade, 3),
-  analeptic:clone(Card.Spade, 9),
-  analeptic:clone(Card.Club, 3),
-  analeptic:clone(Card.Club, 9),
+  Fk:cloneCard("analeptic", Card.Diamond, 9),
+  Fk:cloneCard("analeptic", Card.Spade, 3),
+  Fk:cloneCard("analeptic", Card.Spade, 9),
+  Fk:cloneCard("analeptic", Card.Club, 3),
+  Fk:cloneCard("analeptic", Card.Club, 9),
 }
 
 extension:addCards{
@@ -192,7 +179,7 @@ local blackChain = fk.CreateWeapon{
 extension:addCard(blackChain)
 
 local fiveElementsFanSkill = fk.CreateViewAsSkill{
-  name = "five_elements_fan_skill",
+  name = "#five_elements_fan_skill",
   attached_equip = "five_elements_fan",
   interaction = function(self)
     local choices = {}
@@ -232,14 +219,165 @@ extension:addCards{
   Fk:cloneCard("vine", Card.Spade, 2),
   Fk:cloneCard("vine", Card.Club, 2),
 }
---♣A 护心镜
---当你受到大于1点的伤害或致命伤害时，你可将装备区里的【护心镜】置入弃牌堆，若如此做，防止此伤害。出牌阶段，你可将手牌中的【护心镜】置入其他角色的装备区。
---♣2 黑光铠
---锁定技，当你成为【杀】、伤害锦囊或黑色锦囊牌的目标后，若你不是唯一目标，此牌对你无效。
---♣Q 天机图
---锁定技，此牌进入你的装备区时，弃置一张其他牌；此牌离开你的装备区时，你将手牌摸至五张。
---♠A 太公阴符
---出牌阶段开始时，你可以横置或重置一名角色；出牌阶段结束时，你可以重铸一张手牌。
+
+local breastplateSkill = fk.CreateTriggerSkill{
+  name = "#breastplate_skill",
+  attached_equip = "breastplate",
+  events = {fk.DamageInflicted},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self.name) and (data.damage > 1 or data.damage >= player.hp)
+  end,
+  on_use = function(self, event, target, player, data)
+    player.room:moveCards({
+      ids = {player:getEquipment(Card.SubtypeArmor)},
+      from = player.id,
+      toArea = Card.DiscardPile,
+      moveReason = fk.ReasonPutIntoDiscardPile,
+    })
+    return true
+  end,
+}
+Fk:addSkill(breastplateSkill)
+local putEquip = fk.CreateActiveSkill{
+  name = "putEquip",
+  card_num = 1,
+  target_num = 1,
+  card_filter = function(self, to_select, selected, targets)
+    return #selected == 0 and Fk:getCardById(to_select).type == Card.TypeEquip and not Fk:currentRoom():getCardArea(to_select) == Player.Equip
+  end,
+  target_filter = function(self, to_select, selected, cards)
+    return #selected == 0 and #cards == 1 and to_select ~= Self.id and Fk:currentRoom():getPlayerById(to_select):getEquipment(Fk:getCardById(cards[1]).sub_type) == nil
+  end,
+  on_use = function(self, room, effect)
+    room:moveCards({
+      ids = effect.cards,
+      from = effect.from,
+      to = effect.tos[1],
+      toArea = Card.PlayerEquip,
+      moveReason = fk.ReasonPut,
+    })
+  end
+}
+Fk:addSkill(putEquip)
+local breastplate = fk.CreateArmor{
+  name = "breastplate",
+  suit = Card.Club,
+  number = 1,
+  equip_skill = breastplateSkill,
+  special_skills = {"putEquip"},
+}
+extension:addCard(breastplate)
+
+local darkArmorSkill = fk.CreateTriggerSkill{
+  name = "#dark_armor_skill",
+  attached_equip = "dark_armor",
+  frequency = Skill.Compulsory,
+  events = {fk.TargetConfirmed},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self.name) and #AimGroup:getAllTargets(data.tos) > 1 and
+      (data.card.is_damage_card or data.card.color == Card.Black)
+  end,
+  on_use = function(self, event, target, player, data)
+    table.insertIfNeed(data.nullifiedTargets, player.id)
+  end,
+}
+Fk:addSkill(darkArmorSkill)
+local darkArmor = fk.CreateArmor{
+  name = "dark_armor",
+  suit = Card.Club,
+  number = 2,
+  equip_skill = darkArmorSkill,
+}
+extension:addCard(darkArmor)
+
+local wonderMapSkill = fk.CreateTriggerSkill{  --需要一个空技能以判断equip_skill是否无效
+  name = "#wonder_map_skill",
+  attached_equip = "wonder_map",
+}
+Fk:addSkill(wonderMapSkill)
+local wonderMap = fk.CreateTreasure{
+  name = "wonder_map",
+  suit = Card.Club,
+  number = 12,
+  equip_skill = wonderMapSkill,
+  on_install = function(self, room, player)
+    if player:isAlive() and self.equip_skill:isEffectable(player) then
+      --room:broadcastPlaySound("./packages/ol/audio/card/wonder_map")
+      --room:setEmotion(player, "./packages/ol/image/anim/wonder_map")
+      room:askForDiscard(player, 1, 1, true, self.name, false, "^wonder_map", "#wonder_map-discard")
+    end
+  end,
+  on_uninstall = function(self, room, player)
+    if player:isAlive() and self.equip_skill:isEffectable(player) then
+      --room:broadcastPlaySound("./packages/ol/audio/card/wonder_map")
+      --room:setEmotion(player, "./packages/ol/image/anim/wonder_map")
+      local n = 5 - #player.player_cards[Player.Hand]
+      if n > 0 then
+        player:drawCards(n, self.name)
+      end
+    end
+  end,
+}
+extension:addCard(wonderMap)
+
+local taigongTacticsSkill = fk.CreateTriggerSkill{
+  name = "#taigong_tactics_skill",
+  mute = true,
+  events = {fk.EventPhaseStart, fk.EventPhaseEnd},
+  can_trigger = function(self, event, target, player, data)
+    if target == player and player:hasSkill(self.name) and player.phase == Player.Play then
+      if event == fk.EventPhaseStart then
+        return true
+      else
+        return not player:isKongcheng()
+      end
+    end
+  end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    if event == fk.EventPhaseStart then
+      local to = room:askForChoosePlayers(player, table.map(room:getAlivePlayers(), function (p)
+        return p.id end), 1, 1, "#taigong_tactics-choose", self.name, true)
+      if #to > 0 then
+        self.cost_data = to[1]
+        return true
+      end
+    else
+      local card = room:askForCard(player, 1, 1, false, self.name, true, ".", "#taigong_tactics-invoke")
+      if #card > 0 then
+        self.cost_data = card
+        return true
+      end
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    if event == fk.EventPhaseStart then
+      local to = room:getPlayerById(self.cost_data)
+      if to.chained then
+        to:setChainState(false)
+      else
+        to:setChainState(true)
+      end
+    else
+      room:moveCards({
+        ids = self.cost_data,
+        from = player.id,
+        toArea = Card.DiscardPile,
+        moveReason = fk.ReasonPutIntoDiscardPile,  --TODO: reason recast
+      })
+      player:drawCards(1, self.name)
+    end
+  end,
+}
+Fk:addSkill(taigongTacticsSkill)
+local taigongTactics = fk.CreateTreasure{
+  name = "taigong_tactics",
+  suit = Card.Spade,
+  number = 1,
+  equip_skill = taigongTacticsSkill,
+}
+extension:addCard(taigongTactics)
 --♣K 铜雀
 --你每回合使用的第一张带有强化效果的牌无使用条件。
 
@@ -425,19 +563,33 @@ extension:addCards({
   chasing_near:clone(Card.Club, 4),
 })
 
-
 Fk:loadTranslationTable{
   ["variation"] = "应变",
-
   ["ice__slash"] = "冰杀",
   ["ice_damage_skill"] = "冰杀",
 	[":ice__slash"] = "基本牌<br /><b>时机</b>：出牌阶段<br /><b>目标</b>：攻击范围内的一名角色<br /><b>效果</b>：对目标角色造成1点冰冻伤害。（一名角色造成不为连环伤害的冰冻伤害时，若受到此伤害的角色有牌，来源可防止此伤害，然后依次弃置其两张牌）。",
   ["five_elements_fan"] = "五行鹤翎扇",
-  ["five_elements_fan_skill"] = "五行扇",
+  ["#five_elements_fan_skill"] = "五行扇",
   [":five_elements_fan"] = "装备牌·武器<br /><b>攻击范围</b>：4<br /><b>武器技能</b>：你可以将属性【杀】当任意其他属性【杀】使用。",
   ["black_chain"] = "乌铁锁链",
-  ["black_chain_skill"] = "乌铁锁链",
+  ["#black_chain_skill"] = "乌铁锁链",
   [":black_chain"] = "装备牌·武器<br /><b>攻击范围</b>：3<br /><b>武器技能</b>：当你使用【杀】指定目标后，你可以横置目标角色武将牌。",
+  ["breastplate"] = "护心镜",
+  ["#breastplate_skill"] = "护心镜",
+  [":breastplate"] = "装备牌·防具<br /><b>防具技能</b>：当你受到大于1点的伤害或致命伤害时，你可将装备区里的【护心镜】置入弃牌堆，若如此做，防止此伤害。出牌阶段，你可将手牌中的【护心镜】置入其他角色的装备区。",
+  ["putEquip"] = "置入",
+  [":putEquip"] = "你可以将此牌置入其他角色的装备区",
+  ["dark_armor"] = "黑光铠",
+  ["#dark_armor_skill"] = "黑光铠",
+  [":dark_armor"] = "装备牌·防具<br /><b>防具技能</b>：当你成为【杀】、伤害锦囊或黑色锦囊牌的目标后，若你不是唯一目标，此牌对你无效。",
+  ["wonder_map"] = "天机图",
+  [":wonder_map"] = "装备牌·宝物<br /><b>宝物技能</b>：锁定技，此牌进入你的装备区时，弃置一张其他牌；此牌离开你的装备区时，你将手牌摸至五张。",
+  ["#wonder_map-discard"] = "天机图：你须弃置一张【天机图】以外的牌",
+  ["taigong_tactics"] = "太公阴符",
+  ["#taigong_tactics_skill"] = "太公阴符",
+  [":taigong_tactics"] = "装备牌·宝物<br /><b>宝物技能</b>：出牌阶段开始时，你可以横置或重置一名角色；出牌阶段结束时，你可以重铸一张手牌。",
+  ["#taigong_tactics-choose"] = "太公阴符：你可以横置或重置一名角色",
+  ["#taigong_tactics-invoke"] = "太公阴符：你可以重铸一张手牌",
   ["drowning"] = "水淹七军",
   ["drowning_skill"] = "水淹七军",
   ["#drowning-discard"] = "水淹七军：“确定”弃置装备区所有牌，或点“取消” %dest 对你造成1点雷电伤害",
