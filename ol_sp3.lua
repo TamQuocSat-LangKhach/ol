@@ -46,7 +46,6 @@ local bingxin = fk.CreateViewAsSkill{
     return false
   end,
   view_as = function(self, cards)
-    if self.interaction.data then return end
     local card = Fk:cloneCard(self.interaction.data)
     card.skillName = self.name
     return card
@@ -577,14 +576,14 @@ local zeyue = fk.CreateTriggerSkill{
     to.tag["zeyue_count"] = {0, player}
   end,
 
-  refresh_events = {fk.Damaged, fk.EventPhaseChanging},
+  refresh_events = {fk.Damaged, fk.TurnEnd},
   can_refresh = function(self, event, target, player, data)
     if target == player and player:hasSkill(self.name, true) and player:usedSkillTimes(self.name, Player.HistoryGame) == 0 then
       --这里本不应判断技能发动次数，但为了减少运算就不记录了
       if event == fk.Damaged then
         return data.from and data.from ~= player
       else
-        return data.to == Player.NotActive
+        return true
       end
     end
   end,
@@ -1071,9 +1070,9 @@ local jueman = fk.CreateTriggerSkill{
   name = "jueman",
   anim_type = "special",
   frequency = Skill.Compulsory,
-  events = {fk.EventPhaseChanging},
+  events = {fk.TurnEnd},
   can_trigger = function(self, event, target, player, data)
-    if player:hasSkill(self.name) and data.to == Player.NotActive then
+    if player:hasSkill(self.name) then
       player.tag[self.name] = player.tag[self.name] or {}
       if #player.tag[self.name] < 2 then
         player.tag[self.name] = {}
@@ -1490,9 +1489,9 @@ local chuanwu = fk.CreateTriggerSkill{
 local chuanwu_record = fk.CreateTriggerSkill{
   name = "#chuanwu_record",
 
-  refresh_events = {fk.EventPhaseChanging},
+  refresh_events = {fk.TurnEnd},
   can_refresh = function(self, event, target, player, data)
-    return player.tag["chuanwu"] and data.to == Player.NotActive
+    return player.tag["chuanwu"]
   end,
   on_refresh = function(self, event, target, player, data)
     player.room:handleAddLoseSkills(player, table.concat(player.tag["chuanwu"], "|"), nil, true, false)
@@ -1519,9 +1518,9 @@ local jianman = fk.CreateTriggerSkill{
   name = "jianman",
   anim_type = "special",
   frequency = Skill.Compulsory,
-  events = {fk.EventPhaseChanging},
+  events = {fk.TurnEnd},
   can_trigger = function(self, event, target, player, data)
-    if player:hasSkill(self.name) and data.to == Player.NotActive then
+    if player:hasSkill(self.name) then
       player.tag[self.name] = player.tag[self.name] or {}
       if #player.tag[self.name] < 2 then
         player.tag[self.name] = {}
@@ -1685,7 +1684,7 @@ local kenshang = fk.CreateViewAsSkill{
     return true
   end,
   view_as = function(self, cards)
-    if #cards == 0 then return end
+    if #cards < 2 then return end
     local c = Fk:cloneCard("slash")
     c.skillName = self.name
     c:addSubcards(cards)
@@ -1693,15 +1692,16 @@ local kenshang = fk.CreateViewAsSkill{
   end,
   before_use = function(self, player, use)
     local room = Fk:currentRoom()
-    if not table.every(room:getOtherPlayers(player), function (p) return player:inMyAttackRange(p) end) and
-      room:askForSkillInvoke(player, self.name, nil, "#kenshang-invoke") then
+    local targets = table.map(table.filter(room:getOtherPlayers(player), function(p)
+      return not player:isProhibited(p, use.card) end), function(p) return p.id end)
+    local n = math.min(#targets, #use.card.subcards)
+    local tos = room:askForChoosePlayers(player, targets, n, n, "#kenshang-choose:::"..n, self.name, false)
+    if #tos > 0 then
       table.forEach(TargetGroup:getRealTargets(use.tos), function (id)
         TargetGroup:removeTarget(use.tos, id)
       end)
-      for _, p in ipairs(room:getOtherPlayers(player)) do
-        if not player:inMyAttackRange(p) then
-          TargetGroup:pushTargets(use.tos, p.id)
-        end
+      for _, id in ipairs(tos) do
+        TargetGroup:pushTargets(use.tos, id)
       end
     end
   end,
@@ -1723,16 +1723,7 @@ local kenshang_record = fk.CreateTriggerSkill{
     else
       if player:getMark("kenshang") > 0 then
         if #data.card.subcards > player:getMark("kenshang") then
-          player:drawCards(player:getMark("kenshang"), "kenshang")
-        else
-          local skills = {}
-          for _, skill in ipairs(player.player_skills) do
-            if not skill.attached_equip then
-              table.insert(skills, skill.name)
-            end
-          end
-          local choice = room:askForChoice(player, skills, "kenshang")
-          room:handleAddLoseSkills(player, "-"..choice, nil, true, false)
+          player:drawCards(1, "kenshang")
         end
         room:setPlayerMark(player, "kenshang", 0)
       end
@@ -1745,8 +1736,8 @@ maxiumatie:addSkill(kenshang)
 Fk:loadTranslationTable{
   ["maxiumatie"] = "马休马铁",
   ["kenshang"] = "垦伤",
-  [":kenshang"] = "你可以将任意张牌当【杀】使用，然后可以将目标改为所有你攻击范围外的角色。若这些牌数大于X，你摸X张牌，否则你失去一个技能。（X为以此法使用【杀】造成的伤害）",
-  ["#kenshang-invoke"] = "垦伤：你可以将目标改为所有你攻击范围外的角色",
+  [":kenshang"] = "你可以将至少两张牌当【杀】使用，然后目标可以改为等量的角色。你以此法使用的【杀】结算后，若这些牌数大于此牌造成的伤害，你摸一张牌。",
+  ["#kenshang-choose"] = "垦伤：你可以将目标改为指定%arg名角色",
 }
 
 local zhujun = General(extension, "ol__zhujun", "qun", 4)
@@ -1754,13 +1745,16 @@ local cuipo = fk.CreateTriggerSkill{
   name = "cuipo",
   anim_type = "offensive",
   frequency = Skill.Compulsory,
-  events = {fk.DamageCaused},
+  events = {fk.CardUsing},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name) and data.card and not data.chain and
-      player:getMark("@cuipo-turn") == #Fk:translate(data.card.trueName)/3
+    return target == player and player:hasSkill(self.name) and player:getMark("@cuipo-turn") == #Fk:translate(data.card.trueName)/3
   end,
   on_use = function(self, event, target, player, data)
-    data.damage = data.damage + 1
+    if data.card.is_damage_card then
+      data.additionalDamage = (data.additionalDamage or 0) + 1
+    else
+      player:drawCards(1, self.name)
+    end
   end,
 
   refresh_events = {fk.CardUsing},
@@ -1775,8 +1769,9 @@ zhujun:addSkill(cuipo)
 Fk:loadTranslationTable{
   ["ol__zhujun"] = "朱儁",
   ["cuipo"] = "摧破",
-  [":cuipo"] = "锁定技，当你使用牌对目标造成伤害时，若牌名字数等于本回合你已使用牌数，此伤害+1。（X为此牌牌名字数）",
+  [":cuipo"] = "锁定技，当你每回合使用第X张牌时（X为此牌牌名字数），若为【杀】或伤害锦囊牌，此牌伤害+1，否则你摸一张牌。",
   ["@cuipo-turn"] = "摧破",
 }
+--族吴匡 王瓘 2023.5.10
 
 return extension

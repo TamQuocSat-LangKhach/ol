@@ -417,13 +417,13 @@ local zhanghuyuechen = General(extension, "zhanghuyuechen", "jin", 4)
 local xijue = fk.CreateTriggerSkill{
   name = "xijue",
   anim_type = "offensive",
-  events = {fk.GameStart, fk.EventPhaseChanging},
+  events = {fk.GameStart, fk.TurnEnd},
   can_trigger = function(self, event, target, player, data)
     if player:hasSkill(self.name) then
       if event == fk.GameStart then
         return true
       else
-        return target == player and data.to == Player.NotActive and player:getMark(self.name) > 0
+        return target == player and player:getMark(self.name) > 0
       end
     end
   end,
@@ -460,7 +460,7 @@ local xijue_tuxi = fk.CreateTriggerSkill{
     local room = player.room
     local targets = table.map(table.filter(room:getOtherPlayers(player), function(p)
       return not p:isKongcheng() end), function (p) return p.id end)
-    local tos = room:askForChoosePlayers(player, targets, 1, data.n, "#xijue_tuxi-invoke", "ex__tuxi")
+    local tos = room:askForChoosePlayers(player, targets, 1, data.n, "#xijue_tuxi-invoke", "ex__tuxi", true)
     if #tos > 0 then
       self.cost_data = tos
       room:removePlayerMark(player, "@zhanghuyuechen_jue", 1)
@@ -491,7 +491,7 @@ local xijue_xiaoguo = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     room:removePlayerMark(player, "@zhanghuyuechen_jue", 1)
-    if #room:askForDiscard(target, 1, 1, true, "xiaoguo", true, ".|.|.|.|.|equip", "#xiaoguo-discard") > 0 then
+    if #room:askForDiscard(target, 1, 1, true, "xiaoguo", true, ".|.|.|.|.|equip", "#xiaoguo-discard:"..player.id) > 0 then
       player:drawCards(1)
     else
       room:damage{
@@ -1079,7 +1079,7 @@ Fk:loadTranslationTable{
 }
 
 Fk:loadTranslationTable{
-  ["wangrongh"] = "王荣",
+  ["ol__wangrongh"] = "王荣",
   ["fengzi"] = "丰姿",
   [":fengzi"] = "出牌阶段限一次，当你使用基本牌或普通锦囊牌时，你可以弃置一张类型相同的手牌令此牌的效果结算两次。",
   ["jizhan"] = "吉占",

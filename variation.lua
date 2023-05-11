@@ -179,7 +179,7 @@ local blackChain = fk.CreateWeapon{
 extension:addCard(blackChain)
 
 local fiveElementsFanSkill = fk.CreateViewAsSkill{
-  name = "#five_elements_fan_skill",
+  name = "five_elements_fan_skill",
   attached_equip = "five_elements_fan",
   interaction = function(self)
     local choices = {}
@@ -569,7 +569,7 @@ Fk:loadTranslationTable{
   ["ice_damage_skill"] = "冰杀",
 	[":ice__slash"] = "基本牌<br /><b>时机</b>：出牌阶段<br /><b>目标</b>：攻击范围内的一名角色<br /><b>效果</b>：对目标角色造成1点冰冻伤害。（一名角色造成不为连环伤害的冰冻伤害时，若受到此伤害的角色有牌，来源可防止此伤害，然后依次弃置其两张牌）。",
   ["five_elements_fan"] = "五行鹤翎扇",
-  ["#five_elements_fan_skill"] = "五行扇",
+  ["five_elements_fan_skill"] = "五行扇",
   [":five_elements_fan"] = "装备牌·武器<br /><b>攻击范围</b>：4<br /><b>武器技能</b>：你可以将属性【杀】当任意其他属性【杀】使用。",
   ["black_chain"] = "乌铁锁链",
   ["#black_chain_skill"] = "乌铁锁链",

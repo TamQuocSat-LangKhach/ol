@@ -1381,15 +1381,8 @@ local beizhan = fk.CreateTriggerSkill{
     return target == player and player:hasSkill(self.name) and player.phase == Player.NotActive
   end,
   on_cost = function(self, event, target, player, data)
-    local room = player.room
-    local targets = {}
-    for _, p in ipairs(room:getAlivePlayers()) do
-      if #p.player_cards[Player.Hand] < math.min(p.maxHp, 5) then
-        table.insert(targets, p.id)
-      end
-    end
-    if #targets == 0 then return end
-    local to = room:askForChoosePlayers(player, targets, 1, 1, "#beizhan-choose", self.name, true)
+    local to = player.room:askForChoosePlayers(player, table.map(player.room:getAlivePlayers(), function (p)
+      return p.id end), 1, 1, "#beizhan-choose", self.name, true)
     if #to > 0 then
       self.cost_data = to[1]
       return true
@@ -1397,7 +1390,10 @@ local beizhan = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local to = player.room:getPlayerById(self.cost_data)
-    to:drawCards(math.min(to.maxHp, 5) - #to.player_cards[Player.Hand])
+    local n = math.min(to.maxHp, 5) - #to.player_cards[Player.Hand]
+    if n > 0 then
+      to:drawCards(n)
+    end
     player.room:addPlayerMark(to, self.name, 1)
   end,
 
@@ -1412,13 +1408,13 @@ local beizhan = fk.CreateTriggerSkill{
   end,
   on_refresh = function(self, event, target, player, data)
     player.room:setPlayerMark(target, self.name, 0)
-    player.room:addPlayerMark(target, "beizhan-turn", 1)
+    player.room:addPlayerMark(target, "@@beizhan-turn", 1)
   end,
 }
 local beizhan_prohibit = fk.CreateProhibitSkill{
   name = "#beizhan_prohibit",
   is_prohibited = function(self, from, to, card)
-    return from:getMark("beizhan-turn") > 0 and from ~= to
+    return from:getMark("@@beizhan-turn") > 0 and from ~= to
   end,
 }
 beizhan:addRelatedSkill(beizhan_prohibit)
@@ -1429,8 +1425,9 @@ Fk:loadTranslationTable{
   ["gangzhi"] = "刚直",
   [":gangzhi"] = "锁定技，其他角色对你造成的伤害，和你对其他角色造成的伤害均视为体力流失。",
   ["beizhan"] = "备战",
-  [":beizhan"] = "回合结束后，你可以令一名角色将手牌补至体力上限（至多为5）。该角色回合开始时，若其手牌数为全场最多，则其本回合内不能使用牌指定其他角色为目标。",
-  ["#beizhan-choose"] = "备战：令一名角色将手牌补至X张（X为其体力上限且最多为5）",
+  [":beizhan"] = "回合结束后，你可以指定一名角色：若其手牌数少于X，其将手牌补至X（X为其体力上限且最多为5）；该角色回合开始时，若其手牌数为全场最多，则其本回合内不能使用牌指定其他角色为目标。",
+  ["#beizhan-choose"] = "备战：指定一名角色，若手牌少于X则补至X张（X为其体力上限且最多为5）；<br>若其回合开始时手牌数为最多，则使用牌不能指定其他角色为目标",
+  ["@@beizhan-turn"] = "备战",
 }
 
 local xunchen = General(extension, "ol__xunchen", "qun", 3)
@@ -1995,12 +1992,12 @@ local shijian = fk.CreateTriggerSkill{
     player.room:handleAddLoseSkills(target, "yuxu", nil, true, false)
   end,
 
-  refresh_events = {fk.CardUseFinished, fk.EventPhaseChanging},
+  refresh_events = {fk.CardUseFinished, fk.TurnEnd},
   can_refresh = function(self, event, target, player, data)
     if event == fk.CardUseFinished then
       return player:hasSkill(self.name) and target ~= player and target.phase == Player.Play
     else
-      return target == player and player:getMark("shijian_invoke") > 0 and data.to == Player.NotActive
+      return target == player and player:getMark("shijian_invoke") > 0
     end
   end,
   on_refresh = function(self, event, target, player, data)
@@ -2058,7 +2055,7 @@ local yidian = fk.CreateTriggerSkill{
   anim_type = "offensive",
   events = {fk.TargetSpecifying},
   can_trigger = function(self, event, target, player, data)
-    if target == player and player:hasSkill(self.name) and data.targetGroup and data.firstTarget
+    if target == player and player:hasSkill(self.name) and data.targetGroup and data.firstTarget and
       (data.card.type == Card.TypeBasic or (data.card.type == Card.TypeTrick and data.card.sub_type ~= Card.SubtypeDelayedTrick)) then
       for _, id in ipairs(player.room.discard_pile) do
         if data.card.name == Fk:getCardById(id).name then
@@ -2219,8 +2216,8 @@ local tianxing = fk.CreateTriggerSkill{
   events = {fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(self.name) and player:usedSkillTimes(self.name, Player.HistoryGame) == 0 and
-     player.phase == Player.Start and
-     #player:getPile("caopi_chu") > 2
+      player.phase == Player.Start and
+      #player:getPile("caopi_chu") > 2
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
