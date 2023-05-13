@@ -171,7 +171,7 @@ local zhefu = fk.CreateTriggerSkill{
   anim_type = "offensive",
   events = {fk.CardUseFinished, fk.CardRespondFinished},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name) and player.phase == Player.NotActive and data.card.type == Card.TypeBasic
+    return target == player and player:hasSkill(self.name) and player.phase == Player.NotActive
   end,
   on_cost = function(self, event, target, player, data)
     local targets = {}
@@ -181,7 +181,7 @@ local zhefu = fk.CreateTriggerSkill{
       end
     end
     if #targets > 0 then
-      local to = player.room:askForChoosePlayers(player, targets, 1, 1, "#zhefu-choose", self.name, true)
+      local to = player.room:askForChoosePlayers(player, targets, 1, 1, "#zhefu-choose:::"..data.card.trueName, self.name, true)
       if #to > 0 then
         self.cost_data = to[1]
         return true
@@ -206,7 +206,7 @@ local yidu = fk.CreateTriggerSkill{
   name = "yidu",
   events = {fk.CardUseFinished},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name) and data.card.is_damage_card and #TargetGroup:getRealTargets(data.tos) == 1 and
+    return target == player and player:hasSkill(self.name) and data.card.is_damage_card and #TargetGroup:getRealTargets(data.tos) > 0 and
       not (data.card.extra_data and table.contains(data.card.extra_data, self.name)) and
       not player.room:getPlayerById(TargetGroup:getRealTargets(data.tos)[1]):isKongcheng()
   end,
@@ -240,10 +240,10 @@ guohuai:addSkill(yidu)
 Fk:loadTranslationTable{
   ["guohuaij"] = "郭槐",
   ["zhefu"] = "哲妇",
-  [":zhefu"] = "当你于回合外使用或打出一张基本牌后，你可以令一名有手牌的其他角色选择弃置一张同名基本牌或受到你的1点伤害。",
+  [":zhefu"] = "当你于回合外使用或打出一张牌后，你可以令一名有手牌的其他角色选择弃置一张同名牌或受到你的1点伤害。",
   ["yidu"] = "遗毒",
-  [":yidu"] = "当你使用仅指定唯一目标的【杀】或伤害锦囊牌后，若此牌未对其造成伤害，你可以展示其至多三张手牌，若颜色均相同，其弃置这些牌。",
-  ["#zhefu-choose"] = "哲妇：你可以指定一名角色，其弃置一张同名牌或受到你的1点伤害",
+  [":yidu"] = "当你使用【杀】或伤害锦囊牌后，若有目标角色未受到此牌的伤害，你可以展示其至多三张手牌，若颜色均相同，你弃置这些牌。",
+  ["#zhefu-choose"] = "哲妇：你可以指定一名角色，其弃置一张【%arg】或受到你的1点伤害",
   ["#zhefu-discard"] = "哲妇：你需弃置一张【%arg】，否则 %dest 对你造成1点伤害",
   ["#yidu-invoke"] = "遗毒：你可以展示 %dest 至多三张手牌，若颜色相同则全部弃置",
 }

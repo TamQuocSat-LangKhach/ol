@@ -829,8 +829,7 @@ local dingpan = fk.CreateActiveSkill{
     return false
   end,
   target_filter = function(self, to_select, selected)
-    local target = Fk:currentRoom():getPlayerById(to_select)
-    return #selected == 0 and #target.player_cards[Player.Equip] > 0
+    return #selected == 0 and #Fk:currentRoom():getPlayerById(to_select).player_cards[Player.Equip] > 0
   end,
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
@@ -2197,16 +2196,19 @@ local dengji = fk.CreateTriggerSkill{
   frequency = Skill.Wake,
   events = {fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name) and player:usedSkillTimes(self.name, Player.HistoryGame) == 0 and
-     player.phase == Player.Start and
-     #player:getPile("caopi_chu") > 2
+    return target == player and player:hasSkill(self.name) and
+      player.phase == Player.Start and
+      player:usedSkillTimes(self.name, Player.HistoryGame) == 0
+  end,
+  can_wake = function(self, event, target, player, data)
+    return #player:getPile("caopi_chu") > 2
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
     room:changeMaxHp(player, -1)
     local dummy = Fk:cloneCard("dilu")
     dummy:addSubcards(player:getPile("caopi_chu"))
-    room:obtainCard(player, dummy, false, fk.ReasonPrey)
+    room:obtainCard(player, dummy, false, fk.ReasonJustMove)
     room:handleAddLoseSkills(player, "ex__jianxiong|tianxing", nil)
   end,
 }
@@ -2215,9 +2217,12 @@ local tianxing = fk.CreateTriggerSkill{
   frequency = Skill.Wake,
   events = {fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name) and player:usedSkillTimes(self.name, Player.HistoryGame) == 0 and
+    return target == player and player:hasSkill(self.name) and
       player.phase == Player.Start and
-      #player:getPile("caopi_chu") > 2
+      player:usedSkillTimes(self.name, Player.HistoryGame) == 0
+  end,
+  can_wake = function(self, event, target, player, data)
+    return #player:getPile("caopi_chu") > 2
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
