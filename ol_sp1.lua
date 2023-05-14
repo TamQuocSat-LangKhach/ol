@@ -903,7 +903,7 @@ Fk:loadTranslationTable{
   [":xiahui"] = "锁定技，你的黑色牌不占用手牌上限；其他角色获得你的黑色牌时，其不能使用、打出、弃置这些牌直到其体力值减少为止。",
 }
 
---[[local zhaoxiang = General(extension, "zhaoxiang", "shu", 4, 4, General.Female)
+local zhaoxiang = General(extension, "zhaoxiang", "shu", 4, 4, General.Female)
 local fanghun = fk.CreateViewAsSkill{
   name = "fanghun",
   pattern = "slash,jink",
@@ -913,7 +913,7 @@ local fanghun = fk.CreateViewAsSkill{
     return c.trueName == "slash" or c.name == "jink"
   end,
   view_as = function(self, cards)
-    if #cards ~= 1 or Self:getMark("@meiying") == 0 then return end
+    if #cards ~= 1 then return end
     local _c = Fk:getCardById(cards[1])
     local c
     if _c.trueName == "slash" then
@@ -927,28 +927,26 @@ local fanghun = fk.CreateViewAsSkill{
     c:addSubcard(cards[1])
     return c
   end,
+  before_use = function(self, player)
+    player.room:removePlayerMark(player, "@meiying", 1)
+    player:drawCards(1, self.name)
+  end,
+  enabled_at_play = function(self, player)
+    return player:getMark("@meiying") > 0
+  end,
+  enabled_at_response = function(self, player, response)
+    return player:getMark("@meiying") > 0
+  end,
 }
 local fanghun_record = fk.CreateTriggerSkill{
   name = "#fanghun_record",
-  anim_type = "offensive",
-  events = {fk.AfterCardUseDeclared, fk.PreCardRespond},
-  can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name) and data.card and table.contains(data.card.skillNames, "fanghun")
-  end,
-  on_cost = function(self, event, target, player, data)
-    return true
-  end,
-  on_use = function(self, event, target, player, data)
-    player.room:removePlayerMark(player, "@meiying", 1)
-    player:drawCards(1, "fanghun")
-  end,
 
-  refresh_events = {fk.Damage},
+  refresh_events = {fk.Damage, fk.Damaged},
   can_refresh = function(self, event, target, player, data)
     return target == player and player:hasSkill(self.name) and data.card and data.card.trueName == "slash"
   end,
   on_refresh = function(self, event, target, player, data)
-    player.room:addPlayerMark(player, "@meiying", 1)
+    player.room:addPlayerMark(player, "@meiying", data.damage)
   end,
 }
 local fuhan = fk.CreateTriggerSkill{
@@ -957,38 +955,52 @@ local fuhan = fk.CreateTriggerSkill{
   frequency = Skill.Limited,
   events = {fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name) and player.phase == Player.Start
-      and player:usedSkillTimes(self.name, Player.HistoryGame) == 0 and player:getMark("@meiying") > 0
+    return target == player and player:hasSkill(self.name) and player.phase == Player.Start and
+      player:usedSkillTimes(self.name, Player.HistoryGame) == 0 and player:getMark("@meiying") > 0
+  end,
+  on_cost = function(self, event, target, player, data)
+    local maxHp = math.max(player:usedSkillTimes("fanghun", Player.HistoryGame), 2)
+    maxHp = math.min(maxHp, 8)
+    return player.room:askForSkillInvoke(player, self.name, nil, "#fuhan-invoke:::"..maxHp)
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
     room:setPlayerMark(player, "@meiying", 0)
-    local generals = Fk:getGeneralsRandomly(5, Fk:getAllGenerals(),
-      table.map(room:getAllPlayers(), function(p) return p.general end),
-      (function (p) return (p.kingdom ~= "shu") end))
-    local general = room:askForGeneral(player, generals)
-    room:setPlayerGeneral(player, general)
-    player.maxHp = math.min(player:usedSkillTimes(#fanghun_record, Player.HistoryGame), #room:getAllPlayers())
-    
-    room:recover({
-      who = player,
-      num = 1,
-      recoverBy = player,
-      skillName = self.name
-    })
+    local generals = table.map(Fk:getGeneralsRandomly(5, Fk:getAllGenerals(), table.map(room:getAllPlayers(), function(p)
+      return p.general end), (function(p) return (p.kingdom ~= "shu") end)), function(g) return g.name end)
+    local general = room:askForGeneral(player, generals, 1)
+    room:changeHero(player, general, false, false, true)
+    local maxHp = math.max(player:usedSkillTimes("fanghun", Player.HistoryGame), 2)
+    maxHp = math.min(maxHp, 8)
+    room:changeMaxHp(player, maxHp - player.maxHp)
+    player.gender = Fk.generals[player.general].gender
+    room:broadcastProperty(player, "gender")
+    if player.hp == 0 then
+      room:killPlayer({who = player.id,})
+    end
+    if table.every(player.room:getOtherPlayers(player), function(p) return p.hp >= player.hp end) and player:isWounded() then
+      room:recover({
+        who = player,
+        num = 1,
+        recoverBy = player,
+        skillName = self.name
+      })
+    end
   end,
 }
 fanghun:addRelatedSkill(fanghun_record)
 zhaoxiang:addSkill(fanghun)
-zhaoxiang:addSkill(fuhan)]]--
+zhaoxiang:addSkill(fuhan)
 Fk:loadTranslationTable{
   ["zhaoxiang"] = "赵襄",
   ["fanghun"] = "芳魂",
-  [":fanghun"] = "当你使用【杀】造成伤害后，你获得1个“梅影”标记；你可以移去1个“梅影”标记来发动〖龙胆〗并摸一张牌。",
+  [":fanghun"] = "当你使用【杀】造成伤害后或受到【杀】造成的伤害后，你获得等于伤害值的“梅影”标记；你可以移去1个“梅影”标记发动〖龙胆〗并摸一张牌。",
   ["fuhan"] = "扶汉",
-  [":fuhan"] = "限定技，准备阶段开始时，你可以移去所有“梅影”标记，随机观看五名未登场的蜀势力角色，将武将牌替换为其中一名角色，并将体力上限数调整为本局游戏中移去“梅影”标记的数量（至多为游戏人数），然后若你是体力值最低的角色，你回复1点体力。",
+  [":fuhan"] = "限定技，准备阶段开始时，你可以移去所有“梅影”标记，随机观看五名未登场的蜀势力角色，将武将牌替换为其中一名角色，并将体力上限数调整为本局游戏中移去“梅影”标记的数量（至少2，至多8），然后若你是体力值最低的角色，你回复1点体力。",
   ["@meiying"] = "梅影",
+  ["#fuhan-invoke"] = "扶汉：你可以变身为一名蜀势力武将！（体力上限为%arg）",
 }
+
 Fk:loadTranslationTable{
   ["dongyun"] = "董允",
   ["bingzheng"] = "秉正",
@@ -2099,160 +2111,6 @@ Fk:loadTranslationTable{
   ["#yidian-choose"] = "佚典：你可以为此%arg额外指定一个目标",
 }
 
-local godzhenji = General(extension, "godzhenji", "god", 3, 3, General.Female)
-local shenfu = fk.CreateTriggerSkill {
-  name = "shenfu",
-  anim_type = "control",
-  events = {fk.EventPhaseStart},
-  can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name) and player.phase == Player.Finish
-  end,
-  on_use = function(self, event, target, player, data)
-    local room = player.room
-    if #player.player_cards[Player.Hand] % 2 == 1 then
-      while true do
-        local tos = room:askForChoosePlayers(player, table.map(room:getOtherPlayers(player), function(p)
-          return p.id end), 1, 1, "#shenfu-damage", self.name, true)
-        if #tos > 0 then
-          local to = room:getPlayerById(tos[1])
-          room:damage{
-            from = player,
-            to = to,
-            damage = 1,
-            damageType = fk.ThunderDamage,
-            skillName = self.name,
-          }
-          if not to.dead then return end
-        else
-          return
-        end
-      end
-    else
-      while true do
-        local tos = room:askForChoosePlayers(player, table.map(table.filter(room:getAlivePlayers(), function(p)
-          return p:getMark("shenfu-turn") == 0 end), function(p) return p.id end),
-          1, 1, "#shenfu-hand", self.name, true)
-        if #tos > 0 then
-          local to = room:getPlayerById(tos[1])
-          room:addPlayerMark(to, "shenfu-turn", 1)
-          if to:isKongcheng() then
-            to:drawCards(1, self.name)
-          else
-            local choice = room:askForChoice(player, {"shenfu_draw", "shenfu_discard"}, self.name)
-            if choice == "shenfu_draw" then
-              to:drawCards(1, self.name)
-            else
-              local card = room:askForCardsChosen(player, to, 1, 1, "h", self.name)
-              room:throwCard(card, self.name, to, player)
-            end
-            if #to.player_cards[Player.Hand] ~= to.hp then return end
-          end
-        else
-          return
-        end
-      end
-    end
-  end,
-}
-local qixian = fk.CreateMaxCardsSkill{
-  name = "qixian",
-  fixed_func = function (self, player)
-    if player:hasSkill(self.name) then
-      return 7
-    end
-  end,
-}
-godzhenji:addSkill(shenfu)
-godzhenji:addSkill(qixian)
-Fk:loadTranslationTable{
-  ["godzhenji"] = "神甄姬",
-  ["shenfu"] = "神赋",
-  [":shenfu"] = "结束阶段，如果你的手牌数量为：奇数，可对一名其他角色造成1点雷电伤害，若造成其死亡，你可重复此流程；偶数，可令一名角色摸一张牌或你弃置其一张手牌，若执行后该角色的手牌数等于其体力值，你可重复此流程（不能对本回合指定过的目标使用）。",
-  ["qixian"] = "七弦",
-  [":qixian"] = "锁定技，你的手牌上限为7。",
-  ["#shenfu-damage"] = "神赋：你可以对一名其他角色造成1点雷电伤害",
-  ["#shenfu-hand"] = "神赋：你可以令一名角色摸一张牌或你弃置其一张手牌",
-  ["shenfu_draw"] = "其摸一张牌",
-  ["shenfu_discard"] = "你弃置其一张手牌",
-}
-
-local godcaopi = General(extension, "godcaopi", "god", 5)
-local chuyuan = fk.CreateTriggerSkill{
-  name = "chuyuan",
-  anim_type = "masochism",
-  events = {fk.Damaged},
-  can_trigger = function(self, event, target, player, data)
-    return player:hasSkill(self.name) and #player:getPile("caopi_chu") < player.maxHp
-  end,
-  on_use = function(self, event, target, player, data)
-    local room = player.room
-    target:drawCards(1)
-    local card = room:askForCard(target, 1, 1, false, self.name, false, ".", "#chuyuan-put:"..player.id)
-    player:addToPile("caopi_chu", card, false, self.name)
-  end,
-}
-local dengji = fk.CreateTriggerSkill{
-  name = "dengji",
-  frequency = Skill.Wake,
-  events = {fk.EventPhaseStart},
-  can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name) and
-      player.phase == Player.Start and
-      player:usedSkillTimes(self.name, Player.HistoryGame) == 0
-  end,
-  can_wake = function(self, event, target, player, data)
-    return #player:getPile("caopi_chu") > 2
-  end,
-  on_use = function(self, event, target, player, data)
-    local room = player.room
-    room:changeMaxHp(player, -1)
-    local dummy = Fk:cloneCard("dilu")
-    dummy:addSubcards(player:getPile("caopi_chu"))
-    room:obtainCard(player, dummy, false, fk.ReasonJustMove)
-    room:handleAddLoseSkills(player, "ex__jianxiong|tianxing", nil)
-  end,
-}
-local tianxing = fk.CreateTriggerSkill{
-  name = "tianxing",
-  frequency = Skill.Wake,
-  events = {fk.EventPhaseStart},
-  can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name) and
-      player.phase == Player.Start and
-      player:usedSkillTimes(self.name, Player.HistoryGame) == 0
-  end,
-  can_wake = function(self, event, target, player, data)
-    return #player:getPile("caopi_chu") > 2
-  end,
-  on_use = function(self, event, target, player, data)
-    local room = player.room
-    room:changeMaxHp(player, -1)
-    local dummy = Fk:cloneCard("dilu")
-    dummy:addSubcards(player:getPile("caopi_chu"))
-    room:obtainCard(player, dummy, false, fk.ReasonPrey)
-    local choice = room:askForChoice(player, {"rende", "ex__zhiheng", "luanji"}, self.name)  --TODO:ex__rende, ex__luanji
-    room:handleAddLoseSkills(player, choice.."|-chuyuan", nil)
-  end,
-}
-godcaopi:addSkill(chuyuan)
-godcaopi:addSkill(dengji)
-godcaopi:addRelatedSkill("ex__jianxiong")
-godcaopi:addRelatedSkill(tianxing)
-godcaopi:addRelatedSkill("rende")
-godcaopi:addRelatedSkill("ex__zhiheng")
-godcaopi:addRelatedSkill("luanji")
-Fk:loadTranslationTable{
-  ["godcaopi"] = "神曹丕",
-  ["chuyuan"] = "储元",
-  [":chuyuan"] = "当一名角色受到伤害后，若你的“储”数小于你的体力上限，你可以令其摸一张牌，然后其将一张手牌置于你的武将牌上，称为“储”。",
-  ["dengji"] = "登极",
-  [":dengji"] = "觉醒技，准备阶段，若你的“储”数不小于3，你减1点体力上限，获得所有“储”，获得〖奸雄〗和〖天行〗。",
-  ["tianxing"] = "天行",
-  [":tianxing"] = "觉醒技，准备阶段，若你的“储”数不小于3，你减1点体力上限，获得所有“储”，失去〖储元〗，并获得下列技能中的一项：〖仁德〗、〖制衡〗、〖乱击〗。",
-  ["caopi_chu"] = "储",
-  ["#chuyuan-put"] = "储元：将一张手牌作为“储”置于 %src 武将牌上",
-}
-
 --淳于琼
 
 local gaolan = General(extension, "ol__gaolan", "qun", 4)
@@ -2325,14 +2183,5 @@ Fk:loadTranslationTable{
   ["#xiying-invoke"] = "袭营：你可以弃置一张非基本手牌，所有其他角色需弃置一张牌，否则其本回合不能使用或打出牌",
   ["#xiying-discard"] = "袭营：你需弃置一张牌，否则本回合不能使用或打出牌",
 }
-
-Fk:loadTranslationTable{
-  ["caoshuang"] = "曹爽",
-  ["tuogu"] = "托孤",
-  [":tuogu"] = "当一名角色死亡时，你可以令其选择其武将牌上的一个技能（限定技、觉醒技、主公技和包含隐匿的技能除外），你失去上次以此法获得的技能，然后获得此技能。",
-  ["shanzhuan"] = "擅专",
-  [":shanzhuan"] = "当你对一名其他角色造成伤害后，若其判定区没有牌，你可以将其一张牌置于其判定区，若此牌不是延时锦囊牌，则红色牌视为【乐不思蜀】，黑色牌视为【兵粮寸断】。结束阶段，若你本回合未造成伤害，你可以摸一张牌。",
-}
---群张辽 2020.10.26
 
 return extension
