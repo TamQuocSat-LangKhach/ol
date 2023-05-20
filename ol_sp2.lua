@@ -1039,7 +1039,6 @@ Fk:loadTranslationTable{
 
 --神孙权（制衡技能版）
 
---阿会喃2023.1.13
 local ahuinan = General(extension, "ahuinan", "qun", 4)
 local jueman = fk.CreateTriggerSkill{
   name = "jueman",

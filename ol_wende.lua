@@ -865,8 +865,8 @@ Fk:loadTranslationTable{
 }
 
 local zhongyan = General(extension, "zhongyan", "jin", 3, 3, General.Female)
-local bolan_skills = {"quhu", "qiangxi", "qice", "daoshu", "tiaoxin", "qiangwu", "tianyi", "ex__zhiheng", "jieyin", "guose",
-"lijian", "qingnang", "lihun", "mingce", "mizhao", "sanchen", "gongxin"}  --固定技能库，缺ex__tiaoxin ex__jieyin ex__guose ex__lijian chuli 
+local bolan_skills = {"quhu", "qiangxi", "qice", "daoshu", "tiaoxin", "qiangwu", "tianyi", "ex__zhiheng", "jieyin", "ex__guose",
+"lijian", "qingnang", "lihun", "mingce", "mizhao", "sanchen", "gongxin", "chuli"}  --固定技能库，缺ex__tiaoxin ex__jieyin  ex__lijian
 local bolan = fk.CreateTriggerSkill{
   name = "bolan",
   anim_type = "special",
@@ -911,18 +911,18 @@ local bolan = fk.CreateTriggerSkill{
     elseif event == fk.GameStart or event == fk.EventAcquireSkill then
       if player:hasSkill(self.name, true) then
         for _, p in ipairs(room:getOtherPlayers(player)) do
-          room:handleAddLoseSkills(p, "&bolan", nil, false, true)
+          room:handleAddLoseSkills(p, "bolan&", nil, false, true)
         end
       end
     elseif event == fk.EventLoseSkill or event == fk.Deathed then
       for _, p in ipairs(room:getOtherPlayers(player, true, true)) do
-        room:handleAddLoseSkills(p, "-&bolan", nil, false, true)
+        room:handleAddLoseSkills(p, "-bolan&", nil, false, true)
       end
     end
   end,
 }
 local bolan_active = fk.CreateActiveSkill{
-  name = "&bolan",
+  name = "bolan&",
   anim_type = "special",
   card_num = 0,
   target_num = 0,
@@ -941,6 +941,7 @@ local bolan_active = fk.CreateActiveSkill{
         break
       end
     end
+    room:doIndicate(player.id, {target.id})
     room:loseHp(player, 1, "bolan")
     if player.dead then return end
     local skills = table.clone(bolan_skills)
@@ -952,7 +953,7 @@ local bolan_active = fk.CreateActiveSkill{
       end
     end
     if #skills > 0 then
-      local choice = room:askForChoice(target, table.random(skills, math.min(3, #skills)), self.name)
+      local choice = room:askForChoice(target, table.random(skills, math.min(3, #skills)), self.name, "#bolan-choice::"..player.id)
       room:handleAddLoseSkills(player, choice, nil, true, false)
       player.tag["bolan"] = {choice}
     end
@@ -995,8 +996,9 @@ Fk:loadTranslationTable{
   [":bolan"] = "出牌阶段开始时，你可以从随机三个“出牌阶段限一次”的技能中选择一个获得直到本阶段结束；其他角色的出牌阶段限一次，其可以失去1点体力，令你从随机三个“出牌阶段限一次”的技能中选择一个，其获得之直到此阶段结束。",
   ["yifa"] = "仪法",
   [":yifa"] = "锁定技，当其他角色使用【杀】或黑色普通锦囊牌指定你为目标后，其手牌上限-1直到其回合结束。",
-  ["&bolan"] = "博览",
-  [":&bolan"] = "出牌阶段限一次，你可以失去1点体力，令钟琰从随机三个“出牌阶段限一次”的技能中选择一个，你获得之直到此阶段结束。",
+  ["bolan&"] = "博览",
+  [":bolan&"] = "出牌阶段限一次，你可以失去1点体力，令钟琰从随机三个“出牌阶段限一次”的技能中选择一个，你获得之直到此阶段结束。",
+  ["#bolan-choice"] = "博览：选择令 %dest 此阶段获得技能",
   ["@yifa"] = "仪法",
 }
 
@@ -1183,7 +1185,7 @@ jiachong:addSkill(jianhui)
 Fk:loadTranslationTable{
   ["ol__jiachong"] = "贾充",
   ["xiongshu"] = "凶竖",
-  [":xiongshu"] = "其他角色出牌阶段开始时，你可以：弃置X张牌（为本轮你已发动过本技能的次数），展示其一张手牌，你秘密猜测其于此出牌阶段是否会使用与此牌同名的牌。出牌阶段结束时，若你猜对，你对其造成1点伤害；若你猜错，你获得此牌。",
+  [":xiongshu"] = "其他角色出牌阶段开始时，你可以：弃置X张牌（X为本轮你已发动过本技能的次数），展示其一张手牌，你秘密猜测其于此出牌阶段是否会使用与此牌同名的牌。出牌阶段结束时，若你猜对，你对其造成1点伤害；若你猜错，你获得此牌。",
   ["jianhui"] = "奸回",
   [":jianhui"] = "锁定技，你记录上次对你造成伤害的角色。当你对其造成伤害后，你摸一张牌；当其对你造成伤害后，其弃置一张牌。",
   ["#xiongshu-invoke"] = "凶竖：你可以展示 %dest 的一张手牌，猜测其此阶段是否会使用同名牌",

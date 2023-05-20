@@ -6,7 +6,7 @@ Fk:loadTranslationTable{
 }
 
 local godzhenji = General(extension, "godzhenji", "god", 3, 3, General.Female)
-local shenfu = fk.CreateTriggerSkill {
+local shenfu = fk.CreateTriggerSkill{
   name = "shenfu",
   anim_type = "control",
   events = {fk.EventPhaseStart},

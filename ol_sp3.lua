@@ -255,7 +255,7 @@ local jianhe = fk.CreateActiveSkill{
       }
     else
       local type = Fk:getCardById(effect.cards[1]):getTypeString()
-      local cards = room:askForCard(target, n, n, true, self.name, true, ".|.|.|.|.|"..type, "#jianhe-choose:::"..tostring(n))
+      local cards = room:askForCard(target, n, n, true, self.name, true, ".|.|.|.|.|"..type, "#jianhe-choose:::"..n..":"..type)
       if #cards > 0 then
         room:moveCards({
           ids = cards,
@@ -328,7 +328,7 @@ Fk:loadTranslationTable{
   [":jianhe"] = "出牌阶段每名角色限一次，你可以重铸至少两张同名牌或至少两张装备牌，令一名角色选择一项：1.重铸等量张与之类型相同的牌；2.受到你造成的1点雷电伤害。",
   ["chuanwu"] = "穿屋",
   [":chuanwu"] = "锁定技，当你造成或受到伤害后，你失去你武将牌上前X个技能直到回合结束（X为你的攻击范围），然后摸等同失去技能数张牌。",
-  ["#jianhe-choose"] = "剑合：你需重铸%arg张相同类别的牌，否则受到1点雷电伤害",
+  ["#jianhe-choose"] = "剑合：你需重铸%arg张%arg2，否则受到1点雷电伤害",
 }
 
 local dongtuna = General(extension, "dongtuna", "qun", 4)
