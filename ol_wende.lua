@@ -51,9 +51,13 @@ local ol__huishi = fk.CreateTriggerSkill{
     local dummy = Fk:cloneCard("dilu")
     dummy:addSubcards(get)
     room:obtainCard(player, dummy, false, fk.ReasonJustMove)
-    for _, id in ipairs(card_ids) do
-      table.insert(room.draw_pile, id)
-    end
+    room:moveCards({
+      ids = card_ids,
+      toArea = Card.DrawPile,
+      moveReason = fk.ReasonJustMove,
+      skillName = self.name,
+      drawPilePosition = -1,
+    })
     return true
   end,
 }

@@ -114,7 +114,8 @@ local daojie = fk.CreateTriggerSkill{
       if room:getCardArea(data.card) == Card.Processing then
         local targets = {}
         for _, p in ipairs(room:getAlivePlayers()) do
-          if string.find(p.general, "olz__xun") then
+          if string.find(p.general, "olz__xun") or
+            string.find(p.general, "xunyu") or string.find(p.general, "xunyou") or string.find(p.general, "xunchen") then
             table.insert(targets, p.id)
           end
         end
@@ -221,7 +222,7 @@ local shangshen = fk.CreateTriggerSkill{
       }
     end
     local n = 4 - #target.player_cards[Player.Hand]
-    if n > 0 then
+    if n > 0 and not target.dead then
       target:drawCards(n, self.name)
     end
   end,
@@ -289,7 +290,7 @@ local zhanding = fk.CreateViewAsSkill{
     end
   end,
   enabled_at_response = function(self, player, response)
-    return player:hasSkill(self.name) and not response
+    return not response
   end,
 }
 local zhanding_record = fk.CreateTriggerSkill{
@@ -298,7 +299,7 @@ local zhanding_record = fk.CreateTriggerSkill{
 
   refresh_events = {fk.Damage, fk.CardUseFinished},
   can_refresh = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name) and data.card and table.contains(data.card.skillNames, "zhanding")
+    return target == player and data.card and table.contains(data.card.skillNames, "zhanding")
   end,
   on_refresh = function(self, event, target, player, data)
     if event == fk.Damage then
@@ -332,7 +333,7 @@ local muyin = fk.CreateTriggerSkill{
         end
       end
       for _, p in ipairs(player.room:getAlivePlayers()) do
-        if string.find(p.general, "olz__wu") and p:getMaxCards() < n then
+        if (string.find(p.general, "olz__wu") or string.find(p.general, "wuxian")) and p:getMaxCards() < n then
           table.insert(self.muyin_tos, p.id)
         end
       end

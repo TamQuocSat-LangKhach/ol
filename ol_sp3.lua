@@ -237,14 +237,8 @@ local jianhe = fk.CreateActiveSkill{
     local player = room:getPlayerById(effect.from)
     local target = room:getPlayerById(effect.tos[1])
     room:addPlayerMark(target, "jianhe-turn", 1)
-    room:moveCards({
-      ids = effect.cards,
-      from = effect.from,
-      toArea = Card.DiscardPile,
-      moveReason = fk.ReasonPutIntoDiscardPile,  --TODO: reason recast
-    })
     local n = #effect.cards
-    player:drawCards(n, self.name)
+    room:recastCard(effect.cards, player, self.name)
     if #target:getCardIds{Player.Hand, Player.Equip} < n then
       room:damage{
         from = player,
@@ -257,13 +251,7 @@ local jianhe = fk.CreateActiveSkill{
       local type = Fk:getCardById(effect.cards[1]):getTypeString()
       local cards = room:askForCard(target, n, n, true, self.name, true, ".|.|.|.|.|"..type, "#jianhe-choose:::"..n..":"..type)
       if #cards > 0 then
-        room:moveCards({
-          ids = cards,
-          from = effect.tos[1],
-          toArea = Card.DiscardPile,
-          moveReason = fk.ReasonPutIntoDiscardPile,  --TODO: reason recast
-        })
-        target:drawCards(#cards, self.name)
+        room:recastCard(cards, target, self.name)
       else
         room:damage{
           from = player,
