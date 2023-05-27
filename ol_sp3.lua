@@ -579,5 +579,157 @@ Fk:loadTranslationTable{
   ["@cuipo-turn"] = "摧破",
 }
 --王瓘 2023.5.10
+local luoxian = General(extension, "luoxian", "shu", 4)
+local daili = fk.CreateTriggerSkill{
+  name = "daili",
+  anim_type = "drawcard",
+  events = {fk.TurnEnd},
+  can_trigger = function(self, event, target, player, data)
+    return player:hasSkill(self.name) and (player:getMark("@$daili") == 0 or #player:getMark("@$daili") % 2 == 0)
+  end,
+  on_use = function(self, event, target, player, data)
+    player:turnOver()
+    local cards = player:drawCards(3, self.name)
+    player:showCards(cards)
+  end,
+
+  refresh_events = {fk.CardShown, fk.AfterCardsMove},
+  can_refresh = function(self, event, target, player, data)
+    if event == fk.CardShown then
+      return target == player and player:hasSkill(self.name, true)
+    else
+      return player:getMark(self.name) ~= 0
+    end
+  end,
+  on_refresh = function(self, event, target, player, data)
+    local mark = player:getMark("@$daili")
+    local mark2 = player:getMark(self.name)
+    if event == fk.CardShown then
+      if mark == 0 then mark = {} end
+      if mark2 == 0 then mark2 = {} end
+      for _, id in ipairs(data.cardIds) do
+        table.insert(mark, Fk:getCardById(id, true).name)
+        table.insert(mark2, id)
+      end
+      player.room:setPlayerMark(player, "@$daili", mark)
+      player.room:setPlayerMark(player, self.name, mark2)
+    else
+      for _, move in ipairs(data) do
+        if move.from == player.id then
+          for _, info in ipairs(move.moveInfo) do
+            if info.fromArea == Card.PlayerHand then
+              if table.contains(mark2, info.cardId) then
+                table.removeOne(mark, Fk:getCardById(info.cardId, true).name)
+                table.removeOne(mark2, info.cardId)
+              end
+            end
+          end
+        end
+      end
+      player.room:setPlayerMark(player, "@$daili", mark)
+      player.room:setPlayerMark(player, self.name, mark2)
+    end
+  end,
+}
+luoxian:addSkill(daili)
+Fk:loadTranslationTable{
+  ["luoxian"] = "罗宪",
+  ["daili"] = "带砺",
+  [":daili"] = "每回合结束时，若你有偶数张展示过的手牌，你可以翻面，摸三张牌并展示之。",
+  ["@$daili"] = "带砺",
+}
+
+local sunhong = General(extension, "sunhong", "wu", 3)
+local xianbi = fk.CreateActiveSkill{
+  name = "xianbi",
+  anim_type = "drawcard",
+  card_num = 0,
+  target_num = 1,
+  can_use = function(self, player)
+    return player:usedSkillTimes(self.name, Player.HistoryPhase) == 0
+  end,
+  card_filter = function(self, to_select, selected)
+    return false
+  end,
+  target_filter = function(self, to_select, selected)
+    local target = Fk:currentRoom():getPlayerById(to_select)
+    return #selected == 0 and #Self.player_cards[Player.Hand] ~= #target.player_cards[Player.Equip] and target:getMark("zenrun") == 0
+  end,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    local target = room:getPlayerById(effect.tos[1])
+    local n = #player.player_cards[Player.Hand] - #target.player_cards[Player.Equip]
+    if n < 0 then
+      player:drawCards(-n, self.name)
+    else
+      local cards = room:askForDiscard(player, n, n, false, self.name, false, ".", "#xianbi-discard:::"..n)
+      for _, id in ipairs(cards) do
+        local get = {}
+        local card = Fk:getCardById(id, true)
+        table.insertTable(get, room:getCardsFromPileByRule(".|.|.|.|.|"..card:getTypeString().."|^"..id, 1, "discardPile"))
+        if #get > 0 then
+          room:moveCards({
+            ids = get,
+            to = player.id,
+            toArea = Card.PlayerHand,
+            moveReason = fk.ReasonJustMove,
+            proposer = player.id,
+            skillName = self.name,
+          })
+        end
+      end
+    end
+  end,
+}
+local zenrun = fk.CreateTriggerSkill{
+  name = "zenrun",
+  events = {fk.BeforeDrawCard},
+  anim_type = "control",
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self.name) and player:usedSkillTimes(self.name, Player.HistoryPhase) == 0
+  end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    local n = data.num
+    local targets = table.map(table.filter(room:getOtherPlayers(player), function(p)
+      return p:getMark(self.name) == 0 and #p:getCardIds{Player.Hand, Player.Equip} >= n end), function(p) return p.id end)
+    if #targets == 0 then return end
+    local to = room:askForChoosePlayers(player, targets, 1, 1, "#zenrun-choose:::"..n, self.name, true)
+    if #to > 0 then
+      self.cost_data = to[1]
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local to = room:getPlayerById(self.cost_data)
+    local n = data.num
+    data.num = 0
+    local dummy = Fk:cloneCard("dilu")
+    local cards = room:askForCardsChosen(player, to, n, n, "he", self.name)
+    dummy:addSubcards(cards)
+    room:obtainCard(player, dummy, false, fk.ReasonPrey)
+    local choice = room:askForChoice(to, {"zenrun_draw", "zenrun_forbid"}, self.name, "#zenrun-choice:"..player.id)
+    if choice == "zenrun_draw" then
+      to:drawCards(n, self.name)
+    else
+      room:addPlayerMark(to, self.name, 1)
+    end
+  end,
+}
+sunhong:addSkill(xianbi)
+sunhong:addSkill(zenrun)
+Fk:loadTranslationTable{
+  ["sunhong"] = "孙弘",
+  ["xianbi"] = "险诐",
+  [":xianbi"] = "出牌阶段限一次，你可以将手牌调整至与一名角色装备区里的牌数相同，然后每因此弃置一张牌，你随机获得弃牌堆中另一张类型相同的牌。",
+  ["zenrun"] = "谮润",
+  [":zenrun"] = "每阶段限一次，当你摸牌时，你可以改为获得一名其他角色等量张牌，然后其选择一项："..
+  "1.摸等量的牌；2.本局游戏中你发动〖险诐〗和〖谮润〗不能指定其为目标。",
+  ["#xianbi-discard"] = "险诐：弃置%arg张手牌，然后随机获得弃牌堆中相同类别的牌",
+  ["#zenrun-choose"] = "谮润：你可以将摸牌改为获得一名其他角色%arg张牌，然后其选择摸等量牌或你本局不能对其发动技能",
+  ["zenrun_draw"] = "摸等量牌",
+  ["zenrun_forbid"] = "其本局不能对你发动〖险诐〗和〖谮润〗",
+}
 
 return extension

@@ -443,7 +443,7 @@ local drowningSkill = fk.CreateActiveSkill{
         from = from,
         to = to,
         card = effect.card,
-        damage = 1,
+        damage = 1 + (effect.additionalDamage or 0),
         damageType = fk.ThunderDamage,
         skillName = self.name
       })
@@ -455,7 +455,7 @@ local drowningSkill = fk.CreateActiveSkill{
           from = from,
           to = to,
           card = effect.card,
-          damage = 1,
+          damage = 1 + (effect.additionalDamage or 0),
           damageType = fk.ThunderDamage,
           skillName = self.name
         })
@@ -467,6 +467,7 @@ local drowningSkill = fk.CreateActiveSkill{
 local drowning = fk.CreateTrickCard{
   name = "drowning",
   skill = drowningSkill,
+  is_damage_card = true,
 }
 extension:addCards({
   drowning:clone(Card.Spade, 3),
@@ -492,7 +493,7 @@ local unexpectationSkill = fk.CreateActiveSkill{
         from = from,
         to = to,
         card = effect.card,
-        damage = 1,
+        damage = 1 + (effect.additionalDamage or 0),
         skillName = self.name
       })
     end
