@@ -528,9 +528,9 @@ local guansuo = General(extension, "guansuo", "shu", 4)
 local zhengnan = fk.CreateTriggerSkill{
   name = "zhengnan",
   anim_type = "drawcard",
-  events = {fk.Death},
+  events = {fk.Deathed},
   can_trigger = function(self, event, target, player, data)
-    return player:hasSkill(self.name) and target ~= player
+    return player:hasSkill(self.name)
   end,
   on_use = function(self, event, target, player, data)
     player:drawCards(3)
