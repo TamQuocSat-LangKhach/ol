@@ -41,7 +41,7 @@ local iceSlashSkill = fk.CreateActiveSkill{
       from = room:getPlayerById(from),
       to = room:getPlayerById(to),
       card = effect.card,
-      damage = 1 + (effect.additionalDamage or 0),
+      damage = 1,
       damageType = fk.IceDamage,
       skillName = self.name
     })
@@ -443,7 +443,7 @@ local drowningSkill = fk.CreateActiveSkill{
         from = from,
         to = to,
         card = effect.card,
-        damage = 1 + (effect.additionalDamage or 0),
+        damage = 1,
         damageType = fk.ThunderDamage,
         skillName = self.name
       })
@@ -455,7 +455,7 @@ local drowningSkill = fk.CreateActiveSkill{
           from = from,
           to = to,
           card = effect.card,
-          damage = 1 + (effect.additionalDamage or 0),
+          damage = 1,
           damageType = fk.ThunderDamage,
           skillName = self.name
         })
@@ -493,7 +493,7 @@ local unexpectationSkill = fk.CreateActiveSkill{
         from = from,
         to = to,
         card = effect.card,
-        damage = 1 + (effect.additionalDamage or 0),
+        damage = 1,
         skillName = self.name
       })
     end
