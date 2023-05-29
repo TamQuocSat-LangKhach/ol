@@ -63,17 +63,18 @@ local ol_ex__qimou = fk.CreateActiveSkill{
   card_num = 0,
   target_num = 0,
   frequency = Skill.Limited,
+  interaction = function()
+    return UI.Spin {
+      from = 1,
+      to = Self.hp,
+    }
+  end,
   can_use = function(self, player)
     return player:usedSkillTimes(self.name, Player.HistoryGame) == 0
   end,
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
-    -- TODO: 这里应该给fk加新功能，视为/主动技使用之前应该有个额外的交互
-    local choices = {}
-    for i = 1, player.hp do
-      table.insert(choices, tostring(i))
-    end
-    local tolose = tonumber(room:askForChoice(player, choices, self.name))
+    local tolose = self.interaction.data
     room:loseHp(player, tolose, self.name)
     player:drawCards(tolose)
     room:setPlayerMark(player, "@qimou-turn", tolose)
