@@ -11,7 +11,8 @@ Fk:loadTranslationTable{
   ["aocai"] = "傲才",
   [":aocai"] = "当你于回合外需要使用或打出一张基本牌时，你可以观看牌堆顶的两张牌，若你观看的牌中有此牌，你可以使用或打出之。",
   ["duwu"] = "黩武",
-  [":duwu"] = "出牌阶段，你可以弃置X张牌对你攻击范围内的一名其他角色造成1点伤害（X为该角色的体力值）。若你以此法令该角色进入濒死状态，则濒死状态结算后你失去1点体力，且本回合不能再发动“黩武”。",
+  [":duwu"] = "出牌阶段，你可以弃置X张牌对你攻击范围内的一名其他角色造成1点伤害（X为该角色的体力值）。"..
+  "若你以此法令该角色进入濒死状态，则濒死状态结算后你失去1点体力，且本回合不能再发动〖黩武〗。",
 }
 
 local chengyu = General(extension, "chengyu", "wei", 3)
@@ -143,9 +144,11 @@ chengyu:addSkill(benyu)
 Fk:loadTranslationTable{
   ["chengyu"] = "程昱",
   ["shefu"] = "设伏",
-  [":shefu"] = "结束阶段开始时，你可将一张手牌扣置于武将牌上，称为“伏兵”。若如此做，你为“伏兵”记录一个基本牌或锦囊牌的名称（须与其他“伏兵”记录的名称均不同）。当其他角色于你的回合外使用手牌时，你可将记录的牌名与此牌相同的一张“伏兵”置入弃牌堆，然后此牌无效。",
+  [":shefu"] = "结束阶段开始时，你可将一张手牌扣置于武将牌上，称为“伏兵”。若如此做，你为“伏兵”记录一个基本牌或锦囊牌的名称"..
+  "（须与其他“伏兵”记录的名称均不同）。当其他角色于你的回合外使用手牌时，你可将记录的牌名与此牌相同的一张“伏兵”置入弃牌堆，然后此牌无效。",
   ["benyu"] = "贲育",
-  [":benyu"] = "当你受到伤害后，若你的手牌数不大于伤害来源手牌数，你可以将手牌摸至与伤害来源手牌数相同（最多摸至5张）；否则你可以弃置大于伤害来源手牌数的手牌，然后对其造成1点伤害。",
+  [":benyu"] = "当你受到伤害后，若你的手牌数不大于伤害来源手牌数，你可以将手牌摸至与伤害来源手牌数相同（最多摸至5张）；"..
+  "否则你可以弃置大于伤害来源手牌数的手牌，然后对其造成1点伤害。",
   ["#shefu-cost"] = "设伏：你可以将一张手牌扣置为“伏兵”",
   ["#benyu-discard"] = "贲育：你可以弃置至少%arg张手牌，对 %dest 造成1点伤害",
 }
@@ -365,7 +368,8 @@ zhanglu:addSkill(midao)
 Fk:loadTranslationTable{
   ["zhanglu"] = "张鲁",
   ["yishe"] = "义舍",
-  [":yishe"] = "结束阶段开始时，若你的武将牌上没有牌，你可以摸两张牌。若如此做，你将两张牌置于武将牌上称为“米”，当“米”移至其他区域后，若你的武将牌上没有“米”，你回复1点体力。",
+  [":yishe"] = "结束阶段开始时，若你的武将牌上没有牌，你可以摸两张牌，若如此做，你将两张牌置于武将牌上，称为“米”。当“米”移至其他区域后，"..
+  "若你的武将牌上没有“米”，你回复1点体力。",
   ["bushi"] = "布施",
   [":bushi"] = "当你受到1点伤害后，或其他角色受到你造成的1点伤害后，受到伤害的角色可以获得一张“米”。",
   ["midao"] = "米道",
@@ -408,7 +412,8 @@ mayunlu:addSkill(fengpo)
 Fk:loadTranslationTable{
   ["mayunlu"] = "马云騄",
   ["fengpo"] = "凤魄",
-  [":fengpo"] = "当你于出牌阶段内使用的第一张【杀】或【决斗】仅指定唯一目标后，你可以选择一项:1.摸X张牌；2.此牌造成的伤害+X。（X为其<font color='red'>♦</font>手牌数）",
+  [":fengpo"] = "当你于出牌阶段内使用的第一张【杀】或【决斗】仅指定唯一目标后，你可以选择一项:1.摸X张牌；"..
+  "2.此牌造成的伤害+X。（X为其<font color='red'>♦</font>手牌数）",
   ["fengpo_draw"] = "摸X张牌",
   ["fengpo_damage"] = "伤害+X",
 }
@@ -442,7 +447,8 @@ local hanyong = fk.CreateTriggerSkill{
   anim_type = "offensive",
   events = {fk.CardUsing},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name) and (data.card.name == "savage_assault" or data.card.name == "archery_attack") and player.hp < player.room:getTag("RoundCount")
+    return target == player and player:hasSkill(self.name) and
+      (data.card.name == "savage_assault" or data.card.name == "archery_attack") and player.hp < player.room:getTag("RoundCount")
   end,
   on_use = function(self, event, target, player, data)
     data.additionalDamage = (data.additionalDamage or 0) + 1
@@ -509,7 +515,7 @@ local xunzhi = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     room:loseHp(player, 1, self.name)
-    room:addPlayerMark(player, "AddMaxCards", 2)
+    room:addPlayerMark(player, MarkEnum.AddMaxCards, 2)
   end,
 }
 yawang:addRelatedSkill(yawang_prohibit)
@@ -631,7 +637,8 @@ tadun:addSkill(luanzhan)
 Fk:loadTranslationTable{
   ["tadun"] = "蹋顿",
   ["luanzhan"] = "乱战",
-  [":luanzhan"] = "你使用【杀】或黑色非延时类锦囊牌可以额外选择X名角色为目标；当你使用【杀】或黑色非延时类锦囊牌指定目标后，若此牌的目标角色数小于X，则X减至0。（X为你于本局游戏内造成过伤害的次数）。",
+  [":luanzhan"] = "你使用【杀】或黑色非延时类锦囊牌可以额外选择X名角色为目标；当你使用【杀】或黑色非延时类锦囊牌指定目标后，"..
+  "若此牌的目标角色数小于X，则X减至0。（X为你于本局游戏内造成过伤害的次数）。",
   ["@luanzhan"] = "乱战",
   ["#luanzhan-choose"] = "乱战：你可以为%arg额外指定至多%arg2个目标",
 }
@@ -701,7 +708,8 @@ yanbaihu:addSkill(jili)
 Fk:loadTranslationTable{
   ["yanbaihu"] = "严白虎",
   ["zhidao"] = "雉盗",
-  [":zhidao"] = "锁定技，当你于出牌阶段内第一次对区域里有牌的其他角色造成伤害后，你获得其手牌、装备区和判定区里的各一张牌，然后直到回合结束，其他角色不能被选择为你使用牌的目标。",
+  [":zhidao"] = "锁定技，当你于出牌阶段内第一次对区域里有牌的其他角色造成伤害后，你获得其手牌、装备区和判定区里的各一张牌，"..
+  "然后直到回合结束，其他角色不能被选择为你使用牌的目标。",
   ["jili"] = "寄篱",
   [":jili"] = "锁定技，当一名其他角色成为红色基本牌或红色非延时类锦囊牌的目标时，若其与你的距离为1且你既不是此牌的使用者也不是目标，你也成为此牌的目标。",
 }
@@ -836,7 +844,8 @@ litong:addSkill(tuifeng)
 Fk:loadTranslationTable{
   ["litong"] = "李通",
   ["tuifeng"] = "推锋",
-  [":tuifeng"] = "当你受到1点伤害后，你可以将一张牌置于武将牌上，称为“锋”。准备阶段开始时，若你的武将牌上有“锋”，你将所有“锋”置入弃牌堆，摸2X张牌，然后你于此回合的出牌阶段内使用【杀】的次数上限+X（X为你此次置入弃牌堆的“锋”数）。",
+  [":tuifeng"] = "当你受到1点伤害后，你可以将一张牌置于武将牌上，称为“锋”。准备阶段开始时，若你的武将牌上有“锋”，你将所有“锋”置入弃牌堆，"..
+  "摸2X张牌，然后你于此回合的出牌阶段内使用【杀】的次数上限+X（X为你此次置入弃牌堆的“锋”数）。",
 }
 
 local mizhu = General(extension, "mizhu", "shu", 3)
@@ -1009,7 +1018,8 @@ Fk:loadTranslationTable{
   ["hongde"] = "弘德",
   [":hongde"] = "当你一次获得或失去至少两张牌后，你可以令一名其他角色摸一张牌。",
   ["dingpan"] = "定叛",
-  [":dingpan"] = "出牌阶段限X次，你可以令一名装备区里有牌的角色摸一张牌，然后其选择一项：1.令你弃置其装备区里的一张牌；2.获得其装备区里的所有牌，若如此做，你对其造成1点伤害（X为场上存活的反贼数）。",
+  [":dingpan"] = "出牌阶段限X次，你可以令一名装备区里有牌的角色摸一张牌，然后其选择一项：1.令你弃置其装备区里的一张牌；"..
+  "2.获得其装备区里的所有牌，若如此做，你对其造成1点伤害（X为场上存活的反贼数）。",
   ["#hongde-choose"] = "弘德：你可以令一名其他角色摸一张牌",
   ["dingpan_discard"] = "其弃置你装备区里的一张牌",
   ["dingpan_damage"] = "收回所有装备，其对你造成1点伤害",
@@ -1119,7 +1129,8 @@ Fk:loadTranslationTable{
   ["fanghun"] = "芳魂",
   [":fanghun"] = "当你使用【杀】造成伤害后或受到【杀】造成的伤害后，你获得等于伤害值的“梅影”标记；你可以移去1个“梅影”标记发动〖龙胆〗并摸一张牌。",
   ["fuhan"] = "扶汉",
-  [":fuhan"] = "限定技，准备阶段开始时，你可以移去所有“梅影”标记，随机观看五名未登场的蜀势力角色，将武将牌替换为其中一名角色，并将体力上限数调整为本局游戏中移去“梅影”标记的数量（至少2，至多8），然后若你是体力值最低的角色，你回复1点体力。",
+  [":fuhan"] = "限定技，准备阶段开始时，你可以移去所有“梅影”标记，随机观看五名未登场的蜀势力角色，将武将牌替换为其中一名角色，"..
+  "并将体力上限数调整为本局游戏中移去“梅影”标记的数量（至少2，至多8），然后若你是体力值最低的角色，你回复1点体力。",
   ["@meiying"] = "梅影",
   ["#fuhan-invoke"] = "扶汉：你可以变身为一名蜀势力武将！（体力上限为%arg）",
 }
@@ -1483,7 +1494,8 @@ kanze:addSkill(kuanshi)
 Fk:loadTranslationTable{
   ["kanze"] = "阚泽",
   ["xiashu"] = "下书",
-  [":xiashu"] = "出牌阶段开始时，你可以将所有手牌交给一名其他角色，然后该角色亮出任意数量的手牌（至少一张），令你选择一项：1.获得其亮出的手牌；2.获得其未亮出的手牌。",
+  [":xiashu"] = "出牌阶段开始时，你可以将所有手牌交给一名其他角色，然后该角色亮出任意数量的手牌（至少一张），令你选择一项："..
+  "1.获得其亮出的手牌；2.获得其未亮出的手牌。",
   ["kuanshi"] = "宽释",
   [":kuanshi"] = "结束阶段，你可以选择一名角色。直到你的下回合开始，该角色下一次受到超过1点的伤害时，防止此伤害，然后你跳过下个回合的摸牌阶段。",
   ["#xiashu-choose"] = "下书：将所有手牌交给一名角色，其展示任意张手牌，你获得展示或未展示的牌",
@@ -1939,8 +1951,10 @@ Fk:loadTranslationTable{
   ["gangzhi"] = "刚直",
   [":gangzhi"] = "锁定技，其他角色对你造成的伤害，和你对其他角色造成的伤害均视为体力流失。",
   ["beizhan"] = "备战",
-  [":beizhan"] = "回合结束后，你可以指定一名角色：若其手牌数少于X，其将手牌补至X（X为其体力上限且最多为5）；该角色回合开始时，若其手牌数为全场最多，则其本回合内不能使用牌指定其他角色为目标。",
-  ["#beizhan-choose"] = "备战：指定一名角色，若手牌少于X则补至X张（X为其体力上限且最多为5）；<br>若其回合开始时手牌数为最多，则使用牌不能指定其他角色为目标",
+  [":beizhan"] = "回合结束后，你可以指定一名角色：若其手牌数少于X，其将手牌补至X（X为其体力上限且最多为5）；"..
+  "该角色回合开始时，若其手牌数为全场最多，则其本回合内不能使用牌指定其他角色为目标。",
+  ["#beizhan-choose"] = "备战：指定一名角色，若手牌少于X则补至X张（X为其体力上限且最多为5）；<br>"..
+  "若其回合开始时手牌数为最多，则使用牌不能指定其他角色为目标",
   ["@@beizhan-turn"] = "备战",
 }
 
@@ -2055,7 +2069,8 @@ xunchen:addSkill(moushi)
 Fk:loadTranslationTable{
   ["ol__xunchen"] = "荀谌",
   ["fenglve"] = "锋略",
-  [":fenglve"] = "出牌阶段开始时，你可以与一名角色拼点：若你赢，该角色将每个区域内各一张牌交给你；若你没赢，你交给其一张牌。你与其他角色的拼点结果确定后，你可以将你的拼点牌交给该角色。",
+  [":fenglve"] = "出牌阶段开始时，你可以与一名角色拼点：若你赢，该角色将每个区域内各一张牌交给你；若你没赢，你交给其一张牌。"..
+  "你与其他角色的拼点结果确定后，你可以将你的拼点牌交给该角色。",
   ["moushi"] = "谋识",
   [":moushi"] = "出牌阶段限一次，你可以将一张手牌交给一名其他角色。若如此做，当该角色于其下个出牌阶段对每名角色第一次造成伤害后，你摸一张牌。",
   ["#fenglve-choose"] = "锋略：你可以拼点，若赢，其交给你每个区域各一张牌；没赢，你交给其一张牌",
@@ -2434,7 +2449,7 @@ local fujian = fk.CreateTriggerSkill {
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local to = room:getOtherPlayers(player)[math.random(1, #room.alive_players - 1)]
+    local to = table.random(room:getOtherPlayers(player))
     room:doIndicate(player.id, {to.id})
     local cards = {}
     while #cards < self.cost_data do
@@ -2453,7 +2468,8 @@ caoying:addSkill(fujian)
 Fk:loadTranslationTable{
   ["caoying"] = "曹婴",
   ["lingren"] = "凌人",
-  [":lingren"] = "出牌阶段限一次，当你使用【杀】或伤害类锦囊牌指定目标后，你可以猜测其中一名目标角色的手牌区中是否有基本牌、锦囊牌或装备牌。若你猜对：至少一项，此牌对其造成的伤害+1；至少两项，你摸两张牌；三项，你获得技能〖奸雄〗和〖行殇〗直到你的下个回合开始。",
+  [":lingren"] = "出牌阶段限一次，当你使用【杀】或伤害类锦囊牌指定目标后，你可以猜测其中一名目标角色的手牌区中是否有基本牌、锦囊牌或装备牌。"..
+  "若你猜对：至少一项，此牌对其造成的伤害+1；至少两项，你摸两张牌；三项，你获得技能〖奸雄〗和〖行殇〗直到你的下个回合开始。",
   ["fujian"] = "伏间",
   [":fujian"] = "锁定技，结束阶段，你随机观看一名其他角色的X张手牌（X为全场手牌数最小的角色的手牌数）。",
   ["#lingren-choose"] = "凌人：你可以猜测其中一名目标角色的手牌中是否有基本牌、锦囊牌或装备牌",
@@ -2682,7 +2698,8 @@ gaolan:addSkill(xiying)
 Fk:loadTranslationTable{
   ["ol__gaolan"] = "高览",
   ["xiying"] = "袭营",
-  [":xiying"] = "出牌阶段开始时，你可以弃置手中一张非基本牌，令所有其他角色选择一项：1.弃置一张牌；2.本回合不能使用或打出牌。若如此做，结束阶段，若你于本回合出牌阶段造成过伤害，你获得牌堆中一张【杀】或伤害锦囊牌。",
+  [":xiying"] = "出牌阶段开始时，你可以弃置手中一张非基本牌，令所有其他角色选择一项：1.弃置一张牌；2.本回合不能使用或打出牌。"..
+  "若如此做，结束阶段，若你于本回合出牌阶段造成过伤害，你获得牌堆中一张【杀】或伤害锦囊牌。",
   ["#xiying-invoke"] = "袭营：你可以弃置一张非基本手牌，所有其他角色需弃置一张牌，否则其本回合不能使用或打出牌",
   ["#xiying-discard"] = "袭营：你需弃置一张牌，否则本回合不能使用或打出牌",
 }

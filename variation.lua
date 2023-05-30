@@ -1,6 +1,9 @@
 -- SPDX-License-Identifier: GPL-3.0-or-later
 
 local extension = Package:new("variation", Package.CardPack)
+Fk:loadTranslationTable{
+  ["variation"] = "应变",
+}
 
 extension:addCards{
   Fk:cloneCard("slash", Card.Diamond, 6),
@@ -78,6 +81,12 @@ extension:addCards{
   iceSlash:clone(Card.Spade, 8),
   iceSlash:clone(Card.Spade, 8),
   iceSlash:clone(Card.Spade, 8),
+}
+Fk:loadTranslationTable{
+  ["ice__slash"] = "冰杀",
+  ["ice_damage_skill"] = "冰杀",
+	[":ice__slash"] = "基本牌<br/><b>时机</b>：出牌阶段<br/><b>目标</b>：攻击范围内的一名角色<br /><b>效果</b>：对目标角色造成1点冰冻伤害。"..
+  "（一名角色造成不为连环伤害的冰冻伤害时，若受到此伤害的角色有牌，来源可防止此伤害，然后依次弃置其两张牌）。",
 }
 
 extension:addCards{
@@ -162,7 +171,8 @@ local blackChainSkill = fk.CreateTriggerSkill{
   attached_equip = "black_chain",
   events = {fk.TargetSpecified},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name) and data.card and data.card.trueName == "slash" and not player.room:getPlayerById(data.to).chained
+    return target == player and player:hasSkill(self.name) and data.card and data.card.trueName == "slash" and
+      not player.room:getPlayerById(data.to).chained
   end,
   on_use = function(self, event, target, player, data)
     player.room:getPlayerById(data.to):setChainState(true)
@@ -177,6 +187,11 @@ local blackChain = fk.CreateWeapon{
   equip_skill = blackChainSkill,
 }
 extension:addCard(blackChain)
+Fk:loadTranslationTable{
+  ["black_chain"] = "乌铁锁链",
+  ["#black_chain_skill"] = "乌铁锁链",
+  [":black_chain"] = "装备牌·武器<br/><b>攻击范围</b>：3<br/><b>武器技能</b>：当你使用【杀】指定目标后，你可以横置目标角色武将牌。",
+}
 
 local fiveElementsFanSkill = fk.CreateViewAsSkill{
   name = "five_elements_fan_skill",
@@ -212,6 +227,11 @@ local fiveElementsFan = fk.CreateWeapon{
   equip_skill = fiveElementsFanSkill,
 }
 extension:addCard(fiveElementsFan)
+Fk:loadTranslationTable{
+  ["five_elements_fan"] = "五行鹤翎扇",
+  ["five_elements_fan_skill"] = "五行扇",
+  [":five_elements_fan"] = "装备牌·武器<br/><b>攻击范围</b>：4<br/><b>武器技能</b>：你可以将属性【杀】当任意其他属性【杀】使用。",
+}
 
 extension:addCards{
   Fk:cloneCard("eight_diagram", Card.Spade, 2),
@@ -246,7 +266,8 @@ local putEquip = fk.CreateActiveSkill{
     return #selected == 0 and Fk:getCardById(to_select).type == Card.TypeEquip and not Fk:currentRoom():getCardArea(to_select) == Player.Equip
   end,
   target_filter = function(self, to_select, selected, cards)
-    return #selected == 0 and #cards == 1 and to_select ~= Self.id and Fk:currentRoom():getPlayerById(to_select):getEquipment(Fk:getCardById(cards[1]).sub_type) == nil
+    return #selected == 0 and #cards == 1 and to_select ~= Self.id and
+      Fk:currentRoom():getPlayerById(to_select):getEquipment(Fk:getCardById(cards[1]).sub_type) == nil
   end,
   on_use = function(self, room, effect)
     room:moveCards({
@@ -267,6 +288,14 @@ local breastplate = fk.CreateArmor{
   special_skills = {"putEquip"},
 }
 extension:addCard(breastplate)
+Fk:loadTranslationTable{
+  ["breastplate"] = "护心镜",
+  ["#breastplate_skill"] = "护心镜",
+  [":breastplate"] = "装备牌·防具<br/><b>防具技能</b>：当你受到大于1点的伤害或致命伤害时，你可将装备区里的【护心镜】置入弃牌堆，若如此做，防止此伤害。"..
+  "出牌阶段，你可将手牌中的【护心镜】置入其他角色的装备区。",
+  ["putEquip"] = "置入",
+  [":putEquip"] = "你可以将此牌置入其他角色的装备区",
+}
 
 local darkArmorSkill = fk.CreateTriggerSkill{
   name = "#dark_armor_skill",
@@ -289,6 +318,11 @@ local darkArmor = fk.CreateArmor{
   equip_skill = darkArmorSkill,
 }
 extension:addCard(darkArmor)
+Fk:loadTranslationTable{
+  ["dark_armor"] = "黑光铠",
+  ["#dark_armor_skill"] = "黑光铠",
+  [":dark_armor"] = "装备牌·防具<br/><b>防具技能</b>：当你成为【杀】、伤害锦囊或黑色锦囊牌的目标后，若你不是唯一目标，此牌对你无效。",
+}
 
 local wonderMapSkill = fk.CreateTriggerSkill{  --需要一个空技能以判断equip_skill是否无效
   name = "#wonder_map_skill",
@@ -319,6 +353,11 @@ local wonderMap = fk.CreateTreasure{
   end,
 }
 extension:addCard(wonderMap)
+Fk:loadTranslationTable{
+  ["wonder_map"] = "天机图",
+  [":wonder_map"] = "装备牌·宝物<br/><b>宝物技能</b>：锁定技，此牌进入你的装备区时，弃置一张其他牌；此牌离开你的装备区时，你将手牌摸至五张。",
+  ["#wonder_map-discard"] = "天机图：你须弃置一张【天机图】以外的牌",
+}
 
 local taigongTacticsSkill = fk.CreateTriggerSkill{
   name = "#taigong_tactics_skill",
@@ -360,13 +399,7 @@ local taigongTacticsSkill = fk.CreateTriggerSkill{
         to:setChainState(true)
       end
     else
-      room:moveCards({
-        ids = self.cost_data,
-        from = player.id,
-        toArea = Card.DiscardPile,
-        moveReason = fk.ReasonPutIntoDiscardPile,  --TODO: reason recast
-      })
-      player:drawCards(1, self.name)
+      room:recastCard(self.cost_data, player, self.name)
     end
   end,
 }
@@ -378,6 +411,13 @@ local taigongTactics = fk.CreateTreasure{
   equip_skill = taigongTacticsSkill,
 }
 extension:addCard(taigongTactics)
+Fk:loadTranslationTable{
+  ["taigong_tactics"] = "太公阴符",
+  ["#taigong_tactics_skill"] = "太公阴符",
+  [":taigong_tactics"] = "装备牌·宝物<br/><b>宝物技能</b>：出牌阶段开始时，你可以横置或重置一名角色；出牌阶段结束时，你可以重铸一张手牌。",
+  ["#taigong_tactics-choose"] = "太公阴符：你可以横置或重置一名角色",
+  ["#taigong_tactics-invoke"] = "太公阴符：你可以重铸一张手牌",
+}
 --♣K 铜雀
 --你每回合使用的第一张带有强化效果的牌无使用条件。
 
@@ -473,6 +513,13 @@ extension:addCards({
   drowning:clone(Card.Spade, 3),
   drowning:clone(Card.Spade, 4),
 })
+Fk:loadTranslationTable{
+  ["drowning"] = "水淹七军",
+  ["drowning_skill"] = "水淹七军",
+  ["#drowning-discard"] = "水淹七军：“确定”弃置装备区所有牌，或点“取消” %dest 对你造成1点雷电伤害",
+  [":drowning"] = "锦囊牌<br/><b>时机</b>：出牌阶段<br/><b>目标</b>：一名其他角色<br /><b>效果</b>：目标角色选择一项："..
+  "1.弃置装备区所有牌（至少一张）；2.你对其造成1点雷电伤害。",
+}
 
 local unexpectationSkill = fk.CreateActiveSkill{
   name = "unexpectation_skill",
@@ -508,8 +555,17 @@ extension:addCards{
   unexpectation:clone(Card.Heart, 3),
   unexpectation:clone(Card.Diamond, 11),
 }
+Fk:loadTranslationTable{
+  ["unexpectation"] = "出其不意",
+  ["unexpectation_skill"] = "出其不意",
+  [":unexpectation"] = "锦囊牌<br/><b>时机</b>：出牌阶段<br/><b>目标</b>：一名有手牌的其他角色<br/><b>效果</b>：你展示目标角色的一张手牌，"..
+  "若该牌与此【出其不意】花色不同，你对其造成1点伤害。",
+}
 
 --随机应变♠2
+Fk:loadTranslationTable{
+  ["adaptation"] = "随机应变",
+}
 
 local foresightSkill = fk.CreateActiveSkill{
   name = "foresight_skill",
@@ -534,6 +590,12 @@ extension:addCards({
   foresight:clone(Card.Heart, 9),
   foresight:clone(Card.Heart, 11),
 })
+Fk:loadTranslationTable{
+  ["foresight"] = "洞烛先机",
+  ["foresight_skill"] = "洞烛先机",
+  [":foresight"] = "锦囊牌<br/><b>时机</b>：出牌阶段<br/><b>目标</b>：你<br/><b>效果</b>：目标角色卜算2（观看牌堆顶的两张牌，"..
+  "将其中任意张以任意顺序置于牌堆顶，其余以任意顺序置于牌堆底），然后摸两张牌。",
+}
 
 local chasingNearSkill = fk.CreateActiveSkill{
   name = "chasing_near_skill",
@@ -563,48 +625,11 @@ extension:addCards({
   chasing_near:clone(Card.Club, 3),
   chasing_near:clone(Card.Club, 4),
 })
-
 Fk:loadTranslationTable{
-  ["variation"] = "应变",
-  ["ice__slash"] = "冰杀",
-  ["ice_damage_skill"] = "冰杀",
-	[":ice__slash"] = "基本牌<br /><b>时机</b>：出牌阶段<br /><b>目标</b>：攻击范围内的一名角色<br /><b>效果</b>：对目标角色造成1点冰冻伤害。（一名角色造成不为连环伤害的冰冻伤害时，若受到此伤害的角色有牌，来源可防止此伤害，然后依次弃置其两张牌）。",
-  ["five_elements_fan"] = "五行鹤翎扇",
-  ["five_elements_fan_skill"] = "五行扇",
-  [":five_elements_fan"] = "装备牌·武器<br /><b>攻击范围</b>：4<br /><b>武器技能</b>：你可以将属性【杀】当任意其他属性【杀】使用。",
-  ["black_chain"] = "乌铁锁链",
-  ["#black_chain_skill"] = "乌铁锁链",
-  [":black_chain"] = "装备牌·武器<br /><b>攻击范围</b>：3<br /><b>武器技能</b>：当你使用【杀】指定目标后，你可以横置目标角色武将牌。",
-  ["breastplate"] = "护心镜",
-  ["#breastplate_skill"] = "护心镜",
-  [":breastplate"] = "装备牌·防具<br /><b>防具技能</b>：当你受到大于1点的伤害或致命伤害时，你可将装备区里的【护心镜】置入弃牌堆，若如此做，防止此伤害。出牌阶段，你可将手牌中的【护心镜】置入其他角色的装备区。",
-  ["putEquip"] = "置入",
-  [":putEquip"] = "你可以将此牌置入其他角色的装备区",
-  ["dark_armor"] = "黑光铠",
-  ["#dark_armor_skill"] = "黑光铠",
-  [":dark_armor"] = "装备牌·防具<br /><b>防具技能</b>：当你成为【杀】、伤害锦囊或黑色锦囊牌的目标后，若你不是唯一目标，此牌对你无效。",
-  ["wonder_map"] = "天机图",
-  [":wonder_map"] = "装备牌·宝物<br /><b>宝物技能</b>：锁定技，此牌进入你的装备区时，弃置一张其他牌；此牌离开你的装备区时，你将手牌摸至五张。",
-  ["#wonder_map-discard"] = "天机图：你须弃置一张【天机图】以外的牌",
-  ["taigong_tactics"] = "太公阴符",
-  ["#taigong_tactics_skill"] = "太公阴符",
-  [":taigong_tactics"] = "装备牌·宝物<br /><b>宝物技能</b>：出牌阶段开始时，你可以横置或重置一名角色；出牌阶段结束时，你可以重铸一张手牌。",
-  ["#taigong_tactics-choose"] = "太公阴符：你可以横置或重置一名角色",
-  ["#taigong_tactics-invoke"] = "太公阴符：你可以重铸一张手牌",
-  ["drowning"] = "水淹七军",
-  ["drowning_skill"] = "水淹七军",
-  ["#drowning-discard"] = "水淹七军：“确定”弃置装备区所有牌，或点“取消” %dest 对你造成1点雷电伤害",
-  [":drowning"] = "锦囊牌<br /><b>时机</b>：出牌阶段<br /><b>目标</b>：一名其他角色<br /><b>效果</b>：目标角色选择一项：1.弃置装备区所有牌（至少一张）；2.你对其造成1点雷电伤害。",
-  ["unexpectation"] = "出其不意",
-  ["unexpectation_skill"] = "出其不意",
-  [":unexpectation"] = "锦囊牌<br /><b>时机</b>：出牌阶段<br /><b>目标</b>：一名有手牌的其他角色<br /><b>效果</b>：你展示目标角色的一张手牌，若该牌与此【出其不意】花色不同，你对其造成1点伤害。",
-  ["adaptation"] = "随机应变",
-  ["foresight"] = "洞烛先机",
-  ["foresight_skill"] = "洞烛先机",
-  [":foresight"] = "锦囊牌<br /><b>时机</b>：出牌阶段<br /><b>目标</b>：你<br /><b>效果</b>：目标角色卜算2（观看牌堆顶的两张牌，将其中任意张以任意顺序置于牌堆顶，其余以任意顺序置于牌堆底），然后摸两张牌。",
   ["chasing_near"] = "逐近弃远",
   ["chasing_near_skill"] = "逐近弃远",
-  [":chasing_near"] = "锦囊牌<br /><b>时机</b>：出牌阶段<br /><b>目标</b>：一名区域里有牌的其他角色<br /><b>效果</b>：若你与目标角色距离为1，你获得其区域里一张牌；若你与目标角色距离大于1，你弃置其区域里一张牌。",
+  [":chasing_near"] = "锦囊牌<br/><b>时机</b>：出牌阶段<br/><b>目标</b>：一名区域里有牌的其他角色<br/><b>效果</b>：若你与目标角色距离为1，"..
+  "你获得其区域里一张牌；若你与目标角色距离大于1，你弃置其区域里一张牌。",
 }
 
 return extension

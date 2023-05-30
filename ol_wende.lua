@@ -15,7 +15,8 @@ Fk:loadTranslationTable{
   ["xiongzhi"] = "雄志",
   [":xiongzhi"] = "限定技，出牌阶段，你可展示牌堆顶牌并使用之。你可重复此流程直到牌堆顶牌不能被使用。",
   ["quanbian"] = "权变",
-  [":quanbian"] = "当你于出牌阶段首次使用或打出一种花色的手牌时，你可从牌堆顶X张牌中获得一张与此牌花色不同的牌，将其余牌以任意顺序置于牌堆顶。出牌阶段，你至多使用X张非装备手牌。（X为你的体力上限）",
+  [":quanbian"] = "当你于出牌阶段首次使用或打出一种花色的手牌时，你可从牌堆顶X张牌中获得一张与此牌花色不同的牌，将其余牌以任意顺序置于牌堆顶。"..
+  "出牌阶段，你至多使用X张非装备手牌。（X为你的体力上限）",
 }
 
 local zhangchunhua = General(extension, "ol__zhangchunhua", "jin", 3, 3, General.Female)
@@ -99,7 +100,8 @@ Fk:loadTranslationTable{
   ["ol__huishi"] = "慧识",
   [":ol__huishi"] = "摸牌阶段，你可以放弃摸牌，改为观看牌堆顶的X张牌，获得其中的一半（向下取整），然后将其余牌置入牌堆底。（X为牌堆数量的个位数）",
   ["qingleng"] = "清冷",
-  [":qingleng"] = "其他角色回合结束时，若其体力值与手牌数之和不小于X，你可将一张牌当无距离限制的冰【杀】对其使用。你对一名没有成为过〖清冷〗目标的角色发动〖清冷〗时，摸一张牌。（X为牌堆数量的个位数）",
+  [":qingleng"] = "其他角色回合结束时，若其体力值与手牌数之和不小于X，你可将一张牌当无距离限制的冰【杀】对其使用。"..
+  "你对一名没有成为过〖清冷〗目标的角色发动〖清冷〗时，摸一张牌。（X为牌堆数量的个位数）",
   ["#ol__huishi-invoke"] = "慧识：你可以放弃摸牌，改为观看牌堆顶%arg张牌并获得其中的一半，其余置于牌堆底",
   ["#qingleng-invoke"] = "清冷：你可以将一张牌当冰【杀】对 %dest 使用",
 }
@@ -109,7 +111,8 @@ Fk:loadTranslationTable{
 Fk:loadTranslationTable{
   ["simazhou"] = "司马伷",
   ["caiwang"] = "才望",
-  [":caiwang"] = "当你使用/打出牌响应其他角色使用的牌，或其他角色使用/打出牌响应你使用的牌后，若牌的颜色相同，你可以弃置其一张牌。你可以将最后一张手牌当【闪】使用或打出；将最后一张你装备区里的牌当【无懈可击】使用；将最后一张你判定区的牌当【杀】使用或打出。",
+  [":caiwang"] = "当你使用/打出牌响应其他角色使用的牌，或其他角色使用/打出牌响应你使用的牌后，若牌的颜色相同，你可以弃置其一张牌。<br>"..
+  "你可以将最后一张手牌当【闪】使用或打出；将最后一张你装备区里的牌当【无懈可击】使用；将最后一张你判定区的牌当【杀】使用或打出。",
   ["naxiang"] = "纳降",
   [":naxiang"] = "锁定技，当其他角色对你造成伤害或受到你的伤害后，你对其发动【才望】的“弃置”修改为“获得”直到你的回合开始。",
 }
@@ -230,13 +233,15 @@ local yishi = fk.CreateTriggerSkill{
   events = {fk.AfterCardsMove},
   can_trigger = function(self, event, target, player, data)
     if player:hasSkill(self.name) then
+      local room = player.room
       for _, move in ipairs(data) do
-        if move.from ~= player.id and move.moveReason == fk.ReasonDiscard and player.room:getPlayerById(move.from).phase == Player.Play and
-          not player.room:getPlayerById(move.from).dead and player:usedSkillTimes(self.name) == 0 then
+        if move.from ~= player.id and move.moveReason == fk.ReasonDiscard and room:getPlayerById(move.from).phase == Player.Play and
+          not room:getPlayerById(move.from).dead and player:usedSkillTimes(self.name, Player.HistoryTurn) == 0 then
           self.cost_data = move.from
           player.tag[self.name] = {}
           for _, info in ipairs(move.moveInfo) do
-            if info.fromArea == Card.PlayerHand and player.room:getCardArea(info.cardId) == Card.DiscardPile or player.room:getCardArea(info.cardId) == Card.Processing then
+            if info.fromArea == Card.PlayerHand and
+              (room:getCardArea(info.cardId) == Card.DiscardPile or room:getCardArea(info.cardId) == Card.Processing) then
               table.insertIfNeed(player.tag[self.name], info.cardId)
             end
           end
@@ -326,7 +331,8 @@ local yimie = fk.CreateTriggerSkill{
   anim_type = "offensive",
   events = {fk.DamageCaused},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name) and player:usedSkillTimes(self.name) == 0 and data.to.hp >= data.damage
+    return target == player and player:hasSkill(self.name) and data.to.hp >= data.damage and
+      player:usedSkillTimes(self.name, Player.HistoryTurn) == 0
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
@@ -337,7 +343,8 @@ local yimie = fk.CreateTriggerSkill{
 
   refresh_events = {fk.Damage},
   can_refresh = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name, true, true) and player:usedSkillTimes(self.name) > 0 and not data.to.dead and self.yimie_num > 0
+    return target == player and player:usedSkillTimes(self.name, Player.HistoryTurn) > 0 and
+      not data.to.dead and self.yimie_num > 0
   end,
   on_refresh = function(self, event, target, player, data)
     player.room:recover({
@@ -425,7 +432,8 @@ local ciwei = fk.CreateTriggerSkill{
   events = {fk.CardUsing},
   can_trigger = function(self, event, target, player, data)
     return player:hasSkill(self.name) and target ~= player and target.phase ~= Player.NotActive and target:getMark("ciwei-turn") == 2 and
-      (data.card.type == Card.TypeBasic or (data.card.type == Card.TypeTrick and data.card.sub_type ~= Card.SubtypeDelayedTrick)) and not player:isNude()
+      (data.card.type == Card.TypeBasic or (data.card.type == Card.TypeTrick and data.card.sub_type ~= Card.SubtypeDelayedTrick)) and
+      not player:isNude()
   end,
   on_cost = function(self, event, target, player, data)
     return #player.room:askForDiscard(player, 1, 1, true, self.name, true, ".", "#ciwei-invoke::"..target.id..":"..data.card:toLogString()) > 0
@@ -491,7 +499,8 @@ Fk:loadTranslationTable{
 Fk:loadTranslationTable{
   ["shibao"] = "石苞",
   ["zhuosheng"] = "擢升",
-  [":zhuosheng"] = "出牌阶段，当你使用本轮非以本技能获得的牌时，根据类型执行以下效果：1.基本牌，无距离和次数限制；2.普通锦囊牌，可以令此牌目标+1或-1；3.装备牌，你可以摸一张牌。",
+  [":zhuosheng"] = "出牌阶段，当你使用本轮非以本技能获得的牌时，根据类型执行以下效果：1.基本牌，无距离和次数限制；"..
+  "2.普通锦囊牌，可以令此牌目标+1或-1；3.装备牌，你可以摸一张牌。",
 }
 
 Fk:loadTranslationTable{
@@ -501,7 +510,8 @@ Fk:loadTranslationTable{
   ["choufa"] = "筹伐",
   [":choufa"] = "出牌阶段限一次，你可展示一名其他角色的一张手牌，其手牌中与此牌不同类型的牌均视为【杀】直到其回合结束。",
   ["zhaoran"] = "昭然",
-  [":zhaoran"] = "出牌阶段开始时，你可令你的手牌对所有角色可见直到此阶段结束。若如此做，你于出牌阶段失去任意花色的最后一张手牌时，摸一张牌或弃置一名其他角色的一张牌。（每种花色限一次）",
+  [":zhaoran"] = "出牌阶段开始时，你可令你的手牌对所有角色可见直到此阶段结束。若如此做，你于出牌阶段失去任意花色的最后一张手牌时，"..
+  "摸一张牌或弃置一名其他角色的一张牌。（每种花色限一次）",
   ["chengwu"] = "成务",
   [":chengwu"] = "主公技，锁定技，其他晋势力角色攻击范围内的角色均视为在你的攻击范围内。",
 }
@@ -606,7 +616,7 @@ local zhuijix = fk.CreateTriggerSkill{
 
   refresh_events = {fk.EventPhaseEnd},
   can_refresh = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name, true) and player.phase == Player.Play and player:usedSkillTimes(self.name, Player.HistoryPhase) > 0
+    return target == player and player.phase == Player.Play and player:usedSkillTimes(self.name, Player.HistoryPhase) > 0
   end,
   on_refresh = function(self, event, target, player, data)
     local room = player.room
@@ -627,7 +637,8 @@ Fk:loadTranslationTable{
   ["gaoling"] = "高陵",
   [":gaoling"] = "隐匿技，当你于其他角色的回合内登场时，你可以令一名角色回复1点体力。",
   ["qimei"] = "齐眉",
-  [":qimei"] = "准备阶段，你可以选择一名其他角色，直到你的下个回合开始（每回合每项限一次），当你或该角色的手牌数或体力值变化后，若双方的此数值相等，另一方摸一张牌。",
+  [":qimei"] = "准备阶段，你可以选择一名其他角色，直到你的下个回合开始（每回合每项限一次），当你或该角色的手牌数或体力值变化后，若双方的此数值相等，"..
+  "另一方摸一张牌。",
   ["zhuijix"] = "追姬",
   [":zhuijix"] = "出牌阶段开始时，你可以选择一项：1.回复1点体力，并于此阶段结束时弃置两张牌；2.摸两张牌，并于此阶段结束时失去1点体力。",
   ["#qimei-choose"] = "齐眉：指定一名其他角色为“齐眉”角色，双方手牌数或体力值变化后可摸牌",
@@ -641,7 +652,8 @@ Fk:loadTranslationTable{
   ["shiren"] = "识人",
   [":shiren"] = "隐匿技，你于其他角色的回合登场后，若当前回合角色有手牌，你可以对其发动〖宴戏〗。",
   ["yanxi"] = "宴戏",
-  [":yanxi"] = "出牌阶段限一次，你令一名其他角色的随机一张手牌与牌堆顶的两张牌混合后展示，你猜测哪张牌来自其手牌。若猜对，你获得三张牌；若猜错，你获得选中的牌。你以此法获得的牌本回合不计入手牌上限。",
+  [":yanxi"] = "出牌阶段限一次，你令一名其他角色的随机一张手牌与牌堆顶的两张牌混合后展示，你猜测哪张牌来自其手牌。若猜对，你获得三张牌；"..
+  "若猜错，你获得选中的牌。你以此法获得的牌本回合不计入手牌上限。",
 }
 
 local duyu = General(extension, "ol__duyu", "jin", 4)
@@ -712,18 +724,13 @@ local pozhu = fk.CreateViewAsSkill{
 local pozhu_record = fk.CreateTriggerSkill{
   name = "#pozhu_record",
 
-  refresh_events = {fk.Damage, fk.CardUseFinished},
+  refresh_events = {fk.CardUseFinished},
   can_refresh = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name) and data.card and table.contains(data.card.skillNames, "pozhu")
+    return target == player and table.contains(data.card.skillNames, "pozhu")
   end,
   on_refresh = function(self, event, target, player, data)
-    if event == fk.Damage then
-      data.card.extra_data = data.card.extra_data or {}
-      table.insert(data.card.extra_data, "pozhu")
-    else
-      if not data.card.extra_data or not table.contains(data.card.extra_data, "pozhu") then
-        player.room:addPlayerMark(player, "pozhu-turn", 1)
-      end
+    if not data.damageDealt then
+      player.room:addPlayerMark(player, "pozhu-turn", 1)
     end
   end,
 }
@@ -734,7 +741,8 @@ duyu:addRelatedSkill(pozhu)
 Fk:loadTranslationTable{
   ["ol__duyu"] = "杜预",
   ["sanchen"] = "三陈",
-  [":sanchen"] = "出牌阶段限一次，你可令一名角色摸三张牌，然后弃置三张牌。若其以此法弃置的牌种类均不同，则其摸一张牌，并视为该技能未发动过（本回合不能再指定其为目标）。",
+  [":sanchen"] = "出牌阶段限一次，你可令一名角色摸三张牌然后弃置三张牌。若其以此法弃置的牌种类均不同，则其摸一张牌，且视为本技能未发动过"..
+  "（本回合不能再指定其为目标）。",
   ["zhaotao"] = "昭讨",
   [":zhaotao"] = "觉醒技，准备阶段开始时，若你本局游戏发动过至少3次〖三陈〗，你减1点体力上限，获得〖破竹〗。",
   ["pozhu"] = "破竹",
@@ -859,7 +867,8 @@ weiguan:addSkill(shenpin)
 Fk:loadTranslationTable{
   ["weiguan"] = "卫瓘",
   ["zhongyun"] = "忠允",
-  [":zhongyun"] = "锁定技，每回合各限一次，当你受到伤害或回复体力后，若你的体力值与你的手牌数相等，你回复1点体力或对你攻击范围内的一名角色造成1点伤害；当你获得或失去手牌后，若你的体力值与你的手牌数相等，你摸一张牌或弃置一名其他角色的一张牌。",
+  [":zhongyun"] = "锁定技，每回合各限一次，当你受到伤害或回复体力后，若你的体力值与你的手牌数相等，你回复1点体力或对你攻击范围内的一名角色造成1点伤害；"..
+  "当你获得或失去手牌后，若你的体力值与你的手牌数相等，你摸一张牌或弃置一名其他角色的一张牌。",
   ["shenpin"] = "神品",
   [":shenpin"] = "当一名角色的判定牌生效前，你可以打出一张与判定牌颜色不同的牌代替之。",
   ["#zhongyun2"] = "忠允",
@@ -969,8 +978,9 @@ local yifa = fk.CreateTriggerSkill{
   frequency = Skill.Compulsory,
   events ={fk.TargetSpecified},
   can_trigger = function(self, event, target, player, data)
-    return player:hasSkill(self.name) and target ~= player and data.firstTarget and table.contains(AimGroup:getAllTargets(data.tos), player.id) and
-      (data.card.trueName == "slash" or (data.card.color == Card.Black and data.card.type == Card.TypeTrick and data.card.sub_type ~= Card.SubtypeDelayedTrick))
+    return player:hasSkill(self.name) and target ~= player and data.firstTarget and
+      table.contains(AimGroup:getAllTargets(data.tos), player.id) and (data.card.trueName == "slash" or
+      (data.card.color == Card.Black and data.card.type == Card.TypeTrick and data.card.sub_type ~= Card.SubtypeDelayedTrick))
   end,
   on_use = function(self, event, target, player, data)
     player.room:addPlayerMark(target, "@yifa", 1)
@@ -997,7 +1007,8 @@ zhongyan:addSkill(yifa)
 Fk:loadTranslationTable{
   ["zhongyan"] = "钟琰",
   ["bolan"] = "博览",
-  [":bolan"] = "出牌阶段开始时，你可以从随机三个“出牌阶段限一次”的技能中选择一个获得直到本阶段结束；其他角色的出牌阶段限一次，其可以失去1点体力，令你从随机三个“出牌阶段限一次”的技能中选择一个，其获得之直到此阶段结束。",
+  [":bolan"] = "出牌阶段开始时，你可以从随机三个“出牌阶段限一次”的技能中选择一个获得直到本阶段结束；其他角色的出牌阶段限一次，其可以失去1点体力，"..
+  "令你从随机三个“出牌阶段限一次”的技能中选择一个，其获得之直到此阶段结束。",
   ["yifa"] = "仪法",
   [":yifa"] = "锁定技，当其他角色使用【杀】或黑色普通锦囊牌指定你为目标后，其手牌上限-1直到其回合结束。",
   ["bolan&"] = "博览",
@@ -1058,26 +1069,18 @@ local congjianx = fk.CreateTriggerSkill{
 
     else
       TargetGroup:pushTargets(data.targetGroup, {player.id})
-      data.card.extra_data = data.card.extra_data or {}
-      table.insert(data.card.extra_data, "congjianx")
+      data.extra_data = data.extra_data or {}
+      data.extra_data.congjianx = data.extra_data.congjianx or player.id
     end
   end,
 
-  refresh_events = {fk.Damaged, fk.CardUseFinished},
+  refresh_events = {fk.CardUseFinished},
   can_refresh = function(self, event, target, player, data)
-    return player:hasSkill(self.name) and data.card and data.card.extra_data and table.contains(data.card.extra_data, "congjianx")
+    return data.extra_data and data.extra_data.congjianx and data.extra_data.congjianx == player.id
   end,
   on_refresh = function(self, event, target, player, data)
-    local room = player.room
-    if event == fk.Damaged then
-      if target == player then
-        room:addPlayerMark(player, self.name, 1)
-      end
-    else
-      if player:getMark(self.name) > 0 then
-        player:drawCards(2, self.name)
-        room:setPlayerMark(player, self.name, 0)
-      end
+    if data.damageDealt and data.damageDealt[player.id] then
+      player:drawCards(2, self.name)
     end
   end,
 }
@@ -1107,7 +1110,7 @@ local xiongshu = fk.CreateTriggerSkill{
     if n == 0 then
       return player.room:askForSkillInvoke(player, self.name, nil, "#xiongshu-invoke::"..target.id)
     else
-      return #player.room:askForDiscard(player, n, n, false, self.name, true, ".", "#xiongshu-cost::"..target.id..":"..tostring(n)) == n
+      return #player.room:askForDiscard(player, n, n, false, self.name, true, ".", "#xiongshu-cost::"..target.id..":"..n) == n
     end
   end,
   on_use = function(self, event, target, player, data)
@@ -1189,7 +1192,8 @@ jiachong:addSkill(jianhui)
 Fk:loadTranslationTable{
   ["ol__jiachong"] = "贾充",
   ["xiongshu"] = "凶竖",
-  [":xiongshu"] = "其他角色出牌阶段开始时，你可以：弃置X张牌（X为本轮你已发动过本技能的次数），展示其一张手牌，你秘密猜测其于此出牌阶段是否会使用与此牌同名的牌。出牌阶段结束时，若你猜对，你对其造成1点伤害；若你猜错，你获得此牌。",
+  [":xiongshu"] = "其他角色出牌阶段开始时，你可以：弃置X张牌（X为本轮你已发动过本技能的次数），展示其一张手牌，"..
+  "你秘密猜测其于此出牌阶段是否会使用与此牌同名的牌。出牌阶段结束时，若你猜对，你对其造成1点伤害；若你猜错，你获得此牌。",
   ["jianhui"] = "奸回",
   [":jianhui"] = "锁定技，你记录上次对你造成伤害的角色。当你对其造成伤害后，你摸一张牌；当其对你造成伤害后，其弃置一张牌。",
   ["#xiongshu-invoke"] = "凶竖：你可以展示 %dest 的一张手牌，猜测其此阶段是否会使用同名牌",

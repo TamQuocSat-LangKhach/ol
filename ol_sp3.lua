@@ -518,21 +518,19 @@ local kenshang = fk.CreateViewAsSkill{
 local kenshang_record = fk.CreateTriggerSkill{
   name = "#kenshang_record",
 
-  refresh_events = {fk.Damage, fk.CardUseFinished},
+  refresh_events = {fk.CardUseFinished},
   can_refresh = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name) and data.card and table.contains(data.card.skillNames, "kenshang")
+    return target == player and table.contains(data.card.skillNames, "kenshang") and data.damageDealt
   end,
   on_refresh = function(self, event, target, player, data)
-    local room = player.room
-    if event == fk.Damage then
-      room:addPlayerMark(player, "kenshang", data.damage)
-    else
-      if player:getMark("kenshang") > 0 then
-        if #data.card.subcards > player:getMark("kenshang") then
-          player:drawCards(1, "kenshang")
-        end
-        room:setPlayerMark(player, "kenshang", 0)
+    local n = 0
+    for _, p in ipairs(player.room:getAllPlayers()) do
+      if data.damageDealt[p.id] then
+        n = n + data.damageDealt[p.id]
       end
+    end
+    if #data.card.subcards > n then
+      player:drawCards(1, "kenshang")
     end
   end,
 }

@@ -88,12 +88,12 @@ local chuyuan = fk.CreateTriggerSkill{
   anim_type = "masochism",
   events = {fk.Damaged},
   can_trigger = function(self, event, target, player, data)
-    return player:hasSkill(self.name) and #player:getPile("caopi_chu") < player.maxHp
+    return player:hasSkill(self.name) and #player:getPile("caopi_chu") < player.maxHp and not target.dead
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
     target:drawCards(1)
-    local card = room:askForCard(target, 1, 1, false, self.name, false, ".", "#chuyuan-put:"..player.id)
+    local card = room:askForCard(target, 1, 1, false, self.name, false, ".", "#chuyuan-card:"..player.id)
     player:addToPile("caopi_chu", card, false, self.name)
   end,
 }
@@ -135,8 +135,8 @@ local tianxing = fk.CreateTriggerSkill{
     room:changeMaxHp(player, -1)
     local dummy = Fk:cloneCard("dilu")
     dummy:addSubcards(player:getPile("caopi_chu"))
-    room:obtainCard(player, dummy, false, fk.ReasonPrey)
-    local choice = room:askForChoice(player, {"rende", "ex__zhiheng", "luanji"}, self.name)  --TODO:ex__rende, ex__luanji
+    room:obtainCard(player, dummy, false, fk.ReasonJustMove)
+    local choice = room:askForChoice(player, {"rende", "ex__zhiheng", "luanji"}, self.name, "#tianxing-choice")  --TODO:ex__rende, ex__luanji
     room:handleAddLoseSkills(player, choice.."|-chuyuan", nil)
   end,
 }
@@ -156,7 +156,8 @@ Fk:loadTranslationTable{
   ["tianxing"] = "天行",
   [":tianxing"] = "觉醒技，准备阶段，若你的“储”数不小于3，你减1点体力上限，获得所有“储”，失去〖储元〗，并获得下列技能中的一项：〖仁德〗、〖制衡〗、〖乱击〗。",
   ["caopi_chu"] = "储",
-  ["#chuyuan-put"] = "储元：将一张手牌作为“储”置于 %src 武将牌上",
+  ["#chuyuan-card"] = "储元：将一张手牌作为“储”置于 %src 武将牌上",
+  ["#tianxing-choice"] = "天行：选择获得的技能",
 }
 
 --官渡群张郃 辛评 韩猛

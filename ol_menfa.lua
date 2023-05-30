@@ -51,7 +51,7 @@ local sankuang = fk.CreateTriggerSkill{
     end
     local n = to.tag["sankuang"]
     if n > 0 then
-      local cards = room:askForCard(to, n, #to:getCardIds{Player.Hand, Player.Equip}, true, self.name, false, ".", "#sankuang-give:::"..tostring(n))
+      local cards = room:askForCard(to, n, #to:getCardIds{Player.Hand, Player.Equip}, true, self.name, false, ".", "#sankuang-give:::"..n)
       local dummy = Fk:cloneCard("dilu")
       dummy:addSubcards(cards)
       room:obtainCard(player, dummy, false, fk.ReasonGive)
@@ -286,7 +286,7 @@ local zhanding = fk.CreateViewAsSkill{
   end,
   before_use = function(self, player, use)
     if player:getMaxCards() > 0 then
-      player.room:addPlayerMark(player, "MinusMaxCards", 1)
+      player.room:addPlayerMark(player, MarkEnum.MinusMaxCards, 1)
     end
   end,
   enabled_at_response = function(self, player, response)
@@ -297,25 +297,20 @@ local zhanding_record = fk.CreateTriggerSkill{
   name = "#zhanding_record",
   anim_type = "offensive",
 
-  refresh_events = {fk.Damage, fk.CardUseFinished},
+  refresh_events = {fk.CardUseFinished},
   can_refresh = function(self, event, target, player, data)
-    return target == player and data.card and table.contains(data.card.skillNames, "zhanding")
+    return target == player and table.contains(data.card.skillNames, "zhanding")
   end,
   on_refresh = function(self, event, target, player, data)
-    if event == fk.Damage then
-      data.card.extra_data = data.card.extra_data or {}
-      table.insert(data.card.extra_data, "zhanding")
-    else
-      if data.card.extra_data and table.contains(data.card.extra_data, "zhanding") then
-        local n = #player.player_cards[Player.Hand] - player:getMaxCards()
-        if n < 0 then
-          player:drawCards(-n, self.name)
-        elseif n > 0 then
-          player.room:askForDiscard(player, n, n, false, self.name, false)
-        end
-      else
-        player:addCardUseHistory(data.card.trueName, -1)
+    if data.damageDealt then
+      local n = #player.player_cards[Player.Hand] - player:getMaxCards()
+      if n < 0 then
+        player:drawCards(-n, self.name)
+      elseif n > 0 then
+        player.room:askForDiscard(player, n, n, false, self.name, false)
       end
+    else
+      player:addCardUseHistory(data.card.trueName, -1)
     end
   end,
 }
@@ -348,7 +343,7 @@ local muyin = fk.CreateTriggerSkill{
     end
   end,
   on_use = function(self, event, target, player, data)
-    player.room:addPlayerMark(player.room:getPlayerById(self.cost_data), "AddMaxCards", 1)
+    player.room:addPlayerMark(player.room:getPlayerById(self.cost_data), MarkEnum.AddMaxCards, 1)
   end,
 }
 zhanding:addRelatedSkill(zhanding_record)
@@ -381,11 +376,11 @@ local yirong = fk.CreateActiveSkill{
     if n < 0 then
       player:drawCards(-n, self.name)
       if player:getMaxCards() > 0 then
-        room:addPlayerMark(player, "MinusMaxCards", 1)
+        room:addPlayerMark(player, MarkEnum.MinusMaxCards, 1)
       end
     elseif n > 0 then
       room:askForDiscard(player, n, n, false, self.name, false)
-      room:addPlayerMark(player, "AddMaxCards", 1)
+      room:addPlayerMark(player, MarkEnum.AddMaxCards, 1)
     end
   end,
 }
@@ -461,7 +456,8 @@ Fk:loadTranslationTable{
 Fk:loadTranslationTable{
   ["olz__hanrong"] = "韩融",
   ["lianhe"] = "连和",
-  [":lianhe"] = "出牌阶段开始时，你可以横置两名角色，其下个出牌阶段结束时，若其此阶段未摸牌，其选择一项：1.令你摸X+1张牌；2.交给你X-1张牌（X为其此阶段获得牌数且至多为3）。",
+  [":lianhe"] = "出牌阶段开始时，你可以横置两名角色，其下个出牌阶段结束时，若其此阶段未摸牌，其选择一项："..
+  "1.令你摸X+1张牌；2.交给你X-1张牌（X为其此阶段获得牌数且至多为3）。",
   ["huanjia"] = "缓颊",
   [":huanjia"] = "出牌阶段结束时，你可以与一名角色拼点，赢的角色可以使用一张拼点牌，若其：未造成伤害，你获得另一张拼点牌；造成了伤害，你失去一个技能。",
 }
