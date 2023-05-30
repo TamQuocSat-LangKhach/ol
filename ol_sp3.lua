@@ -726,7 +726,8 @@ Fk:loadTranslationTable{
   "1.摸等量的牌；2.本局游戏中你发动〖险诐〗和〖谮润〗不能指定其为目标。",
   ["#xianbi-discard"] = "险诐：弃置%arg张手牌，然后随机获得弃牌堆中相同类别的牌",
   ["#zenrun-choose"] = "谮润：你可以将摸牌改为获得一名其他角色%arg张牌，然后其选择摸等量牌或你本局不能对其发动技能",
-  ["zenrun_draw"] = "摸等量牌",
+  ["#zenrun-choice"] = "谮润：选择 %src 令你执行的一项",
+  ["zenrun_draw"] = "你摸等量牌",
   ["zenrun_forbid"] = "其本局不能对你发动〖险诐〗和〖谮润〗",
 }
 

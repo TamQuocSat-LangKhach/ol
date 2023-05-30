@@ -104,7 +104,7 @@ Fk:loadTranslationTable{
 }
 --群张辽 2020.10.26
 
-local zhangling = General(extension, "zhangling", "qun", 4)
+local zhangling = General(extension, "zhangling", "qun", 3)
 local huqi = fk.CreateTriggerSkill{
   name = "huqi",
   anim_type = "masochism",
@@ -1704,12 +1704,138 @@ Fk:loadTranslationTable{
   [":aichen"] = "锁定技，当你进入濒死状态时，若【落宠】选项数大于1，你移除其中一项。",
 }
 
+local menghuo = General(extension, "sp__menghuo", "qun", 4)
+local function doManwang(player, i)
+  local room = player.room
+  if i == 1 then
+    room:handleAddLoseSkills(player, "panqin", nil, true, false)
+  elseif i == 2 then
+    player:drawCards(1, "manwang")
+  elseif i == 3 then
+    if player:isWounded() then
+      room:recover{
+        who = player,
+        num = 1,
+        recoverBy = player,
+        skillName = "manwang",
+      }
+    end
+  elseif i == 4 then
+    player:drawCards(2, "manwang")
+    room:handleAddLoseSkills(player, "-panqin", nil, true, false)
+  end
+end
+local manwang = fk.CreateActiveSkill{
+  name = "manwang",
+  anim_type = "special",
+  min_card_num = 1,
+  target_num = 0,
+  can_use = function(self, player)
+    return not player:isNude()
+  end,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    room:throwCard(effect.cards, self.name, player, player)
+    for i = 1, #effect.cards, 1 do
+      if i > 4 or player:getMark("@manwang") > (4-i) then return end
+      doManwang(player, i)
+    end
+  end,
+}
+local panqin_record = fk.CreateTriggerSkill{  --怎样在没获得过叛侵的情况下为叛侵记录牌
+  name = "#panqin_record",
+
+  refresh_events = {fk.AfterCardsMove},
+  can_refresh = function(self, event, target, player, data)
+    return player.phase == Player.Play or player.phase == Player.Discard
+  end,
+  on_refresh = function(self, event, target, player, data)
+    for _, move in ipairs(data) do
+      if move.from == player.id and move.moveReason == fk.ReasonDiscard then
+        for _, info in ipairs(move.moveInfo) do
+          local mark = player:getMark("panqin-phase")
+          if mark == 0 then mark = {} end
+          table.insertIfNeed(mark, info.cardId)
+          player.room:setPlayerMark(player, "panqin-phase", mark)
+        end
+      end
+    end
+  end,
+}
+local panqin = fk.CreateTriggerSkill{
+  name = "panqin",
+  anim_type = "offensive",
+  events = {fk.EventPhaseEnd},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self.name) and (player.phase == Player.Play or player.phase == Player.Discard) and
+      player:getMark("panqin-phase") ~= 0
+  end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    local ids = player:getMark("panqin-phase")
+    local cards = {}
+    for _, id in ipairs(ids) do
+      if room:getCardArea(id) == Card.DiscardPile then
+        table.insertIfNeed(cards, id)
+      end
+    end
+    if #cards > 0 and player.room:askForSkillInvoke(player, self.name, nil, "#panqin-invoke:::"..#cards) then
+      self.cost_data = cards
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local card = Fk:cloneCard("savage_assault")
+    card:addSubcards(self.cost_data)
+    card.skillName = self.name
+    room:useCard({
+      from = player.id,
+      card = card,
+    })
+  end,
+
+  refresh_events = {fk.TargetSpecified},
+  can_refresh = function(self, event, target, player, data)
+    return target == player and data.firstTarget and table.contains(data.card.skillNames, self.name)
+  end,
+  on_refresh = function(self, event, target, player, data)
+    if #TargetGroup:getRealTargets(data.tos) >= #data.card.subcards then
+      doManwang(player, 4 - player:getMark("@manwang"))
+      if player:getMark("@manwang") < 4 then
+        player.room:addPlayerMark(player, "@manwang", 1)
+      end
+    end
+  end,
+--[[
+  refresh_events = {fk.AfterCardsMove},
+  can_refresh = function(self, event, target, player, data)
+    return player.phase == Player.Play or player.phase == Player.Discard
+  end,
+  on_refresh = function(self, event, target, player, data)
+    for _, move in ipairs(data) do
+      if move.from == player.id and move.moveReason == fk.ReasonDiscard then
+        for _, info in ipairs(move.moveInfo) do
+          local mark = player:getMark("panqin-phase")
+          if mark == 0 then mark = {} end
+          table.insertIfNeed(mark, info.cardId)
+          player.room:addPlayerMark(player, "panqin-phase", mark)
+        end
+      end
+    end
+  end,]]--
+}
+manwang:addRelatedSkill(panqin_record)  --FIXME
+menghuo:addSkill(manwang)
+menghuo:addRelatedSkill(panqin)
 Fk:loadTranslationTable{
   ["sp__menghuo"] = "孟获",
   ["manwang"] = "蛮王",
   [":manwang"] = "出牌阶段，你可以弃置任意张牌依次执行前等量项：1.获得〖叛侵〗；2.摸一张牌；3.回复1点体力；4.摸两张牌并失去〖叛侵〗。",
   ["panqin"] = "叛侵",
   [":panqin"] = "出牌和弃牌阶段结束时，你可以将弃牌堆中你本阶段弃置的牌当【南蛮入侵】使用，若此牌目标数不小于这些牌的数量，你执行并移除〖蛮王〗的最后一项。",
+  ["@manwang"] = "蛮王",
+  ["#panqin-invoke"] = "叛侵：你可以将弃牌堆中的%arg张牌当【南蛮入侵】使用",
 }
 
 Fk:loadTranslationTable{
@@ -1998,7 +2124,6 @@ local shanduan_maxcards = fk.CreateMaxCardsSkill{
     if player:getMark("shanduan3-phase") > 0 then
       return player:getMark("shanduan3-phase")
     end
-    return 0
   end,
 }
 local yilie = fk.CreateViewAsSkill{
