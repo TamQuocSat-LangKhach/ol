@@ -696,7 +696,7 @@ local wangrong = General(extension, "ol__wangrongh", "qun", 3, 3, General.Female
 local fengzi = fk.CreateTriggerSkill{
   name = "fengzi",
   anim_type = "control",
-  events = {fk.AfterCardTargetDeclared},
+  events = {fk.PreCardEffect},
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(self.name) and player.phase == Player.Play and
       player:usedSkillTimes(self.name, Player.HistoryPhase) == 0 and not player:isKongcheng() and data.tos and
@@ -708,25 +708,17 @@ local fengzi = fk.CreateTriggerSkill{
       "#fengzi-invoke:::"..type..":"..data.card:toLogString()) > 0
   end,
   on_use = function(self, event, target, player, data)
-    player.room:setPlayerMark(player, self.name, TargetGroup:getRealTargets(data.tos))
+    data.extra_data = data.extra_data or {}
+    data.extra_data.fengzi = data.extra_data.fengzi or true
   end,
 
-  refresh_events = {fk.CardUseFinished},
+  refresh_events = {fk.CardEffectFinished},
   can_refresh = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name, true) and player:getMark(self.name) ~= 0
+    return data.extra_data and data.extra_data.fengzi
   end,
   on_refresh = function(self, event, target, player, data)
-    local room = player.room
-    local targets = player:getMark(self.name)
-    room:setPlayerMark(player, self.name, 0)
-    for _, id in ipairs(targets) do
-      if room:getPlayerById(id).dead then
-        table.removeOne(targets, id)
-      end
-    end
-    if #targets > 0 then
-      room:useVirtualCard(data.card.name, nil, player, table.map(targets, function(id) return room:getPlayerById(id) end), self.name, true)
-    end
+    data.extra_data.fengzi = false
+    player.room:doCardEffect(data)
   end,
 }
 local jizhan = fk.CreateTriggerSkill{
@@ -746,6 +738,7 @@ local jizhan = fk.CreateTriggerSkill{
       skillName = self.name,
     }
     while true do
+      room:delay(1000)
       local choice = room:askForChoice(player, {"jizhan_more", "jizhan_less"}, self.name, "#jizhan-choice")
       local num1 = Fk:getCardById(get[#get]).number
       local id = room:getNCards(1)[1]
@@ -758,12 +751,17 @@ local jizhan = fk.CreateTriggerSkill{
       }
       table.insert(get, id)
       if (choice == "jizhan_more" and num1 >= num2) or (choice == "jizhan_less" and num1 <= num2) then
+        room:setCardEmotion(id, "judgebad")
+        room:delay(1000)
         break
+      else
+        room:setCardEmotion(id, "judgegood")
+        room:delay(1000)
       end
     end
     local dummy = Fk:cloneCard("dilu")
     dummy:addSubcards(get)
-    room:obtainCard(player, dummy, true, fk.ReasonJustMove)
+    room:obtainCard(player.id, dummy, true, fk.ReasonJustMove)
     return true
   end,
 }
@@ -817,12 +815,101 @@ Fk:loadTranslationTable{
   ["#fusong-choice"] = "赋颂：选择你获得的技能",
 }
 
+local bianfuren = General(extension, "ol__bianfuren", "wei", 3, 3, General.Female)
+local ol__wanwei = fk.CreateTriggerSkill{
+  name = "ol__wanwei",
+  anim_type = "drawcard",
+  events = {fk.AfterCardsMove},
+  can_trigger = function(self, event, target, player, data)
+    return player:hasSkill(self.name) and player:usedSkillTimes(self.name, Player.HistoryTurn) == 0
+  end,
+  on_cost = function(self, event, target, player, data)
+    local names = {}
+    for _, move in ipairs(data) do
+      if move.from == player.id then
+        for _, info in ipairs(move.moveInfo) do
+          if (move.moveReason == fk.ReasonPrey or move.moveReason == fk.ReasonDiscard) and
+            (move.proposer ~= player and move.proposer ~= player.id) then
+            table.insertIfNeed(names, Fk:getCardById(info.cardId).name)
+          end
+        end
+      end
+    end
+    if #names > 0 then
+      self.cost_data = names
+      local prompt
+      if #names == 1 then
+        prompt = "#ol__wanwei1-invoke:::"..names[1]
+      else
+        prompt = "#ol__wanwei2-invoke"
+      end
+      return player.room:askForSkillInvoke(player, self.name, nil, prompt)
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local names = self.cost_data
+    local card
+    if #names == 1 then
+      card = room:getCardsFromPileByRule(names[1])
+    else
+      local choice = room:askForChoice(player, names, self.name, "#ol__wanwei-choice")
+      card = room:getCardsFromPileByRule(choice)
+    end
+    if #card == 0 then
+      player:drawCards(1, self.name)
+    else
+      room:moveCards({
+        ids = card,
+        to = player.id,
+        toArea = Card.PlayerHand,
+        moveReason = fk.ReasonJustMove,
+        proposer = player.id,
+        skillName = self.name,
+      })
+    end
+  end,
+}
+local ol__yuejian = fk.CreateTriggerSkill{
+  name = "ol__yuejian",
+  anim_type = "drawcard",
+  events = {fk.CardUseFinished},
+  can_trigger = function(self, event, target, player, data)
+    return player:hasSkill(self.name) and target ~= player and not player:isKongcheng() and
+      table.contains(TargetGroup:getRealTargets(data.tos), player.id) and player.room:getCardArea(data.card) == Card.Processing and
+      player:usedSkillTimes(self.name, Player.HistoryTurn) < 2
+  end,
+  on_cost = function(self, event, target, player, data)
+    return player.room:askForSkillInvoke(player, self.name, nil, "#ol__yuejian-invoke:::"..data.card:toLogString())
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    if data.card.suit == Card.NoSuit then
+      room:obtainCard(player.id, data.card, true, fk.ReasonJustMove)
+    else
+      local cards = player.player_cards[Player.Hand]
+      player:showCards(cards)
+      for _, id in ipairs(cards) do
+        if Fk:getCardById(id).suit == data.card.suit then
+          return
+        end
+      end
+      room:obtainCard(player.id, data.card, true, fk.ReasonJustMove)
+    end
+  end,
+}
+bianfuren:addSkill(ol__wanwei)
+bianfuren:addSkill(ol__yuejian)
 Fk:loadTranslationTable{
   ["ol__bianfuren"] = "卞夫人",
   ["ol__wanwei"] = "挽危",
   [":ol__wanwei"] = "每回合限一次，当你的牌被其他角色弃置或获得后，你可以从牌堆获得一张同名牌（无同名牌则改为摸一张牌）。",
   ["ol__yuejian"] = "约俭",
-  [":ol__yuejian"] = "每回合限两次，当其他角色对你使用的牌置入弃牌堆时，你可以展示所有手牌，若花色与此牌均不同，你获得此牌。",
+  [":ol__yuejian"] = "每回合限两次，当其他角色对你使用的牌结算完毕置入弃牌堆时，你可以展示所有手牌，若花色与此牌均不同，你获得之。",
+  ["#ol__wanwei1-invoke"] = "挽危：你可以从牌堆获得一张【%arg】（若没有则摸一张牌）",
+  ["#ol__wanwei2-invoke"] = "挽危：你可以从牌堆获得其中一张牌的同名牌（若没有则摸一张牌）",
+  ["#ol__wanwei-choice"] = "挽危：选择你要从牌堆获得的牌（若没有则摸一张牌）",
+  ["#ol__yuejian-invoke"] = "约俭：你可以展示所有手牌，若花色均与%arg不同，你获得之",
 }
 
 local zuofen = General(extension, "zuofen", "jin", 3, 3, General.Female)
@@ -840,7 +927,7 @@ local zhaosong = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     local ids = room:askForCard(target, 1, 1, false, self.name, false, ".", "#zhaosong-give:"..player.id)
-    room:obtainCard(player, ids[1], false, fk.ReasonGive)
+    room:obtainCard(player.id, ids[1], false, fk.ReasonGive)
     local card = Fk:getCardById(ids[1])
     local mark
     if card.type == Card.TypeTrick then
@@ -940,7 +1027,7 @@ local lisi = fk.CreateTriggerSkill{
     end
   end,
   on_use = function(self, event, target, player, data)
-    player.room:obtainCard(self.cost_data[1], data.card, true, fk.ReasonGive)
+    player.room:obtainCard(self.cost_data, data.card, true, fk.ReasonGive)
   end,
 }
 zhaosong:addRelatedSkill(zhaosong_trigger)
@@ -1630,7 +1717,7 @@ local zengou = fk.CreateTriggerSkill{
     if #room:askForDiscard(player, 1, 1, true, self.name, true, ".|.|.|.|.|^basic", "#zengou-discard") == 0 then
       room:loseHp(player, 1, self.name)
       if room:getCardArea(data.card) == Card.Processing then
-        room:obtainCard(player, data.card, true, fk.ReasonJustMove)
+        room:obtainCard(player.id, data.card, true, fk.ReasonJustMove)
       end
     end
     return true
@@ -2404,7 +2491,7 @@ local kanpod_prey = fk.CreateTriggerSkill{
     local id = room:askForAG(player, hearts, true, self.name)
     room:closeAG(player)
     if id then
-      room:obtainCard(player, id, true, fk.ReasonPrey)
+      room:obtainCard(player.id, id, true, fk.ReasonPrey)
     end
   end,
 }
@@ -2432,7 +2519,7 @@ local gengzhan = fk.CreateTriggerSkill{
     local room = player.room
     local cards = self.cost_data
     if #cards == 1 then
-      room:obtainCard(player, cards[1], true, fk.ReasonJustMove)
+      room:obtainCard(player.id, cards[1], true, fk.ReasonJustMove)
     else
       room:fillAG(player, cards)
       local id = room:askForAG(player, cards, false, self.name)
@@ -2440,7 +2527,7 @@ local gengzhan = fk.CreateTriggerSkill{
         id = table.random(cards)
       end
       room:closeAG(player)
-      room:obtainCard(player, id, true, fk.ReasonJustMove)
+      room:obtainCard(player.id, id, true, fk.ReasonJustMove)
     end
   end,
 
@@ -2620,7 +2707,7 @@ local qingyix_record = fk.CreateTriggerSkill{
     if #get > 0 then
       local dummy = Fk:cloneCard("dilu")
       dummy:addSubcards(get)
-      room:obtainCard(player, dummy, true, fk.ReasonJustMove)
+      room:obtainCard(player.id, dummy, true, fk.ReasonJustMove)
     end
   end,
 }

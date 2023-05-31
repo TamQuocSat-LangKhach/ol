@@ -1446,7 +1446,7 @@ local kuanshi = fk.CreateTriggerSkill{
     if event == fk.EventPhaseStart then
       return target == player and player:hasSkill(self.name) and player.phase == Player.Finish
     else
-      return player:hasSkill(self.name, true) and data.damage > 1 and target:getMark("@@kuanshi") == player.id
+      return player:hasSkill(self.name, true) and data.damage > 1 and target:getMark(self.name) == player.id
     end
   end,
   on_cost = function(self, event, target, player, data)
@@ -1464,10 +1464,10 @@ local kuanshi = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     if event == fk.EventPhaseStart then
-      room:setPlayerMark(room:getPlayerById(self.cost_data), "@@kuanshi", player.id)
+      room:setPlayerMark(room:getPlayerById(self.cost_data), self.name, player.id)
     else
-      room:setPlayerMark(target, "@@kuanshi", 0)
-      room:setPlayerMark(player, self.name, 1)
+      room:setPlayerMark(target, self.name, 0)
+      room:setPlayerMark(player, "kuanshi_trigger", 1)
       return true
     end
   end,
@@ -1479,12 +1479,12 @@ local kuanshi = fk.CreateTriggerSkill{
   on_refresh = function(self, event, target, player, data)
     local room = player.room
     for _, p in ipairs(room:getAlivePlayers()) do
-      if p:getMark("@@kuanshi") ~= 0 then
-        room:setPlayerMark(p, "@@kuanshi", 0)
+      if p:getMark(self.name) ~= 0 then
+        room:setPlayerMark(p, self.name, 0)
       end
     end
-    if player:getMark(self.name) > 0 then
-      room:setPlayerMark(player, self.name, 0)
+    if player:getMark("kuanshi_trigger") > 0 then
+      room:setPlayerMark(player, "kuanshi_trigger", 0)
       player:skip(Player.Draw)
     end
   end,
