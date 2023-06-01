@@ -124,8 +124,8 @@ local tianxing = fk.CreateTriggerSkill{
   events = {fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(self.name) and
-      player.phase == Player.Start and
-      player:usedSkillTimes(self.name, Player.HistoryGame) == 0
+      player.phase == Player.Start and player:usedSkillTimes(self.name, Player.HistoryGame) == 0 and
+      player:usedSkillTimes("dengji", Player.HistoryTurn) == 0  --连续觉醒体验不好，强行改了
   end,
   can_wake = function(self, event, target, player, data)
     return #player:getPile("caopi_chu") > 2

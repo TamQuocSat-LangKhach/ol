@@ -611,7 +611,7 @@ local chasingNearSkill = fk.CreateActiveSkill{
     if from:distanceTo(to) > 1 then
       room:throwCard(id, self.name, to, from)
     elseif from:distanceTo(to) == 1 then
-        room:obtainCard(from, id)
+      room:obtainCard(from, id, false, fk.ReasonPrey)
     end
   end
 }

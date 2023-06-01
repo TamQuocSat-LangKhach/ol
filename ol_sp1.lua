@@ -1176,6 +1176,75 @@ local bingzheng = fk.CreateTriggerSkill{
     end
   end,
 }
+
+---@param player ServerPlayer @ 执行的玩家
+---@param targets ServerPlayer[] @ 可选的目标范围
+---@param num integer @ 可选的目标数
+---@param can_minus boolean @ 是否可减少
+---@param prompt string @ 提示信息
+---@param skillName string @ 技能名
+---@param data CardUseStruct @ 使用数据
+--枚举法为使用牌增减目标（无距离限制）
+local function AskForAddTarget(player, targets, num, can_minus, prompt, skillName, data)
+  num = num or 1
+  can_minus = can_minus or false
+  prompt = prompt or ""
+  skillName = skillName or ""
+  local room = player.room
+  local tos = {}
+  if can_minus and #AimGroup:getAllTargets(data.tos) > 1 then  --默认不允许减目标至0
+    tos = table.map(table.filter(targets, function(p)
+      return table.contains(AimGroup:getAllTargets(data.tos), p.id) end), function(p) return p.id end)
+  end
+  for _, p in ipairs(targets) do
+    if not table.contains(AimGroup:getAllTargets(data.tos), p.id) and not room:getPlayerById(data.from):isProhibited(p, data.card) then
+      if data.card.name == "jink" or data.card.trueName == "nullification" or data.card.name == "adaptation" or
+        (data.card.name == "peach" and not p:isWounded()) then
+        --continue
+      else
+        if data.from ~= p.id then
+          if (data.card.trueName == "slash") or
+            ((table.contains({"dismantlement", "snatch", "chasing_near"}, data.card.name)) and not p:isAllNude()) or
+            (table.contains({"fire_attack", "unexpectation"}, data.card.name) and not p:isKongcheng()) or
+            (table.contains({"peach", "analeptic", "ex_nihilo", "duel", "savage_assault", "archery_attack", "amazing_grace", "god_salvation", 
+              "iron_chain", "foresight", "redistribute", "enemy_at_the_gates", "raid_and_frontal_attack"}, data.card.name)) or
+            (data.card.name == "collateral" and p:getEquipment(Card.SubtypeWeapon) and
+              #table.filter(room:getOtherPlayers(p), function(v) return p:inMyAttackRange(v) end) > 0)then
+            table.insertIfNeed(tos, p.id)
+          end
+        else
+          if (data.card.name == "analeptic") or
+            (table.contains({"ex_nihilo", "foresight", "iron_chain", "amazing_grace", "god_salvation", "redistribute"}, data.card.name)) or
+            (data.card.name == "fire_attack" and not p:isKongcheng()) then
+            table.insertIfNeed(tos, p.id)
+          end
+        end
+      end
+    end
+  end
+  if #tos > 0 then
+    tos = room:askForChoosePlayers(player, tos, 1, num, prompt, skillName, true)
+    if data.card.name ~= "collateral" then
+      return tos
+    else
+      local result = {}
+      for _, id in ipairs(tos) do
+        local to = room:getPlayerById(id)
+        local target = room:askForChoosePlayers(player, table.map(table.filter(room:getOtherPlayers(player), function(v)
+          return to:inMyAttackRange(v) end), function(p) return p.id end), 1, 1, "#collateral-choose::"..to.id..":"..data.card:toLogString())
+        if #target > 0 then
+          table.insert(result, {id, target[1]})
+        end
+      end
+      if #result > 0 then
+        return result
+      else
+        return {}
+      end
+    end
+  end
+  return {}
+end
 local sheyan = fk.CreateTriggerSkill{
   name = "sheyan",
   anim_type = "control",
@@ -1185,27 +1254,9 @@ local sheyan = fk.CreateTriggerSkill{
   end,
   on_cost = function(self, event, target, player, data)
     local room = player.room
-    local targets = {}
-    if #data.targetGroup > 1 then  --多目标牌取消自己
-      table.insert(targets, player.id)
-    end
-    for _, p in ipairs(room:getOtherPlayers(player)) do
-      if #data.targetGroup > 1 then
-        if table.contains(TargetGroup:getRealTargets(data.tos), p.id) or not player:isProhibited(p, data.card) then
-          if data.from ~= player.id or data.card.name == "fire_attack" then
-            table.insertIfNeed(targets, p.id)
-          end
-        end
-      else
-        if not player:isProhibited(p, data.card) then
-          table.insertIfNeed(targets, p.id)
-        end
-      end
-    end
-    if #targets == 0 then return end
-    local to = room:askForChoosePlayers(player, targets, 1, 1, "#sheyan-choose:::"..data.card:toLogString(), self.name, true)
-    if #to > 0 then
-      self.cost_data = to[1]
+    local targets = AskForAddTarget(player, room:getAlivePlayers(), 1, true, "#sheyan-choose:::"..data.card:toLogString(), self.name, data)
+    if #targets > 0 then
+      self.cost_data = targets[1]
       return true
     end
   end,
@@ -1231,6 +1282,7 @@ Fk:loadTranslationTable{
   ["bingzheng_draw"] = "其摸一张牌",
   ["#bingzheng-card"] = "秉正：你可以交给 %dest 一张牌",
   ["#sheyan-choose"] = "舍宴：你可以为%arg增加/减少一个目标",
+  ["#collateral-choose"] = "请为对 %dest 使用的%arg指定被杀的目标",
 }
 
 local mazhong = General(extension, "mazhong", "shu", 4)
@@ -2662,10 +2714,17 @@ local xiying = fk.CreateTriggerSkill{
         end
       end
     else
-      local card = {getCardByPattern(room, "damage_card")}
-      if #card > 0 then
+      local cards = {}
+      for i = 1, #room.draw_pile, 1 do
+        local card = Fk:getCardById(room.draw_pile[i])
+        if card.is_damage_card then
+          table.insertIfNeed(cards, room.draw_pile[i])
+        end
+      end
+      if #cards > 0 then
+        local card = table.random(cards)
         room:moveCards({
-          ids = card,
+          ids = {card},
           to = player.id,
           toArea = Card.PlayerHand,
           moveReason = fk.ReasonJustMove,

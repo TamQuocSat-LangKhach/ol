@@ -334,25 +334,32 @@ local yimie = fk.CreateTriggerSkill{
     return target == player and player:hasSkill(self.name) and data.to.hp >= data.damage and
       player:usedSkillTimes(self.name, Player.HistoryTurn) == 0
   end,
+  on_cost = function(self, event, target, player, data)
+    return player.room:askForSkillInvoke(player, self.name, nil, "#yimie-invoke::"..data.to.id)
+  end,
   on_use = function(self, event, target, player, data)
     local room = player.room
     room:loseHp(player, 1, self.name)
-    self.yimie_num = data.to.hp - data.damage
+    room:setPlayerMark(data.to, "yimie-phase", {player.id, data.to.hp - data.damage})
     data.damage = data.to.hp
   end,
 
-  refresh_events = {fk.Damage},
+  refresh_events = {fk.DamageFinished},
   can_refresh = function(self, event, target, player, data)
-    return target == player and player:usedSkillTimes(self.name, Player.HistoryTurn) > 0 and
-      not data.to.dead and self.yimie_num > 0
+    return target == player and player:getMark("yimie-phase") ~= 0
   end,
   on_refresh = function(self, event, target, player, data)
-    player.room:recover({
-      who = data.to,
-      num = self.yimie_num,
-      recoverBy = player,
-      skillName = self.name
-    })
+    local room = player.room
+    local mark = player:getMark("yimie-phase")
+    room:setPlayerMark(player, "yimie-phase", 0)
+    if not player.dead then
+      room:recover({
+        who = player,
+        num = math.min(player.maxHp - player.hp, mark[2]),
+        recoverBy = room:getPlayerById(mark[1]),
+        skillName = self.name
+      })
+    end
   end,
 }
 local tairan = fk.CreateTriggerSkill{
@@ -423,6 +430,7 @@ Fk:loadTranslationTable{
   [":tairan"] = "锁定技，回合结束时，你回复体力至体力上限，将手牌摸至体力上限；出牌阶段开始时，你失去上回合以此法回复的体力值，弃置以此法获得的手牌。",
   ["ruilve"] = "睿略",
   [":ruilve"] = "主公技，其他晋势力角色的出牌阶段限一次，该角色可以将一张【杀】或伤害锦囊牌交给你。",
+  ["#yimie-invoke"] = "夷灭：你可以失去1点体力，令你对 %arg 造成的伤害增加至其体力值！",
 }
 
 local yanghuiyu = General(extension, "ol__yanghuiyu", "jin", 3, 3, General.Female)
