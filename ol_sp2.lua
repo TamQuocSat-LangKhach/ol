@@ -351,18 +351,21 @@ local huangzu = General(extension, "ol__huangzu", "qun", 4)
 local wangong = fk.CreateTriggerSkill{
   name = "wangong",
   anim_type = "offensive",
-  mute = true,
   frequency = Skill.Compulsory,
-  events = {fk.CardUsing},
+  events = {fk.AfterCardUseDeclared},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name)
+    return target == player and player:hasSkill(self.name) and player:getMark("@@wangong") > 0 and data.card.trueName == "slash"
   end,
   on_use = function(self, event, target, player, data)
+    data.additionalDamage = (data.additionalDamage or 0) + 1
+  end,
+
+  refresh_events = {fk.CardUseFinished},
+  can_refresh = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self.name, true)
+  end,
+  on_refresh = function(self, event, target, player, data)
     local room = player.room
-    if data.card.trueName == "slash" then
-      room:broadcastSkillInvoke(self.name)
-      data.additionalDamage = (data.additionalDamage or 0) + 1
-    end
     if data.card.type == Card.TypeBasic then
       room:setPlayerMark(player, "@@wangong", 1)
     else
