@@ -153,7 +153,7 @@ local ol_ex__leiji = fk.CreateTriggerSkill{
         end
       end
       local targets = player.room:askForChoosePlayers(player, table.map(player.room:getOtherPlayers(player), function (p)
-        return p.id end), 1, 1, "#ol_ex__leiji-choose:::" .. x, self.name)
+        return p.id end), 1, 1, "#ol_ex__leiji-choose:::" .. x, self.name, true)
        if #targets > 0 then
           local tar = targets[1]
           room:damage{
@@ -266,13 +266,14 @@ local ol_ex__shensu = fk.CreateTriggerSkill{
       player:skip(Player.Discard)
       player:turnOver()
     end
-    room:useVirtualCard("slash", nil, player, table.map(self.cost_data, function(id) return room:getPlayerById(id) end), self.name, false)
+    room:useVirtualCard("slash", nil, player, table.map(self.cost_data, function(id) return room:getPlayerById(id) end), self.name, true)
     return true
   end,
 }
 local ol_ex__shebian = fk.CreateTriggerSkill{
   name = "ol_ex__shebian",
   events = { fk.TurnedOver },
+  anim_type = "control",
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(self.name)
   end,
@@ -426,28 +427,42 @@ local ol_ex__piaoling = fk.CreateTriggerSkill{
       pattern = ".|.|heart",
     }
     room:judge(judge)
-    if judge.card.suit == Card.Heart and room:getCardArea(judge.card) == Card.DiscardPile then
+  end,
+}
+local ol_ex__piaoling_delay = fk.CreateTriggerSkill{
+  name = "#ol_ex__piaoling_delay",
+  events = {fk.FinishJudge},
+  mute = true,
+  can_trigger = function(self, event, target, player, data)
+    return target == player and data.card.suit == Card.Heart and data.reason == ol_ex__piaoling.name
+      and player.room:getCardArea(data.card.id) == Card.Processing
+  end,
+  on_cost = function() return true end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    if data.card.suit == Card.Heart and room:getCardArea(data.card) == Card.Processing then
       local targets = room:askForChoosePlayers(player, table.map(room.alive_players, function (p)
-        return p.id end), 1, 1, "#ol_ex__piaoling-choose", self.name)
+        return p.id end), 1, 1, "#ol_ex__piaoling-choose", ol_ex__piaoling.name, true)
       if #targets == 0 then
         room:moveCards({
-          ids = {judge.card:getEffectiveId()},
-          fromArea = Card.DiscardPile,
+          ids = {data.card.id},
+          fromArea = Card.Processing,
           toArea = Card.DrawPile,
-          moveReason = fk.ReasonJustMove,
-          skillName = self.name,
+          moveReason = fk.ReasonPut,
+          skillName = ol_ex__piaoling.name,
         })
       else
         local to = room:getPlayerById(targets[1])
-        room:obtainCard(to, judge.card, true, fk.ReasonJustMove)
+        room:obtainCard(to, data.card, true, fk.ReasonJustMove)
         if to == player then
-          room:askForDiscard(to, 1, 1, true, self.name, false, ".", "#ol_ex__piaoling-discard")
+          room:askForDiscard(to, 1, 1, true, ol_ex__piaoling.name, false, ".", "#ol_ex__piaoling-discard")
         end
       end
     end
   end,
 }
 ol_ex__hongyan:addRelatedSkill(ol_ex__hongyan_maxcards)
+ol_ex__piaoling:addRelatedSkill(ol_ex__piaoling_delay)
 xiaoqiao:addSkill(ol_ex__tianxiang)
 xiaoqiao:addSkill(ol_ex__hongyan)
 xiaoqiao:addSkill(ol_ex__piaoling)
@@ -458,7 +473,8 @@ Fk:loadTranslationTable{
   ["ol_ex__hongyan"] = "红颜",
   [":ol_ex__hongyan"] = "锁定技，①你的♠牌视为<font color='red'>♥</font>牌。②若你的装备区里有<font color='red'>♥</font>牌，你的手牌上限初值改为体力上限。",
   ["ol_ex__piaoling"] = "飘零",
-  [":ol_ex__piaoling"] = "结束阶段，你可判定，若结果为<font color='red'>♥</font>，你选择：1.将判定牌置于牌堆顶；2.令一名角色获得判定牌，若其为你，你弃置一张牌。",
+  ["#ol_ex__piaoling_delay"] = "飘零",  
+  [":ol_ex__piaoling"] = "结束阶段，你可判定，然后当判定结果确定后，若为<font color='red'>♥</font>，你选择：1.将判定牌置于牌堆顶；2.令一名角色获得判定牌，若其为你，你弃置一张牌。",
  
   ["#ol_ex__tianxiang-choose"] = "天香：弃置一张<font color='red'>♥</font>手牌并选择一名其他角色",
   ["#ol_ex__tianxiang-choice"] = "天香：选择一项令 %dest 执行",
@@ -742,7 +758,7 @@ local ol_ex__luanji_trigger = fk.CreateTriggerSkill{
   end,
   on_cost = function(self, event, target, player, data)
     if #data.tos == 0 then return false end
-    local tos = player.room:askForChoosePlayers(player, TargetGroup:getRealTargets(data.tos), 1, 1, "#ol_ex__luanji-choose", "ol_ex__luanji")
+    local tos = player.room:askForChoosePlayers(player, TargetGroup:getRealTargets(data.tos), 1, 1, "#ol_ex__luanji-choose", "ol_ex__luanji", true)
     if #tos > 0 then
       self.cost_data = tos[1]
       return true
@@ -897,7 +913,7 @@ local ol_ex__jieming = fk.CreateTriggerSkill{
   end,
   on_cost = function(self, event, target, player, data)
     local to = player.room:askForChoosePlayers(player, table.map(player.room:getAlivePlayers(), function (p)
-      return p.id end), 1, 1, "#ol_ex__jieming-choose", self.name)
+      return p.id end), 1, 1, "#ol_ex__jieming-choose", self.name, true)
     if #to > 0 then
       self.cost_data = to[1]
       return true
@@ -1152,7 +1168,7 @@ local ol_ex__wulie = fk.CreateTriggerSkill{
   end,
   on_cost = function(self, event, target, player, data)
     local tos = player.room:askForChoosePlayers(player, table.map(player.room.alive_players, function (p)
-      return p.id end), 1, player.hp, "#ol_ex__wulie-choose", self.name)
+      return p.id end), 1, player.hp, "#ol_ex__wulie-choose", self.name, true)
     if #tos > 0 then
       self.cost_data = tos
       return true
@@ -1263,7 +1279,7 @@ local ol_ex__baonve = fk.CreateTriggerSkill{
   anim_type = "support",
   events = {fk.Damage},
   can_trigger = function(self, event, target, player, data)
-    return player:hasSkill(self.name) and player ~= target and target.kingdom == "qun"
+    return target and player:hasSkill(self.name) and player ~= target and target.kingdom == "qun"
   end,
   on_trigger = function(self, event, target, player, data)
     self.cancel_cost = false
@@ -1327,7 +1343,7 @@ Fk:loadTranslationTable{
   ["#ol_ex__jiuchi_trigger"] = "酒池",
   [":ol_ex__jiuchi"] = "①你可将一张♠手牌转化为【酒】使用。②你使用【酒】无次数限制。③当你造成伤害后，若渠道为受【酒】效果影响的【杀】，你的〖崩坏〗于当前回合内无效。",
   ["ol_ex__baonve"] = "暴虐",
-  [":ol_ex__baonve"] = "主公技，当其他群雄角色造成1点伤害后，你可判定，若结果为♠，回复1点体力，当判定牌生效后，你获得此牌。",
+  [":ol_ex__baonve"] = "主公技，当其他群雄角色造成1点伤害后，你可判定，若结果为♠，回复1点体力，然后当判定牌生效后，你获得此牌。",
 
   ["@@ol_ex__benghuai_invalidity-turn"] = "崩坏失效",
 
@@ -1506,7 +1522,7 @@ local ol_ex__luanwu = fk.CreateActiveSkill{
     if #slash_targets == 0 or max_num == 0 then return end
     local tos = room:askForChoosePlayers(player, slash_targets, 1, max_num, "#ol_ex__luanwu-choose", self.name, true)
     if #tos > 0 then
-      room:useVirtualCard("slash", nil, player, table.map(tos, function(id) return room:getPlayerById(id) end), self.name, false)
+      room:useVirtualCard("slash", nil, player, table.map(tos, function(id) return room:getPlayerById(id) end), self.name, true)
     end
   end,
 }
@@ -1805,7 +1821,7 @@ local ol_ex__zaiqi = fk.CreateTriggerSkill{
   on_cost = function(self, event, target, player, data)
     local x = self.trigger_times
     local result = player.room:askForChoosePlayers(player, table.map(player.room.alive_players, function (p)
-      return p.id end), 1, x, "#ol_ex__zaiqi-choose:::"..x, self.name)
+      return p.id end), 1, x, "#ol_ex__zaiqi-choose:::"..x, self.name, true)
     if #result > 0 then
       self.cost_data = result
       return true
@@ -1926,14 +1942,14 @@ local ol_ex__jiezi = fk.CreateTriggerSkill{
   anim_type = "support",
   events = {fk.EventPhaseChanging},
   can_trigger = function(self, event, target, player, data)
-    if player:hasSkill(self.name) and player ~= target and target.skipped_phases[Player.Draw] and
+    if player:hasSkill(self.name) and player ~= target and target and target.skipped_phases[Player.Draw] and
         player:usedSkillTimes(self.name, Player.HistoryTurn) < 1 then
       return data.to == Player.Play or data.to == Player.Discard or data.to == Player.Finish
     end
   end,
   on_cost = function(self, event, target, player, data)
     local result = player.room:askForChoosePlayers(player, table.map(player.room.alive_players, function (p)
-      return p.id end), 1, 1, "#ol_ex__jiezi-choose", self.name)
+      return p.id end), 1, 1, "#ol_ex__jiezi-choose", self.name, true)
     if #result == 1 then
       self.cost_data = result[1]
       return true
@@ -2019,15 +2035,64 @@ local ol_ex__fangquan_delay = fk.CreateTriggerSkill{
     end
   end,
 }
-
-
+local ol_ex__ruoyu = fk.CreateTriggerSkill{
+  name = "ol_ex__ruoyu",
+  frequency = Skill.Wake,
+  events = {fk.EventPhaseStart},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self.name) and
+      player:usedSkillTimes(self.name, Player.HistoryGame) == 0 and
+      player.phase == Player.Start
+  end,
+  can_wake = function(self, event, target, player, data)
+    return table.every(player.room:getOtherPlayers(player), function(p) return p.hp >= player.hp end)
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    room:changeMaxHp(player, 1)
+    if player:isWounded() and player.hp < 3 then
+      room:recover({
+        who = player,
+        num = math.min(3, player.maxHp) - player.hp,
+        recoverBy = player,
+        skillName = self.name,
+      })
+    end
+    room:handleAddLoseSkills(player, "jijiang|ol_ex__sishu", nil, true, false)
+  end,
+}
+local ol_ex__sishu = fk.CreateTriggerSkill{
+  name = "ol_ex__sishu",
+  events = {fk.EventPhaseStart},
+  anim_type = "support",
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self.name) and player.phase == Player.Play
+  end,
+  on_cost = function(self, event, target, player, data)
+    local to = player.room:askForChoosePlayers(player, table.map(player.room:getOtherPlayers(player), function (p)
+      return p.id end), 1, 1, "#ol_ex__sishu-choose", self.name, true)
+    if #to > 0 then
+      self.cost_data = to[1]
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local tar = player.room:getPlayerById(self.cost_data)
+    if tar then
+      player.room:setPlayerMark(tar, "@@ol_ex__sishu_effect", 1- tar:getMark("@@ol_ex__sishu_effect"))
+    end
+  end,
+}
 
 --[[
 ol_ex__fangquan:addRelatedSkill(ol_ex__fangquan_delay)
 local liushan = General(extension, "ol_ex__liushan", "shu", 3)
+liushan:addSkill("xiangle")
 liushan:addSkill(ol_ex__fangquan)
+liushan:addSkill(ol_ex__ruoyu)
+liushan:addRelatedSkill("jijiang")
+liushan:addRelatedSkill(ol_ex__sishu)
 ]]
-
 
 Fk:loadTranslationTable{
   ["ol_ex__liushan"] = "界刘禅",
@@ -2037,7 +2102,10 @@ Fk:loadTranslationTable{
   ["ol_ex__ruoyu"] = "若愚",
   [":ol_ex__ruoyu"] = "主公技，觉醒技，准备阶段，若你是体力值最小的角色，你加1点体力上限，回复体力至3点，获得〖激将〗和〖思蜀〗。",
   ["ol_ex__sishu"] = "思蜀",
-  [":ol_ex__sishu"] = "出牌阶段开始时，你可选择一名角色，其本局游戏【乐不思蜀】的判定结果反转。",
+  [":ol_ex__sishu"] = "出牌阶段开始时，你可选择一名角色，其本局游戏【乐不思蜀】的判定结果反转（暂时效果无法正常适用）。",
+
+  ["#ol_ex__sishu-choose"] = "思蜀：选择一名角色，令其本局游戏【乐不思蜀】的判定结果反转",
+  ["@@ol_ex__sishu_effect"] = "思蜀",
 
   ["$ol_ex__xiangle1"] = "嘿嘿嘿，还是玩耍快乐。",
   ["$ol_ex__xiangle2"] = "美好的日子，应该好好享受。",
@@ -2150,7 +2218,7 @@ local ol_ex__hunzi_delay = fk.CreateTriggerSkill{
   events = {fk.EventPhaseStart},
   mute = true,
   can_trigger = function(self, event, target, player, data)
-    return target.phase == Player.Finish and player:usedSkillTimes(ol_ex__hunzi.name, Player.HistoryTurn) > 0
+    return target and target.phase == Player.Finish and player:usedSkillTimes(ol_ex__hunzi.name, Player.HistoryTurn) > 0
   end,
   on_cost = function() return true end,
   on_use = function(self, event, target, player, data)
@@ -2295,14 +2363,10 @@ local ol_ex__jixi = fk.CreateViewAsSkill{
 }
 ol_ex__tuntian:addRelatedSkill(ol_ex__tuntian_delay)
 ol_ex__tuntian:addRelatedSkill(ol_ex__tuntian_distance)
-
---[[
 local dengai = General(extension, "ol_ex__dengai", "wei", 4)
 dengai:addSkill(ol_ex__tuntian)
 dengai:addSkill(ol_ex__zaoxian)
 dengai:addRelatedSkill(ol_ex__jixi)
-]]
-
 
 Fk:loadTranslationTable{
   ["ol_ex__dengai"] = "界邓艾",
@@ -2310,9 +2374,9 @@ Fk:loadTranslationTable{
   ["#ol_ex__tuntian_delay"] = "屯田",
   [":ol_ex__tuntian"] = "当你于回合外失去牌后，或于回合内因弃置而失去【杀】后，你可以进行判定，若结果不为红桃，你将判定牌置于你的武将牌上，称为“田”；你计算与其他角色的距离-X（X为“田”的数量）。",
   ["ol_ex__zaoxian"] = "凿险",
-  [":ol_ex__zaoxian"] = "觉醒技，准备阶段，若“田”的数量大于等于3，你减1点体力上限，然后获得“急袭”。此回合结束后，你获得一个额外回合。",
+  [":ol_ex__zaoxian"] = "觉醒技，准备阶段，若“田”的数量大于等于3，你减1点体力上限，然后获得“急袭”。此回合结束后，你获得一个额外回合（暂时不能获得额外回合）。",
   ["ol_ex__jixi"] = "急袭",
-  [":ol_ex__jixi"] = "你可以将一张“田”当【顺手牵羊】使用。",
+  [":ol_ex__jixi"] = "你可以将一张“田”当【顺手牵羊】使用（暂时会参与屯田的距离计算）。",
 
   ["ol_ex__dengai_field"] = "田",
 
@@ -2505,6 +2569,7 @@ zhanghe:addSkill(ol_ex__qiaobian)
 Fk:loadTranslationTable{
   ["ol_ex__zhanghe"] = "界张郃",
   ["ol_ex__qiaobian"] = "巧变",
+  ["#ol_ex__qiaobian_select"] = "巧变",
   [":ol_ex__qiaobian"] = "游戏开始时，你获得2枚“变”标记。你可以弃置一张牌或移除1枚“变”标记并跳过你的一个阶段（准备阶段和结束阶段除外）：若跳过摸牌阶段，你可以获得至多两名角色的各一张手牌；若跳过出牌阶段，你可以移动场上的一张牌。结束阶段开始时，若你的手牌数与之前你的每一回合结束阶段开始时的手牌数均不相等，你获得1枚“变”标记。",
 
   ["@ol_ex__qiaobian_change"] = "变",
