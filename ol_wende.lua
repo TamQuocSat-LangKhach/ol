@@ -886,8 +886,8 @@ Fk:loadTranslationTable{
 }
 
 local zhongyan = General(extension, "zhongyan", "jin", 3, 3, General.Female)
-local bolan_skills = {"quhu", "qiangxi", "qice", "daoshu", "tiaoxin", "qiangwu", "tianyi", "ex__zhiheng", "jieyin", "ex__guose",
-"lijian", "qingnang", "lihun", "mingce", "mizhao", "sanchen", "gongxin", "chuli"}  --固定技能库，缺ex__tiaoxin ex__jieyin  ex__lijian
+local bolan_skills = {"quhu", "qiangxi", "qice", "daoshu", "ol_ex__tiaoxin", "qiangwu", "tianyi", "ex__zhiheng", "jieyin", "ex__guose",
+"lijian", "qingnang", "lihun", "mingce", "mizhao", "sanchen", "gongxin", "chuli"}  --固定技能库，缺 ex__jieyin  ex__lijian
 local bolan = fk.CreateTriggerSkill{
   name = "bolan",
   anim_type = "special",
@@ -1016,7 +1016,8 @@ Fk:loadTranslationTable{
   ["zhongyan"] = "钟琰",
   ["bolan"] = "博览",
   [":bolan"] = "出牌阶段开始时，你可以从随机三个“出牌阶段限一次”的技能中选择一个获得直到本阶段结束；其他角色的出牌阶段限一次，其可以失去1点体力，"..
-  "令你从随机三个“出牌阶段限一次”的技能中选择一个，其获得之直到此阶段结束。",
+  "令你从随机三个“出牌阶段限一次”的技能中选择一个，其获得之直到此阶段结束。<br>"..
+  "<font color='grey'>技能库：<br>驱虎 强袭 奇策 盗书 挑衅 枪舞 天义 制衡 结姻 国色 离间 青囊 离魂 明策 密诏 三陈 攻心 除疬<br/>",
   ["yifa"] = "仪法",
   [":yifa"] = "锁定技，当其他角色使用【杀】或黑色普通锦囊牌指定你为目标后，其手牌上限-1直到其回合结束。",
   ["bolan&"] = "博览",

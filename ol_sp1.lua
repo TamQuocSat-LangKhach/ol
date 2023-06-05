@@ -2034,6 +2034,7 @@ local chouce = fk.CreateTriggerSkill{
       to:drawCards(1 + (to:getMark("xianfu") == player.id and 1 or 0), self.name)
     elseif judge.card.color == Card.Black then
       local targets = table.map(table.filter(room:getAlivePlayers(), function(p) return not p:isAllNude() end), function(p) return p.id end)
+      if #targets == 0 then return end
       local tos = room:askForChoosePlayers(player, targets, 1, 1, "#chouce-discard", self.name, false)
       local to
       if #tos > 0 then
