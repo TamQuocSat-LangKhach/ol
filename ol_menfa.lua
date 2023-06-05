@@ -35,7 +35,7 @@ local sankuang = fk.CreateTriggerSkill{
       end
     end
     if #targets > 0 then
-      local to = room:askForChoosePlayers(player, targets, 1, 1, "#sankuang-choose:::"..data.card:toLogString(), self.name)
+      local to = room:askForChoosePlayers(player, targets, 1, 1, "#sankuang-choose:::"..data.card:toLogString(), self.name, false)
       if #to == 0 then
         to = {table.random(targets)}
       end
@@ -119,7 +119,7 @@ local daojie = fk.CreateTriggerSkill{
             table.insert(targets, p.id)
           end
         end
-        local to = room:askForChoosePlayers(player, targets, 1, 1, "#daojie-choose:::"..data.card:toLogString(), self.name)
+        local to = room:askForChoosePlayers(player, targets, 1, 1, "#daojie-choose:::"..data.card:toLogString(), self.name, false)
         if #to == 0 then
           to = {table.random(targets)}
         end

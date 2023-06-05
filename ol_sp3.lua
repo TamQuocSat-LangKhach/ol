@@ -43,7 +43,7 @@ local qiejian = fk.CreateTriggerSkill{
       local targets = {}
       if #player:getCardIds{Player.Equip, Player.Judge} > 0 then table.insertIfNeed(targets, player.id) end
       if #to:getCardIds{Player.Equip, Player.Judge} > 0 then table.insertIfNeed(targets, to.id) end
-      local tos = room:askForChoosePlayers(player, targets, 1, 1, "#qiejian-choose", self.name)
+      local tos = room:askForChoosePlayers(player, targets, 1, 1, "#qiejian-choose", self.name, false)
       local p
       if #tos > 0 then
         p = room:getPlayerById(tos[1])
@@ -124,7 +124,7 @@ local nishou = fk.CreateTriggerSkill{
     elseif #targets == 1 then
       to = targets[1]
     else
-      local tos = room:askForChoosePlayers(player, targets, 1, 1, "#nishou-choose", self.name)
+      local tos = room:askForChoosePlayers(player, targets, 1, 1, "#nishou-choose", self.name, false)
       if #tos > 0 then
         to = tos[1]
       else
@@ -444,7 +444,7 @@ local kangrui = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     player:drawCards(1, self.name)
-    local choice = room:askForChoice(target, {"recover", "kangrui_damage"}, self.name)
+    local choice = room:askForChoice(player, {"recover", "kangrui_damage"}, self.name, "#kangrui-choice::"..target.id)
     if choice == "recover" then
       room:recover{
         who = target,
@@ -478,8 +478,9 @@ Fk:loadTranslationTable{
   [":dianjun"] = "锁定技，回合结束时，你受到1点伤害并执行一个额外的出牌阶段。",
   ["kangrui"] = "亢锐",
   [":kangrui"] = "当一名角色于其回合内首次受到伤害后，你可以摸一张牌并令其：1.回复1点体力；2.本回合下次造成的伤害+1，然后当其造成伤害后，其此回合手牌上限改为0。",
-  ["#kangrui-invoke"] = "亢锐：你可以摸一张牌，令 %dest 选择回复1点体力或本回合下次造成伤害+1",
+  ["#kangrui-invoke"] = "亢锐：你可以摸一张牌，令 %dest 回复1点体力或本回合下次造成伤害+1",
   ["kangrui_damage"] = "本回合下次造成伤害+1，造成伤害后本回合手牌上限改为0",
+  ["#kangrui-choice"] = "亢锐：选择令 %dest 执行的一项",
 }
 
 local maxiumatie = General(extension, "maxiumatie", "qun", 4)

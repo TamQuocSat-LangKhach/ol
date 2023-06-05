@@ -576,7 +576,7 @@ local foresightSkill = fk.CreateActiveSkill{
   end,
   on_effect = function(self, room, effect)
     local to = room:getPlayerById(effect.to)
-    room:askForGuanxing(to, room:getNCards(2))
+    room:askForGuanxing(to, room:getNCards(2), nil, nil)
     room:drawCards(to, 2, self.name)
   end
 }
@@ -609,7 +609,7 @@ local chasingNearSkill = fk.CreateActiveSkill{
     if to:isAllNude() then return end
     local id = room:askForCardChosen(from, to, "hej", self.name)
     if from:distanceTo(to) > 1 then
-      room:throwCard(id, self.name, to, from)
+      room:throwCard({id}, self.name, to, from)
     elseif from:distanceTo(to) == 1 then
       room:obtainCard(from, id, false, fk.ReasonPrey)
     end

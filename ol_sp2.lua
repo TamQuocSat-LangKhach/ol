@@ -707,10 +707,15 @@ local fengzi = fk.CreateTriggerSkill{
   end,
   on_cost = function(self, event, target, player, data)
     local type = data.card:getTypeString()
-    return #player.room:askForDiscard(player, 1, 1, false, self.name, true, ".|.|.|.|.|"..type,
-      "#fengzi-invoke:::"..type..":"..data.card:toLogString()) > 0
+    local card = player.room:askForDiscard(player, 1, 1, false, self.name, true, ".|.|.|.|.|"..type,
+      "#fengzi-invoke:::"..type..":"..data.card:toLogString(), true)
+    if #card > 0 then
+      self.cost_data = card
+      return true
+    end
   end,
   on_use = function(self, event, target, player, data)
+    player.room:throwCard(self.cost_data, self.name, player, player)
     data.extra_data = data.extra_data or {}
     data.extra_data.fengzi = data.extra_data.fengzi or true
   end,
@@ -972,7 +977,8 @@ local zhaosong_trigger = fk.CreateTriggerSkill{
       end
     else
       local targets = table.map(table.filter(room:getOtherPlayers(player), function(p)
-        return not table.contains(AimGroup:getAllTargets(data.tos), p.id) and not player:isProhibited(p, data.card) end), function(p) return p.id end)
+        return not table.contains(AimGroup:getAllTargets(data.tos), p.id) and
+        not player:isProhibited(p, data.card) end), function(p) return p.id end)
       if #targets == 0 then return end
       local tos = room:askForChoosePlayers(player, targets, 1, 2, "#zhaosong3-invoke", self.name, true)
       if #tos > 0 then
@@ -1363,7 +1369,8 @@ local lanjiang = fk.CreateTriggerSkill{
         end
       end
     end
-    local targets1 = table.filter(targets, function (id) return #room:getPlayerById(id).player_cards[Player.Hand] == #player.player_cards[Player.Hand] end)
+    local targets1 = table.filter(targets, function(id)
+      return #room:getPlayerById(id).player_cards[Player.Hand] == #player.player_cards[Player.Hand] end)
     if #targets1 > 0 then
       local to = room:askForChoosePlayers(player, targets1, 1, 1, "#lanjiang-damage", self.name, true)
       if #to > 0 then
@@ -1376,7 +1383,8 @@ local lanjiang = fk.CreateTriggerSkill{
         }
       end
     end
-    local targets2 = table.filter(targets, function (id) return #room:getPlayerById(id).player_cards[Player.Hand] < #player.player_cards[Player.Hand] end)
+    local targets2 = table.filter(targets, function (id)
+      return #room:getPlayerById(id).player_cards[Player.Hand] < #player.player_cards[Player.Hand] end)
     if #targets2 > 0 then
       local to = room:askForChoosePlayers(player, targets2, 1, 1, "#lanjiang-draw", self.name, true)
       if #to > 0 then
@@ -1719,9 +1727,9 @@ local zengou = fk.CreateTriggerSkill{
     local room = player.room
     if #room:askForDiscard(player, 1, 1, true, self.name, true, ".|.|.|.|.|^basic", "#zengou-discard") == 0 then
       room:loseHp(player, 1, self.name)
-      if room:getCardArea(data.card) == Card.Processing then
-        room:obtainCard(player.id, data.card, true, fk.ReasonJustMove)
-      end
+    end
+    if room:getCardArea(data.card) == Card.Processing then
+      room:obtainCard(player.id, data.card, true, fk.ReasonJustMove)
     end
     return true
   end,
@@ -2186,7 +2194,7 @@ local shanduan = fk.CreateTriggerSkill{
         player.room:setPlayerMark(player, self.name, {1, 2, 3, 4})
       end
     else
-      data.n = data.n + player:getMark("shanduan1-phase") - 1
+      data.n = data.n + player:getMark("shanduan1-phase") - 2
     end
   end,
 }
@@ -2731,7 +2739,8 @@ local zeyue = fk.CreateTriggerSkill{
       if not p.dead and #p.player_skills > 0 then
         local skills = table.map(Fk.generals[p.general].skills, function(s) return s.name end)
         for _, skill in ipairs(skills) do
-          if p:hasSkill(skill, true) and skill.frequency ~= Skill.Compulsory and skill.frequency ~= Skill.Wake and skill.frequency ~= Skill.Limited then
+          if p:hasSkill(skill, true) and skill.frequency ~= Skill.Compulsory and skill.frequency ~= Skill.Wake and
+            skill.frequency ~= Skill.Limited then
             table.insertIfNeed(targets, id)
             break
           end
@@ -2750,7 +2759,8 @@ local zeyue = fk.CreateTriggerSkill{
     local to = room:getPlayerById(self.cost_data)
     local skills = {}
     for _, skill in ipairs(to.player_skills) do
-      if not skill.attached_equip and skill.frequency ~= Skill.Compulsory and skill.frequency ~= Skill.Wake and skill.frequency ~= Skill.Limited then
+      if not skill.attached_equip and skill.frequency ~= Skill.Compulsory and skill.frequency ~= Skill.Wake and
+        skill.frequency ~= Skill.Limited then
         table.insertIfNeed(skills, skill.name)
       end
     end

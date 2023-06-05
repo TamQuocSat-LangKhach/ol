@@ -60,7 +60,8 @@ local function AskForAddTarget(player, targets, num, can_minus, prompt, skillNam
       for _, id in ipairs(tos) do
         local to = room:getPlayerById(id)
         local target = room:askForChoosePlayers(player, table.map(table.filter(room:getOtherPlayers(player), function(v)
-          return to:inMyAttackRange(v) end), function(p) return p.id end), 1, 1, "#collateral-choose::"..to.id..":"..data.card:toLogString())
+          return to:inMyAttackRange(v) end), function(p) return p.id end), 1, 1,
+          "#collateral-choose::"..to.id..":"..data.card:toLogString(), "collateral_skill", true)
         if #target > 0 then
           table.insert(result, {id, target[1]})
         end
@@ -998,7 +999,7 @@ local hongde = fk.CreateTriggerSkill{
   end,
   on_cost = function(self, event, target, player, data)
     local p = player.room:askForChoosePlayers(player, table.map(player.room:getOtherPlayers(player), function(p)
-      return p.id end), 1, 1, "#hongde-choose", self.name)
+      return p.id end), 1, 1, "#hongde-choose", self.name, true)
     if #p > 0 then
       self.cost_data = p[1]
       return true
@@ -1452,7 +1453,7 @@ local xiashu = fk.CreateTriggerSkill{
   end,
   on_cost = function(self, event, target, player, data)
     local to = player.room:askForChoosePlayers(player, table.map(player.room:getOtherPlayers(player), function(p)
-      return p.id end), 1, 1, "#xiashu-choose", self.name)
+      return p.id end), 1, 1, "#xiashu-choose", self.name, true)
     if #to > 0 then
       self.cost_data = to[1]
       return true
@@ -1497,7 +1498,7 @@ local kuanshi = fk.CreateTriggerSkill{
   on_cost = function(self, event, target, player, data)
     if event == fk.EventPhaseStart then
       local to = player.room:askForChoosePlayers(player, table.map(player.room:getAlivePlayers(), function(p)
-        return p.id end), 1, 1, "#kuanshi-choose", self.name)
+        return p.id end), 1, 1, "#kuanshi-choose", self.name, true)
       if #to > 0 then
         self.cost_data = to[1]
         return true
@@ -1967,7 +1968,7 @@ local xianfu = fk.CreateTriggerSkill{
     local room = player.room
     if event == fk.GameStart then
       local targets = table.map(room:getOtherPlayers(player), function(p) return p.id end)
-      local tos = room:askForChoosePlayers(player, targets, 1, 1, "#xianfu-choose", self.name)
+      local tos = room:askForChoosePlayers(player, targets, 1, 1, "#xianfu-choose", self.name, false)
       local to
       if #tos > 0 then
         to = room:getPlayerById(tos[1])
@@ -2023,7 +2024,7 @@ local chouce = fk.CreateTriggerSkill{
     room:judge(judge)
     if judge.card.color == Card.Red then
       local targets = table.map(room:getAlivePlayers(), function(p) return p.id end)
-      local tos = room:askForChoosePlayers(player, targets, 1, 1, "#chouce-draw", self.name)
+      local tos = room:askForChoosePlayers(player, targets, 1, 1, "#chouce-draw", self.name, false)
       local to
       if #tos > 0 then
         to = room:getPlayerById(tos[1])
@@ -2033,7 +2034,7 @@ local chouce = fk.CreateTriggerSkill{
       to:drawCards(1 + (to:getMark("xianfu") == player.id and 1 or 0), self.name)
     elseif judge.card.color == Card.Black then
       local targets = table.map(table.filter(room:getAlivePlayers(), function(p) return not p:isAllNude() end), function(p) return p.id end)
-      local tos = room:askForChoosePlayers(player, targets, 1, 1, "#chouce-discard", self.name)
+      local tos = room:askForChoosePlayers(player, targets, 1, 1, "#chouce-discard", self.name, false)
       local to
       if #tos > 0 then
         to = room:getPlayerById(tos[1])
@@ -2412,7 +2413,7 @@ local dianhu = fk.CreateTriggerSkill{
     local room = player.room
     if event == fk.GameStart then
       local targets = table.map(room:getOtherPlayers(player), function(p) return p.id end)
-      local tos = room:askForChoosePlayers(player, targets, 1, 1, "#dianhu-choose", self.name)
+      local tos = room:askForChoosePlayers(player, targets, 1, 1, "#dianhu-choose", self.name, false)
       local to
       if #tos > 0 then
         to = tos[1]
@@ -2504,7 +2505,7 @@ local qingzhong = fk.CreateTriggerSkill{
     elseif #targets == 1 then
       to = targets[1]
     else
-      local tos = room:askForChoosePlayers(player, targets, 1, 1, "#qingzhong-choose", self.name)
+      local tos = room:askForChoosePlayers(player, targets, 1, 1, "#qingzhong-choose", self.name, false)
       if #tos > 0 then
         to = tos[1]
       else
@@ -2567,34 +2568,31 @@ local weijing = fk.CreateViewAsSkill{
     return card
   end,
   enabled_at_play = function(self, player)
-    return player:usedSkillTimes(self.name, Player.HistoryRound) == 0 and player:usedSkillTimes("#weijing_record", Player.HistoryRound) == 0
+    return player:usedSkillTimes(self.name, Player.HistoryRound) == 0 and
+      player:usedSkillTimes("#weijing_record", Player.HistoryRound) == 0
   end,
-  enabled_at_response = function(self, player)
-    return player:usedSkillTimes(self.name, Player.HistoryRound) == 0 and player:usedSkillTimes("#weijing_record", Player.HistoryRound) == 0
+  enabled_at_response = function(self, player, response)
+    return not response and player:usedSkillTimes(self.name, Player.HistoryRound) == 0 and
+      player:usedSkillTimes("#weijing_record", Player.HistoryRound) == 0
   end,
 }
 local weijing_record = fk.CreateTriggerSkill{
   name = "#weijing_record",
-  events = {fk.AskForCardUse, fk.AskForCardResponse},
+  events = {fk.AskForCardUse},
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(self.name) and
     player:usedSkillTimes(self.name, Player.HistoryRound) == 0 and player:usedSkillTimes("weijing", Player.HistoryRound) == 0 and
     (data.cardName == "jink" or (data.pattern and Exppattern:Parse(data.pattern):matchExp("jink|0|nosuit|none")))
   end,
   on_use = function(self, event, target, player, data)
-    if event == fk.AskForCardUse then
-      data.result = {
-        from = player.id,
-        card = Fk:cloneCard(data.cardName),
-      }
-      data.result.card.skillName = "weijing"
-      if data.eventData then
-        data.result.toCard = data.eventData.toCard
-        data.result.responseToEvent = data.eventData.responseToEvent
-      end
-    else
-      data.result = Fk:cloneCard(data.cardName)
-      data.result.skillName = "weijing"
+    data.result = {
+      from = player.id,
+      card = Fk:cloneCard(data.cardName),
+    }
+    data.result.card.skillName = "weijing"
+    if data.eventData then
+      data.result.toCard = data.eventData.toCard
+      data.result.responseToEvent = data.eventData.responseToEvent
     end
     return true
   end
@@ -2754,7 +2752,7 @@ local lingren = fk.CreateTriggerSkill{
     end
   end,
   on_cost = function(self, event, target, player, data)
-    local to = player.room:askForChoosePlayers(player, data.tos[1], 1, 1, "#lingren-choose", self.name)
+    local to = player.room:askForChoosePlayers(player, data.tos[1], 1, 1, "#lingren-choose", self.name, true)
     if #to > 0 then
       self.cost_data = to[1]
       return true
