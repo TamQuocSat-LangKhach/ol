@@ -2926,7 +2926,122 @@ Fk:loadTranslationTable{
   ["#yuxu-invoke"] = "誉虚：你可以摸一张牌，然后你使用下一张牌后需弃置一张牌",
   ["#shijian-invoke"] = "实荐：你可以弃置一张牌，令%dest获得〖誉虚〗直到回合结束",
 }
---袁谭袁尚 2020.2.7
+
+local yuantanyuanshang = General(extension, "yuantanyuanshang", "qun", 4)
+local neifa = fk.CreateTriggerSkill{
+  name = "neifa",
+  anim_type = "drawcard",
+  events = {fk.EventPhaseStart},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self.name) and player.phase == Player.Play
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local targets = table.map(table.filter(room:getAlivePlayers(), function(p)
+      return #p:getCardIds{Player.Equip, Player.Judge} > 0 end), function (p) return p.id end)
+    if #targets == 0 then
+      player:drawCards(2, self.name)
+    else
+      local to = room:askForChoosePlayers(player, targets, 1, 1, "#neifa-choose", self.name, true)
+      if #to > 0 then
+        local id = room:askForCardChosen(player, room:getPlayerById(to[1]), "ej", self.name)
+        room:obtainCard(player, id, true, fk.ReasonPrey)
+      else
+        player:drawCards(2, self.name)
+      end
+    end
+    local card = room:askForDiscard(player, 1, 1, true, self.name, false)
+    if Fk:getCardById(card[1]).type == Card.TypeBasic then
+      room:setPlayerMark(player, "@neifa-turn", "basic")
+    else
+      room:setPlayerMark(player, "@neifa-turn", "non_basic")
+    end
+  end,
+}
+local neifa_trigger = fk.CreateTriggerSkill{
+  name = "#neifa_trigger",
+  anim_type = "control",
+  events = {fk.TargetSpecifying},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:getMark("@neifa-turn") == "non_basic" and data.card:isCommonTrick() and data.firstTarget
+  end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    local targets = AskForAddTarget(player, room:getAlivePlayers(), 1, true,
+      "#neifa_trigger-choose:::"..data.card:toLogString(), self.name, data)
+    if #targets > 0 then
+      self.cost_data = targets[1]
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    if table.contains(AimGroup:getAllTargets(data.tos), self.cost_data) then
+      TargetGroup:removeTarget(data.targetGroup, self.cost_data)
+    else
+      TargetGroup:pushTargets(data.targetGroup, self.cost_data)
+    end
+  end,
+}
+local neifa_draw = fk.CreateTriggerSkill{
+  name = "#neifa_draw",
+  anim_type = "drawcard",
+  events = {fk.CardUsing},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:getMark("@neifa-turn") == "non_basic" and data.card.type == Card.TypeEquip and
+      player:usedSkillTimes(self.name, Player.HistoryTurn) < 2
+  end,
+  on_cost = function(self, event, target, player, data)
+    return true
+  end,
+  on_use = function(self, event, target, player, data)
+    local n = 0
+    for _, id in ipairs(player.player_cards[Player.Hand]) do
+      if Fk:getCardById(id).type == Card.TypeBasic then
+        n = n + 1
+      end
+    end
+    if n > 0 then
+      player:drawCards(math.min(n, 5), "neifa")
+    end
+  end,
+}
+local neifa_targetmod = fk.CreateTargetModSkill{
+  name = "#neifa_targetmod",
+  residue_func = function(self, player, skill, scope)
+    if skill.trueName == "slash_skill" and player:getMark("@neifa-turn") == "basic" and scope == Player.HistoryPhase then
+      return 1
+    end
+  end,
+  extra_target_func = function(self, player, skill)
+    if skill.trueName == "slash_skill" and player:getMark("@neifa-turn") == "basic" then
+      return 1
+    end
+  end,
+}
+local neifa_prohibit = fk.CreateProhibitSkill{
+  name = "#neifa_prohibit",
+  prohibit_use = function(self, player, card)
+    return (player:getMark("@neifa-turn") == "basic" and card.type ~= Card.TypeBasic) or
+      (player:getMark("@neifa-turn") == "non_basic" and card.type == Card.TypeBasic)
+  end,
+}
+neifa:addRelatedSkill(neifa_targetmod)
+neifa:addRelatedSkill(neifa_prohibit)
+neifa:addRelatedSkill(neifa_trigger)
+neifa:addRelatedSkill(neifa_draw)
+yuantanyuanshang:addSkill(neifa)
+Fk:loadTranslationTable{
+  ["yuantanyuanshang"] = "袁谭袁尚",
+  ["neifa"] = "内伐",
+  [":neifa"] = "出牌阶段开始时，你可以摸两张牌或获得场上一张牌，然后弃置一张牌。若弃置的牌：是基本牌，你本回合不能使用非基本牌，本阶段使用【杀】次数上限"..
+  "和目标上限+1；不是基本牌，你本回合不能使用基本牌，使用普通锦囊牌的目标+1或-1，前两次使用装备牌时摸X张牌（X为手牌中因本技能不能使用的牌且至多为5）。",
+  ["#neifa-choose"] = "内伐：获得场上的一张牌，或点“取消”摸两张牌",
+  ["@neifa-turn"] = "内伐",
+  ["non_basic"] = "非基本牌",
+  ["#neifa_trigger-choose"] = "内伐：你可以为%arg增加/减少一个目标",
+  ["#neifa_trigger"] = "内伐",
+  ["#neifa_draw"] = "内伐",
+}
 
 local sunshao = General(extension, "ol__sunshao", "wu", 3)
 local bizheng = fk.CreateTriggerSkill{
