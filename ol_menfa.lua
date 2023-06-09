@@ -144,12 +144,125 @@ Fk:loadTranslationTable{
   ["#daojie-choose"] = "蹈节：令一名同族角色获得此%arg",
 }
 
+local xunshu = General(extension, "olz__xunshu", "qun", 3)
+local shenjun_viewas = fk.CreateViewAsSkill{
+  name = "shenjun_viewas",
+  interaction = function()
+    local names = {}
+    for _, id in ipairs(Self:getMark("shenjun-phase")) do
+      table.insertIfNeed(names, Fk:getCardById(id, true).name)
+    end
+    if #names == 0 then return end
+    return UI.ComboBox {choices = names}
+  end,
+  card_filter = function(self, to_select, selected)
+    return #selected < #Self:getMark("shenjun-phase")
+  end,
+  view_as = function(self, cards)
+    if Self:getMark("shenjun-phase") ~= 0 and #cards ~= #Self:getMark("shenjun-phase") or not self.interaction.data then return end
+    local card = Fk:cloneCard(self.interaction.data)
+    card:addSubcards(cards)
+    card.skillName = "shenjun"
+    return card
+  end,
+}
+local shenjun = fk.CreateTriggerSkill{
+  name = "shenjun",
+  anim_type = "special",
+  events = {fk.CardUsing, fk.EventPhaseEnd},
+  can_trigger = function(self, event, target, player, data)
+    if player:hasSkill(self.name) then
+      if event == fk.CardUsing then
+        return (data.card.trueName == "slash" or data.card:isCommonTrick()) and not player:isKongcheng() and
+          table.find(player.player_cards[Player.Hand], function(id) return Fk:getCardById(id).trueName == data.card.trueName end)
+      else
+        if player:usedSkillTimes(self.name, Player.HistoryPhase) > 0 and not player:isNude() then
+          local cards = {}
+          for _, id in ipairs(player.player_cards[Player.Hand]) do
+            if table.contains(player:getMark("shenjun-phase"), id) then
+              table.insertIfNeed(cards, id)
+            end
+          end
+          if #cards > 0 then
+            player.room:setPlayerMark(player, "shenjun-phase", cards)
+            return true
+          end
+        end
+      end
+    end
+  end,
+  on_cost = function(self, event, target, player, data)
+    if event == fk.CardUsing then
+      return true
+    else
+      local success, dat = player.room:askForUseViewAsSkill(player, "shenjun_viewas",
+        "#shenjun-invoke:::"..#player:getMark("shenjun-phase"), true)
+      if success then
+        self.cost_data = dat
+        return true
+      end
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    if event == fk.CardUsing then
+      local cards = table.filter(player.player_cards[Player.Hand], function(id) return Fk:getCardById(id).trueName == data.card.trueName end)
+      player:showCards(cards)
+      local mark = player:getMark("shenjun-phase")
+      if mark == 0 then mark = {} end
+      for _, id in ipairs(cards) do
+        table.insertIfNeed(mark, id)
+      end
+      room:setPlayerMark(player, "shenjun-phase", mark)
+    else
+      local card = Fk.skills["shenjun_viewas"]:viewAs(self.cost_data.cards)
+      room:useCard{
+        from = player.id,
+        tos = table.map(self.cost_data.targets, function(id) return {id} end),
+        card = card,
+      }
+    end
+  end,
+}
+local balong = fk.CreateTriggerSkill{
+  name = "balong",
+  anim_type = "drawcard",
+  frequency = Skill.Compulsory,
+  events = {fk.HpChanged},
+  can_trigger = function(self, event, target, player, data)
+    if target == player and player:hasSkill(self.name) then
+      if player:getMark("balong-turn") == 0 then
+        player.room:setPlayerMark(player, "balong-turn", 1)
+        if not player:isKongcheng() then
+          local types = {Card.TypeBasic, Card.TypeEquip, Card.TypeTrick}
+          local num = {0, 0, 0}
+          for i = 1, 3, 1 do
+            num[i] = #table.filter(player.player_cards[Player.Hand], function(id) return Fk:getCardById(id).type == types[i] end)
+          end
+          return num[3] > num[1] and num[3] > num[2]
+        end
+      end
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local cards = player.player_cards[Player.Hand]
+    player:showCards(cards)
+    if #cards < #player.room.alive_players then
+      player:drawCards(#player.room.alive_players - #cards, self.name)
+    end
+  end,
+}
+Fk:addSkill(shenjun_viewas)
+xunshu:addSkill(shenjun)
+xunshu:addSkill(balong)
+xunshu:addSkill("daojie")
 Fk:loadTranslationTable{
   ["olz__xunshu"] = "荀淑",
   ["shenjun"] = "神君",
-  [":shenjun"] = "当一名角色使用【杀】或普通锦囊牌时，你展示所有同名手牌记为「神君」，本阶段结束时，你可以将X张牌当任意「神君」牌使用（X为「神君」牌数）。",
+  [":shenjun"] = "当一名角色使用【杀】或普通锦囊牌时，你展示所有同名手牌记为“神君”，本阶段结束时，你可以将X张牌当任意“神君”牌使用（X为“神君”牌数）。",
   ["balong"] = "八龙",
   [":balong"] = "锁定技，当你每回合体力值首次变化后，若你手牌中锦囊牌为唯一最多的类型，你展示手牌并摸至与存活角色数相同。",
+  ["#shenjun-invoke"] = "神君：你可以将%arg张牌当一种“神君”牌使用",
 }
 
 local xuncan = General(extension, "olz__xuncan", "wei", 3)

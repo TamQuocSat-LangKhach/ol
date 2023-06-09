@@ -1870,8 +1870,8 @@ local jingong_record = fk.CreateTriggerSkill{
     local names = {}
     for _, id in ipairs(Fk:getAllCardIds()) do
       local card = Fk:getCardById(id)
-      if card.type == Card.TypeTrick and card.sub_type ~= Card.SubtypeDelayedTrick and
-        not table.contains({"nullification", "adaptation", "honey_trap", "daggar_in_smile"}, card.name) then
+      if card:isCommonTrick() and not card.is_derived and
+        not table.contains({"nullification", "adaptation"}, card.name) then
         table.insertIfNeed(names, card.name)
       end
     end
@@ -1989,12 +1989,14 @@ local xianfu = fk.CreateTriggerSkill{
       if player:getMark("@xianfu") == 0 then
         room:setPlayerMark(player, "@xianfu", target.general)
       end
-      room:recover{
-        who = player,
-        num = data.num,
-        recoverBy = player,
-        skillName = self.name,
-      }
+      if player:isWounded() then
+        room:recover{
+          who = player,
+          num = data.num,
+          recoverBy = player,
+          skillName = self.name,
+        }
+      end
     end
   end,
 }

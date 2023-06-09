@@ -340,23 +340,22 @@ local yimie = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     room:loseHp(player, 1, self.name)
-    room:setPlayerMark(data.to, "yimie-phase", {player.id, data.to.hp - data.damage})
+    data.extra_data = data.extra_data or {}
+    data.extra_data.yimie = {player.id, data.to.hp - data.damage}
     data.damage = data.to.hp
   end,
 
   refresh_events = {fk.DamageFinished},
   can_refresh = function(self, event, target, player, data)
-    return target == player and player:getMark("yimie-phase") ~= 0
+    return target == player and data.extra_data and data.extra_data.yimie
   end,
   on_refresh = function(self, event, target, player, data)
     local room = player.room
-    local mark = player:getMark("yimie-phase")
-    room:setPlayerMark(player, "yimie-phase", 0)
     if not player.dead then
       room:recover({
         who = player,
-        num = math.min(player.maxHp - player.hp, mark[2]),
-        recoverBy = room:getPlayerById(mark[1]),
+        num = data.extra_data.yimie[2],
+        recoverBy = room:getPlayerById(data.extra_data.yimie[1]),
         skillName = self.name
       })
     end
@@ -655,12 +654,77 @@ Fk:loadTranslationTable{
   ["zhuiji_draw"] = "摸两张牌，此阶段结束时失去1点体力",
 }
 
+local wangyuanji = General(extension, "ol__wangyuanji", "jin", 3, 3, General.Female)
+local yanxi = fk.CreateActiveSkill{
+  name = "yanxi",
+  anim_type = "drawcard",
+  card_num = 0,
+  target_num = 1,
+  can_use = function(self, player)
+    return player:usedSkillTimes(self.name, Player.HistoryPhase) == 0
+  end,
+  card_filter = function(self, to_select, selected)
+    return false
+  end,
+  target_filter = function(self, to_select, selected)
+    return #selected == 0 and to_select ~= Self.id and not Fk:currentRoom():getPlayerById(to_select):isKongcheng()
+  end,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    local target = room:getPlayerById(effect.tos[1])
+    local cards = room:getNCards(2)
+    local id = table.random(target.player_cards[Player.Hand])
+    room:moveCards({
+      ids = cards,
+      toArea = Card.Void,
+      moveReason = fk.ReasonJustMove,
+      moveVisible = false,
+    },
+    {
+      ids = {id},
+      from = target.id,
+      toArea = Card.Void,
+      moveReason = fk.ReasonJustMove,
+      moveVisible = false,
+    })
+    table.insert(cards, id)
+    table.shuffle(cards)
+    table.forEach(room.players, function(p) room:fillAG(p, cards) end)
+    local get = room:askForAG(player, cards, false, self.name)
+    room:takeAG(player, get, room.players)
+    room:delay(1000)
+    table.forEach(room.players, function(p) room:closeAG(p) end)
+    local dummy = Fk:cloneCard("dilu")
+    if get == id then
+      dummy:addSubcards(cards)
+    else
+      dummy:addSubcard(get)
+      table.removeOne(cards, get)
+      room:moveCards({
+        ids = cards,
+        toArea = Card.DiscardPile,
+        moveReason = fk.ReasonJustMove,
+        moveVisible = true,
+      })
+    end
+    room:obtainCard(player, dummy, true, fk.ReasonJustMove)
+    room:setPlayerMark(player, "yanxi-turn", dummy.subcards)
+  end,
+}
+local yanxi_maxcards = fk.CreateMaxCardsSkill{
+  name = "#yanxi_maxcards",
+  exclude_from = function(self, player, card)
+    return player:getMark("yanxi-turn") ~= 0 and table.contains(player:getMark("yanxi-turn"), card.id)
+  end,
+}
+yanxi:addRelatedSkill(yanxi_maxcards)
+wangyuanji:addSkill(yanxi)
 Fk:loadTranslationTable{
   ["ol__wangyuanji"] = "王元姬",
   ["shiren"] = "识人",
   [":shiren"] = "隐匿技，你于其他角色的回合登场后，若当前回合角色有手牌，你可以对其发动〖宴戏〗。",
   ["yanxi"] = "宴戏",
-  [":yanxi"] = "出牌阶段限一次，你令一名其他角色的随机一张手牌与牌堆顶的两张牌混合后展示，你猜测哪张牌来自其手牌。若猜对，你获得三张牌；"..
+  [":yanxi"] = "出牌阶段限一次，你将一名其他角色的随机一张手牌与牌堆顶的两张牌混合后展示，你猜测哪张牌来自其手牌。若猜对，你获得三张牌；"..
   "若猜错，你获得选中的牌。你以此法获得的牌本回合不计入手牌上限。",
 }
 
@@ -1214,7 +1278,7 @@ Fk:loadTranslationTable{
 local wangxiang = General(extension, "wangxiang", "jin", 3)
 local bingxin = fk.CreateViewAsSkill{
   name = "bingxin",
-  pattern = ".|.|.|.|.|basic|.",
+  pattern = "^nullification|.|.|.|.|basic|.",
   interaction = function()
     local names = {}
     local mark = Self:getMark("bingxin-turn")
@@ -1264,6 +1328,76 @@ Fk:loadTranslationTable{
   [":bingxin"] = "若你手牌的数量等于体力值且颜色相同，你可以摸一张牌视为使用一张与本回合以此法使用过的牌牌名不同的基本牌。",
 }
 
+local yangyan = General(extension, "yangyan", "jin", 3, 3, General.Female)
+local xuanbei = fk.CreateActiveSkill{
+  name = "xuanbei",
+  anim_type = "control",
+  card_num = 0,
+  target_num = 1,
+  can_use = function(self, player)
+    return player:usedSkillTimes(self.name, Player.HistoryPhase) == 0
+  end,
+  card_filter = function(self, to_select, selected)
+    return false
+  end,
+  target_filter = function(self, to_select, selected)
+    return #selected == 0 and to_select ~= Self.id and not Fk:currentRoom():getPlayerById(to_select):isAllNude()
+  end,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    local target = room:getPlayerById(effect.tos[1])
+    local id = room:askForCardChosen(player, target, "hej", self.name)
+    local card = Fk:cloneCard("slash")
+    card:addSubcard(id)
+    local use = {
+      from = target.id,
+      tos = {{player.id}},
+      card = card,
+      skillName = self.name,
+      extraUse = true,
+    }
+    room:useCard(use)
+    if not player.dead then
+      if use.damageDealt and use.damageDealt[player.id] then
+        player:drawCards(2, self.name)
+      else
+        player:drawCards(1, self.name)
+      end
+    end
+  end,
+}
+local xianwan = fk.CreateViewAsSkill{
+  name = "xianwan",
+  pattern = "slash,jink",
+  anim_type = "defensive",
+  card_filter = function(self, to_select, selected)
+    return false
+  end,
+  view_as = function(self, cards)
+    local card
+    if Self:hasSkill(self.name) then
+      if Self.chained then
+        card = Fk:cloneCard("slash")
+      else
+        card = Fk:cloneCard("jink")
+      end
+    end
+    card.skillName = self.name
+    return card
+  end,
+  before_use = function(self, player, use)
+    if player.chained then
+      player:setChainState(false)
+    else
+      player:setChainState(true)
+    end
+  end,
+  enabled_at_response = function(self, player, response)
+    return not response
+  end,
+}
+yangyan:addSkill(xuanbei)
+yangyan:addSkill(xianwan)
 Fk:loadTranslationTable{
   ["yangyan"] = "杨艳",
   ["xuanbei"] = "选备",

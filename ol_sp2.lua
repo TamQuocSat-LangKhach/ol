@@ -297,7 +297,7 @@ local jinzhi_active = fk.CreateActiveSkill{
 local jinzhi = fk.CreateViewAsSkill{
   name = "jinzhi",
   anim_type = "special",
-  pattern = ".|.|.|.|.|basic",
+  pattern = "^nullification|.|.|.|.|basic",
   interaction = function()
     local names = {}
     for _, id in ipairs(Fk:getAllCardIds()) do
@@ -406,7 +406,7 @@ local juguan = fk.CreateViewAsSkill{
     return #selected == 0 and Fk:currentRoom():getCardArea(to_select) ~= Player.Equip
   end,
   view_as = function(self, cards)
-    if #cards ~= 1 then return end
+    if #cards ~= 1 or not self.interaction.data then return end
     local c = Fk:cloneCard(self.interaction.data)
     c.skillName = self.name
     c:addSubcard(cards[1])
@@ -971,9 +971,9 @@ local juanxia_active = fk.CreateActiveSkill{
     for _, id in ipairs(Fk:getAllCardIds()) do
       local card = Fk:getCardById(id)
       if card.name ~= mark[1] then
-        if card.type == Card.TypeTrick and card.sub_type ~= Card.SubtypeDelayedTrick and card.skill.target_num == 1 and
+        if card:isCommonTrick() and card.skill.target_num == 1 and not card.is_derived and
           card.skill:targetFilter(mark[2], {}, {}, card) and
-          not Self:isProhibited(Fk:currentRoom():getPlayerById(mark[2]), card) then  --FIXME：衍生牌
+          not Self:isProhibited(Fk:currentRoom():getPlayerById(mark[2]), card) then
           table.insertIfNeed(names, card.name)
         end
       end
@@ -2099,7 +2099,7 @@ local shanduan_maxcards = fk.CreateMaxCardsSkill{
 }
 local yilie = fk.CreateViewAsSkill{
   name = "yilie",
-  pattern = ".|.|.|.|.|basic|.",
+  pattern = "^nullification|.|.|.|.|basic|.",
   interaction = function()
     local names = {}
     local mark = Self:getMark("yilie-round")
@@ -2212,7 +2212,7 @@ local cihuang_active = fk.CreateActiveSkill{
       if mark == 0 or (not table.contains(mark, card.name)) then
         if Self.phase == Player.NotActive then
           if (card.trueName == "slash" and card.name ~= "slash") or
-            (card.type == Card.TypeTrick and card.sub_type ~= Card.SubtypeDelayedTrick and card.skill.target_num == 1) then  --FIXME：衍生牌
+            (card:isCommonTrick() and card.skill.target_num == 1 and not card.is_derived) then
             table.insertIfNeed(names, card.name)
           end
         else
@@ -2815,7 +2815,7 @@ local bixin = fk.CreateTriggerSkill{
 }
 local bixinEx = fk.CreateViewAsSkill{
   name = "bixinEx",
-  pattern = ".|.|.|.|.|basic",
+  pattern = "^nullification|.|.|.|.|basic",
   interaction = function()
     local names = {}
     for _, id in ipairs(Fk:getAllCardIds()) do
