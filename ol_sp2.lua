@@ -1388,6 +1388,7 @@ local huaiyuan = fk.CreateTriggerSkill{
               table.removeOne(player:getMark(self.name), info.cardId)
               if #player:getMark(self.name) == 0 then
                 player.room:setPlayerMark(player, self.name, 0)
+                break
               end
             end
           end

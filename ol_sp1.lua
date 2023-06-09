@@ -455,9 +455,8 @@ local fengpo = fk.CreateTriggerSkill{
   anim_type = "offensive",
   events ={fk.TargetSpecified},
   can_trigger = function(self, event, target, player, data)
-    if target == player and player:hasSkill(self.name) and (data.card.trueName == "slash" or data.card.name == "duel") then
-        return player:usedCardTimes("slash") + player:usedCardTimes("duel") <= 1
-    end
+    return target == player and player:hasSkill(self.name) and (data.card.trueName == "slash" or data.card.name == "duel") and
+      player:usedCardTimes("slash") + player:usedCardTimes("duel") <= 1 and player.phase == Player.Play
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
@@ -991,7 +990,8 @@ local hongde = fk.CreateTriggerSkill{
   can_trigger = function(self, event, target, player, data)
     if player:hasSkill(self.name) then
       for _, move in ipairs(data) do
-        if #move.moveInfo > 1 and ((move.from == player.id and move.to ~= player.id) or (move.to == player.id and move.toArea == Card.PlayerHand)) then
+        if #move.moveInfo > 1 and ((move.from == player.id and move.to ~= player.id) or
+          (move.to == player.id and move.toArea == Card.PlayerHand)) then
           return true
         end
       end
@@ -2189,16 +2189,14 @@ local beizhan = fk.CreateTriggerSkill{
 
   refresh_events = {fk.EventPhaseChanging},
   can_refresh = function(self, event, target, player, data)
-    if target:getMark(self.name) > 0 and data.to == Player.Start then
-      for _, p in ipairs(player.room.alive_players) do
-        if #p.player_cards[Player.Hand] > #target.player_cards[Player.Hand] then return end
-      end
-      return true
-    end
+    return target:getMark(self.name) > 0 and data.to == Player.Start
   end,
   on_refresh = function(self, event, target, player, data)
-    player.room:setPlayerMark(target, self.name, 0)
-    player.room:addPlayerMark(target, "@@beizhan-turn", 1)
+    local room = player.room
+    room:setPlayerMark(target, self.name, 0)
+    if table.every(room:getOtherPlayers(player), function(p) return #player.player_cards[Player.Hand] >= #p.player_cards[Player.Hand] end) then
+    room:addPlayerMark(target, "@@beizhan-turn", 1)
+    end
   end,
 }
 local beizhan_prohibit = fk.CreateProhibitSkill{
