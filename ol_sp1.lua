@@ -1088,12 +1088,111 @@ Fk:loadTranslationTable{
   ["dingpan_damage"] = "收回所有装备，其对你造成1点伤害",
 }
 
+local dongbai = General(extension, "dongbai", "qun", 3, 3, General.Female)
+local lianzhu = fk.CreateActiveSkill{
+  name = "lianzhu",
+  anim_type = "control",
+  card_num = 1,
+  target_num = 1,
+  can_use = function(self, player)
+    return player:usedSkillTimes(self.name, Player.HistoryPhase) == 0 and not player:isKongcheng()
+  end,
+  card_filter = function(self, to_select, selected)
+    return #selected == 0 and Fk:currentRoom():getCardArea(to_select) ~= Player.Equip
+  end,
+  target_filter = function(self, to_select, selected)
+    return #selected == 0 and to_select ~= Self.id
+  end,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    local target = room:getPlayerById(effect.tos[1])
+    player:showCards(effect.cards)
+    local card = Fk:getCardById(effect.cards[1])
+    room:obtainCard(target, card, true, fk.ReasonGive)
+    if card.color == Card.Black then
+      if #target:getCardIds{Player.Hand, Player.Equip} < 2 or
+        #room:askForDiscard(target, 2, 2, true, self.name, true, ".", "#lianzhu-discard:"..player.id) ~= 2 then
+        player:drawCards(2, self.name)
+      end
+    end
+  end,
+}
+local xiahui = fk.CreateMaxCardsSkill{
+  name = "xiahui",
+  exclude_from = function(self, player, card)
+    return player:hasSkill(self.name) and card.color == Card.Black
+  end,
+}
+local xiahui_record = fk.CreateTriggerSkill{
+  name = "#xiahui_record",
+  mute = true,
+  frequency = Skill.Compulsory,
+  events = {fk.AfterCardsMove, fk.HpChanged},
+  can_trigger = function(self, event, target, player, data)
+    if event == fk.AfterCardsMove and player:hasSkill(self.name) then
+      for _, move in ipairs(data) do
+        if move.from == player.id and move.to and move.to ~= player.id and move.toArea == Card.PlayerHand then
+          for _, info in ipairs(move.moveInfo) do
+            if Fk:getCardById(info.cardId).color == Card.Black then
+              return true
+            end
+          end
+        end
+      end
+    elseif event == fk.HpChanged then
+      return target == player and player:getMark("xiahui") ~= 0 and data.num < 0
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    if event == fk.AfterCardsMove then
+      for _, move in ipairs(data) do
+        if move.from == player.id and move.to and move.to ~= player.id and move.toArea == Card.PlayerHand then
+          local to = room:getPlayerById(move.to)
+          for _, info in ipairs(move.moveInfo) do
+            if Fk:getCardById(info.cardId).color == Card.Black then
+              local mark = to:getMark("xiahui")
+              if mark == 0 then mark = {} end
+              table.insertIfNeed(mark, info.cardId)
+              room:setPlayerMark(to, "xiahui", mark)
+            end
+          end
+        end
+      end
+    else
+      room:setPlayerMark(player, "xiahui", 0)
+    end
+  end,
+}
+local xiahui_prohibit = fk.CreateProhibitSkill{
+  name = "#xiahui_prohibit",
+  prohibit_use = function(self, player, card)
+    if player:getMark("xiahui") ~= 0 then
+      return table.contains(player:getMark("xiahui"), card.id)
+    end
+  end,
+  prohibit_response = function(self, player, card)
+    if player:getMark("xiahui") ~= 0 then
+      return table.contains(player:getMark("xiahui"), card.id)
+    end
+  end,
+  prohibit_discard = function(self, player, card)
+    if player:getMark("xiahui") ~= 0 then
+      return table.contains(player:getMark("xiahui"), card.id)
+    end
+  end,
+}
+xiahui:addRelatedSkill(xiahui_record)
+xiahui:addRelatedSkill(xiahui_prohibit)
+dongbai:addSkill(lianzhu)
+dongbai:addSkill(xiahui)
 Fk:loadTranslationTable{
   ["dongbai"] = "董白",
   ["lianzhu"] = "连诛",
   [":lianzhu"] = "出牌阶段限一次，你可以展示并交给一名其他角色一张牌，若该牌为黑色，其选择一项：1.你摸两张牌；2.弃置两张牌。",
   ["xiahui"] = "黠慧",
   [":xiahui"] = "锁定技，你的黑色牌不占用手牌上限；其他角色获得你的黑色牌时，其不能使用、打出、弃置这些牌直到其体力值减少为止。",
+  ["#lianzhu-discard"] = "连诛：你需弃置两张牌，否则 %src 摸两张牌",
 }
 
 local zhaoxiang = General(extension, "zhaoxiang", "shu", 4, 4, General.Female)

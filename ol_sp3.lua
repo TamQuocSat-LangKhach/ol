@@ -732,4 +732,136 @@ Fk:loadTranslationTable{
   ["zenrun_forbid"] = "其本局不能对你发动〖险诐〗和〖谮润〗",
 }
 
+local zhangshiping = General(extension, "zhangshiping", "shu", 3)
+local hongji = fk.CreateTriggerSkill{
+  name = "hongji",
+  events = {fk.EventPhaseStart},
+  anim_type = "support",
+  can_trigger = function(self, event, target, player, data)
+    return player:hasSkill(self.name) and target.phase == Player.Start and player:usedSkillTimes(self.name, Player.HistoryRound) == 0
+  end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    local prompt = ""
+    if table.every(room:getOtherPlayers(target), function(p) return #p.player_cards[Player.Hand] > #target.player_cards[Player.Hand] end) then
+      prompt = "hongji1"
+    end
+    if table.every(room:getOtherPlayers(target), function(p) return #p.player_cards[Player.Hand] < #target.player_cards[Player.Hand] end) then
+      prompt = "hongji2"
+    end
+    if prompt == "" then return end
+    if room:askForSkillInvoke(player, self.name, nil, "#"..prompt.."-invoke::"..target.id) then
+      self.cost_data = prompt
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    player.room:doIndicate(player.id, {target.id})
+    player.room:setPlayerMark(target, self.cost_data.."-turn", 1)
+  end,
+
+  refresh_events = {fk.EventPhaseChanging},
+  can_refresh = function(self, event, target, player, data)
+    return target == player and ((player:getMark("hongji1-turn") > 0 and data.from == Player.Draw) or
+      (player:getMark("hongji2-turn") > 0 and data.from == Player.Play))
+  end,
+  on_refresh = function(self, event, target, player, data)
+    local room = player.room
+    if data.from == Player.Draw then
+      room:setPlayerMark(player, "hongji1-turn", 0)
+      player:gainAnExtraPhase(Player.Draw)
+    else
+      room:setPlayerMark(player, "hongji2-turn", 0)
+      player:gainAnExtraPhase(Player.Play)
+    end
+  end,
+}
+local xinggu = fk.CreateTriggerSkill{
+  name = "xinggu",
+  anim_type = "support",
+  events = {fk.GamePrepared, fk.EventPhaseStart},
+  can_trigger = function(self, event, target, player, data)
+    if player:hasSkill(self.name) then
+      if event == fk.GamePrepared then
+        return true
+      else
+        return target == player and player.phase == Player.Finish and #player:getPile(self.name) > 0
+      end
+    end
+  end,
+  on_cost = function(self, event, target, player, data)
+    if event == fk.GamePrepared then
+      return true
+    else
+      return player.room:askForUseActiveSkill(player, "xinggu_active", "#xinggu-invoke", true)
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    if event == fk.GamePrepared then
+      local cards = {}
+      for _, id in ipairs(room.draw_pile) do
+        if Fk:getCardById(id).sub_type == Card.SubtypeOffensiveRide or Fk:getCardById(id).sub_type == Card.SubtypeDefensiveRide then
+          table.insertIfNeed(cards, id)
+        end
+      end
+      local dummy = Fk:cloneCard("dilu")
+      dummy:addSubcards(table.random(cards, 3))
+      player:addToPile(self.name, dummy)
+    else
+      local card = room:getCardsFromPileByRule(".|.|diamond")
+      if #card > 0 then
+        room:moveCards({
+          ids = card,
+          to = player.id,
+          toArea = Card.PlayerHand,
+          moveReason = fk.ReasonJustMove,
+          proposer = player.id,
+          skillName = self.name,
+        })
+      end
+    end
+  end,
+}
+local xinggu_active = fk.CreateActiveSkill{
+  name = "xinggu_active",
+  anim_type = "support",
+  card_num = 1,
+  target_num = 1,
+  expand_pile = "xinggu",
+  card_filter = function(self, to_select, selected, targets)
+    return #selected == 0 and Self:getPileNameOfId(to_select) == "xinggu"
+  end,
+  target_filter = function(self, to_select, selected, cards)
+    return #selected == 0 and #cards == 1 and Fk:currentRoom():getPlayerById(to_select):getEquipment(Fk:getCardById(cards[1]).sub_type) == nil
+  end,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    local target = room:getPlayerById(effect.tos[1])
+    room:moveCards({
+      ids = effect.cards,
+      from = player.id,
+      to = target.id,
+      toArea = Card.PlayerEquip,
+      moveReason = fk.ReasonPut,
+      fromSpecialName = "xinggu",
+    })
+  end,
+}
+Fk:addSkill(xinggu_active)
+zhangshiping:addSkill(hongji)
+zhangshiping:addSkill(xinggu)
+Fk:loadTranslationTable{
+  ["zhangshiping"] = "张世平",
+  ["hongji"] = "鸿济",
+  [":hongji"] = "每轮各限一次，每名角色的准备阶段，若其手牌数为全场唯一最少/最多，你可以令其于本回合摸牌/出牌阶段后额外执行一个摸牌/出牌阶段。",
+  ["xinggu"] = "行贾",
+  [":xinggu"] = "游戏开始时，你将随机三张坐骑牌置于你的武将牌上。结束阶段，你可以将其中一张牌置于一名其他角色的装备区，"..
+  "然后你获得牌堆中一张<font color='red'>♦</font>牌。",
+  ["#hongji1-invoke"] = "鸿济：你可以令 %dest 本回合摸牌阶段后额外执行一个摸牌阶段",
+  ["#hongji2-invoke"] = "鸿济：你可以令 %dest 本回合出牌阶段后额外执行一个出牌阶段",
+  ["#xinggu-invoke"] = "行贾：你可以将一张“行贾”坐骑置入一名其他角色的装备区，然后获得一张<font color='red'>♦</font>牌",
+  ["xinggu_active"] = "行贾",
+}
+
 return extension
