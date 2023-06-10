@@ -106,7 +106,14 @@ Fk:loadTranslationTable{
   ["#qingleng-invoke"] = "清冷：你可以将一张牌当冰【杀】对 %dest 使用",
 }
 
---李肃
+Fk:loadTranslationTable{
+  ["ol__lisu"] = "李肃",
+  ["qiaoyan"] = "巧言",
+  [":qiaoyan"] = "锁定技，在你的回合外，当其他角色对你造成伤害时，若你：没有“珠”，你防止此伤害并摸一张牌，然后将一张牌置于你的武将牌上，称为“珠”；"..
+  "有“珠”，其获得“珠”。",
+  ["xianzhu"] = "献珠",
+  [":xianzhu"] = "锁定技，出牌阶段开始时，你令一名角色获得“珠”；若不为你，其视为对你攻击范围内你指定的一名角色使用一张【杀】。",
+}
 
 Fk:loadTranslationTable{
   ["simazhou"] = "司马伷",
@@ -117,7 +124,15 @@ Fk:loadTranslationTable{
   [":naxiang"] = "锁定技，当其他角色对你造成伤害或受到你的伤害后，你对其发动【才望】的“弃置”修改为“获得”直到你的回合开始。",
 }
 
---彻里吉 
+Fk:loadTranslationTable{
+  ["cheliji"] = "彻里吉",
+  ["chexuan"] = "车悬",
+  [":chexuan"] = "出牌阶段，若你的装备区里没有宝物牌，你可以弃置一张黑色牌，选择一张“舆”置入你的装备区。当你不因使用装备牌失去装备区里的宝物牌后，"..
+  "你可以判定，若结果为黑色，将一张随机的“舆”置入你的装备区。",
+  ["qiangshou"] = "羌首",
+  [":qiangshou"] = "锁定技，若你的装备区里有宝物牌，你至其他角色的距离-1。",
+}
+
 --华歆
 
 local zhanghuyuechen = General(extension, "zhanghuyuechen", "jin", 4)
@@ -970,7 +985,7 @@ local bolan = fk.CreateTriggerSkill{
       end
     end
     if #skills > 0 then
-      local choice = room:askForChoice(player, table.random(skills, math.min(3, #skills)), self.name)
+      local choice = room:askForChoice(player, table.random(skills, math.min(3, #skills)), self.name, "#bolan-choice::"..player.id, true)
       room:handleAddLoseSkills(player, choice, nil, true, false)
       player.tag[self.name] = {choice}
     end
@@ -1038,7 +1053,7 @@ local bolan_active = fk.CreateActiveSkill{
       end
     end
     if #skills > 0 then
-      local choice = room:askForChoice(target, table.random(skills, math.min(3, #skills)), self.name, "#bolan-choice::"..player.id)
+      local choice = room:askForChoice(target, table.random(skills, math.min(3, #skills)), self.name, "#bolan-choice::"..player.id, true)
       room:handleAddLoseSkills(player, choice, nil, true, false)
       player.tag["bolan"] = {choice}
     end

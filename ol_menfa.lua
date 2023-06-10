@@ -106,7 +106,7 @@ local daojie = fk.CreateTriggerSkill{
         table.insert(skills, skill.name)
       end
     end
-    local choice = room:askForChoice(player, skills, self.name)
+    local choice = room:askForChoice(player, skills, self.name, "#daojie-choice", true)
     if choice == "Cancel" then
       room:loseHp(player, 1, self.name)
     else
@@ -141,7 +141,9 @@ Fk:loadTranslationTable{
   [":daojie"] = "宗族技，锁定技，当你每回合首次使用非伤害锦囊牌后，你选择一项：1.失去1点体力；2.失去一个锁定技，然后令一名同族角色获得此牌。",
   ["#sankuang-choose"] = "三恇：令一名其他角色交给你至少X张牌并获得你使用的%arg",
   ["#sankuang-give"] = "三恇：你须交给其%arg张牌",
+  ["#daojie-choice"] = "蹈节：失去一个锁定技，或点“取消”失去1点体力",
   ["#daojie-choose"] = "蹈节：令一名同族角色获得此%arg",
+  [":Cancel"] = "",
 }
 
 local xunshu = General(extension, "olz__xunshu", "qun", 3)
@@ -195,7 +197,7 @@ local shenjun = fk.CreateTriggerSkill{
     if event == fk.CardUsing then
       return true
     else
-      local success, dat = player.room:askForUseViewAsSkill(player, "shenjun_viewas",
+      local success, dat = player.room:askForUseActiveSkill(player, "shenjun_viewas",
         "#shenjun-invoke:::"..#player:getMark("shenjun-phase"), true)
       if success then
         self.cost_data = dat
@@ -575,6 +577,228 @@ Fk:loadTranslationTable{
   [":huanjia"] = "出牌阶段结束时，你可以与一名角色拼点，赢的角色可以使用一张拼点牌，若其：未造成伤害，你获得另一张拼点牌；造成了伤害，你失去一个技能。",
 }
 
---吴匡 2023.5.10
+local wukuang = General(extension, "olz__wukuang", "qun", 4)
+local lianzhuw = fk.CreateActiveSkill{
+  name = "lianzhuw",
+  anim_type = "switch",
+  switch_skill_name = "lianzhuw",
+  card_num = function()
+    if Self:getSwitchSkillState("lianzhuw", false) == fk.SwitchYang then
+      return 1
+    else
+      return 0
+    end
+  end,
+  target_num = 0,
+  can_use = function(self, player)
+    return player:usedSkillTimes(self.name, Player.HistoryPhase) == 0
+  end,
+  card_filter = function(self, to_select, selected)
+    if Self:getSwitchSkillState(self.name, false) == fk.SwitchYang then
+      return #selected == 0
+    else
+      return false
+    end
+  end,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    if player:getSwitchSkillState(self.name, true) == fk.SwitchYang then
+      room:recastCard(effect.cards, player, self.name)
+      local color = Fk:getCardById(effect.cards[1]):getColorString()
+      local prompt = "#lianzhuw1-card:::"..color
+      if color == "nocolor" then
+        prompt = "#lianzhuw2-card"
+      end
+      local card = room:askForCard(player, 1, 1, true, self.name, true, ".", prompt)
+      if #card > 0 then
+        room:recastCard(card, player, self.name)
+        if color ~= "nocolor" then
+          local color2 = Fk:getCardById(card[1]):getColorString()
+          if color2 ~= "nocolor" and color2 ~= color and player:getMaxCards() > 0 then
+            room:addPlayerMark(player, MarkEnum.MinusMaxCards, 1)
+          end
+        end
+      end
+    else
+      local targets = table.map(table.filter(room:getOtherPlayers(player), function(p)
+        return player:inMyAttackRange(p) end), function (p) return p.id end)
+      if #targets == 0 then return end
+      local target = room:askForChoosePlayers(player, targets, 1, 1, "#lianzhuw1-choose", self.name, false)
+      if #target > 0 then
+        target = room:getPlayerById(target[1])
+      else
+        target = room:getPlayerById(table.random(targets))
+      end
+      local use1 = room:askForUseCard(player, "slash", "slash", "#lianzhuw-slash::"..target.id, true, {must_targets = {target.id}})
+      if use1 then
+        room:useCard(use1)
+        if not player.dead and not target.dead then
+          local color = use1.card:getColorString()
+          local prompt = "#lianzhuw1-slash::"..target.id..":"..color
+          if color == "nocolor" then
+            prompt = "#lianzhuw-slash::"..target.id
+          end
+          local use2 = room:askForUseCard(player, "slash", "slash", prompt, true, {must_targets = {target.id}})
+          if use2 then
+            room:useCard(use2)
+            if color ~= "nocolor" then
+              local color2 = use2.card:getColorString()
+              if color2 ~= "nocolor" and color2 == color then
+                room:addPlayerMark(player, MarkEnum.AddMaxCards, 1)
+              end
+            end
+          end
+        end
+      end
+    end
+  end,
+}
+local lianzhuw_trigger = fk.CreateTriggerSkill{
+  name = "#lianzhuw_trigger",
+
+  refresh_events = {fk.GameStart, fk.EventAcquireSkill, fk.EventLoseSkill, fk.Deathed},
+  can_refresh = function(self, event, target, player, data)
+    if event == fk.GameStart then
+      return player:hasSkill(self.name, true)
+    elseif event == fk.EventAcquireSkill or event == fk.EventLoseSkill then
+      return data == self
+    else
+      return target == player and player:hasSkill(self.name, true, true)
+    end
+  end,
+  on_refresh = function(self, event, target, player, data)
+    local room = player.room
+    if event == fk.GameStart or event == fk.EventAcquireSkill then
+      if player:hasSkill(self.name, true) then
+        for _, p in ipairs(room:getOtherPlayers(player)) do
+          room:handleAddLoseSkills(p, "lianzhuw&", nil, false, true)
+        end
+      end
+    elseif event == fk.EventLoseSkill or event == fk.Deathed then
+      for _, p in ipairs(room:getOtherPlayers(player, true, true)) do
+        room:handleAddLoseSkills(p, "-lianzhuw&", nil, false, true)
+      end
+    end
+  end,
+}
+local lianzhuw_active = fk.CreateActiveSkill{
+  name = "lianzhuw&",
+  mute = true,
+  card_num = function()
+    for _, p in ipairs(Fk:currentRoom().alive_players) do
+      if p:hasSkill("lianzhuw") then
+        if p:getSwitchSkillState("lianzhuw", false) == fk.SwitchYang then
+          return 1
+        else
+          return 0
+        end
+      end
+    end
+    return 0
+  end,
+  target_num = 0,
+  can_use = function(self, player)
+    return player:usedSkillTimes(self.name, Player.HistoryPhase) == 0
+  end,
+  card_filter = function(self, to_select, selected)
+    for _, p in ipairs(Fk:currentRoom().alive_players) do
+      if p:hasSkill("lianzhuw", true) then
+        if p:getSwitchSkillState("lianzhuw", false) == fk.SwitchYang then
+          return #selected == 0
+        else
+          return false
+        end
+      end
+    end
+    return false
+  end,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    local src
+    for _, p in ipairs(room:getOtherPlayers(player)) do
+      if p:hasSkill("lianzhuw") then
+        src = p
+        break
+      end
+    end
+    room:doIndicate(player.id, {src.id})
+    room:setPlayerMark(src, MarkEnum.SwithSkillPreName .. "lianzhuw", src:getSwitchSkillState("lianzhuw", true))
+    src:addSkillUseHistory("lianzhuw")
+    room:broadcastSkillInvoke("lianzhuw")
+    room:notifySkillInvoked(src, "lianzhuw", "switch")
+    if src:getSwitchSkillState("lianzhuw", true) == fk.SwitchYang then
+      room:recastCard(effect.cards, player, "lianzhuw")
+      local color = Fk:getCardById(effect.cards[1]):getColorString()
+      local prompt = "#lianzhuw1-card:::"..color
+      if color == "nocolor" then
+        prompt = "#lianzhuw2-card"
+      end
+      local card = room:askForCard(src, 1, 1, true, "lianzhuw", true, ".", prompt)
+      if #card > 0 then
+        room:recastCard(card, src, "lianzhuw")
+        if color ~= "nocolor" then
+          local color2 = Fk:getCardById(card[1]):getColorString()
+          if color2 ~= "nocolor" and color2 ~= color and src:getMaxCards() > 0 then
+            room:addPlayerMark(src, MarkEnum.MinusMaxCards, 1)
+          end
+        end
+      end
+    else
+      local targets = table.map(table.filter(room:getOtherPlayers(player), function(p)
+        return (player:inMyAttackRange(p) or src:inMyAttackRange(p)) and p ~= src end), function (p) return p.id end)
+      if #targets == 0 then return end
+      local target = room:askForChoosePlayers(src, targets, 1, 1, "#lianzhuw2-choose:"..player.id, "lianzhuw", false)
+      if #target > 0 then
+        target = room:getPlayerById(target[1])
+      else
+        target = room:getPlayerById(table.random(targets))
+      end
+      local use1 = room:askForUseCard(player, "slash", "slash", "#lianzhuw-slash::"..target.id, true, {must_targets = {target.id}})
+      if use1 then
+        room:useCard(use1)
+      end
+      if not src.dead and not target.dead then
+        local color = "nocolor"
+        local prompt = "#lianzhuw-slash::"..target.id
+        if use1 then
+          color = use1.card:getColorString()
+          prompt = "#lianzhuw1-slash::"..target.id..":"..color
+          if color == "nocolor" then
+            prompt = "#lianzhuw-slash::"..target.id
+          end
+        end
+        local use2 = room:askForUseCard(src, "slash", "slash", prompt, true, {must_targets = {target.id}})
+        if use2 then
+          room:useCard(use2)
+          if color ~= "nocolor" then
+            local color2 = use2.card:getColorString()
+            if color2 ~= "nocolor" and color2 == color then
+              room:addPlayerMark(src, MarkEnum.AddMaxCards, 1)
+            end
+          end
+        end
+      end
+    end
+  end,
+}
+Fk:addSkill(lianzhuw_active)
+lianzhuw:addRelatedSkill(lianzhuw_trigger)
+wukuang:addSkill(lianzhuw)
+wukuang:addSkill("muyin")
+Fk:loadTranslationTable{
+  ["olz__wukuang"] = "吴匡",
+  ["lianzhuw"] = "联诛",
+  [":lianzhuw"] = "转换技，每名角色出牌阶段限一次，阳：其可以与你各重铸一张牌，若颜色不同，你的手牌上限-1；"..
+  "阴：你选择一名在你或其攻击范围内的角色，其可以与你各对目标使用一张【杀】，若颜色相同，你的手牌上限+1。",
+  ["#lianzhuw1-card"] = "联诛：你可以重铸一张牌，若不为%arg，你手牌上限-1",
+  ["#lianzhuw2-card"] = "联诛：你可以重铸一张牌",
+  ["#lianzhuw1-choose"] = "联诛：选择一名你攻击范围内的角色",
+  ["#lianzhuw2-choose"] = "联诛：选择一名你或 %src 攻击范围内的角色",
+  ["#lianzhuw1-slash"] = "联诛：你可以对 %dest 使用一张【杀】，若为%arg，你手牌上限+1",
+  ["#lianzhuw-slash"] = "联诛：你可以对 %dest 使用一张【杀】",
+  ["lianzhuw&"] = "联诛",
+  [":lianzhuw&"] = "出牌阶段限一次，若吴匡的〖联诛〗为：阳：你可以与其各重铸一张牌，若颜色不同，其手牌上限-1；"..
+  "阴：其选择一名在你或其攻击范围内的角色，你可以与吴匡各对目标使用一张【杀】，若颜色相同，其手牌上限+1。",
+}
 
 return extension

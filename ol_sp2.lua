@@ -993,7 +993,7 @@ local juanxia = fk.CreateTriggerSkill{
     return target == player and player:hasSkill(self.name) and player.phase == Player.Finish
   end,
   on_cost = function(self, event, target, player, data)
-    local success, dat = player.room:askForUseViewAsSkill(player, "juanxia_viewas", "#juanxia-choose", true)
+    local success, dat = player.room:askForUseActiveSkill(player, "juanxia_viewas", "#juanxia-choose", true)
     if success then
       self.cost_data = dat
       return true
@@ -1842,7 +1842,8 @@ local zhangjiq = fk.CreateTriggerSkill{
     local room = player.room
     if self.cost_data == "zhangji1" then
       target:drawCards(2, self.name)
-      if player:getMark("zhangji2-turn") > 0 and not target:isNude() and room:askForSkillInvoke(player, self.name, data, "#zhangji-discard::"..target.id) then
+      if player:getMark("zhangji2-turn") > 0 and not target:isNude() and
+        room:askForSkillInvoke(player, self.name, data, "#zhangji-discard::"..target.id) then
         room:askForDiscard(target, 2, 2, true, self.name, false)
       end
     else
@@ -2975,7 +2976,7 @@ local zeyue = fk.CreateTriggerSkill{
         table.insertIfNeed(skills, skill.name)
       end
     end
-    local choice = room:askForChoice(player, skills, self.name)
+    local choice = room:askForChoice(player, skills, self.name, "#zeyue-choice::"..to.id, true)
     room:handleAddLoseSkills(to, "-"..choice, nil, true, false)
     room:setPlayerMark(to, self.name, choice)
     to.tag["zeyue_count"] = {0, player}
@@ -3059,6 +3060,7 @@ Fk:loadTranslationTable{
   ["#qingyi-invoke"] = "清议：是否继续发动“清议”？",
   ["#qingyix_record"] = "清议",
   ["#zeyue-choose"] = "迮阅：你可以令一名角色失去一个技能，其每轮视为对你使用【杀】，造成伤害后恢复失去的技能",
+  ["#zeyue-choice"] = "迮阅：选择令 %dest 失去的一个技能",
   ["#zeyue_record"] = "迮阅",
 }
 
@@ -3106,7 +3108,7 @@ local bixin = fk.CreateTriggerSkill{
     end
   end,
   on_cost = function(self, event, target, player, data)
-    local success, dat = player.room:askForUseViewAsSkill(player, "bixin_viewas", "#bixin-invoke", true)
+    local success, dat = player.room:askForUseActiveSkill(player, "bixin_viewas", "#bixin-invoke", true)
     if success then
       self.cost_data = dat
       return true

@@ -616,7 +616,7 @@ local zhengnan = fk.CreateTriggerSkill{
       end
     end
     if #choices > 0 then
-      local choice = player.room:askForChoice(player, choices, self.name)
+      local choice = player.room:askForChoice(player, choices, self.name, "#zhengnan-choice", true)
       player.room:handleAddLoseSkills(player, choice, nil)
     end
   end,
@@ -647,6 +647,7 @@ Fk:loadTranslationTable{
   [":zhengnan"] = "当其他角色死亡后，你可以摸三张牌，若如此做，你获得下列技能中的任意一个：〖武圣〗，〖当先〗和〖制蛮〗。",
   ["xiefang"] = "撷芳",
   [":xiefang"] = "锁定技，你计算与其他角色的距离-X（X为女性角色数）。",
+  ["#zhengnan-choice"] = "征南：选择获得的技能",
 }
 
 local tadun = General(extension, "tadun", "qun", 4)
@@ -873,23 +874,28 @@ local tuifeng = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     player:addToPile(self.name, self.cost_data, false, self.name)
   end,
-
-  refresh_events = {fk.EventPhaseStart},
-  can_refresh = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name) and player.phase == Player.Start and #player:getPile(self.name) > 0
+}
+local tuifeng_trigger = fk.CreateTriggerSkill{
+  name = "#tuifeng_trigger",
+  anim_type = "drawcard",
+  events = {fk.EventPhaseStart},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self.name) and player.phase == Player.Start and #player:getPile("tuifeng") > 0
   end,
-  on_refresh = function(self, event, target, player, data)
+  on_cost = function(self, event, target, player, data)
+    return true
+  end,
+  on_use = function(self, event, target, player, data)
     local room = player.room
-    local n = #player:getPile(self.name)
+    local n = #player:getPile("tuifeng")
     room:moveCards({
       from = player.id,
-      ids = player:getPile(self.name),
+      ids = player:getPile("tuifeng"),
       toArea = Card.DiscardPile,
       moveReason = fk.ReasonPutIntoDiscardPile,
-      skillName = self.name,
+      skillName = "tuifeng",
     })
-    player:removeCards(Player.Special, player:getPile(self.name), self.name)
-    player:drawCards(2 * n, self.name)
+    player:drawCards(2 * n, "tuifeng")
     room:addPlayerMark(player, "tuifeng-turn", n)
   end,
 }
@@ -902,12 +908,14 @@ local tuifeng_targetmod = fk.CreateTargetModSkill{
   end,
 }
 tuifeng:addRelatedSkill(tuifeng_targetmod)
+tuifeng:addRelatedSkill(tuifeng_trigger)
 litong:addSkill(tuifeng)
 Fk:loadTranslationTable{
   ["litong"] = "李通",
   ["tuifeng"] = "推锋",
   [":tuifeng"] = "当你受到1点伤害后，你可以将一张牌置于武将牌上，称为“锋”。准备阶段开始时，若你的武将牌上有“锋”，你将所有“锋”置入弃牌堆，"..
   "摸2X张牌，然后你于此回合的出牌阶段内使用【杀】的次数上限+X（X为你此次置入弃牌堆的“锋”数）。",
+  ["#tuifeng_trigger"] = "推锋",
 }
 
 local mizhu = General(extension, "mizhu", "shu", 3)
