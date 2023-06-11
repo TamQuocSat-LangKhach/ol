@@ -1605,7 +1605,7 @@ local kuanshi = fk.CreateTriggerSkill{
   on_cost = function(self, event, target, player, data)
     if event == fk.EventPhaseStart then
       local to = player.room:askForChoosePlayers(player, table.map(player.room:getAlivePlayers(), function(p)
-        return p.id end), 1, 1, "#kuanshi-choose", self.name, true)
+        return p.id end), 1, 1, "#kuanshi-choose", self.name, true, true)
       if #to > 0 then
         self.cost_data = to[1]
         return true
@@ -2075,7 +2075,7 @@ local xianfu = fk.CreateTriggerSkill{
     local room = player.room
     if event == fk.GameStart then
       local targets = table.map(room:getOtherPlayers(player), function(p) return p.id end)
-      local tos = room:askForChoosePlayers(player, targets, 1, 1, "#xianfu-choose", self.name, false)
+      local tos = room:askForChoosePlayers(player, targets, 1, 1, "#xianfu-choose", self.name, false, true)
       local to
       if #tos > 0 then
         to = room:getPlayerById(tos[1])

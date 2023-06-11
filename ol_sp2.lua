@@ -806,6 +806,7 @@ local zhaosong = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
+    room:doIndicate(player.id, {target.id})
     local ids = room:askForCard(target, 1, 1, false, self.name, false, ".", "#zhaosong-give:"..player.id)
     room:obtainCard(player.id, ids[1], false, fk.ReasonGive)
     local card = Fk:getCardById(ids[1])
@@ -1808,6 +1809,7 @@ local zengou = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
+    room:doIndicate(player.id, {data.from})
     if #room:askForDiscard(player, 1, 1, true, self.name, true, ".|.|.|.|.|^basic", "#zengou-discard") == 0 then
       room:loseHp(player, 1, self.name)
     end
@@ -1844,9 +1846,11 @@ local zhangjiq = fk.CreateTriggerSkill{
       target:drawCards(2, self.name)
       if player:getMark("zhangji2-turn") > 0 and not target:isNude() and
         room:askForSkillInvoke(player, self.name, data, "#zhangji-discard::"..target.id) then
+        room:doIndicate(player.id, {target.id})
         room:askForDiscard(target, 2, 2, true, self.name, false)
       end
     else
+      room:doIndicate(player.id, {target.id})
       room:askForDiscard(target, 2, 2, true, self.name, false)
     end
   end,
