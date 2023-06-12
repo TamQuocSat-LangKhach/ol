@@ -208,10 +208,15 @@ local xijue_xiaoguo = fk.CreateTriggerSkill{
       not player:isKongcheng() and player:getMark("@zhanghuyuechen_jue") > 0
   end,
   on_cost = function(self, event, target, player, data)
-    return #player.room:askForDiscard(player, 1, 1, false, "xiaoguo", true, ".|.|.|.|.|basic", "#xijue_xiaoguo-invoke::"..target.id) > 0
+    local card = player.room:askForDiscard(player, 1, 1, false, "xiaoguo", true, ".|.|.|.|.|basic", "#xijue_xiaoguo-invoke::"..target.id, true)
+    if #card > 0 then
+      self.cost_data = card
+      return true
+    end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
+    room:throwCard(self.cost_data, "xiaoguo", player, player)
     room:removePlayerMark(player, "@zhanghuyuechen_jue", 1)
     if #room:askForDiscard(target, 1, 1, true, "xiaoguo", true, ".|.|.|.|.|equip", "#xiaoguo-discard:"..player.id) > 0 then
       player:drawCards(1)
