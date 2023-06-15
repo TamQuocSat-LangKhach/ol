@@ -3061,9 +3061,13 @@ local neifa = fk.CreateTriggerSkill{
     end
     local card = room:askForDiscard(player, 1, 1, true, self.name, false)
     if Fk:getCardById(card[1]).type == Card.TypeBasic then
+      local cards = table.filter(player.player_cards[Player.Hand], function(id) return Fk:getCardById(id).type ~= Card.TypeBasic end)
       room:setPlayerMark(player, "@neifa-turn", "basic")
+      room:setPlayerMark(player, "neifa-turn", math.min(#cards, 5))
     else
+      local cards = table.filter(player.player_cards[Player.Hand], function(id) return Fk:getCardById(id).type == Card.TypeBasic end)
       room:setPlayerMark(player, "@neifa-turn", "non_basic")
+      room:setPlayerMark(player, "neifa-turn", math.min(#cards, 5))
     end
   end,
 }
@@ -3103,14 +3107,9 @@ local neifa_draw = fk.CreateTriggerSkill{
     return true
   end,
   on_use = function(self, event, target, player, data)
-    local n = 0
-    for _, id in ipairs(player.player_cards[Player.Hand]) do
-      if Fk:getCardById(id).type == Card.TypeBasic then
-        n = n + 1
-      end
-    end
+    local n = player:getMark("neifa-turn")
     if n > 0 then
-      player:drawCards(math.min(n, 5), "neifa")
+      player:drawCards(n, "neifa")
     end
   end,
 }
@@ -3118,7 +3117,7 @@ local neifa_targetmod = fk.CreateTargetModSkill{
   name = "#neifa_targetmod",
   residue_func = function(self, player, skill, scope)
     if skill.trueName == "slash_skill" and player:getMark("@neifa-turn") == "basic" and scope == Player.HistoryPhase then
-      return 1
+      return player:getMark("neifa-turn")
     end
   end,
   extra_target_func = function(self, player, skill)
@@ -3142,8 +3141,9 @@ yuantanyuanshang:addSkill(neifa)
 Fk:loadTranslationTable{
   ["yuantanyuanshang"] = "袁谭袁尚",
   ["neifa"] = "内伐",
-  [":neifa"] = "出牌阶段开始时，你可以摸两张牌或获得场上一张牌，然后弃置一张牌。若弃置的牌：是基本牌，你本回合不能使用非基本牌，本阶段使用【杀】次数上限"..
-  "和目标上限+1；不是基本牌，你本回合不能使用基本牌，使用普通锦囊牌的目标+1或-1，前两次使用装备牌时摸X张牌（X为手牌中因本技能不能使用的牌且至多为5）。",
+  [":neifa"] = "出牌阶段开始时，你可以摸两张牌或获得场上一张牌，然后弃置一张牌。若弃置的牌：是基本牌，你本回合不能使用非基本牌，"..
+  "本阶段使用【杀】次数上限+X，目标上限+1；不是基本牌，你本回合不能使用基本牌，使用普通锦囊牌的目标+1或-1，前两次使用装备牌时摸X张牌"..
+  "（X为发动技能时手牌中因本技能不能使用的牌且至多为5）。",
   ["#neifa-choose"] = "内伐：获得场上的一张牌，或点“取消”摸两张牌",
   ["@neifa-turn"] = "内伐",
   ["non_basic"] = "非基本牌",

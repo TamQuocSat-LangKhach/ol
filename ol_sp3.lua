@@ -864,4 +864,147 @@ Fk:loadTranslationTable{
   ["xinggu_active"] = "行贾",
 }
 
+--曹羲
+
+local lushi = General(extension, "lushi", "qun", 3, 3, General.Female)
+local zhuyan = fk.CreateTriggerSkill{
+  name = "zhuyan",
+  anim_type = "switch",
+  switch_skill_name = "zhuyan",
+  events = {fk.EventPhaseStart},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self.name) and player.phase == Player.Finish
+  end,
+  on_cost = function(self, event, target, player, data)
+    local targets, prompt
+    if player:getSwitchSkillState(self.name, false) == fk.SwitchYang then
+      targets = table.map(table.filter(player.room.alive_players, function(p)
+        return p:getMark("zhuyan-yang") == 0 and p:getMark(self.name) ~= 0 end), function(p) return p.id end)
+      prompt = "#zhuyan1-choose"
+    else
+      targets = table.map(table.filter(player.room.alive_players, function(p)
+        return p:getMark("zhuyan-yin") == 0 and p:getMark(self.name) ~= 0 end), function(p) return p.id end)
+      prompt = "#zhuyan2-choose"
+    end
+    if #targets == 0 then return end
+    for _, id in ipairs(targets) do  --FIXME：先用个mark代替贴脸文字
+      local p = player.room:getPlayerById(id)
+      if player:getSwitchSkillState(self.name, false) == fk.SwitchYang then
+        local sig = ""
+        local n = p:getMark(self.name)[1] - p.hp
+        if n > 0 then
+          sig = "+"
+        end
+        player.room:setPlayerMark(p, "@zhuyan1", sig..tostring(n))
+      else
+        local sig = ""
+        local n = p:getMark(self.name)[2] - p:getHandcardNum()
+        if n > 0 then
+          sig = "+"
+        end
+        player.room:setPlayerMark(p, "@zhuyan2", sig..tostring(n))
+      end
+    end
+    local to = player.room:askForChoosePlayers(player, targets, 1, 1, prompt, self.name, true)
+    for _, id in ipairs(targets) do
+      local p = player.room:getPlayerById(id)
+      player.room:setPlayerMark(p, "@zhuyan1", 0)
+      player.room:setPlayerMark(p, "@zhuyan2", 0)
+    end
+    if #to > 0 then
+      self.cost_data = to[1]
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local to = room:getPlayerById(self.cost_data)
+    if player:getSwitchSkillState(self.name, true) == fk.SwitchYang then
+      room:setPlayerMark(to, "zhuyan-yang", 1)
+      local n = to:getMark(self.name)[1] - to.hp
+      if n > 0 then
+        if to:isWounded() then
+          room:recover({
+            who = to,
+            num = math.min(to:getLostHp(), n),
+            recoverBy = player,
+            skillName = self.name
+          })
+        end
+      elseif n < 0 then
+        room:loseHp(to, -n, self.name)
+      end
+    else
+      room:setPlayerMark(to, "zhuyan-yin", 1)
+      local n = to:getMark(self.name)[2] - to:getHandcardNum()
+      if n > 0 then
+        to:drawCards(n, self.name)
+      elseif n < 0 then
+        room:askForDiscard(to, -n, -n, false, self.name, false)
+      end
+    end
+  end,
+
+  refresh_events = {fk.EventPhaseStart},
+  can_refresh = function(self, event, target, player, data)
+    return target == player and player.phase == Player.Start
+  end,
+  on_refresh = function(self, event, target, player, data)
+    player.room:setPlayerMark(player, self.name, {player.hp, math.min(player:getHandcardNum(), 5)})
+  end,
+}
+local leijie = fk.CreateTriggerSkill{
+  name = "leijie",
+  anim_type = "control",
+  events = {fk.EventPhaseStart},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self.name) and player.phase == Player.Start
+  end,
+  on_cost = function(self, event, target, player, data)
+    local to = player.room:askForChoosePlayers(player, table.map(player.room:getAlivePlayers(), function (p)
+      return p.id end), 1, 1, "#leijie-choose", self.name, true)
+    if #to > 0 then
+      self.cost_data = to[1]
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local to = room:getPlayerById(self.cost_data)
+    local judge = {
+      who = to,
+      reason = self.name,
+      pattern = ".|2~9|spade",
+    }
+    room:judge(judge)
+    if judge.card.suit == Card.Spade and judge.card.number >= 2 and judge.card.number <= 9 then
+      room:damage{
+        to = to,
+        damage = 2,
+        damageType = fk.ThunderDamage,
+        skillName = self.name,
+      }
+    else
+      to:drawCards(2, self.name)
+    end
+  end,
+}
+lushi:addSkill(zhuyan)
+lushi:addSkill(leijie)
+Fk:loadTranslationTable{
+  ["lushi"] = "卢氏",
+  ["zhuyan"] = "驻颜",
+  [":zhuyan"] = "转换技，结束阶段，你可以令一名角色将以下项调整至与其上个准备阶段相同：阳：体力值；阴：手牌数（最多摸至五张）。每名角色每项限一次。",
+  ["leijie"] = "雷劫",
+  [":leijie"] = "准备阶段，你可以令一名角色判定，若结果为♠2~9，其受到2点雷电伤害，否则其摸两张牌。",
+  ["#zhuyan1-choose"] = "驻颜：选择一名角色，其将体力值调整至与其上个准备阶段相同",
+  ["#zhuyan2-choose"] = "驻颜：选择一名角色，其将手牌调整至与其上个准备阶段相同",
+  ["#leijie-choose"] = "雷劫：令一名角色判定，若为♠2~9，其受到2点雷电伤害，否则其摸两张牌",
+
+  ["@zhuyan1"] = "体力",
+  ["@zhuyan2"] = "手牌",
+}
+
+--周群
+
 return extension
