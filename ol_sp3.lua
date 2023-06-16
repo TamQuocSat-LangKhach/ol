@@ -743,10 +743,10 @@ local hongji = fk.CreateTriggerSkill{
   on_cost = function(self, event, target, player, data)
     local room = player.room
     local prompt = ""
-    if table.every(room:getOtherPlayers(target), function(p) return #p.player_cards[Player.Hand] > #target.player_cards[Player.Hand] end) then
+    if table.every(room:getOtherPlayers(target), function(p) return p:getHandcardNum() >= target:getHandcardNum() end) then
       prompt = "hongji1"
     end
-    if table.every(room:getOtherPlayers(target), function(p) return #p.player_cards[Player.Hand] < #target.player_cards[Player.Hand] end) then
+    if table.every(room:getOtherPlayers(target), function(p) return p:getHandcardNum() <= target:getHandcardNum() end) then
       prompt = "hongji2"
     end
     if prompt == "" then return end
@@ -854,7 +854,7 @@ zhangshiping:addSkill(xinggu)
 Fk:loadTranslationTable{
   ["zhangshiping"] = "张世平",
   ["hongji"] = "鸿济",
-  [":hongji"] = "每轮各限一次，每名角色的准备阶段，若其手牌数为全场唯一最少/最多，你可以令其于本回合摸牌/出牌阶段后额外执行一个摸牌/出牌阶段。",
+  [":hongji"] = "每轮各限一次，每名角色的准备阶段，若其手牌数为全场最少/最多，你可以令其于本回合摸牌/出牌阶段后额外执行一个摸牌/出牌阶段。",
   ["xinggu"] = "行贾",
   [":xinggu"] = "游戏开始时，你将随机三张坐骑牌置于你的武将牌上。结束阶段，你可以将其中一张牌置于一名其他角色的装备区，"..
   "然后你获得牌堆中一张<font color='red'>♦</font>牌。",

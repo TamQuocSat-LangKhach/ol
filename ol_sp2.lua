@@ -947,7 +947,7 @@ local juanxia_viewas = fk.CreateViewAsSkill{
     local names = {}
     for _, id in ipairs(Fk:getAllCardIds()) do
       local card = Fk:getCardById(id)
-      if card.type == Card.TypeTrick and card.sub_type ~= Card.SubtypeDelayedTrick and card.skill.target_num == 1 then  --FIXME：衍生牌
+      if card:isCommonTrick() and not card.is_derived and card.skill.target_num == 1 then
         table.insertIfNeed(names, card.name)
       end
     end
@@ -2334,6 +2334,12 @@ Fk:loadTranslationTable{
   ["#zhefu-choose"] = "哲妇：你可以指定一名角色，其弃置一张【%arg】或受到你的1点伤害",
   ["#zhefu-discard"] = "哲妇：你需弃置一张【%arg】，否则 %dest 对你造成1点伤害",
   ["#yidu-invoke"] = "遗毒：你可以选择一名角色，展示至多三张手牌，若颜色相同则全部弃置",
+
+  ["$zhefu1"] = "非我善妒，实乃汝之过也！",
+  ["$zhefu2"] = "履行不端者，当有此罚。",
+  ["$yidu1"] = "彼之砒霜，吾之蜜糖。",
+  ["$yidu2"] = "巧动心思，以遗他人。",
+  ["~guohuaij"] = "我死后，切勿从粲、午之言。",
 }
 
 Fk:loadTranslationTable{
@@ -2504,6 +2510,12 @@ Fk:loadTranslationTable{
   ["#shanduan2-choice"] = "善断：选择攻击范围",
   ["#shanduan3-choice"] = "善断：选择手牌上限",
   ["#shanduan4-choice"] = "善断：选择使用【杀】次数上限",
+
+  ["$shanduan1"] = "浪子回头，其期未晚矣！",
+  ["$shanduan2"] = "心既存蛟虎，秉慧剑斩之！",
+  ["$yilie1"] = "从来天下义，只在青山中！",
+  ["$yilie2"] = "沥血染征袍，英名万古存！",
+  ["~ol__zhouchu"] = "死战死谏，死亦可乎！",
 }
 
 Fk:loadTranslationTable{
@@ -2662,6 +2674,14 @@ Fk:loadTranslationTable{
   ["#yangkuang-invoke"] = "阳狂：你可以视为使用【酒】并摸一张牌",
   ["#yangkuang2-invoke"] = "阳狂：你可以视为使用【酒】并与 %dest 各摸一张牌",
   ["#cihuang-invoke"] = "雌黄：选择一张牌，将之当属性【杀】或单目标锦囊对 %dest 使用",
+
+  ["$yangkuang1"] = "比干忠谏剖心死，箕子披发阳狂生。",
+  ["$yangkuang2"] = "梅伯数谏遭炮烙，来革顺志而用国。",
+  ["$cihuang1"] = "腹存经典，口吐雌黄。",
+  ["$cihuang2"] = "手把玉麈，胸蕴成篇。",
+  ["$sanku1"] = "纲常难为，应存后路。",
+  ["$sanku2"] = "世将大乱，当思保全。",
+  ["~wangyan"] = "影摇枭鸱动，三窟难得生。",
 }
 
 --霍峻2022.10.21

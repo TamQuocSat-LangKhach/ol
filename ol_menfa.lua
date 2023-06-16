@@ -144,6 +144,14 @@ Fk:loadTranslationTable{
   ["#daojie-choice"] = "蹈节：失去一个锁定技，或点“取消”失去1点体力",
   ["#daojie-choose"] = "蹈节：令一名同族角色获得此%arg",
   [":Cancel"] = "",
+
+  ["$sankuang1"] = "人言可畏，宜常辟之。",
+  ["$sankuang2"] = "天地可敬，可常惧之。",
+  ["$beishi1"] = "虎卑其势，将有所逮。",
+  ["$beishi2"] = "至山穷水尽，复柳暗花明。",
+  ["$daojie1"] = "此生所重者，慷慨之节也。",
+  ["$daojie2"] = "愿以此身，全清尚之节。",
+  ["~olz__xunchen"] = "行二臣之为，羞见列祖……",
 }
 
 local xunshu = General(extension, "olz__xunshu", "qun", 3)
@@ -265,6 +273,14 @@ Fk:loadTranslationTable{
   ["balong"] = "八龙",
   [":balong"] = "锁定技，当你每回合体力值首次变化后，若你手牌中锦囊牌为唯一最多的类型，你展示手牌并摸至与存活角色数相同。",
   ["#shenjun-invoke"] = "神君：你可以将%arg张牌当一种“神君”牌使用",
+
+  ["$shenjun1"] = "区区障眼之法，难遮神人之目。",
+  ["$shenjun2"] = "我以天地为师，自可道法自然。",
+  ["$balong1"] = "八龙之蜿蜿，云旗之委蛇。",
+  ["$balong2"] = "穆王乘八牡，天地恣遨游。",
+  --["$daojie1"] = "荀人如玉，向节而生。",
+  --["$daojie2"] = "竹有其节，焚之不改。",
+  ["~olz__xunshu"] = "天下陆沉，荀氏难支……",
 }
 
 local xuncan = General(extension, "olz__xuncan", "wei", 3)
@@ -373,6 +389,16 @@ Fk:loadTranslationTable{
   ["#shangshen-invoke"] = "伤神：你可以进行一次【闪电】判定并令 %dest 将手牌摸至四张",
   ["yushen1"] = "视为其对你使用冰【杀】",
   ["yushen2"] = "视为你对其使用冰【杀】",
+
+  ["$yushen1"] = "此心恋卿，尽融三九之冰。",
+  ["$yushen2"] = "寒梅傲雪，馥郁三尺之香。",
+  ["$shangshen1"] = "识字数万，此痛无字可言。",
+  ["$shangshen2"] = "吾妻已逝，吾心悲怆。",
+  ["$fenchai1"] = "钗同我心，奈何分之？",
+  ["$fenchai2"] = "夫妻分钗，天涯陌路。",
+  --["$daojie1"] = "君子持节，何移情乎？",
+  --["$daojie2"] = "我心慕鸳，从一而终。",
+  ["~olz__xuncan"] = "此钗，今日可合乎？",
 }
 
 Fk:loadTranslationTable{
@@ -383,6 +409,16 @@ Fk:loadTranslationTable{
   [":dianzhan"] = "锁定技，当你每轮首次使用一种花色的牌后，你横置此牌唯一目标并重铸此花色的所有手牌，然后若你以此法横置了角色且你以此法重铸了牌，你摸一张牌。",
   ["huanyin"] = "还阴",
   [":huanyin"] = "锁定技，当你进入濒死状态时，你将手牌摸至4张。",
+
+  ["$lieshi1"] = "拭刃为誓，女无二夫。",
+  ["$lieshi2"] = "霜刃证言，宁死不贰。",
+  ["$dianzhan1"] = "此灯如我，独向光明。",
+  ["$dianzhan2"] = "此间皆暗，唯灯瞩明。",
+  ["$huanyin1"] = "且将此身，还于阴氏。",
+  ["$huanyin2"] = "生不得同户，死可葬同穴乎？",
+  --["$daojie1"] = "荀氏三纲，死不贰嫁。",
+  --["$daojie2"] = "女子有节，宁死蹈之。",
+  ["~olz__xuncai"] = "苦难已过，世间大好……",
 }
 
 local olz__wuban = General(extension, "olz__wuban", "shu", 4)
@@ -801,4 +837,14 @@ Fk:loadTranslationTable{
   "阴：其选择一名在你或其攻击范围内的角色，你可以与吴匡各对目标使用一张【杀】，若颜色相同，其手牌上限+1。",
 }
 
+--local wangyun = General(extension, "olz__wangyun", "qun", 3)
+Fk:loadTranslationTable{
+  ["olz__wangyun"] = "王允",
+  ["jiexuan"] = "解悬",
+  [":jiexuan"] = "",
+  ["mingjie"] = "铭戒",
+  [":mingjie"] = "",
+  ["zhongliu"] = "中流",
+  [":zhongliu"] = "",
+}
 return extension
