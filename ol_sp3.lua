@@ -5,10 +5,309 @@ Fk:loadTranslationTable{
   ["ol_sp3"] = "OL专属3",
 }
 
---胡班2023.1.13
---傅肜2023.2.4
---刘巴2023.2.25
---马承2023.3.26
+local huban = General(extension, "ol__huban", "wei", 4)
+local huiyun = fk.CreateViewAsSkill{
+  name = "huiyun",
+  anim_type = "support",
+  pattern = "fire_attack",
+  card_filter = function(self, to_select, selected)
+    return #selected == 0
+  end,
+  view_as = function(self, cards)
+    if #cards ~= 1 then return end
+    local card = Fk:cloneCard("fire_attack")
+    card.skillName = self.name
+    card:addSubcard(cards[1])
+    return card
+  end,
+}
+local huiyun_trigger = fk.CreateTriggerSkill{
+  name = "#huiyun_trigger",
+  mute = true,
+  events = {fk.CardUseFinished},
+  can_trigger = function(self, event, target, player, data)
+    if target == player and table.contains(data.card.skillNames, "huiyun") then
+      local to = player.room:getPlayerById(TargetGroup:getRealTargets(data.tos)[1])
+      if not to.dead and to:getMark(self.name) ~= 0 then
+        return player.room:getCardOwner(to:getMark(self.name)) == to and player.room:getCardArea(to:getMark(self.name)) == Card.PlayerHand
+      end
+    end
+  end,
+  on_trigger = function(self, event, target, player, data)
+    self:doCost(event, target, player, data)
+    local to = player.room:getPlayerById(TargetGroup:getRealTargets(data.tos)[1])
+    if not to.dead then
+      player.room:setPlayerMark(to, self.name, 0)
+    end
+  end,
+  on_cost = function(self, event, target, player, data)
+    local choices = {"Cancel"}
+    for i = 1, 3, 1 do
+      local mark = "huiyun"..tostring(i).."-round"
+      if player:getMark(mark) == 0 then
+        table.insert(choices, mark)
+      end
+    end
+    if #choices == 1 then return end
+    local to = TargetGroup:getRealTargets(data.tos)[1]
+    local choice = player.room:askForChoice(player, choices, "huiyun", "#huiyun-choice::"..to)
+    if choice ~= "Cancel" then
+      self.cost_data = choice
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    room:setPlayerMark(player, self.cost_data, 1)
+    local to = room:getPlayerById(TargetGroup:getRealTargets(data.tos)[1])
+    local id = to:getMark(self.name)
+    room:setPlayerMark(to, self.name, 0)
+    if self.cost_data == "huiyun3-round" then
+      to:drawCards(1, "huiyun")
+    else
+      if self.cost_data == "huiyun1-round" then
+        --FIXME：这里需要大量可用判断！满血吃桃、重复挂闪电等
+        local use = room:askForUseCard(to, Fk:getCardById(id).name, "^jink,nullification|.|.|.|.|.|"..tostring(id), "#huiyun1-card", true)
+        if use then
+          room:useCard(use)
+          room:delay(1000)
+          if not to.dead and not to:isKongcheng() then
+            room:recastCard(to:getCardIds{Player.Hand}, to, "huiyun")
+          end
+        end
+      elseif self.cost_data == "huiyun2-round" then
+        local use = room:askForUseCard(to, "", "^jink,nullification|.|.|hand", "#huiyun2-card", true)
+        if use then
+          --if not CanUseCard(use.card, player.id) then return end
+          room:useCard(use)
+          room:delay(1000)
+          if not to.dead and room:getCardOwner(id) == to and room:getCardArea(id) == Card.PlayerHand then
+            room:recastCard({id}, to, "huiyun")
+          end
+        end
+      end
+    end
+  end,
+
+  refresh_events = {fk.CardShown},
+  can_refresh = function(self, event, target, player, data)
+    if target == player then
+      local e = player.room.logic:getCurrentEvent():findParent(GameEvent.UseCard)
+      if e then
+        local use = e.data[1]
+        return table.contains(use.card.skillNames, "huiyun")
+      end
+    end
+  end,
+  on_refresh = function(self, event, target, player, data)
+    player.room:setPlayerMark(player, self.name, data.cardIds[1])
+  end,
+}
+huiyun:addRelatedSkill(huiyun_trigger)
+huban:addSkill(huiyun)
+Fk:loadTranslationTable{
+  ["ol__huban"] = "胡班",
+  ["huiyun"] = "晖云",
+  [":huiyun"] = "每轮每项限一次，你可以将一张牌当【火攻】使用，结算后你可以选择一项，令目标可以：1.使用展示牌，然后重铸所有手牌；"..
+  "2.使用一张手牌，然后重铸展示牌；3.摸一张牌。",
+  ["#huiyun-choice"] = "晖云：你可以选择一项，令 %dest 选择是否执行",
+  ["huiyun1-round"] = "使用展示牌，然后重铸所有手牌",
+  ["huiyun2-round"] = "使用一张手牌，然后重铸展示牌",
+  ["huiyun3-round"] = "摸一张牌",
+  ["#huiyun1-card"] = "晖云：你可以使用展示牌，然后重铸所有手牌",
+  ["#huiyun2-card"] = "晖云：你可以使用一张手牌，然后重铸展示牌",
+}
+
+Fk:loadTranslationTable{
+  ["ol__furong"] = "傅肜",
+  ["xiaosi"] = "效死",
+  [":xiaosi"] = "出牌阶段限一次，你可以与一名有手牌的其他角色各弃置一张基本牌（若其不能弃置则你摸一张牌），"..
+  "然后你可以使用其中的任意张牌（无距离和次数限制）。",
+}
+
+local liuba = General(extension, "ol__liuba", "shu", 3)
+local ol__tongdu = fk.CreateTriggerSkill{
+  name = "ol__tongdu",
+  anim_type = "control",
+  events = {fk.EventPhaseStart},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self.name) and player.phase == Player.Start and
+      not table.every(player.room:getOtherPlayers(player), function(p) return p:isKongcheng() end)
+  end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    local to = room:askForChoosePlayers(player, table.map(table.filter(room:getOtherPlayers(player), function(p)
+      return not p:isKongcheng() end), function(p) return p.id end), 1, 1, "#ol__tongdu-choose", self.name, true)
+    if #to > 0 then
+      self.cost_data = to[1]
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local to = room:getPlayerById(self.cost_data)
+    local card = room:askForCard(to, 1, 1, true, self.name, false, ".", "#ol__tongdu-give:"..player.id)
+    room:obtainCard(player.id, card[1], false, fk.ReasonGive)
+    room:setPlayerMark(player, "ol__tongdu-turn", card[1])
+  end,
+}
+local ol__tongdu_trigger = fk.CreateTriggerSkill{
+  name = "#ol__tongdu_trigger",
+  mute = true,
+  events = {fk.EventPhaseEnd},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player.phase == Player.Play and player:usedSkillTimes("ol__tongdu", Player.HistoryTurn) > 0 and
+      player:getMark("ol__tongdu-turn") ~= 0 and player.room:getCardOwner(player:getMark("ol__tongdu-turn")) == player and
+      player.room:getCardArea(player:getMark("ol__tongdu-turn")) == Card.PlayerHand
+  end,
+  on_cost = function(self, event, target, player, data)
+    return true
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    room:broadcastSkillInvoke("ol__tongdu")
+    room:notifySkillInvoked(player, "ol__tongdu")
+    local id = player:getMark("ol__tongdu-turn")
+    room:moveCards({
+      ids = {id},
+      from = player.id,
+      fromArea = Player.Hand,
+      toArea = Card.DrawPile,
+      moveReason = fk.ReasonJustMove,
+      skillName = "ol__tongdu",
+    })
+  end,
+}
+local ol__zhubi = fk.CreateActiveSkill{
+  name = "ol__zhubi",
+  anim_type = "support",
+  card_num = 0,
+  target_num = 1,
+  can_use = function(self, player)
+    return player:usedSkillTimes(self.name, Player.HistoryPhase) < player.maxHp
+  end,
+  card_filter = function(self, to_select, selected)
+    return false
+  end,
+  target_filter = function(self, to_select, selected)
+    return #selected == 0 and not Fk:currentRoom():getPlayerById(to_select):isNude()
+  end,
+  on_use = function(self, room, effect)
+    local target = room:getPlayerById(effect.tos[1])
+    local card = room:askForCard(target, 1, 1, true, self.name, false, ".", "#ol__zhubi-card")
+    room:moveCards({
+      ids = card,
+      from = target.id,
+      toArea = Card.DiscardPile,
+      skillName = self.name,
+      moveReason = fk.ReasonPutIntoDiscardPile,
+      proposer = target.id
+    })
+    room:sendLog{
+      type = "#RecastBySkill",
+      from = target.id,
+      card = card,
+      arg = self.name,
+    }
+    local id = target:drawCards(1, self.name)[1]
+    if room:getCardOwner(id) == target and room:getCardArea(id) == Card.PlayerHand then
+      local mark = target:getMark(self.name)
+      if mark == 0 then mark = {} end
+      table.insertIfNeed(mark, id)
+      room:setPlayerMark(target, self.name, mark)
+    end
+  end
+}
+local ol__zhubi_trigger = fk.CreateTriggerSkill{
+  name = "#ol__zhubi_trigger",
+  mute = true,
+  events = {fk.EventPhaseStart},
+  can_trigger = function(self, event, target, player, data)
+    if player:hasSkill(self.name, true) and target.phase == Player.Finish and target:getMark("ol__zhubi") ~= 0 then
+      for _, id in ipairs(target:getMark("ol__zhubi")) do
+        if player.room:getCardOwner(id) == target and player.room:getCardArea(id) == Card.PlayerHand then
+          return true
+        end
+      end
+    end
+  end,
+  on_cost = function(self, event, target, player, data)
+    return true
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    room:broadcastSkillInvoke("ol__tongdu")
+    room:notifySkillInvoked(player, "ol__tongdu")
+    local ids = {}
+    for _, id in ipairs(target:getMark("ol__zhubi")) do
+      if room:getCardOwner(id) == target and room:getCardArea(id) == Card.PlayerHand then
+        table.insert(ids, id)
+      end
+    end
+    local piles = room:askForExchange(target, {room:getNCards(5, "bottom"), ids}, {"Bottom", "ol__zhubi"}, "ol__zhubi")
+    local cards1, cards2 = {}, {}
+    for _, id in ipairs(piles[1]) do
+      if room:getCardArea(id) == target.Hand then
+        table.insert(cards1, id)
+      end
+    end
+    for _, id in ipairs(piles[2]) do
+      if room:getCardArea(id) ~= target.Hand then
+        table.insert(cards2, id)
+      end
+    end
+    local move1 = {
+      ids = cards1,
+      from = target.id,
+      fromArea = Player.Hand,
+      toArea = Card.DrawPile,
+      moveReason = fk.ReasonJustMove,
+      skillName = "ol__zhubi",
+      drawPilePosition = -1,
+    }
+    local move2 = {
+      ids = cards2,
+      to = target.id,
+      toArea = Player.Hand,
+      moveReason = fk.ReasonJustMove,
+      skillName = "ol__zhubi",
+    }
+    room:moveCards(move1, move2)
+    ids = {}
+    for _, id in ipairs(target:getMark("ol__zhubi")) do
+      if room:getCardOwner(id) == target and room:getCardArea(id) == Card.PlayerHand then
+        table.insertIfNeed(ids, id)
+      end
+    end
+    if #ids == 0 then
+      room:setPlayerMark(target, "ol__zhubi", 0)
+    else
+      room:setPlayerMark(target, "ol__zhubi", ids)
+    end
+  end,
+}
+ol__tongdu:addRelatedSkill(ol__tongdu_trigger)
+ol__zhubi:addRelatedSkill(ol__zhubi_trigger)
+liuba:addSkill(ol__tongdu)
+liuba:addSkill(ol__zhubi)
+Fk:loadTranslationTable{
+  ["ol__liuba"] = "刘巴",
+  ["ol__tongdu"] = "统度",
+  [":ol__tongdu"] = "准备阶段，你可以令一名其他角色交给你一张手牌，然后本回合出牌阶段结束时，若此牌仍在你的手牌中，你将此牌置于牌堆顶。",
+  ["ol__zhubi"] = "铸币",
+  [":ol__zhubi"] = "出牌阶段限X次，你可以令一名角色重铸一张牌，以此法摸的牌称为“币”；有“币”的角色的结束阶段，其观看牌堆底的五张牌，"..
+  "然后可以用任意“币”交换其中等量张牌（X为你的体力上限）。",
+  ["#ol__tongdu-choose"] = "统度：你可以令一名其他角色交给你一张手牌，出牌阶段结束时你将之置于牌堆顶",
+  ["#ol__tongdu-give"] = "统度：你须交给 %src 一张手牌，出牌阶段结束时将之置于牌堆顶",
+  ["#ol__zhubi-card"] = "铸币：重铸一张牌，摸到的“币”可以在你的结束阶段和牌堆底牌交换",
+}
+
+Fk:loadTranslationTable{
+  ["macheng"] = "马承",
+  ["chenglie"] = "骋烈",
+  [":chenglie"] = "你使用【杀】可以多指定至多两个目标，然后展示牌堆顶与目标数等量张牌，秘密将一张手牌与其中一张牌交换，将之分别暗置于"..
+  "目标角色武将牌上直到此【杀】结算结束，其中“骋烈”牌为红色的角色若：响应了此【杀】，其交给你一张牌；未响应此【杀】，其回复1点体力。",
+}
 
 local quhuang = General(extension, "quhuang", "wu", 3)
 local qiejian = fk.CreateTriggerSkill{
@@ -153,7 +452,7 @@ local nishou = fk.CreateTriggerSkill{
     }
     room:moveCards(move1, move2)
     local move3 = {
-      ids = cards1,
+      ids = table.filter(cards1, function(id) return room:getCardArea(id) == Card.Processing end),
       fromArea = Card.Processing,
       to = to,
       toArea = Card.PlayerHand,
@@ -163,7 +462,7 @@ local nishou = fk.CreateTriggerSkill{
       moveVisible = false,
     }
     local move4 = {
-      ids = cards2,
+      ids = table.filter(cards2, function(id) return room:getCardArea(id) == Card.Processing end),
       fromArea = Card.Processing,
       to = player.id,
       toArea = Card.PlayerHand,
@@ -457,19 +756,25 @@ local kangrui = fk.CreateTriggerSkill{
     end
   end,
 
-  refresh_events = {fk.DamageCaused, fk.Damage},
+  refresh_events = {fk.DamageCaused},
   can_refresh = function(self, event, target, player, data)
     return target == player and player:getMark("kangrui_damage-turn") > 0
   end,
   on_refresh = function(self, event, target, player, data)
-    if event == fk.DamageCaused then
-      data.damage = data.damage + 1
-    else
-      player.room:addPlayerMark(player, "MinusMaxCards-turn", 999)
-      player.room:setPlayerMark(player, "kangrui_damage-turn", 0)
-    end
+    data.damage = data.damage + 1
+    player.room:setPlayerMark(player, "kangrui_minus-turn", 1)
+    player.room:setPlayerMark(player, "kangrui_damage-turn", 0)
   end,
 }
+local kangrui_maxcards = fk.CreateMaxCardsSkill{
+  name = "#kangrui_maxcards",
+  fixed_func = function(self, player)
+    if player:getMark("kangrui_minus-turn") > 0 then
+      return 0
+    end
+  end
+}
+kangrui:addRelatedSkill(kangrui_maxcards)
 zhangyi:addSkill(dianjun)
 zhangyi:addSkill(kangrui)
 Fk:loadTranslationTable{
@@ -477,7 +782,7 @@ Fk:loadTranslationTable{
   ["dianjun"] = "殿军",
   [":dianjun"] = "锁定技，回合结束时，你受到1点伤害并执行一个额外的出牌阶段。",
   ["kangrui"] = "亢锐",
-  [":kangrui"] = "当一名角色于其回合内首次受到伤害后，你可以摸一张牌并令其：1.回复1点体力；2.本回合下次造成的伤害+1，然后当其造成伤害后，其此回合手牌上限改为0。",
+  [":kangrui"] = "当一名角色于其回合内首次受到伤害后，你可以摸一张牌并令其：1.回复1点体力；2.本回合下次造成的伤害+1，然后当其造成伤害时，其此回合手牌上限改为0。",
   ["#kangrui-invoke"] = "亢锐：你可以摸一张牌，令 %dest 回复1点体力或本回合下次造成伤害+1",
   ["kangrui_damage"] = "本回合下次造成伤害+1，造成伤害后本回合手牌上限改为0",
   ["#kangrui-choice"] = "亢锐：选择令 %dest 执行的一项",
@@ -707,7 +1012,7 @@ local zenrun = fk.CreateTriggerSkill{
     local dummy = Fk:cloneCard("dilu")
     local cards = room:askForCardsChosen(player, to, n, n, "he", self.name)
     dummy:addSubcards(cards)
-    room:obtainCard(player, dummy, false, fk.ReasonPrey)
+    room:obtainCard(player.id, dummy, false, fk.ReasonPrey)
     local choice = room:askForChoice(to, {"zenrun_draw", "zenrun_forbid"}, self.name, "#zenrun-choice:"..player.id)
     if choice == "zenrun_draw" then
       to:drawCards(n, self.name)

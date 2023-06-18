@@ -1767,8 +1767,7 @@ local wenji = fk.CreateTriggerSkill{
   on_cost = function(self, event, target, player, data)
     local room = player.room
     local to = room:askForChoosePlayers(player, table.map(table.filter(room:getOtherPlayers(player), function(p)
-      return (not p:isNude()) end), function(p) return p.id end),
-      1, 1, "#wenji-choose", self.name, true)
+      return not p:isNude() end), function(p) return p.id end), 1, 1, "#wenji-choose", self.name, true)
     if #to > 0 then
       self.cost_data = to[1]
       return true
@@ -1778,20 +1777,24 @@ local wenji = fk.CreateTriggerSkill{
     local room = player.room
     local to = room:getPlayerById(self.cost_data)
     local card = room:askForCard(to, 1, 1, true, self.name, false, ".", "#wenji-give::"..player.id)
-    room:addPlayerMark(player, "wenji"..Fk:getCardById(card[1]).trueName.."-turn", 1)
-    room:obtainCard(player, card[1], false, fk.ReasonGive)
+    room:setPlayerMark(player, "wenji-turn", Fk:getCardById(card[1]).trueName)
+    room:obtainCard(player.id, card[1], false, fk.ReasonGive)
   end,
 }
 local wenji_record = fk.CreateTriggerSkill{
   name = "#wenji_record",
-
-  refresh_events = {fk.CardUsing},
-  can_refresh = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name) and player:usedSkillTimes("wenji") > 0 and player:getMark("wenji"..data.card.trueName.."-turn") > 0
+  mute = true,
+  events = {fk.CardUsing},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:usedSkillTimes("wenji", Player.HistoryTurn) > 0 and player:getMark("wenji-turn") ~= 0 and
+      player:getMark("wenji-turn") == data.card.trueName
   end,
-  on_refresh = function(self, event, target, player, data)
+  on_cost = function(self, event, target, player, data)
+    return true
+  end,
+  on_use = function(self, event, target, player, data)
     data.disresponsiveList = data.disresponsiveList or {}
-    for _, p in ipairs(player.room.alive_players) do
+    for _, p in ipairs(player.room:getOtherPlayers(player)) do
       table.insertIfNeed(data.disresponsiveList, p.id)
     end
   end,
@@ -1806,7 +1809,7 @@ local tunjiang = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local kingdoms = {}
-    for _, p in ipairs(player.room:getAlivePlayers()) do
+    for _, p in ipairs(player.room.alive_players) do
       table.insertIfNeed(kingdoms, p.kingdom)
     end
     player:drawCards(#kingdoms)
@@ -2637,7 +2640,7 @@ local jianji = fk.CreateActiveSkill{
   card_num = 0,
   target_num = 1,
   can_use = function(self, player)
-    return player:usedSkillTimes(self.name) == 0
+    return player:usedSkillTimes(self.name, Player.HistoryPhase) == 0
   end,
   card_filter = function(self, to_select, selected)
     return false
