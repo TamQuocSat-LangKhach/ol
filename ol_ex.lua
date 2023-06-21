@@ -87,7 +87,7 @@ local ol_ex__qimou = fk.CreateActiveSkill{
     local player = room:getPlayerById(effect.from)
     local tolose = self.interaction.data
     room:loseHp(player, tolose, self.name)
-    player:drawCards(tolose)
+    player:drawCards(tolose, self.name)
     room:setPlayerMark(player, "@qimou-turn", tolose)
   end,
 }
@@ -100,7 +100,7 @@ Fk:loadTranslationTable{
   ["ol_ex__kuanggu"] = "狂骨",
   [":ol_ex__kuanggu"] = "你对距离1以内的角色造成1点伤害后，你可以选择摸一张牌或回复1点体力。",
   ["ol_ex__qimou"] = "奇谋",
-  [":ol_ex__qimou"] = "限定技，出牌阶段，你可以失去X点体力，本回合内与其他角色计算距离-X且可以多使用X张杀。",
+  [":ol_ex__qimou"] = "限定技，出牌阶段，你可以失去X点体力，摸X张牌，本回合内与其他角色计算距离-X且可以多使用X张杀。",
   ["@qimou-turn"] = "奇谋",
 
   ["$ol_ex__kuanggu1"] = "反骨狂傲，彰显本色！",
@@ -141,7 +141,7 @@ local ol_ex__leiji = fk.CreateTriggerSkill{
       room:judge(judge)
     elseif event == fk.FinishJudge then
       local x = 2
-      if data.card.suit == Card.Club and player:isWounded() then
+      if data.card.suit == Card.Club then
         x = 1
         if player:isWounded() then
           room:recover({
@@ -236,20 +236,19 @@ local ol_ex__shensu = fk.CreateTriggerSkill{
     if data.to == Player.Judge then
       local tos = room:askForChoosePlayers(player, targets, 1, max_num, "#ol_ex__shensu1-choose", self.name, true)
       if #tos > 0 then
-        self.cost_data = tos
+        self.cost_data = {tos}
         return true
       end
     elseif data.to == Player.Play then
       local tos, id = room:askForChooseCardAndPlayers(player, targets, 1, max_num, ".|.|.|.|.|equip", "#ol_ex__shensu2-choose", self.name, true)
       if #tos > 0 and id then
-        self.cost_data = tos
-        self.cost_data2 = id
+        self.cost_data = {tos, {id}}
         return true
       end
     elseif data.to == Player.Discard then
       local tos = room:askForChoosePlayers(player, targets, 1, max_num, "#ol_ex__shensu3-choose", self.name, true)
       if #tos > 0 then
-        self.cost_data = tos
+        self.cost_data = {tos}
         return true
       end
     end
@@ -261,12 +260,12 @@ local ol_ex__shensu = fk.CreateTriggerSkill{
       player:skip(Player.Draw)
     elseif data.to == Player.Play then
       player:skip(Player.Play)
-      room:throwCard(self.cost_data2, self.name, player, player)
+      room:throwCard(self.cost_data[2], self.name, player, player)
     elseif data.to == Player.Discard then
       player:skip(Player.Discard)
       player:turnOver()
     end
-    room:useVirtualCard("slash", nil, player, table.map(self.cost_data, function(id) return room:getPlayerById(id) end), self.name, true)
+    room:useVirtualCard("slash", nil, player, table.map(self.cost_data[1], function(id) return room:getPlayerById(id) end), self.name, true)
     return true
   end,
 }
@@ -290,7 +289,7 @@ xiahouyuan:addSkill(ol_ex__shebian)
 Fk:loadTranslationTable{
   ["ol_ex__xiahouyuan"] = "界夏侯渊",
   ["ol_ex__shensu"] = "神速",
-  [":ol_ex__shensu"] = "①判定阶段开始前，你可跳过此阶段和摸牌阶段，视为使用普【杀】。②摸牌阶段开始前，你可跳过此阶段并弃置一张装备牌，视为使用普【杀】。③弃牌阶段开始前，你可跳过此阶段并翻面，视为使用普【杀】。",
+  [":ol_ex__shensu"] = "①判定阶段开始前，你可跳过此阶段和摸牌阶段来视为使用普【杀】。②摸牌阶段开始前，你可跳过此阶段并弃置一张装备牌来视为使用普【杀】。③弃牌阶段开始前，你可跳过此阶段并翻面来视为使用普【杀】。",
   ["ol_ex__shebian"] = "设变",
   [":ol_ex__shebian"] = "当你翻面后，你可将一名角色装备区里的一张牌置入另一名角色的装备区。",
   ["#ol_ex__shensu1-choose"] = "神速：你可以跳过判定阶段和摸牌阶段，视为使用一张无距离限制的【杀】",
@@ -359,15 +358,14 @@ local ol_ex__tianxiang = fk.CreateTriggerSkill{
     local tar, card =  player.room:askForChooseCardAndPlayers(player, table.map(player.room:getOtherPlayers(player), function (p)
       return p.id end), 1, 1, ".|.|heart|.", "#ol_ex__tianxiang-choose", self.name, true)
     if #tar > 0 and card then
-      self.cost_data = tar[1]
-      self.cost_data2 = card
+      self.cost_data = {tar[1], card}
       return true
     end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local to = room:getPlayerById(self.cost_data)
-    local cid = self.cost_data2
+    local to = room:getPlayerById(self.cost_data[1])
+    local cid = self.cost_data[2]
     room:throwCard(cid, self.name, player, player)
 
     local choices = {"ol_ex__tianxiang_loseHp"}
@@ -485,8 +483,8 @@ Fk:loadTranslationTable{
   
   ["$ol_ex__tianxiang1"] = "碧玉闺秀，只可远观。",
   ["$ol_ex__tianxiang2"] = "你岂会懂我的美丽？",
-  ["$ol_ex__hongyan1"] = "我的容貌，让你心动了吗？",
-  ["$ol_ex__hongyan2"] = "红颜娇花好，折花门前盼。",
+  ["$ol_ex__hongyan1"] = "红颜娇花好，折花门前盼。",
+  ["$ol_ex__hongyan2"] = "我的容貌，让你心动了吗？",
   ["$ol_ex__piaoling1"] = "花自飘零水自流。",
   ["$ol_ex__piaoling2"] = "清风拂枝，落花飘零。",
   ["~ol_ex__xiaoqiao"] = "同心而离居，忧伤以终老……",
@@ -495,7 +493,6 @@ Fk:loadTranslationTable{
 local caoren = General(extension, "ol_ex__caoren", "wei", 4)
 local ol_ex__jushou_select = fk.CreateActiveSkill{
   name = "#ol_ex__jushou_select",
-  anim_type = "offensive",
   can_use = function() return false end,
   target_num = 0,
   card_num = 1,
@@ -606,7 +603,7 @@ Fk:loadTranslationTable{
   [":ol_ex__jushou"] = "结束阶段，你可翻面，你摸四张牌，选择：1.使用一张为装备牌的手牌；2.弃置一张不为装备牌的手牌。",
   ["ol_ex__jiewei"] = "解围",
   ["#ol_ex__jiewei_trigger"] = "解围",
-  [":ol_ex__jiewei"] = "①你可将一张装备区里的牌当普【无懈可击】使用。②当你翻面后，若你的武将牌正面朝上，你可弃置一张牌，你可将一名角色装备区或判定区里的一张牌置入另一名角色的相同区域。",
+  [":ol_ex__jiewei"] = "①你可将一张装备区里的牌转化为普【无懈可击】使用。②当你翻面后，若你的武将牌正面朝上，你可弃置一张牌，你可将一名角色装备区或判定区里的一张牌置入另一名角色的相同区域。",
 
   ["#ol_ex__jushou-select"] = "据守：选择使用手牌中的一张装备牌或弃置手牌中的一张非装备牌",
   ["#ol_ex__jiewei-discard"] = "解围：弃置一张牌发动，之后可以移动场上的一张牌",
@@ -827,7 +824,7 @@ Fk:loadTranslationTable{
   ["ol_ex__luanji"] = "乱击",
   [":ol_ex__luanji"] = "①出牌阶段，你可以将两张花色相同的手牌转化为【万箭齐发】使用。②当你使用【万箭齐发】选择目标后，你可取消其中一个目标。",
   ["ol_ex__xueyi"] = "血裔",
-  [":ol_ex__xueyi"] = "主公技，①游戏开始时，你获得X枚“裔”（X为群势力角色数的两倍）。②出牌阶段开始时，你可弃1枚“裔”，你摸一张牌。③你的手牌上限+X（X为“裔”数）",
+  [":ol_ex__xueyi"] = "主公技，①游戏开始时，你获得2X枚“裔”（X为群势力角色数）。②出牌阶段开始时，你可弃1枚“裔”，你摸一张牌。③你的手牌上限+X（X为“裔”数）",
 
   ["#ol_ex__luanji-choose"] = "乱击：你可以为此【万箭齐发】减少一个目标",
   ["@ol_ex__xueyi_yi"] = "裔",
@@ -1152,9 +1149,9 @@ Fk:loadTranslationTable{
   ["@ol_ex__shuangxiong-turn"] = "双雄",
   ["#ol_ex__shuangxiong-discard"] = "双雄：你可以弃置一张牌，本回合可以将不同颜色的牌当【决斗】使用",
 
-  --["$ol_ex__shuangxiong1"] = "吾执矛，君执槊，此天下可有挡我者。",
-  --["$ol_ex__shuangxiong2"] = "兄弟协力，定可于乱世纵横。",
-  --["~ol_ex__yanliangwenchou"] = "",
+  ["$ol_ex__shuangxiong1"] = "吾执矛，君执槊，此天下可有挡我者？",
+  ["$ol_ex__shuangxiong2"] = "兄弟协力，定可于乱世纵横！",
+  ["~ol_ex__yanliangwenchou"] = "双雄皆陨，徒隆武圣之名……",
 }
 
 local ol_ex__wulie = fk.CreateTriggerSkill{
@@ -1353,8 +1350,8 @@ Fk:loadTranslationTable{
   ["$ol_ex__roulin2"] = "这些美人，都可进贡。",
   ["$ol_ex__benghuai1"] = "何人伤我？",
   ["$ol_ex__benghuai2"] = "酒色伤身呐……",
-  ["$ol_ex__baonve1"] = "天下群雄，唯我独尊！",
-  ["$ol_ex__baonve2"] = "吾乃人屠，当以兵为贡。",
+  ["$ol_ex__baonve1"] = "吾乃人屠，当以兵为贡。",
+  ["$ol_ex__baonve2"] = "天下群雄，唯我独尊！",
   ["~ol_ex__dongzhuo"] = "地府……可有美人乎？",
 }
 
@@ -1461,8 +1458,8 @@ local ol_ex__wansha_prohibit = fk.CreateProhibitSkill{
 local ol_ex__wansha_invalidity = fk.CreateInvaliditySkill {
   name = "#ol_ex__wansha_invalidity",
   invalidity_func = function(self, from, skill)
-    if skill.frequency ~= Skill.Compulsory and skill.frequency ~= Skill.Wake
-        and not (skill.attached_equip or skill.name:endsWith("&")) then
+    if table.contains(from.player_skills, skill) and not from.dying and skill.frequency ~= Skill.Compulsory
+    and skill.frequency ~= Skill.Wake and not (skill.attached_equip or skill.name:endsWith("&")) then
       return table.find(Fk:currentRoom().alive_players, function(p)
         return p.dying
       end) and table.find(Fk:currentRoom().alive_players, function(p)
@@ -1486,30 +1483,32 @@ local ol_ex__luanwu = fk.CreateActiveSkill{
     local targets = room:getOtherPlayers(player)
     room:doIndicate(player.id, table.map(targets, function (p) return p.id end))
     for _, target in ipairs(targets) do
-      local other_players = room:getOtherPlayers(target)
-      local luanwu_targets = table.map(table.filter(other_players, function(p2)
-        return table.every(other_players, function(p1)
-          return target:distanceTo(p1) >= target:distanceTo(p2)
+      if not target.dead then
+        local other_players = room:getOtherPlayers(target)
+        local luanwu_targets = table.map(table.filter(other_players, function(p2)
+          return table.every(other_players, function(p1)
+            return target:distanceTo(p1) >= target:distanceTo(p2)
+          end)
+        end), function (p)
+          return p.id
         end)
-      end), function (p)
-        return p.id
-      end)
-      if #luanwu_targets > 1 then
-        local tos = room:askForChoosePlayers(target, luanwu_targets, 1, 1, "#ol_ex__luanwu-slash", self.name, false)
-        if #tos == 1 then
-          luanwu_targets = tos
+        if #luanwu_targets > 1 then
+          local tos = room:askForChoosePlayers(target, luanwu_targets, 1, 1, "#ol_ex__luanwu-slash", self.name, false, true)
+          if #tos == 1 then
+            luanwu_targets = tos
+          else
+            luanwu_targets = {luanwu_targets[1]}
+          end
+        end
+        local use = room:askForUseCard(target, "slash", "slash", "#ol_ex__luanwu-use::" .. luanwu_targets[1], true, { must_targets = luanwu_targets})
+        if use then
+          room:useCard(use)
         else
-          luanwu_targets = {luanwu_targets[1]}
-          room:doIndicate(target.id, luanwu_targets)
+          room:loseHp(target, 1, self.name)
         end
       end
-      local use = room:askForUseCard(target, "slash", "slash", "#ol_ex__luanwu-use::" .. luanwu_targets[1], true, {must_targets = luanwu_targets})
-      if use then
-        room:useCard(use)
-      else
-        room:loseHp(target, 1, self.name)
-      end
     end
+    if player.dead then return end
     local slash = Fk:cloneCard("slash")
     if player:prohibitUse(slash) then return end
     local max_num = slash.skill:getMaxTargetNum(player, slash)
@@ -1528,6 +1527,7 @@ local ol_ex__luanwu = fk.CreateActiveSkill{
 }
 local ol_ex__weimu = fk.CreateProhibitSkill{
   name = "ol_ex__weimu",
+  frequency = Skill.Compulsory,
   is_prohibited = function(self, from, to, card)
     return to:hasSkill(self.name) and card.type == Card.TypeTrick and card.color == Card.Black
   end,
@@ -1561,7 +1561,7 @@ jiaxu:addSkill(ol_ex__weimu)
 Fk:loadTranslationTable{
   ["ol_ex__jiaxu"] = "界贾诩",
   ["ol_ex__wansha"] = "完杀",
-  [":ol_ex__wansha"] = "①除进行濒死流程的角色以外的其他角色于你的回合内不能使用【桃】。②在一名角色于你的回合内进行的濒死流程中，除其以外的其他角色的不带“锁定技”标签的技能无效。",
+  [":ol_ex__wansha"] = "锁定技，①除进行濒死流程的角色以外的其他角色于你的回合内不能使用【桃】。②在一名角色于你的回合内进行的濒死流程中，除其以外的其他角色的不带“锁定技”标签的技能无效。",
   ["ol_ex__luanwu"] = "乱武",
   [":ol_ex__luanwu"] = "限定技，出牌阶段，你可选择所有其他角色，这些角色各需对包括距离最小的另一名角色在内的角色使用【杀】，否则失去1点体力。最后你可视为使用普【杀】。",
   ["ol_ex__weimu"] = "帷幕",
@@ -1574,8 +1574,8 @@ Fk:loadTranslationTable{
 
   ["$ol_ex__wansha1"] = "有谁敢试试？",
   ["$ol_ex__wansha2"] = "斩草务尽，以绝后患。",
-  ["$ol_ex__luanwu1"] = "这乱世还不够乱！",
-  ["$ol_ex__luanwu2"] = "一切都在我的掌控中！",
+  ["$ol_ex__luanwu1"] = "一切都在我的掌控中！",
+  ["$ol_ex__luanwu2"] = "这乱世还不够乱！",
   ["$ol_ex__weimu1"] = "此伤与我无关。",
   ["$ol_ex__weimu2"] = "还是另寻他法吧。",
   ["~ol_ex__jiaxu"] = "此劫，我亦有所算……",
@@ -1797,8 +1797,8 @@ Fk:loadTranslationTable{
 
   ["$ol_ex__haoshi1"] = "仗义疏财，深得人心。",
   ["$ol_ex__haoshi2"] = "招聚少年，给其衣食。",
-  ["$ol_ex__dimeng1"] = "同盟之人，言归于好。",
-  ["$ol_ex__dimeng2"] = "深知其奇，相与亲结。",
+  ["$ol_ex__dimeng1"] = "深知其奇，相与亲结。",
+  ["$ol_ex__dimeng2"] = "同盟之人，言归于好。",
   ["~ol_ex__lusu"] = "一生为国，纵死无憾……",
 }
 
@@ -1896,7 +1896,7 @@ Fk:loadTranslationTable{
   ["$ol_ex__huoshou1"] = "坐据三山，蛮霸四野！",
   ["$ol_ex__huoshou2"] = "啸据哀牢，闻祸而喜！",
   ["$ol_ex__zaiqi1"] = "挫而弥坚，战而弥勇！",
-  ["$ol_ex__zaiqi2"] = "蛮人骨硬，其势复来！  ",
+  ["$ol_ex__zaiqi2"] = "蛮人骨硬，其势复来！",
   ["~ol_ex__menghuo"] = "勿再放我，但求速死！",
 }
 
@@ -2036,7 +2036,7 @@ local ol_ex__fangquan_delay = fk.CreateTriggerSkill{
   end,
 }
 local ol_ex__ruoyu = fk.CreateTriggerSkill{
-  name = "ol_ex__ruoyu",
+  name = "ol_ex__ruoyu$",
   frequency = Skill.Wake,
   events = {fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
@@ -2084,7 +2084,6 @@ local ol_ex__sishu = fk.CreateTriggerSkill{
   end,
 }
 
---[[
 ol_ex__fangquan:addRelatedSkill(ol_ex__fangquan_delay)
 local liushan = General(extension, "ol_ex__liushan", "shu", 3)
 liushan:addSkill("xiangle")
@@ -2092,7 +2091,7 @@ liushan:addSkill(ol_ex__fangquan)
 liushan:addSkill(ol_ex__ruoyu)
 liushan:addRelatedSkill("jijiang")
 liushan:addRelatedSkill(ol_ex__sishu)
-]]
+
 
 Fk:loadTranslationTable{
   ["ol_ex__liushan"] = "界刘禅",
@@ -2100,10 +2099,11 @@ Fk:loadTranslationTable{
   ["#ol_ex__fangquan_delay"] = "放权",
   [":ol_ex__fangquan"] = "出牌阶段开始前，你可跳过此阶段，然后弃牌阶段开始时，你可弃置一张手牌并选择一名其他角色，其获得一个额外回合。",
   ["ol_ex__ruoyu"] = "若愚",
-  [":ol_ex__ruoyu"] = "主公技，觉醒技，准备阶段，若你是体力值最小的角色，你加1点体力上限，回复体力至3点，获得〖激将〗和〖思蜀〗。",
+  [":ol_ex__ruoyu"] = "主公技，觉醒技，准备阶段，若你是体力值最小的角色，你加1点体力上限，回复体力至3点，获得〖激将〗（暂时为标准版）和〖思蜀〗（暂时无法正常适用）。",
   ["ol_ex__sishu"] = "思蜀",
-  [":ol_ex__sishu"] = "出牌阶段开始时，你可选择一名角色，其本局游戏【乐不思蜀】的判定结果反转（暂时效果无法正常适用）。",
+  [":ol_ex__sishu"] = "出牌阶段开始时，你可选择一名角色，其本局游戏【乐不思蜀】的判定结果反转（暂时无法正常适用）。",
 
+  ["#ol_ex__fangquan-choose"] = "放权：弃置一张手牌，令一名角色获得一个额外回合",
   ["#ol_ex__sishu-choose"] = "思蜀：选择一名角色，令其本局游戏【乐不思蜀】的判定结果反转",
   ["@@ol_ex__sishu_effect"] = "思蜀",
 
@@ -2340,7 +2340,7 @@ local ol_ex__zaoxian = fk.CreateTriggerSkill{
     local room = player.room
     room:changeMaxHp(player, -1)
     room:handleAddLoseSkills(player, "ol_ex__jixi", nil)
-    --player:gainAnExtraTurn()
+    player:gainAnExtraTurn()
   end,
 }
 local ol_ex__jixi = fk.CreateViewAsSkill{
@@ -2360,6 +2360,12 @@ local ol_ex__jixi = fk.CreateViewAsSkill{
     c:addSubcard(cards[1])
     return c
   end,
+  enabled_at_play = function(self, player)
+    return #player:getPile("ol_ex__dengai_field") > 0
+  end,
+  enabled_at_response = function(self, player)
+    return #player:getPile("ol_ex__dengai_field") > 0
+  end,
 }
 ol_ex__tuntian:addRelatedSkill(ol_ex__tuntian_delay)
 ol_ex__tuntian:addRelatedSkill(ol_ex__tuntian_distance)
@@ -2374,9 +2380,9 @@ Fk:loadTranslationTable{
   ["#ol_ex__tuntian_delay"] = "屯田",
   [":ol_ex__tuntian"] = "当你于回合外失去牌后，或于回合内因弃置而失去【杀】后，你可以进行判定，若结果不为红桃，你将判定牌置于你的武将牌上，称为“田”；你计算与其他角色的距离-X（X为“田”的数量）。",
   ["ol_ex__zaoxian"] = "凿险",
-  [":ol_ex__zaoxian"] = "觉醒技，准备阶段，若“田”的数量大于等于3，你减1点体力上限，然后获得“急袭”。此回合结束后，你获得一个额外回合（暂时不能获得额外回合）。",
+  [":ol_ex__zaoxian"] = "觉醒技，准备阶段，若“田”的数量大于等于3，你减1点体力上限，然后获得“急袭”。此回合结束后，你获得一个额外回合。",
   ["ol_ex__jixi"] = "急袭",
-  [":ol_ex__jixi"] = "你可以将一张“田”当【顺手牵羊】使用（暂时会参与屯田的距离计算）。",
+  [":ol_ex__jixi"] = "你可以将一张“田”当【顺手牵羊】使用。",
 
   ["ol_ex__dengai_field"] = "田",
 
@@ -2447,7 +2453,7 @@ local ol_ex__zhiji = fk.CreateTriggerSkill{
       })
     end
     room:changeMaxHp(player, -1)
-    room:handleAddLoseSkills(player, "guanxing", nil)
+    room:handleAddLoseSkills(player, "ex__guanxing", nil)
   end,
 }
 local jiangwei = General(extension, "ol_ex__jiangwei", "shu", 4)
@@ -2460,16 +2466,17 @@ Fk:loadTranslationTable{
   ["ol_ex__tiaoxin"] = "挑衅",
   [":ol_ex__tiaoxin"] = "出牌阶段限一次，你可以选择一名攻击范围内含有你的角色，然后除非该角色对你使用一张【杀】且你因其执行此【杀】的效果而受到过伤害，否则你弃置其一张牌，然后本阶段本技能限两次。",
   ["ol_ex__zhiji"] = "志继",
-  [":ol_ex__zhiji"] = "觉醒技，准备阶段或结束阶段，若你没有手牌，你回复1点体力或摸两张牌，然后减1点体力上限，获得“观星”（暂时为标准版）。",
+  [":ol_ex__zhiji"] = "觉醒技，准备阶段或结束阶段，若你没有手牌，你回复1点体力或摸两张牌，然后减1点体力上限，获得“观星”。",
 
-  ["$ol_ex__tiaoxin1"] = "宜乘其衅会，以挑敌将。",
-  ["$ol_ex__tiaoxin2"] = "会闻用师，观衅而动。",
+  ["$ol_ex__tiaoxin1"] = "会闻用师，观衅而动。",
+  ["$ol_ex__tiaoxin2"] = "宜乘其衅会，以挑敌将。",
   ["$ol_ex__zhiji1"] = "丞相遗志，不死不休！",
   ["$ol_ex__zhiji2"] = "大业未成，矢志不渝！",
   ["$ol_ex__guanxing1"] = "星象相弦，此乃吉兆！",
   ["$ol_ex__guanxing2"] = "星之分野，各有所属。",
   ["~ol_ex__jiangwei"] = "星散流离……",
 }
+
 local ol_ex__qiaobian_select = fk.CreateActiveSkill{
   name = "#ol_ex__qiaobian_select",
   anim_type = "offensive",
