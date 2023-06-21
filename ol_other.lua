@@ -80,6 +80,10 @@ Fk:loadTranslationTable{
   ["#shenfu-hand"] = "神赋：你可以令一名角色摸一张牌或你弃置其一张手牌",
   ["shenfu_draw"] = "其摸一张牌",
   ["shenfu_discard"] = "你弃置其一张手牌",
+
+  ["$shenfu1"] = "河洛之神，诗赋可抒。",
+  ["$shenfu2"] = "云神鱼游，罗扇掩面。	",
+  ["~godzhenji"] = "众口铄金，难证吾清……",
 }
 
 local godcaopi = General(extension, "godcaopi", "god", 5)
@@ -162,6 +166,20 @@ Fk:loadTranslationTable{
   ["caopi_chu"] = "储",
   ["#chuyuan-card"] = "储元：将一张手牌作为“储”置于 %src 武将牌上",
   ["#tianxing-choice"] = "天行：选择获得的技能",
+
+  ["$chuyuan1"] = "储君之位，囊中之物。",
+  ["$chuyuan2"] = "此役，我之胜。",
+  ["$dengji1"] = "登高位，享极乐。",
+  ["$dengji2"] = "今日，便是我称帝之时。",
+  ["$tianxing1"] = "孤之行，天之意。",
+  ["$tianxing2"] = "我做的决定，便是天的旨意。",
+  ["$jianxiong1-godcaopi"] = "孤之所长，继父之所长。",
+  ["$jianxiong2-godcaopi"] = "乱世枭雄，哼，孤亦是。",
+  ["$rende-godcaopi"] = "这些都是孤赏赐给你的。",
+  ["$zhiheng-godcaopi"] = "有些事情，还需多加思索。",
+  ["$luanji-godcaopi"] = "违逆我的，都该处罚。",
+  ["$fangquan-godcaopi"] = "此等小事，你们处理即可。",
+  ["~godcaopi"] = "曹魏锦绣，孤还未看尽……",
 }
 
 --官渡群张郃 辛评 韩猛
