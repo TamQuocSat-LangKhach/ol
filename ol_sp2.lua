@@ -345,6 +345,12 @@ Fk:loadTranslationTable{
   ["#weiyi3-invoke"] = "威仪：你可以令 %dest 回复1点体力",
   ["#weiyi-choice"] = "威仪：选择令 %dest 执行的一项",
   ["#jinzhi-discard"] = "锦织：弃置%arg张颜色相同的牌，摸一张牌，视为使用此基本牌",
+  
+  ["$weiyi1"] = "无威仪者，不可奉社稷。",
+  ["$weiyi2"] = "有威仪者，进止雍容。",
+  ["$jinzhi1"] = "织锦为旗，以扬威仪。",
+  ["$jinzhi2"] = "坐而织锦，立则为仪。",
+  ["~ol__panshu"] = "本为织女，幸蒙帝垂怜……",
 }
 
 local huangzu = General(extension, "ol__huangzu", "qun", 4)
@@ -936,9 +942,26 @@ Fk:loadTranslationTable{
   ["#zhaosong2-invoke"] = "诏颂：你可以弃置“赋”，弃置一名角色区域内至多两张牌",
   ["#zhaosong3-invoke"] = "诏颂：你可以弃置“颂”，额外选择至多两个目标",
   ["#lisi-invoke"] = "离思：你可以将%arg交给一名手牌数不大于你的其他角色",
+  
+  ["$zhaosong1"] = "领诏者，可上而颂之。",
+  ["$zhaosong2"] = "今为诏，以上告下也。",
+  ["$lisi1"] = "骨肉至亲，化为他人。",
+  ["$lisi2"] = "梦想魂归，见所思兮。",
+  ["~zuofen"] = "惨怆愁悲……",
 }
 
 --冯方女
+
+Fk:loadTranslationTable{
+  ["$zhuangshu1"] = "殿前妆梳，风姿绝世。",
+  ["$zhuangshu2"] = "顾影徘徊，丰容靓饰。",
+  ["$zhuangshu3"] = "鬓怯琼梳，朱颜消瘦。",
+  ["$zhuangshu4"] = "犀梳斜插，醉倚阑干。",
+  ["$zhuangshu5"] = "金梳富贵，蒙君宠幸。",
+  ["$chuiti1"] = "悲愁垂涕，三日不食。",
+  ["$chuiti2"] = "宜数涕泣，示忧愁也。",
+  ["~ol__fengfangnv"] = "毒妇妒我……",
+}
 
 local yangyi = General(extension, "ol__yangyi", "shu", 3)
 local juanxia_viewas = fk.CreateViewAsSkill{
@@ -1879,6 +1902,12 @@ Fk:loadTranslationTable{
   ["#zengou-discard"] = "谮构：弃置一张非基本牌，或点“取消”失去1点体力",
   ["#zhangji-draw"] = "长姬：你可以令 %dest 摸两张牌",
   ["#zhangji-discard"] = "长姬：你可以令 %dest 弃置两张牌",
+
+  ["$zengou1"] = "此书定能置夏侯楙于死地。",
+  ["$zengou2"] = "夏侯违制，请君上定夺。",
+  ["$zhangjiq1"] = "魏武有子数十，唯我最长。",
+  ["$zhangjiq2"] = "长姐为大，众弟怎可悖之？",
+  ["~qinghegongzhu"] = "我言非虚，君上何疑于我？",
 }
 
 local tengfanglan = General(extension, "ol__tengfanglan", "wu", 3, 3, General.Female)
@@ -2016,6 +2045,12 @@ Fk:loadTranslationTable{
   ["luochong3"] = "弃置两张牌",
   ["luochong4"] = "摸两张牌",
   ["#aichen-choice"] = "哀尘：移除一种“落宠”选项",
+  
+  ["$luochong1"] = "宠至莫言非，思移难恃貌。",
+  ["$luochong2"] = "君王一时情，安有恩长久。",
+  ["$aichen1"] = "泪干红落面，心结发垂头。",
+  ["$aichen2"] = "思君应叹息，苦泪无言垂。",
+  ["~ol__tengfanglan"] = "封侯归命，夫妻同归……",
 }
 
 local menghuo = General(extension, "sp__menghuo", "qun", 4)

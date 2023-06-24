@@ -82,7 +82,7 @@ Fk:loadTranslationTable{
   ["shenfu_discard"] = "你弃置其一张手牌",
 
   ["$shenfu1"] = "河洛之神，诗赋可抒。",
-  ["$shenfu2"] = "云神鱼游，罗扇掩面。	",
+  ["$shenfu2"] = "云神鱼游，罗扇掩面。",
   ["~godzhenji"] = "众口铄金，难证吾清……",
 }
 
@@ -180,6 +180,112 @@ Fk:loadTranslationTable{
   ["$luanji-godcaopi"] = "违逆我的，都该处罚。",
   ["$fangquan-godcaopi"] = "此等小事，你们处理即可。",
   ["~godcaopi"] = "曹魏锦绣，孤还未看尽……",
+}
+
+local lvbu3 = General(extension, "hulao__godlvbu3", "god", 4)
+lvbu3.hidden = true
+
+local shenqu = fk.CreateTriggerSkill{
+  name = "shenqu",
+  anim_type = "drawcard",
+  events = {fk.EventPhaseStart, fk.Damaged},
+  can_trigger = function(self, event, target, player, data)
+    if event == fk.EventPhaseStart then
+      return player:hasSkill(self.name) and target.phase == Player.Start and player:getHandcardNum() <= player.maxHp
+    elseif event == fk.Damaged then
+      return player:hasSkill(self.name) and player == target
+    end
+  end,
+  on_cost = function(self, event, target, player, data)
+    if event == fk.EventPhaseStart then
+      return player.room:askForSkillInvoke(player, self.name, nil, "#shenqu-invoke")
+    end
+    return true
+  end,
+  on_use = function(self, event, target, player, data)
+    if event == fk.EventPhaseStart then
+      player:drawCards(2, self.name)
+    else
+      local use = player.room:askForUseCard(player, "peach", "peach", "#shenqu-use", true)
+      if use then
+        player.room:useCard(use)
+      end
+    end
+  end,
+}
+
+local jiwu = fk.CreateActiveSkill{
+  name = "jiwu",
+  anim_type = "offensive",
+  mute = true,
+  card_num = 1,
+  target_num = 0,
+  interaction = function(self)
+    local jiwu_skills = table.filter({"ol_ex__qiangxi", "ex__tieji", "ty_ex__xuanfeng", "ol_ex__wansha"}, function (skill_name)
+      return not Self:hasSkill(skill_name, true)
+    end)
+    if #jiwu_skills == 0 then return false end
+    return UI.ComboBox { choices = jiwu_skills }
+  end,
+  can_use = function(self, player)
+    local jiwu_skills = {"ol_ex__qiangxi", "ex__tieji", "ty_ex__xuanfeng", "ol_ex__wansha"}
+    return not table.every(jiwu_skills, function (skill_name) return player:hasSkill(skill_name, true) end)
+  end,
+  card_filter = function(self, to_select, selected)
+    return #selected == 0 and not Self:prohibitDiscard(Fk:getCardById(to_select))
+  end,
+  on_use = function(self, room, effect)
+    local skill_name = self.interaction.data
+    local player = room:getPlayerById(effect.from)
+    room:notifySkillInvoked(player, self.name)
+    room:broadcastSkillInvoke(self.name, math.random(2))
+    room:throwCard(effect.cards, self.name, player, player)
+    local jiwu_skills = type(player:getMark("jiwu_skills")) == "table" and player:getMark("jiwu_skills") or {}
+    table.insertIfNeed(jiwu_skills, skill_name)
+    room:setPlayerMark(player, "jiwu_skills", jiwu_skills)
+    room:handleAddLoseSkills(player, skill_name, nil, true, false)
+  end,
+
+  refresh_events = {fk.TurnEnd},
+  can_refresh = function(self, event, target, player, data)
+    return target == player and type(player:getMark("jiwu_skills")) == "table"
+  end,
+  on_refresh = function(self, event, target, player, data)
+    local jiwu_skills = player:getMark("jiwu_skills")
+    if #jiwu_skills > 0 then
+      player.room:handleAddLoseSkills(player, "-"..table.concat(jiwu_skills, "|-"), nil, true, false)
+    end
+    player.room:setPlayerMark(player, "jiwu_skills", 0)
+  end,
+}
+
+lvbu3:addSkill("wushuang")
+lvbu3:addSkill(shenqu)
+lvbu3:addSkill(jiwu)
+
+Fk:loadTranslationTable{
+  ["hulao__godlvbu3"] = "神吕布",
+  ["shenqu"] = "神躯",
+  [":shenqu"] = "一名角色的准备阶段，若你的手牌数不大于你的体力上限，你可摸两张牌。当你受到伤害后，你可使用一张【桃】。",
+  ["jiwu"] = "极武",
+  [":jiwu"] = "出牌阶段，你可以弃置一张牌，然后本回合你拥有以下其中一个技能：“强袭”、“铁骑”、“旋风”、“完杀”。",
+
+  ["#shenqu-invoke"] = "是否使用神躯，摸两张牌",
+  ["#shenqu-use"] = "神躯：你可以使用一张【桃】",
+	["$shenqu1"] = "别心怀侥幸了，你们不可能赢！",
+	["$shenqu2"] = "虎牢关，我一人镇守足矣。",
+	["$jiwu1"] = "我！是不可战胜的！",
+	["$jiwu2"] = "今天！就让你们感受一下真正的绝望！",
+	["$jiwu3"] = "这么想死，那我就成全你！",
+	["$jiwu4"] = "项上人头，待我来取！",
+	["$jiwu5"] = "哈哈哈！破绽百出！",
+	["$jiwu6"] = "我要让这虎牢关下，血流成河！",
+	["$jiwu7"] = "千钧之势，力贯苍穹！",
+	["$jiwu8"] = "风扫六合，威震八荒！",
+	["$jiwu9"] = "蝼蚁！怎容偷生！",
+	["$jiwu10"] = "沉沦吧！在这无边的恐惧！",
+	["~hulao__godlvbu3"] = "你们的项上人头，我改日再取！",
+
 }
 
 --官渡群张郃 辛评 韩猛

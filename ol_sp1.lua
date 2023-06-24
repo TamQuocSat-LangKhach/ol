@@ -2160,6 +2160,7 @@ local xianfu = fk.CreateTriggerSkill{
   name = "xianfu",
   events = {fk.GameStart, fk.Damaged, fk.HpRecover},
   frequency = Skill.Compulsory,
+  mute = true,
   can_trigger = function(self, event, target, player, data)
     if player:hasSkill(self.name) then
       if event == fk.GameStart then
@@ -2172,6 +2173,8 @@ local xianfu = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     if event == fk.GameStart then
+      room:notifySkillInvoked(player, self.name)
+      room:broadcastSkillInvoke(self.name, math.random(2))
       local targets = table.map(room:getOtherPlayers(player), function(p) return p.id end)
       local tos = room:askForChoosePlayers(player, targets, 1, 1, "#xianfu-choose", self.name, false, true)
       local to
@@ -2182,6 +2185,8 @@ local xianfu = fk.CreateTriggerSkill{
       end
       room:setPlayerMark(to, self.name, player.id)
     elseif event == fk.Damaged then
+      room:notifySkillInvoked(player, self.name, "negative")
+      room:broadcastSkillInvoke(self.name, math.random(2)+2)
       if player:getMark("@xianfu") == 0 then
         room:setPlayerMark(player, "@xianfu", target.general)
       end
@@ -2191,6 +2196,8 @@ local xianfu = fk.CreateTriggerSkill{
         skillName = self.name,
       }
     elseif event == fk.HpRecover then
+      room:notifySkillInvoked(player, self.name, "support")
+      room:broadcastSkillInvoke(self.name, math.random(2)+4)
       if player:getMark("@xianfu") == 0 then
         room:setPlayerMark(player, "@xianfu", target.general)
       end
@@ -2271,7 +2278,11 @@ Fk:loadTranslationTable{
   -- ["$tiandu1"] = "天意不可逆。",
   -- ["$tiandu2"] = "既是如此。",
   ["$xianfu1"] = "辅佐明君，从一而终。",
-  ["$xianfu2"] = "吾于此生，竭尽所能。",
+	["$xianfu2"] = "吾于此生，竭尽所能。",
+	["$xianfu3"] = "春蚕至死，蜡炬成灰！",
+	["$xianfu4"] = "愿为主公，尽我所能。",
+	["$xianfu5"] = "赠人玫瑰，手有余香。",
+	["$xianfu6"] = "主公之幸，我之幸也。",
   ["$chouce1"] = "一筹一划，一策一略。",
   ["$chouce2"] = "主公之忧，吾之所思也。",
   ["~xizhicai"] = "为何……不再给我……一点点时间……",
