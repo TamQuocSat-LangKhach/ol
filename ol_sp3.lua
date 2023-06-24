@@ -1138,7 +1138,8 @@ local xinggu_active = fk.CreateActiveSkill{
     return #selected == 0 and Self:getPileNameOfId(to_select) == "xinggu"
   end,
   target_filter = function(self, to_select, selected, cards)
-    return #selected == 0 and #cards == 1 and Fk:currentRoom():getPlayerById(to_select):getEquipment(Fk:getCardById(cards[1]).sub_type) == nil
+    return #selected == 0 and #cards == 1 and to_select ~= Self.id and
+      Fk:currentRoom():getPlayerById(to_select):getEquipment(Fk:getCardById(cards[1]).sub_type) == nil
   end,
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)

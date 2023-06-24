@@ -265,7 +265,14 @@ local ol_ex__shensu = fk.CreateTriggerSkill{
       player:skip(Player.Discard)
       player:turnOver()
     end
-    room:useVirtualCard("slash", nil, player, table.map(self.cost_data[1], function(id) return room:getPlayerById(id) end), self.name, true)
+
+    local slash = Fk:cloneCard("slash")
+    slash.skillName = self.name
+    room:useCard({
+      from = target.id,
+      tos = table.map(self.cost_data[1], function(pid) return { pid } end),
+      card = slash,
+    })
     return true
   end,
 }
@@ -667,25 +674,34 @@ local ol_ex__fenji = fk.CreateTriggerSkill{
   events = {fk.AfterCardsMove},
   can_trigger = function(self, event, target, player, data)
     if player:hasSkill(self.name) and player.hp >= 1 then
-      self.target_list = {}
       for _, move in ipairs(data) do
-        if not table.contains(self.target_list, move.from) and (move.moveReason == fk.ReasonDiscard or move.moveReason == fk.ReasonPrey) then
+        if (move.moveReason == fk.ReasonDiscard or move.moveReason == fk.ReasonPrey) then
           if move.from and move.proposer and move.from ~= move.proposer then
             for _, info in ipairs(move.moveInfo) do
               if info.fromArea == Card.PlayerHand then
-                table.insertIfNeed(self.target_list, move.from)
-                break
+                return true
               end
             end
           end
         end
       end
-      return #self.target_list > 0
     end
   end,
   on_trigger = function(self, event, target, player, data)
     local room = player.room
-    local targets = table.clone(self.target_list)
+    local targets = {}
+    for _, move in ipairs(data) do
+      if not table.contains(targets, move.from) and (move.moveReason == fk.ReasonDiscard or move.moveReason == fk.ReasonPrey) then
+        if move.from and move.proposer and move.from ~= move.proposer then
+          for _, info in ipairs(move.moveInfo) do
+            if info.fromArea == Card.PlayerHand then
+              table.insert(targets, move.from)
+              break
+            end
+          end
+        end
+      end
+    end
     room:sortPlayersByAction(targets)
     for _, target_id in ipairs(targets) do
       if not player:hasSkill(self.name) or player.hp < 1 then break end
@@ -945,6 +961,7 @@ Fk:loadTranslationTable{
 local ol_ex__qiangxi = fk.CreateActiveSkill{
   name = "ol_ex__qiangxi",
   anim_type = "offensive",
+  prompt = "#ol_ex__qiangxi",
   max_card_num = 1,
   target_num = 1,
   can_use = function(self, player)
@@ -1029,6 +1046,8 @@ Fk:loadTranslationTable{
   [":ol_ex__qiangxi"] = "出牌阶段限两次，你可受到1点普通伤害或弃置一张武器牌并选择一名于此阶段内未选择过的其他角色，你对其造成1点普通伤害。",
   ["ol_ex__ninge"] = "狞恶",
   [":ol_ex__ninge"] = "锁定技，当一名角色于当前回合内第二次受到伤害后，若其为你或来源为你，你摸一张牌，弃置其装备区或判定区里的一张牌。",
+
+  ["#ol_ex__qiangxi"] = "选择一张武器牌或不选（受到1点伤害），并选择强袭的目标",
 
   ["$ol_ex__qiangxi1"] = "典韦来也，谁敢一战！",
   ["$ol_ex__qiangxi2"] = "双戟青罡，百死无生！",
@@ -1138,7 +1157,7 @@ local ol_ex__shuangxiong = fk.CreateViewAsSkill{
   end,
 }
 ol_ex__shuangxiong:addRelatedSkill(ol_ex__shuangxiong_trigger)
-local yanliangwenchou = General:new(extension, "ol_ex__yanliangwenchou", "qun", 4)
+local yanliangwenchou = General(extension, "ol_ex__yanliangwenchou", "qun", 4)
 yanliangwenchou:addSkill(ol_ex__shuangxiong)
 Fk:loadTranslationTable{
   ["ol_ex__yanliangwenchou"] = "界颜良文丑",
@@ -1235,11 +1254,8 @@ local ol_ex__jiuchi = fk.CreateViewAsSkill{
 }
 local ol_ex__jiuchi_targetmod = fk.CreateTargetModSkill{
   name = "#ol_ex__jiuchi_targetmod",
-  residue_func = function(self, player, skill, scope)
-    if player:hasSkill("ol_ex__jiuchi") and skill.trueName == "analeptic_skill"
-      and scope == Player.HistoryTurn then
-      return 999
-    end
+  bypass_times = function(self, player, skill, scope)
+    return player:hasSkill(ol_ex__jiuchi.name) and skill.trueName == "analeptic_skill" and scope == Player.HistoryTurn
   end,
 }
 local ol_ex__jiuchi_trigger = fk.CreateTriggerSkill{
@@ -1404,8 +1420,8 @@ local ol_ex__changbiao_trigger = fk.CreateTriggerSkill{
 }
 local ol_ex__changbiao_targetmod = fk.CreateTargetModSkill{
   name = "#ol_ex__changbiao_targetmod",
-  distance_limit_func = function(self, player, skill, card)
-    return (card and table.contains(card.skillNames, ol_ex__changbiao.name)) and 999 or 0
+  bypass_distances =  function(self, player, skill, card, to)
+    return table.contains(card.skillNames, ol_ex__changbiao.name)
   end,
 }
 ol_ex__changbiao:addRelatedSkill(ol_ex__changbiao_trigger)
@@ -1930,11 +1946,9 @@ local ol_ex__duanliang_refresh = fk.CreateTriggerSkill{
 }
 local ol_ex__duanliang_targetmod = fk.CreateTargetModSkill{
   name = "#ol_ex__duanliang_targetmod",
-  distance_limit_func =  function(self, player, skill)
-    if player:hasSkill(ol_ex__duanliang.name) and skill.name == "supply_shortage_skill"
-      and player:getMark("ol_ex__duanliang_damage-turn") == 0 then
-      return 998
-    end
+  bypass_distances =  function(self, player, skill, card, to)
+    return player:hasSkill(ol_ex__duanliang.name) and skill.name == "supply_shortage_skill" and
+    player:getMark("ol_ex__duanliang_damage-turn") == 0
   end,
 }
 local ol_ex__jiezi = fk.CreateTriggerSkill{
@@ -2459,7 +2473,7 @@ local ol_ex__zhiji = fk.CreateTriggerSkill{
 local jiangwei = General(extension, "ol_ex__jiangwei", "shu", 4)
 jiangwei:addSkill(ol_ex__tiaoxin)
 jiangwei:addSkill(ol_ex__zhiji)
-jiangwei:addRelatedSkill("guanxing")
+jiangwei:addRelatedSkill("ex__guanxing")
 
 Fk:loadTranslationTable{
   ["ol_ex__jiangwei"] = "界姜维",
@@ -2580,7 +2594,7 @@ Fk:loadTranslationTable{
   [":ol_ex__qiaobian"] = "游戏开始时，你获得2枚“变”标记。你可以弃置一张牌或移除1枚“变”标记并跳过你的一个阶段（准备阶段和结束阶段除外）：若跳过摸牌阶段，你可以获得至多两名角色的各一张手牌；若跳过出牌阶段，你可以移动场上的一张牌。结束阶段开始时，若你的手牌数与之前你的每一回合结束阶段开始时的手牌数均不相等，你获得1枚“变”标记。",
 
   ["@ol_ex__qiaobian_change"] = "变",
-  ["#ol_ex__qiaobian-invoke"] = "巧变：你可选择一张牌弃置，或直接点确定弃置变标记。来跳过 %arg",
+  ["#ol_ex__qiaobian-invoke"] = "巧变：你可选择一张牌弃置，或直接点确定则弃置变标记。来跳过 %arg",
   ["#ol_ex__qiaobian-prey"] = "巧变：你可以选择一至两名角色，获得这些角色各一张手牌",
   ["#ol_ex__qiaobian-movecard"] = "巧变：你可以选择两名角色，移动这些角色装备区或判定区的一张牌",
 
@@ -2662,7 +2676,7 @@ Fk:loadTranslationTable{
   [":ol_ex__beige"] = "当一名角色受到【杀】造成的伤害后，若你有牌，你可以令其进行一次判定，然后你可以弃置一张牌，根据判定结果执行：红桃，其回复1点体力；方块，其摸两张牌；梅花，伤害来源弃置两张牌；黑桃，伤害来源将武将牌翻面；点数相同，你获得你弃置的牌；花色相同，你获得判定牌。",
  
   ["#ol_ex__beige-invoke"] = "悲歌：你可以令%dest进行判定",
-  ["#ol_ex__beige-discard"] = "悲歌：你可以弃置一张牌令%dest根据判定的花色执行效果",
+  ["#ol_ex__beige-discard"] = "悲歌：你可以弃置一张牌令%dest根据判定的花色执行对应效果",
 
   ["$ol_ex__beige1"] = "箜篌鸣九霄，闻者心俱伤。",
   ["$ol_ex__beige2"] = " 琴弹十八拍，听此双泪流。",

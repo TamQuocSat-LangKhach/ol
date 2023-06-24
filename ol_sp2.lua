@@ -796,6 +796,12 @@ Fk:loadTranslationTable{
   ["#ol__wanwei2-invoke"] = "挽危：你可以从牌堆获得其中一张牌的同名牌（若没有则摸一张牌）",
   ["#ol__wanwei-choice"] = "挽危：选择你要从牌堆获得的牌（若没有则摸一张牌）",
   ["#ol__yuejian-invoke"] = "约俭：你可以展示所有手牌，若花色均与%arg不同，你获得之",
+
+  ["$ol__wanwei1"] = "梁、沛之间，非子廉无有今日。",
+  ["$ol__wanwei2"] = "正使祸至，共死何苦！",
+  ["$ol__yuejian1"] = "无文绣珠玉，器皆黑漆。",
+  ["$ol__yuejian2"] = "性情约俭，不尚华丽。",
+  ["~ol__bianfuren"] = "心肝涂地，惊愕断绝……",
 }
 
 local zuofen = General(extension, "zuofen", "jin", 3, 3, General.Female)

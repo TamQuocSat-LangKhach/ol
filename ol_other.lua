@@ -99,6 +99,7 @@ local chuyuan = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
+    room:doIndicate(player.id, {target.id})
     target:drawCards(1, self.name)
     local card = room:askForCard(target, 1, 1, false, self.name, false, ".", "#chuyuan-card:"..player.id)
     player:addToPile("caopi_chu", card, false, self.name)
@@ -131,8 +132,7 @@ local tianxing = fk.CreateTriggerSkill{
   events = {fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(self.name) and
-      player.phase == Player.Start and player:usedSkillTimes(self.name, Player.HistoryGame) == 0 and
-      player:usedSkillTimes("dengji", Player.HistoryTurn) == 0  --连续觉醒体验不好，强行改了
+      player.phase == Player.Start and player:usedSkillTimes(self.name, Player.HistoryGame) == 0
   end,
   can_wake = function(self, event, target, player, data)
     return #player:getPile("caopi_chu") > 2
@@ -245,6 +245,10 @@ local jiwu = fk.CreateActiveSkill{
     room:setPlayerMark(player, "jiwu_skills", jiwu_skills)
     room:handleAddLoseSkills(player, skill_name, nil, true, false)
   end,
+}
+
+local jiwu_refresh = fk.CreateTriggerSkill{
+  name = "#jiwu_refresh",
 
   refresh_events = {fk.TurnEnd},
   can_refresh = function(self, event, target, player, data)
@@ -259,6 +263,7 @@ local jiwu = fk.CreateActiveSkill{
   end,
 }
 
+jiwu:addRelatedSkill(jiwu_refresh)
 lvbu3:addSkill("wushuang")
 lvbu3:addSkill(shenqu)
 lvbu3:addSkill(jiwu)
