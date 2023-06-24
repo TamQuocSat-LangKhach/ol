@@ -1405,7 +1405,7 @@ local ol_ex__changbiao_trigger = fk.CreateTriggerSkill{
 local ol_ex__changbiao_targetmod = fk.CreateTargetModSkill{
   name = "#ol_ex__changbiao_targetmod",
   distance_limit_func = function(self, player, skill, card)
-    return table.contains(card.skillNames, ol_ex__changbiao.name) and 999 or 0
+    return (card and table.contains(card.skillNames, ol_ex__changbiao.name)) and 999 or 0
   end,
 }
 ol_ex__changbiao:addRelatedSkill(ol_ex__changbiao_trigger)
@@ -2283,7 +2283,7 @@ local ol_ex__tuntian = fk.CreateTriggerSkill{
   can_trigger = function(self, event, target, player, data)
     if player:hasSkill(self.name) then
       for _, move in ipairs(data) do
-        if move.from == player.id then
+        if move.from == player.id and (move.to ~= player.id or (move.toArea ~= Card.PlayerHand and move.toArea ~= Card.PlayerEquip)) then
           for _, info in ipairs(move.moveInfo) do
             if info.fromArea == Card.PlayerHand or info.fromArea == Card.PlayerEquip then
               if (move.moveReason == fk.ReasonDiscard and Fk:getCardById(info.cardId).trueName == "slash") or
