@@ -882,7 +882,156 @@ Fk:loadTranslationTable{
   [":cuipo"] = "锁定技，当你每回合使用第X张牌时（X为此牌牌名字数），若为【杀】或伤害锦囊牌，此牌伤害+1，否则你摸一张牌。",
   ["@cuipo-turn"] = "摧破",
 }
---王瓘 2023.5.10
+
+local wangguan = General(extension, "wangguan", "wei", 3)
+local miuyan = fk.CreateViewAsSkill{
+  name = "miuyan",
+  anim_type = "switch",
+  switch_skill_name = "miuyan",
+  pattern = "fire_attack",
+  card_filter = function(self, to_select, selected)
+    return #selected == 0 and Fk:getCardById(to_select).color == Card.Black
+  end,
+  view_as = function(self, cards)
+    if #cards ~= 1 then return end
+    local card = Fk:cloneCard("fire_attack")
+    card.skillName = self.name
+    card:addSubcard(cards[1])
+    return card
+  end,
+  enabled_at_play = function(self, player)
+    return player:getMark("@@miuyan-round") == 0
+  end,
+}
+local miuyan_trigger = fk.CreateTriggerSkill{
+  name = "#miuyan_trigger",
+  mute = true,
+  events = {fk.CardUseFinished},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill("miuyan") and table.contains(data.card.skillNames, "miuyan")
+  end,
+  on_cost = function(self, event, target, player, data)
+    return true
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    if player:getSwitchSkillState("miuyan", true) == fk.SwitchYang and data.damageDealt then
+      local moveInfos = {}
+      for _, p in ipairs(room:getOtherPlayers(player)) do
+        if not p:isKongcheng() then
+          local cards = {}
+          for _, id in ipairs(p.player_cards[Player.Hand]) do
+            if Fk:getCardById(id):getMark("miuyan") > 0 then
+              table.insertIfNeed(cards, id)
+            end
+          end
+          if #cards > 0 then
+            table.insert(moveInfos, {
+              from = p.id,
+              ids = cards,
+              to = player.id,
+              toArea = Card.PlayerHand,
+              moveReason = fk.ReasonPrey,
+              proposer = player.id,
+              skillName = "miuyan",
+            })
+          end
+        end
+      end
+      if #moveInfos > 0 then
+        room:moveCards(table.unpack(moveInfos))
+      end
+    elseif player:getSwitchSkillState("miuyan", true) == fk.SwitchYin and not data.damageDealt then
+      room:setPlayerMark(player, "@@miuyan-round", 1)
+    end
+  end,
+
+  refresh_events = {fk.CardShown, fk.TurnEnd},
+  can_refresh = function(self, event, target, player, data)
+    return target == player
+  end,
+  on_refresh = function(self, event, target, player, data)
+    local room = player.room
+    if event == fk.CardShown then
+      for _, id in ipairs(data.cardIds) do
+        room:setCardMark(Fk:getCardById(id), "miuyan", 1)
+      end
+    else
+      for _, id in ipairs(Fk:getAllCardIds()) do
+        room:setCardMark(Fk:getCardById(id), "miuyan", 0)
+      end
+    end
+  end,
+}
+local shilu = fk.CreateTriggerSkill{
+  name = "shilu",
+  anim_type = "masochism",
+  frequency = Skill.Compulsory,
+  events = {fk.Damaged},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self.name)
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    player:drawCards(player.hp, self.name)
+    local targets = table.map(table.filter(room:getOtherPlayers(player), function(p)
+      return player:inMyAttackRange(p) and not p:isKongcheng() end), function(p) return p.id end)
+    if #targets == 0 then return end
+    local tos = room:askForChoosePlayers(player, targets, 1, 1, "#shilu-choose", self.name, false)
+    local to
+    if #tos > 0 then
+      to = room:getPlayerById(tos[1])
+    else
+      to = room:getPlayerById(table.random(targets))
+    end
+    local id = room:askForCardChosen(player, to, "h", self.name)
+    to:showCards(id)
+    if room:getCardArea(id) == Card.PlayerHand then
+      room:setCardMark(Fk:getCardById(id), "@@shilu", 1)
+    end
+  end,
+
+  refresh_events = {fk.AfterCardsMove},
+  can_refresh = function(self, event, target, player, data)
+    return true
+  end,
+  on_refresh = function(self, event, target, player, data)
+  local room = player.room
+    for _, move in ipairs(data) do
+      if move.toArea ~= Card.PlayerHand and move.toArea ~= Card.Processing then
+        for _, info in ipairs(move.moveInfo) do
+          room:setCardMark(Fk:getCardById(info.cardId), "@@shilu", 0)
+        end
+      end
+    end
+  end,
+}
+local shilu_filter = fk.CreateFilterSkill{
+  name = "#shilu_filter",
+  card_filter = function(self, card, player)
+    return card:getMark("@@shilu") > 0
+  end,
+  view_as = function(self, card)
+    return Fk:cloneCard("slash", card.suit, card.number)
+  end,
+}
+miuyan:addRelatedSkill(miuyan_trigger)
+shilu:addRelatedSkill(shilu_filter)
+wangguan:addSkill(miuyan)
+wangguan:addSkill(shilu)
+Fk:loadTranslationTable{
+  ["wangguan"] = "王瓘",
+  ["miuyan"] = "谬焰",
+  [":miuyan"] = "转换技，阳：你可以将一张黑色牌当【火攻】使用，若此牌造成伤害，你获得本阶段展示过的所有手牌；"..
+  "阴：你可以将一张黑色牌当【火攻】使用，若此牌未造成伤害，本轮本技能失效。",
+  ["shilu"] = "失路",
+  [":shilu"] = "锁定技，当你受到伤害后，你摸等同体力值张牌并展示攻击范围内一名其他角色的一张手牌，令此牌视为【杀】。",
+  ["@@miuyan-round"] = "谬焰失效",
+  ["#shilu-choose"] = "失路：展示一名角色的一张手牌，此牌视为【杀】",
+  ["@@shilu"] = "失路",
+  ["#shilu_filter"] = "失路",
+}
+
 local luoxian = General(extension, "luoxian", "shu", 4)
 local daili = fk.CreateTriggerSkill{
   name = "daili",
@@ -1170,48 +1319,42 @@ Fk:loadTranslationTable{
   ["xinggu_active"] = "行贾",
 }
 
---曹羲
-
 local lushi = General(extension, "lushi", "qun", 3, 3, General.Female)
+local function setZhuyanMark(p)  --FIXME：先用个mark代替贴脸文字
+  local room = p.room
+  if p:getMark("zhuyan1") == 0 then
+    local sig = ""
+    local n = p:getMark("zhuyan")[1] - p.hp
+    if n > 0 then
+      sig = "+"
+    end
+    room:setPlayerMark(p, "@zhuyan1", sig..tostring(n))
+  end
+  if p:getMark("zhuyan2") == 0 then
+    local sig = ""
+    local n = p:getMark("zhuyan")[2] - p:getHandcardNum()
+    if n > 0 then
+      sig = "+"
+    end
+    room:setPlayerMark(p, "@zhuyan2", sig..tostring(n))
+  end
+end
 local zhuyan = fk.CreateTriggerSkill{
   name = "zhuyan",
-  anim_type = "switch",
-  switch_skill_name = "zhuyan",
+  anim_type = "control",
   events = {fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(self.name) and player.phase == Player.Finish
   end,
   on_cost = function(self, event, target, player, data)
-    local targets, prompt
-    if player:getSwitchSkillState(self.name, false) == fk.SwitchYang then
-      targets = table.map(table.filter(player.room.alive_players, function(p)
-        return p:getMark("zhuyan-yang") == 0 and p:getMark(self.name) ~= 0 end), function(p) return p.id end)
-      prompt = "#zhuyan1-choose"
-    else
-      targets = table.map(table.filter(player.room.alive_players, function(p)
-        return p:getMark("zhuyan-yin") == 0 and p:getMark(self.name) ~= 0 end), function(p) return p.id end)
-      prompt = "#zhuyan2-choose"
-    end
+    local targets = table.map(table.filter(player.room.alive_players, function(p)
+      return p:getMark("zhuyan1") == 0 or p:getMark("zhuyan2") == 0 end), function(p) return p.id end)
     if #targets == 0 then return end
-    for _, id in ipairs(targets) do  --FIXME：先用个mark代替贴脸文字
+    for _, id in ipairs(targets) do
       local p = player.room:getPlayerById(id)
-      if player:getSwitchSkillState(self.name, false) == fk.SwitchYang then
-        local sig = ""
-        local n = p:getMark(self.name)[1] - p.hp
-        if n > 0 then
-          sig = "+"
-        end
-        player.room:setPlayerMark(p, "@zhuyan1", sig..tostring(n))
-      else
-        local sig = ""
-        local n = p:getMark(self.name)[2] - p:getHandcardNum()
-        if n > 0 then
-          sig = "+"
-        end
-        player.room:setPlayerMark(p, "@zhuyan2", sig..tostring(n))
-      end
+      setZhuyanMark(p)
     end
-    local to = player.room:askForChoosePlayers(player, targets, 1, 1, prompt, self.name, true)
+    local to = player.room:askForChoosePlayers(player, targets, 1, 1, "#zhuyan-choose", self.name, true)
     for _, id in ipairs(targets) do
       local p = player.room:getPlayerById(id)
       player.room:setPlayerMark(p, "@zhuyan1", 0)
@@ -1225,8 +1368,19 @@ local zhuyan = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     local to = room:getPlayerById(self.cost_data)
-    if player:getSwitchSkillState(self.name, true) == fk.SwitchYang then
-      room:setPlayerMark(to, "zhuyan-yang", 1)
+    setZhuyanMark(to)
+    local choices = {}
+    if to:getMark("zhuyan1") == 0 then
+      table.insert(choices, "@zhuyan1")
+    end
+    if to:getMark("zhuyan2") == 0 then
+      table.insert(choices, "@zhuyan2")
+    end
+    local choice = room:askForChoice(player, choices, self.name, "#zhuyan-choice::"..to.id)
+    room:setPlayerMark(to, "@zhuyan1", 0)
+    room:setPlayerMark(to, "@zhuyan2", 0)
+    if choice == "@zhuyan1" then
+      room:setPlayerMark(to, "zhuyan1", 1)
       local n = to:getMark(self.name)[1] - to.hp
       if n > 0 then
         if to:isWounded() then
@@ -1241,7 +1395,7 @@ local zhuyan = fk.CreateTriggerSkill{
         room:loseHp(to, -n, self.name)
       end
     else
-      room:setPlayerMark(to, "zhuyan-yin", 1)
+      room:setPlayerMark(to, "zhuyan2", 1)
       local n = to:getMark(self.name)[2] - to:getHandcardNum()
       if n > 0 then
         to:drawCards(n, self.name)
@@ -1251,9 +1405,13 @@ local zhuyan = fk.CreateTriggerSkill{
     end
   end,
 
-  refresh_events = {fk.EventPhaseStart},
+  refresh_events = {fk.GameStart , fk.EventPhaseStart},
   can_refresh = function(self, event, target, player, data)
-    return target == player and player.phase == Player.Start
+    if event == fk.GameStart then
+      return true
+    else
+      return target == player and player.phase == Player.Start
+    end
   end,
   on_refresh = function(self, event, target, player, data)
     player.room:setPlayerMark(player, self.name, {player.hp, math.min(player:getHandcardNum(), 5)})
@@ -1300,17 +1458,37 @@ lushi:addSkill(leijie)
 Fk:loadTranslationTable{
   ["lushi"] = "卢氏",
   ["zhuyan"] = "驻颜",
-  [":zhuyan"] = "转换技，结束阶段，你可以令一名角色将以下项调整至与其上个准备阶段相同：阳：体力值；阴：手牌数（最多摸至五张）。每名角色每项限一次。",
+  [":zhuyan"] = "结束阶段，你可以令一名角色将以下项调整至与其上个准备阶段结束时（若无则改为游戏开始时）相同：体力值；手牌数（至多摸至五张）。"..
+  "每名角色每项限一次",
   ["leijie"] = "雷劫",
   [":leijie"] = "准备阶段，你可以令一名角色判定，若结果为♠2~9，其受到2点雷电伤害，否则其摸两张牌。",
-  ["#zhuyan1-choose"] = "驻颜：选择一名角色，其将体力值调整至与其上个准备阶段相同",
-  ["#zhuyan2-choose"] = "驻颜：选择一名角色，其将手牌调整至与其上个准备阶段相同",
+  ["#zhuyan-choose"] = "驻颜：你可以令一名角色将体力值或手牌数调整至与其上个准备阶段相同",
+  ["#zhuyan-choice"] = "驻颜：选择令 %dest 调整的一项",
   ["#leijie-choose"] = "雷劫：令一名角色判定，若为♠2~9，其受到2点雷电伤害，否则其摸两张牌",
 
   ["@zhuyan1"] = "体力",
   ["@zhuyan2"] = "手牌",
 }
 
---周群
+
+Fk:loadTranslationTable{
+  ["ol__zhouqun"] = "周群",
+  ["tianhou"] = "天候",
+  [":tianhou"] = "锁定技，准备阶段，你观看牌堆顶牌并选择是否用一张牌交换之，然后展示牌堆顶的牌，令一名角色根据此牌花色获得技能直到你下个准备阶段："..
+  "<font color='red'>♥</font>〖烈暑〗；<font color='red'>♦</font>〖凝雾〗；♠〖骤雨〗；♣〖严霜〗。",
+  ["chenshuo"] = "谶说",
+  [":chenshuo"] = "结束阶段，你可以展示一张手牌。若如此做，展示牌堆顶牌，若两张牌类型/花色/点数/牌名字数中任意项相同且展示牌数不大于3，重复此流程。"..
+  "然后你获得以此法展示的牌。",
+  ["tianhou1"] = "烈暑",
+  [":tianhou1"] = "锁定技，其他角色的结束阶段，若其体力值全场最大，其失去1点体力。",
+  ["tianhou2"] = "凝雾",
+  [":tianhou2"] = "锁定技，当其他角色使用【杀】指定不与其相邻的角色为唯一目标时，其判定，若判定牌点数大于此【杀】，此【杀】无效。",
+  ["tianhou3"] = "骤雨",
+  [":tianhou3"] = "锁定技，防止其他角色造成的火焰伤害。当一名角色受到雷电伤害后，其相邻的角色失去1点体力。",
+  ["tianhou4"] = "严霜",
+  [":tianhou4"] = "锁定技，其他角色的结束阶段，若其体力值全场最小，其失去1点体力。",
+}
+
+--曹羲
 
 return extension
