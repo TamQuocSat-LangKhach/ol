@@ -21,7 +21,7 @@ local sankuang = fk.CreateTriggerSkill{
       end
     end
   end,
-  on_cost = function(self, event, target, player, data)
+  on_use = function(self, event, target, player, data)
     local room = player.room
     local targets = {}
     for _, p in ipairs(room:getOtherPlayers(player)) do
@@ -29,35 +29,35 @@ local sankuang = fk.CreateTriggerSkill{
       if #p:getCardIds{Player.Equip, Player.Judge} > 0 then n = n + 1 end
       if p:isWounded() then n = n + 1 end
       if p.hp < #p.player_cards[Player.Hand] then n = n + 1 end
-      p.tag["sankuang"] = n  --TODO: show target's sankuang_num when targeting
+      room:setPlayerMark(p, "@sankuang", n)  --FIXME: 用来显示三恇张数
       if #p:getCardIds{Player.Hand, Player.Equip} >= n then
         table.insert(targets, p.id)
       end
     end
-    if #targets > 0 then
-      local to = room:askForChoosePlayers(player, targets, 1, 1, "#sankuang-choose:::"..data.card:toLogString(), self.name, false)
-      if #to == 0 then
-        to = {table.random(targets)}
-      end
-      self.cost_data = to[1]
-      return true
+    if #targets == 0 then return end
+    local to = room:askForChoosePlayers(player, targets, 1, 1, "#sankuang-choose:::"..data.card:toLogString(), self.name, false)
+    if #to > 0 then
+      to = to[1]
+    else
+      to = table.random(targets)
     end
-  end,
-  on_use = function(self, event, target, player, data)
-    local room = player.room
-    local to = room:getPlayerById(self.cost_data)
-    if player.tag["beishi"] == nil then
-      player.tag["beishi"] = to.id
+    to = room:getPlayerById(to)
+    if player:getMark("beishi") == 0 then
+      room:setPlayerMark(player, "beishi", to.id)
     end
-    local n = to.tag["sankuang"]
+    local n = to:getMark("@sankuang")
+    for _, p in ipairs(room.alive_players) do
+      room:setPlayerMark(p, "@sankuang", 0)
+    end
     if n > 0 then
-      local cards = room:askForCard(to, n, #to:getCardIds{Player.Hand, Player.Equip}, true, self.name, false, ".", "#sankuang-give:::"..n)
+      local cards = room:askForCard(to, n, #to:getCardIds{Player.Hand, Player.Equip}, true, self.name, false, ".",
+        "#sankuang-give:"..player.id.."::"..n)
       local dummy = Fk:cloneCard("dilu")
       dummy:addSubcards(cards)
       room:obtainCard(player, dummy, false, fk.ReasonGive)
     end
     if room:getCardArea(data.card) == Card.PlayerEquip or room:getCardArea(data.card) == Card.Processing then
-      room:obtainCard(to, data.card, true, fk.ReasonPrey)
+      room:obtainCard(to.id, data.card, true, fk.ReasonPrey)
     end
   end,
 }
@@ -100,14 +100,14 @@ local daojie = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     room:addPlayerMark(player, "daojie-turn", 1)
-    local skills = {"Cancel"}
+    local skills = {"daojie_cancel"}
     for _, skill in ipairs(player.player_skills) do
       if skill.frequency == Skill.Compulsory and not skill.attached_equip then
         table.insert(skills, skill.name)
       end
     end
     local choice = room:askForChoice(player, skills, self.name, "#daojie-choice", true)
-    if choice == "Cancel" then
+    if choice == "daojie_cancel" then
       room:loseHp(player, 1, self.name)
     else
       room:handleAddLoseSkills(player, "-"..choice, nil, true, false)
@@ -134,16 +134,19 @@ olz__xunchen:addSkill(daojie)
 Fk:loadTranslationTable{
   ["olz__xunchen"] = "荀谌",
   ["sankuang"] = "三恇",
-  [":sankuang"] = "锁定技，当你每轮首次使用一种类别的牌后，你令一名其他角色交给你至少X张牌并获得你使用的牌（X为其满足的项数：1.场上有牌；2.已受伤；3.体力值小于手牌数）。",
+  [":sankuang"] = "锁定技，当你每轮首次使用一种类别的牌后，你令一名其他角色交给你至少X张牌并获得你使用的牌（X为其满足的项数：1.场上有牌；2.已受伤；"..
+  "3.体力值小于手牌数）。",
   ["beishi"] = "卑势",
   [":beishi"] = "锁定技，当你首次发动〖三恇〗选择的角色失去最后的手牌后，你回复1点体力。",
   ["daojie"] = "蹈节",
   [":daojie"] = "宗族技，锁定技，当你每回合首次使用非伤害锦囊牌后，你选择一项：1.失去1点体力；2.失去一个锁定技，然后令一名同族角色获得此牌。",
   ["#sankuang-choose"] = "三恇：令一名其他角色交给你至少X张牌并获得你使用的%arg",
-  ["#sankuang-give"] = "三恇：你须交给其%arg张牌",
+  ["@sankuang"] = "三恇张数：",
+  ["#sankuang-give"] = "三恇：你须交给 %src %arg张牌",
   ["#daojie-choice"] = "蹈节：失去一个锁定技，或点“取消”失去1点体力",
   ["#daojie-choose"] = "蹈节：令一名同族角色获得此%arg",
-  [":Cancel"] = "",
+  ["daojie_cancel"] = "取消",
+  [":daojie_cancel"] = "失去1点体力",
 
   ["$sankuang1"] = "人言可畏，宜常辟之。",
   ["$sankuang2"] = "天地可敬，可常惧之。",
@@ -218,6 +221,7 @@ local shenjun = fk.CreateTriggerSkill{
     if event == fk.CardUsing then
       local cards = table.filter(player.player_cards[Player.Hand], function(id) return Fk:getCardById(id).trueName == data.card.trueName end)
       player:showCards(cards)
+      if player.dead then return end
       local mark = player:getMark("shenjun-phase")
       if mark == 0 then mark = {} end
       for _, id in ipairs(cards) do
@@ -257,7 +261,7 @@ local balong = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local cards = player.player_cards[Player.Hand]
     player:showCards(cards)
-    if #cards < #player.room.alive_players then
+    if #cards < #player.room.alive_players and not player.dead then
       player:drawCards(#player.room.alive_players - #cards, self.name)
     end
   end,
@@ -301,8 +305,8 @@ local yushen = fk.CreateActiveSkill{
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
     local target = room:getPlayerById(effect.tos[1])
-    if player.tag["fenchai"] == nil and player.gender ~= target.gender then
-      player.tag["fenchai"] = target.id
+    if player:getMark("fenchai") == 0 and player.gender ~= target.gender then
+      room:setPlayerMark(player, "fenchai", target.id)
     end
     room:recover({
       who = target,
@@ -325,7 +329,7 @@ local shangshen = fk.CreateTriggerSkill{
   can_trigger = function(self, event, target, player, data)
     if player:hasSkill(self.name) and not target.dead and data.damageType ~= fk.NormalDamage then
       if player:getMark("shangshen-turn") == 0 then
-        player.room:addPlayerMark(player, "shangshen-turn", 1)
+        player.room:setPlayerMark(player, "shangshen-turn", 1)
         return true
       end
     end
@@ -335,8 +339,9 @@ local shangshen = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    if player.tag["fenchai"] == nil and player.gender ~= target.gender then
-      player.tag["fenchai"] = target.id
+    room:doIndicate(player.id, {target.id})
+    if player:getMark("fenchai") == 0 and player.gender ~= target.gender then
+      room:setPlayerMark(player, "fenchai", target.id)
     end
     local judge = {
       who = player,
@@ -352,26 +357,24 @@ local shangshen = fk.CreateTriggerSkill{
         skillName = self.name,
       }
     end
-    local n = 4 - #target.player_cards[Player.Hand]
+    local n = 4 - target:getHandcardNum()
     if n > 0 and not target.dead then
       target:drawCards(n, self.name)
     end
   end,
 }
-local fenchai = fk.CreateTriggerSkill{
+local fenchai = fk.CreateFilterSkill{
   name = "fenchai",
-  anim_type = "special",
-  frequency = Skill.Compulsory,
-  events = {fk.FinishRetrial},
-  can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name) and player.tag["fenchai"]
+  card_filter = function(self, to_select, player)
+    return player:hasSkill(self.name) and player:getMark(self.name) ~= 0 and RoomInstance and
+      RoomInstance.logic:getCurrentEvent().event == GameEvent.Judge
   end,
-  on_use = function(self, event, target, player, data)
-    if player.room:getPlayerById(player.tag["fenchai"]).dead then
-      data.card.suit = Card.Spade
-    else
-      data.card.suit = Card.Heart
+  view_as = function(self, to_select, player)
+    local suit = Card.Heart
+    if player:getMark(self.name) ~= 0 and Fk:currentRoom():getPlayerById(player:getMark(self.name)).dead then
+      suit = Card.Spade
     end
+    return Fk:cloneCard(to_select.name, suit, to_select.number)
   end,
 }
 xuncan:addSkill(yushen)

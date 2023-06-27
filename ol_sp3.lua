@@ -998,7 +998,7 @@ local shilu = fk.CreateTriggerSkill{
   on_refresh = function(self, event, target, player, data)
   local room = player.room
     for _, move in ipairs(data) do
-      if move.toArea ~= Card.PlayerHand and move.toArea ~= Card.Processing then
+      if move.toArea ~= Card.Processing then
         for _, info in ipairs(move.moveInfo) do
           room:setCardMark(Fk:getCardById(info.cardId), "@@shilu", 0)
         end
@@ -1470,7 +1470,70 @@ Fk:loadTranslationTable{
   ["@zhuyan2"] = "手牌",
 }
 
-
+--local zhouqun = General(extension, "ol__zhouqun", "shu", 4)
+local tianhou = fk.CreateTriggerSkill{
+  name = "tianhou",
+  anim_type = "control",
+  frequency = Skill.Compulsory,
+  events = {fk.EventPhaseStart},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self.name) and player.phase == Player.Start
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local piles = room:askForExchange(player, {room:getNCards(1), player:getCardIds{Player.Hand, Player.Equip}},
+      {"Top", player.general}, self.name)
+    if room:getCardOwner(piles[1][1]) == player then
+      local cards1, cards2 = {piles[1][1]}, {}
+      for _, id in ipairs(piles[2]) do
+        if room:getCardArea(id) ~= Player.Hand then
+          table.insert(cards2, id)
+          break
+        end
+      end
+      local move1 = {
+        ids = cards1,
+        from = player.id,
+        toArea = Card.DrawPile,
+        moveReason = fk.ReasonJustMove,
+        skillName = self.name,
+      }
+      local move2 = {
+        ids = cards2,
+        to = player.id,
+        toArea = Player.Hand,
+        moveReason = fk.ReasonJustMove,
+        skillName = self.name,
+      }
+      room:moveCards(move1, move2)
+    else
+      table.insert(room.draw_pile, 1, piles[1][1])
+    end
+    local card = room:getNCards(1)
+    room:moveCards({
+      ids = card,
+      toArea = Card.Processing,
+      moveReason = fk.ReasonJustMove,
+      skillName = self.name,
+    })
+    room:sendFootnote(card, {
+      type = "##ShowCard",
+      from = player.id,
+    })
+    local suits = {Card.Heart, Card.Diamond, Card.Spade, Card.Club}
+    local i = table.indexOf(suits, Fk:getCardById(card[1], true).suit)
+    local targets = table.map(room.alive_players, function(p) return p.id end)
+    local to = room:askForChoosePlayers(player, targets, 1, 1,
+      "#tianhou-choose:::".."tianhou"..i..":"..Fk:translate(":tianhou"..i), self.name, false)
+    if #to > 0 then
+      to = room:getPlayerById(to[1])
+    else
+      to = room:getPlayerById(table.random(targets))
+    end
+    room:handleAddLoseSkills(to, "tianhou"..i, nil, true, false)
+  end,
+}
+--zhouqun:addSkill(tianhou)
 Fk:loadTranslationTable{
   ["ol__zhouqun"] = "周群",
   ["tianhou"] = "天候",
@@ -1487,6 +1550,7 @@ Fk:loadTranslationTable{
   [":tianhou3"] = "锁定技，防止其他角色造成的火焰伤害。当一名角色受到雷电伤害后，其相邻的角色失去1点体力。",
   ["tianhou4"] = "严霜",
   [":tianhou4"] = "锁定技，其他角色的结束阶段，若其体力值全场最小，其失去1点体力。",
+  ["#tianhou-choose"] = "天候：令一名角色获得技能<br>%arg：%arg2",
 }
 
 --曹羲

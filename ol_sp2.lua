@@ -2211,8 +2211,8 @@ local yuanzi = fk.CreateTriggerSkill{
   can_trigger = function(self, event, target, player, data)
     if target ~= player and player:hasSkill(self.name) then
       if event == fk.EventPhaseStart then
-        return target.phase == Player.Start and
-          player:usedSkillTimes(self.name, Player.HistoryRound) == 0 and not player:isKongcheng()
+        return target.phase == Player.Start and not player:isKongcheng() and not target.dead and
+          player:usedSkillTimes(self.name, Player.HistoryRound) == 0
       else
         return player:usedSkillTimes(self.name, Player.HistoryTurn) > 0 and #target.player_cards[Player.Hand] >= #player.player_cards[Player.Hand]
       end

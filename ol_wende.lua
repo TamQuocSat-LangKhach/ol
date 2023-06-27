@@ -129,7 +129,7 @@ Fk:loadTranslationTable{
   [":caiwang"] = "当你使用/打出牌响应其他角色使用的牌后，或其他角色使用/打出牌响应你使用的牌后，若牌的颜色相同，你可以弃置其一张牌。<br>"..
   "你可以将最后一张手牌当【闪】使用或打出；将最后一张你装备区里的牌当【无懈可击】使用；将最后一张你判定区的牌当【杀】使用或打出。",
   ["naxiang"] = "纳降",
-  [":naxiang"] = "锁定技，当其他角色对你造成伤害或受到你的伤害后，你对其发动【才望】的“弃置”修改为“获得”直到你的回合开始。",
+  [":naxiang"] = "锁定技，当其他角色对你造成伤害或受到你的伤害后，你对其发动〖才望〗的“弃置”修改为“获得”直到你的回合开始。",
 }
 
 Fk:loadTranslationTable{
@@ -584,13 +584,22 @@ local qimei = fk.CreateTriggerSkill{
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(self.name) and player.phase == Player.Start
   end,
-  on_cost = function(self, event, target, player, data)
-    local room = player.room
-    if player.tag[self.name] then
-      room:setPlayerMark(room:getPlayerById(player.tag[self.name]), "@@qimei", 0)
+  on_trigger = function(self, event, target, player, data)
+    if player:getMark(self.name) ~= 0 then
+      local room = player.room
+      local to = room:getPlayerById(player:getMark(self.name))
+      room:setPlayerMark(player, self.name, 0)
+      if not to.dead then
+        local mark = to:getMark("@@qimei")
+        table.removeOne(mark, player.id)
+        if #mark == 0 then mark = 0 end
+        room:setPlayerMark(to, "@@qimei", mark)
+      end
     end
-    player.tag[self.name] = nil
-    local tos = room:askForChoosePlayers(player, table.map(room:getOtherPlayers(player), function(p)
+    self:doCost(event, target, player, data)
+  end,
+  on_cost = function(self, event, target, player, data)
+    local tos = player.room:askForChoosePlayers(player, table.map(player.room:getOtherPlayers(player), function(p)
       return p.id end), 1, 1, "#qimei-choose", self.name, true)
     if #tos > 0 then
       self.cost_data = tos[1]
@@ -598,8 +607,13 @@ local qimei = fk.CreateTriggerSkill{
     end
   end,
   on_use = function(self, event, target, player, data)
-    player.room:setPlayerMark(player.room:getPlayerById(self.cost_data), "@@qimei", 1)
-    player.tag[self.name] = self.cost_data
+    local room = player.room
+    local to = room:getPlayerById(self.cost_data)
+    local mark = to:getMark("@@qimei")
+    if mark == 0 then mark = {} end
+    table.insertIfNeed(mark, player.id)
+    room:setPlayerMark(to, "@@qimei", mark)
+    room:setPlayerMark(player, self.name, self.cost_data)
   end,
 }
 local qimei_trigger = fk.CreateTriggerSkill{
@@ -608,11 +622,11 @@ local qimei_trigger = fk.CreateTriggerSkill{
   events = {fk.AfterCardsMove, fk.HpChanged},
   can_trigger = function(self, event, target, player, data)
     local room = player.room
-    if player:hasSkill(self.name) and player.tag[self.name] and not room:getPlayerById(player.tag[self.name]).dead then
-      local to = room:getPlayerById(player.tag[self.name])
+    if player:hasSkill("qimei") and player:getMark("qimei") ~= 0 and not room:getPlayerById(player:getMark("qimei")).dead then
+      local to = room:getPlayerById(player:getMark("qimei"))
       self.cost_data = nil
       if event == fk.AfterCardsMove then
-        if player:getHandcardNum() ~= #to.player_cards[Player.Hand] then return end
+        if player:getHandcardNum() ~= to:getHandcardNum() then return end
         for _, move in ipairs(data) do
           if move.toArea == Card.PlayerHand then
             if move.to == player.id then
@@ -653,7 +667,7 @@ local qimei_trigger = fk.CreateTriggerSkill{
     local room = player.room
     room:broadcastSkillInvoke("qimei")
     room:notifySkillInvoked(player, "qimei", "drawcard")
-    self.cost_data:drawCards(1, self.name)
+    self.cost_data:drawCards(1, "qimei")
   end,
 }
 local zhuijix = fk.CreateTriggerSkill{
