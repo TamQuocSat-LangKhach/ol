@@ -1470,17 +1470,24 @@ Fk:loadTranslationTable{
   ["@zhuyan2"] = "手牌",
 }
 
---local zhouqun = General(extension, "ol__zhouqun", "shu", 4)
+local zhouqun = General(extension, "ol__zhouqun", "shu", 4)
 local tianhou = fk.CreateTriggerSkill{
   name = "tianhou",
   anim_type = "control",
   frequency = Skill.Compulsory,
   events = {fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name) and player.phase == Player.Start
+    return target == player and player.phase == Player.Start and (player:hasSkill(self.name) or player:getMark(self.name) ~= 0)
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
+    if player:getMark(self.name) ~= 0 then
+      local p = room:getPlayerById(player:getMark(self.name)[1])
+      if p:hasSkill(player:getMark(self.name)[2], true, true) then
+        room:handleAddLoseSkills(p, "-"..player:getMark(self.name)[2], nil, true, false)
+      end
+    end
+    if not player:hasSkill(self.name) then return end
     local piles = room:askForExchange(player, {room:getNCards(1), player:getCardIds{Player.Hand, Player.Equip}},
       {"Top", player.general}, self.name)
     if room:getCardOwner(piles[1][1]) == player then
@@ -1530,10 +1537,162 @@ local tianhou = fk.CreateTriggerSkill{
     else
       to = room:getPlayerById(table.random(targets))
     end
+    room:moveCards({
+      ids = card,
+      toArea = Card.DiscardPile,
+      moveReason = fk.ReasonJustMove,
+      skillName = self.name,
+    })
+    room:setPlayerMark(player, self.name, {to.id, "tianhou"..i})
     room:handleAddLoseSkills(to, "tianhou"..i, nil, true, false)
   end,
 }
---zhouqun:addSkill(tianhou)
+local tianhou1 = fk.CreateTriggerSkill{
+  name = "tianhou1",
+  anim_type = "control",
+  frequency = Skill.Compulsory,
+  events = {fk.EventPhaseStart},
+  can_trigger = function(self, event, target, player, data)
+    return target ~= player and player:hasSkill(self.name) and target.phase == Player.Finish and not target.dead and
+      table.every(player.room:getOtherPlayers(target), function(p) return target.hp >= p.hp end)
+  end,
+  on_use = function(self, event, target, player, data)
+    player.room:loseHp(target, 1, self.name)
+  end,
+}
+local tianhou2 = fk.CreateTriggerSkill{
+  name = "tianhou2",
+  anim_type = "control",
+  frequency = Skill.Compulsory,
+  events = {fk.TargetSpecifying},
+  can_trigger = function(self, event, target, player, data)
+    if target ~= player and player:hasSkill(self.name) and data.card.trueName == "slash" and #AimGroup:getAllTargets(data.tos) == 1 then
+      local to = player.room:getPlayerById(AimGroup:getAllTargets(data.tos)[1])
+      return to:getNextAlive() ~= target and target:getNextAlive() ~= to
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local n = data.card.number
+    local pattern = ".|14"
+    if n < 13 then
+      pattern = ".|"..tostring(n + 1).."~13"
+    end
+    local judge = {
+      who = target,
+      reason = self.name,
+      pattern = pattern,
+    }
+    room:judge(judge)
+    if judge.card.number > data.card.number then
+      data.nullifiedTargets = table.map(room.alive_players, function(p) return p.id end)
+    end
+  end,
+}
+local tianhou3 = fk.CreateTriggerSkill{
+  name = "tianhou3",
+  anim_type = "control",
+  events = {fk.DamageCaused, fk.Damaged},
+  frequency = Skill.Compulsory,
+  can_trigger = function(self, event, target, player, data)
+    if player:hasSkill(self.name) then
+      if event == fk.DamageCaused then
+        return target ~= player and data.damageType == fk.FireDamage
+      else
+        return data.damageType == fk.ThunderDamage
+      end
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    if event == fk.DamageCaused then
+      return true
+    else
+      local room = player.room
+      for _, p in ipairs(room:getOtherPlayers(data.to)) do
+        if not p.dead and p:getMark("tianhou_lose") > 0 then
+          room:loseHp(p, 1, self.name)
+        end
+      end
+    end
+  end,
+
+  refresh_events = {fk.DamageInflicted},
+  can_refresh = function(self, event, target, player, data)
+    return target == player and data.damageType == fk.ThunderDamage
+  end,
+  on_refresh = function(self, event, target, player, data)
+    local room = player.room
+    for _, p in ipairs(room.alive_players) do
+      if target:getNextAlive() == p or p:getNextAlive() == target then
+        room:setPlayerMark(p, "tianhou_lose", 1)
+      else
+        room:setPlayerMark(p, "tianhou_lose", 0)
+      end
+    end
+  end,
+}
+local tianhou4 = fk.CreateTriggerSkill{
+  name = "tianhou4",
+  anim_type = "control",
+  frequency = Skill.Compulsory,
+  events = {fk.EventPhaseStart},
+  can_trigger = function(self, event, target, player, data)
+    return target ~= player and player:hasSkill(self.name) and target.phase == Player.Finish and not target.dead and
+      table.every(player.room:getOtherPlayers(target), function(p) return target.hp <= p.hp end)
+  end,
+  on_use = function(self, event, target, player, data)
+    player.room:loseHp(target, 1, self.name)
+  end,
+}
+local chenshuo = fk.CreateTriggerSkill{
+  name = "chenshuo",
+  anim_type = "drawcard",
+  events = {fk.EventPhaseStart},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self.name) and player.phase == Player.Finish and not player:isKongcheng()
+  end,
+  on_cost = function(self, event, target, player, data)
+    local card = player.room:askForCard(player, 1, 1, false, self.name, true, ".", "#chenshuo-invoke")
+    if #card > 0 then
+      self.cost_data = card
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    player:showCards(self.cost_data)
+    if player.dead then return end
+    local card = Fk:getCardById(self.cost_data[1])
+    local dummy = Fk:cloneCard("dilu")
+    for i = 1, 3, 1 do
+      local get = room:getNCards(1)
+      room:moveCards{
+        ids = get,
+        toArea = Card.Processing,
+        moveReason = fk.ReasonJustMove,
+        skillName = self.name,
+      }
+      dummy:addSubcard(get[1])
+      local card2 = Fk:getCardById(get[1], true)
+      if card.type == card2.type or card.suit == card2.suit or card.number == card2.number or
+        #Fk:translate(card.trueName) == #Fk:translate(card2.trueName) then
+        room:setCardEmotion(get[1], "judgegood")
+        room:delay(1000)
+      else
+        room:setCardEmotion(get[1], "judgebad")
+        room:delay(1000)
+        break
+      end
+    end
+    room:obtainCard(player.id, dummy, true, fk.ReasonJustMove)
+  end,
+}
+zhouqun:addSkill(tianhou)
+zhouqun:addSkill(chenshuo)
+zhouqun:addRelatedSkill(tianhou1)
+zhouqun:addRelatedSkill(tianhou2)
+zhouqun:addRelatedSkill(tianhou3)
+zhouqun:addRelatedSkill(tianhou4)
 Fk:loadTranslationTable{
   ["ol__zhouqun"] = "周群",
   ["tianhou"] = "天候",
@@ -1550,9 +1709,20 @@ Fk:loadTranslationTable{
   [":tianhou3"] = "锁定技，防止其他角色造成的火焰伤害。当一名角色受到雷电伤害后，其相邻的角色失去1点体力。",
   ["tianhou4"] = "严霜",
   [":tianhou4"] = "锁定技，其他角色的结束阶段，若其体力值全场最小，其失去1点体力。",
-  ["#tianhou-choose"] = "天候：令一名角色获得技能<br>%arg：%arg2",
+  ["#tianhou-choose"] = "天候：令一名角色获得技能<br>〖%arg〗：%arg2",
+  ["#chenshuo-invoke"] = "谶说：你可以展示一张手牌，亮出并获得牌堆顶至多三张相同类型/花色/点数/字数的牌",
 }
 
---曹羲
+Fk:loadTranslationTable{
+  ["ol__liuyan"] = "刘焉",
+  ["pianan"] = "偏安",
+  [":pianan"] = "锁定技，游戏开始时和你的弃牌阶段结束时，你弃置不为【闪】的手牌并从牌堆或弃牌堆获得【闪】至你的体力值。",
+  ["yinji"] = "殷积",
+  [":yinji"] = "锁定技结束阶段，若你不是体力值唯一最大的角色，你回复1点体力或增加1点体力上限。",
+  ["kuisi"] = "窥伺",
+  [":kuisi"] = "锁定技，你跳过摸牌阶段，改为观看牌堆顶的4张牌并使用其中任意张，若你以此法使用的牌数不为2或3，你减少1点体力上限。",
+}
 
+--曹羲 成济成倅 孟达 郝普
+--local caoxi = General(extension, "caoxi", "wei", 3)
 return extension

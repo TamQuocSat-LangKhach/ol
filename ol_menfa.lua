@@ -847,7 +847,91 @@ Fk:loadTranslationTable{
   [":jiexuan"] = "",
   ["mingjie"] = "铭戒",
   [":mingjie"] = "",
+}
+
+local wangling = General(extension, "olz__wangling", "wei", 4)
+local bolong = fk.CreateActiveSkill{
+  name = "bolong",
+  anim_type = "offensive",
+  card_num = 0,
+  target_num = 1,
+  can_use = function(self, player)
+    return player:usedSkillTimes(self.name, Player.HistoryPhase) == 0
+  end,
+  card_filter = function(self, to_select, selected)
+    return false
+  end,
+  target_filter = function(self, to_select, selected)
+    if #selected == 0 and to_select ~= Self.id then
+      return not Self:isNude() or (not Self:isKongcheng() and
+        #Fk:currentRoom():getPlayerById(to_select):getCardIds{Player.Hand, Player.Equip} >= Self:getHandcardNum())
+    end
+  end,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    local target = room:getPlayerById(effect.tos[1])
+    local n = player:getHandcardNum()
+    if #target:getCardIds{Player.Hand, Player.Equip} >= n and n > 0 then
+      local cards = room:askForCard(target, n, n, true, self.name, true, ".", "#bolong-card:"..player.id.."::"..n)
+      if #cards == n then
+        local dummy = Fk:cloneCard("dilu")
+        dummy:addSubcards(cards)
+        room:obtainCard(player.id, dummy, false, fk.ReasonGive)
+        room:useVirtualCard("analeptic", nil, target, player, self.name)
+        return
+      end
+    end
+    local card = room:askForCard(player, 1, 1, true, self.name, false, ".", "#bolong-slash::"..target.id)
+    room:obtainCard(target.id, card[1], false, fk.ReasonGive)
+    room:useVirtualCard("slash", nil, player, target, self.name, true)
+  end,
+}
+local zhongliu = fk.CreateTriggerSkill{
+  name = "zhongliu",
+  anim_type = "special",
+  frequency = Skill.Compulsory,
+  events = {fk.CardUsing, fk.BeforeCardsMove},
+  can_trigger = function(self, event, target, player, data)
+    if player:hasSkill(self.name) then
+      if event == fk.CardUsing then
+        return target == player and data.card:isVirtual()
+      else
+        if player.room.logic:getCurrentEvent().parent.event == GameEvent.UseCard then
+          local use = player.room.logic:getCurrentEvent().parent
+          if not use or use.data[1].from ~= player.id then return end
+          for _, move in ipairs(data) do
+            if move.from and move.toArea == Card.Processing then
+              local p = player.room:getPlayerById(move.from)
+              if string.find(p.general, "olz__wang") or string.find(p.general, "wangyun") or
+                string.find(p.general, "wangling") or string.find(p.general, "wangchang") then
+                for _, info in ipairs(move.moveInfo) do
+                  if info.fromArea == Card.PlayerHand then
+                    return false
+                  end
+                end
+              end
+              return true
+            end
+          end
+        end
+      end
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    for _, s in ipairs(Fk.generals[player.general].skills) do
+      player:setSkillUseHistory(s.name, 0, Player.HistoryPhase)  --先用着看看，说不定还有重置限定技的
+    end
+  end,
+}
+wangling:addSkill(bolong)
+wangling:addSkill(zhongliu)
+Fk:loadTranslationTable{
+  ["olz__wangling"] = "王淩",
+  ["bolong"] = "驳龙",
+  [":bolong"] = "出牌阶段限一次，你可以令一名其他角色选择一项：1.你交给其一张牌，视为对其使用一张【杀】；2.交给你与你手牌数等量张牌，视为对你使用一张【酒】。",
   ["zhongliu"] = "中流",
-  [":zhongliu"] = "",
+  [":zhongliu"] = "宗族技，锁定技，当你使用牌时，若不为同族角色的手牌，你视为未发动武将牌上的技能。",
+  ["#bolong-card"] = "驳龙：交给 %src %arg张牌视为对其使用【酒】，否则其交给你一张牌视为对你使用【杀】",
+  ["#bolong-slash"] = "驳龙：交给 %dest 一张牌，视为对其使用【杀】",
 }
 return extension
