@@ -141,7 +141,81 @@ Fk:loadTranslationTable{
   [":qiangshou"] = "锁定技，若你的装备区里有宝物牌，你至其他角色的距离-1。",
 }
 
---华歆
+--local huaxin = General(extension, "ol__huaxin", "wei", 3)
+local caozhao = fk.CreateActiveSkill{
+  name = "caozhao",
+  anim_type = "control",
+  card_num = 1,
+  target_num = 1,
+  prompt = "#caozhao-invoke",
+  interaction = function()
+    local names = {}
+    local mark = Self:getMark("@$caozhao")
+    for _, id in ipairs(Fk:getAllCardIds()) do
+      local card = Fk:getCardById(id)
+      if (card.type == Card.TypeBasic or card:isCommonTrick()) and not card.is_derived then
+        if mark == 0 or (not table.contains(mark, card.trueName)) then
+          table.insertIfNeed(names, card.name)
+        end
+      end
+    end
+    return UI.ComboBox {choices = names}
+  end,
+  can_use = function(self, player)
+    return player:usedSkillTimes(self.name, Player.HistoryPhase) == 0 and not player:isKongcheng()
+  end,
+  card_filter = function(self, to_select, selected)
+    return #selected == 0 and self.interaction.data and Fk:currentRoom():getCardArea(to_select) == Card.PlayerHand
+  end,
+  target_filter = function(self, to_select, selected)
+    return #selected == 0 and self.interaction.data and to_select ~= Self.id and Fk:currentRoom():getPlayerById(to_select).hp <= Self.hp
+  end,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    room:sendLog{
+      type = "#caozhao",
+      from = player.id,
+      arg = self.interaction.data,
+    }
+    local mark = player:getMark("@$caozhao")
+    if mark == 0 then mark = {} end
+    table.insert(mark, self.interaction.data)
+    room:setPlayerMark(player, "@$caozhao", mark)
+    player:showCards(effect.cards)
+    if player.dead then return end
+    local id = effect.cards[1]
+    local targets = table.map(table.filter(room.alive_players, function(p)
+      return p.hp <= player.hp end), function(p) return p.id end)
+    local to = room:askForChoosePlayers(player, targets, 1, 1,
+      "#caozhao-choose:::"..Fk:getCardById(id, true)..":"..self.interaction.data, self.name, false)
+    if #to > 0 then
+      to = room:getPlayerById(to[1])
+    else
+      to = room:getPlayerById(table.random(targets))
+    end
+    local choice = room:askForSkillInvoke(to, self.name, nil,
+      "#caozhao-choice:"..player.id.."::"..Fk:getCardById(id, true)..":"..self.interaction.data)
+    if choice then
+      room:setCardMark(Fk:getCardById(id), "@caozhao", self.interaction.data)
+    else
+      room:loseHp(to, 1, self.name)
+    end
+  end,
+}
+--huaxin:addSkill(caozhao)
+Fk:loadTranslationTable{
+  ["ol__huaxin"] = "华歆",
+  ["caozhao"] = "草诏",
+  [":caozhao"] = "出牌阶段限一次，你可展示一张手牌并声明一种未以此法声明过的基本牌或普通锦囊牌，令一名体力不大于你的其他角色选择一项："..
+  "令此牌视为你声明的牌，或其失去1点体力。然后若此牌声明成功，你可将之交给一名其他角色。",
+  ["ol__xibing"] = "息兵",
+  [":ol__xibing"] = "当你受到其他角色造成的伤害时，你可以弃置你或其两张牌，然后手牌数少的角色摸两张牌，以此法摸牌的角色不能使用牌指定你为目标直到回合结束。",
+  ["#caozhao"] = "%from 声明了 %arg",
+  ["#caozhao-choose"] = "草诏：令一名角色选择：%arg视为【%arg2】，或其失去1点体力",
+  ["#caozhao-choice"] = "草诏：令 %src 将%arg视为【%arg2】，或点“取消”你失去1点体力",
+  ["@$caozhao"] = "草诏",
+  ["@caozhao"] = "草诏",
+}
 
 local zhanghuyuechen = General(extension, "zhanghuyuechen", "jin", 4)
 local xijue = fk.CreateTriggerSkill{

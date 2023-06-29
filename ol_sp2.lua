@@ -1189,18 +1189,25 @@ local ol__zhouxuan = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     player:addToPile("zhanghe_xuan", self.cost_data, true, self.name)
   end,
-
-  refresh_events = {fk.EventPhaseEnd, fk.CardUsing},
-  can_refresh = function(self, event, target, player, data)
+}
+local ol__zhouxuan_trigger = fk.CreateTriggerSkill{
+  name = "#ol__zhouxuan_trigger",
+  mute = true,
+  expand_pile = "zhanghe_xuan",
+  events = {fk.EventPhaseEnd, fk.CardUsing},
+  can_trigger = function(self, event, target, player, data)
     if target == player and #player:getPile("zhanghe_xuan") > 0 then
       if event == fk.EventPhaseEnd then
-        return player.phase == Player.Play
+        return player:hasSkill("ol__zhouxuan") and player.phase == Player.Play
       else
         return true
       end
     end
   end,
-  on_refresh = function(self, event, target, player, data)
+  on_cost = function(self, event, target, player, data)
+    return true
+  end,
+  on_use = function(self, event, target, player, data)
     local room = player.room
     if event == fk.EventPhaseEnd then
       room:moveCards({
@@ -1208,29 +1215,32 @@ local ol__zhouxuan = fk.CreateTriggerSkill{
         ids = player:getPile("zhanghe_xuan"),
         toArea = Card.DiscardPile,
         moveReason = fk.ReasonPutIntoDiscardPile,
-        skillName = self.name,
+        skillName = "ol__zhouxuan",
         specialName = "zhanghe_xuan",
       })
     else
+      room:broadcastSkillInvoke("ol__zhouxuan")
+      room:notifySkillInvoked(player, "ol__zhouxuan", "drawcard")
       if not table.every(room:getOtherPlayers(player), function(p)
         return #p.player_cards[Player.Hand] < #player.player_cards[Player.Hand] end) then
-        player:drawCards(#player:getPile("zhanghe_xuan"), self.name)
+        player:drawCards(#player:getPile("zhanghe_xuan"), "ol__zhouxuan")
       else
-        player:drawCards(1, self.name)
+        player:drawCards(1, "ol__zhouxuan")
       end
-      local card = room:askForCard(player, 1, 1, false, self.name, false, ".|.|.|zhanghe_xuan|.|.", "#ol__zhouxuan-discard", "zhanghe_xuan")
+      local card = room:askForCard(player, 1, 1, false, "ol__zhouxuan", false, ".|.|.|zhanghe_xuan|.|.", "#ol__zhouxuan-discard", "zhanghe_xuan")
       if #card == 0 then card = {table.random(player:getPile("zhanghe_xuan"))} end
       room:moveCards({
         from = player.id,
         ids = card,
         toArea = Card.DiscardPile,
         moveReason = fk.ReasonPutIntoDiscardPile,
-        skillName = self.name,
+        skillName = "ol__zhouxuan",
         specialName = "zhanghe_xuan",
       })
     end
   end,
 }
+ol__zhouxuan:addRelatedSkill(ol__zhouxuan_trigger)
 zhanghe:addSkill(ol__zhouxuan)
 Fk:loadTranslationTable{
   ["ol__zhanghe"] = "张郃",
@@ -1242,14 +1252,159 @@ Fk:loadTranslationTable{
   ["#ol__zhouxuan-discard"] = "周旋：请移去一张“旋”",
 }
 
+local dongzhao = General(extension, "ol__dongzhao", "wei", 3)
+local xianlve = fk.CreateTriggerSkill{
+  name = "xianlve",
+  anim_type = "control",
+  events = {fk.EventPhaseChanging},
+  can_trigger = function(self, event, target, player, data)
+    return target.role == "lord" and player:hasSkill(self.name) and data.from == Player.RoundStart
+  end,
+  on_cost = function(self, event, target, player, data)
+    return player.room:askForSkillInvoke(player, self.name, data, "#xianlve-invoke")
+  end,
+  on_use = function(self, event, target, player, data)
+    local names = {}
+    for _, id in ipairs(Fk:getAllCardIds()) do
+      local card = Fk:getCardById(id)
+      if card:isCommonTrick() then
+        table.insertIfNeed(names, card.name)
+      end
+    end
+    local choice = player.room:askForChoice(player, names, self.name, "#xianlve-choice")
+    player.room:setPlayerMark(player, "@xianlve", choice)
+  end,
+}
+local xianlve_trigger = fk.CreateTriggerSkill{
+  name = "#xianlve_trigger",
+  mute = true,
+  events = {fk.CardUsing},
+  can_trigger = function(self, event, target, player, data)
+    return player:hasSkill("xianlve") and target ~= player and player:getMark("@xianlve") ~= 0 and
+      player:getMark("@xianlve") == data.card.trueName and player:usedSkillTimes(self.name, Player.HistoryTurn) == 0
+  end,
+  on_cost = function(self, event, target, player, data)
+    return true
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    room:broadcastSkillInvoke("xianlve")
+    room:notifySkillInvoked(player, "xianlve", "drawcard")
+    local cards = player:drawCards(2, "xianlve")
+    for _, id in ipairs(cards) do
+      if room:getCardOwner(id) == player and room:getCardArea(id) == Card.PlayerHand then
+        room:setCardMark(Fk:getCardById(id), "xianlve", 1)
+      end
+    end
+    while table.find(player.player_cards[Player.Hand], function(id) return Fk:getCardById(id):getMark("xianlve") > 0 end) do
+      if not room:askForUseActiveSkill(player, "xianlve_active", "#xianlve-give", true) then
+        for _, id in ipairs(player.player_cards[Player.Hand]) do
+          room:setCardMark(Fk:getCardById(id), "xianlve", 0)
+        end
+      end
+    end
+    local skill = Fk.skills["xianlve"]
+    skill:use(event, target, player, data)
+  end,
+}
+local xianlve_active = fk.CreateActiveSkill{
+  name = "xianlve_active",
+  mute = true,
+  min_card_num = 1,
+  target_num = 1,
+  card_filter = function(self, to_select, selected, targets)
+    return Fk:getCardById(to_select):getMark("xianlve") > 0
+  end,
+  target_filter = function(self, to_select, selected, selected_cards)
+    return #selected == 0
+  end,
+  on_use = function(self, room, effect)
+    local target = room:getPlayerById(effect.tos[1])
+    for _, id in ipairs(effect.cards) do
+      room:setCardMark(Fk:getCardById(id), "xianlve", 0)
+    end
+    if effect.tos[1] ~= effect.from then
+      local dummy = Fk:cloneCard("dilu")
+      dummy:addSubcards(effect.cards)
+      room:obtainCard(target, dummy, false, fk.ReasonGive)
+    end
+  end,
+}
+local zaowang = fk.CreateActiveSkill{
+  name = "zaowang",
+  anim_type = "control",
+  card_num = 0,
+  target_num = 1,
+  frequency = Skill.Limited,
+  prompt = "#zaowang-invoke",
+  can_use = function(self, player)
+    return player:usedSkillTimes(self.name, Player.HistoryGame) == 0
+  end,
+  card_filter = function(self, to_select, selected)
+    return false
+  end,
+  target_filter = function(self, to_select, selected, selected_cards)
+    return #selected == 0
+  end,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    local target = room:getPlayerById(effect.tos[1])
+    room:changeMaxHp(target, 1)
+    if target:isWounded() then
+      room:recover{
+        who = target,
+        num = 1,
+        recoverBy = player,
+        skillName = self.name,
+      }
+    end
+    target:drawCards(3, self.name)
+    room:setPlayerMark(target, "@@zaowang", 1)
+  end,
+}
+local zaowang_trigger = fk.CreateTriggerSkill{
+  name = "#zaowang_trigger",
+
+  refresh_events = {fk.BeforeGameOverJudge},
+  can_refresh = function(self, event, target, player, data)
+    return player:getMark("@@zaowang") > 0
+  end,
+  on_refresh = function(self, event, target, player, data)
+    local room = player.room
+    if target.role == "lord" and player.role == "loyalist" then
+      player.role = "lord"
+      target.role = "loyalist"
+      for _, p in ipairs(room.players) do
+        room:notifyProperty(p, player, "role")
+        room:notifyProperty(p, target, "role")
+      end
+      room:setPlayerMark(player, "@@zaowang", 0)
+    elseif target == player and player.role == "rebel" and data.damage and data.damage.from and
+      (data.damage.from.role == "lord" or data.damage.from.role == "loyalist") then
+      room:gameOver("lord+loyalist")
+    end
+  end,
+}
+Fk:addSkill(xianlve_active)
+xianlve:addRelatedSkill(xianlve_trigger)
+zaowang:addRelatedSkill(zaowang_trigger)
+dongzhao:addSkill(xianlve)
+dongzhao:addSkill(zaowang)
 Fk:loadTranslationTable{
   ["ol__dongzhao"] = "董昭",
   ["xianlve"] = "先略",
   [":xianlve"] = "主公的回合开始时，你可以声明一种普通锦囊牌牌名。每回合限一次，当其他角色使用被声明的牌后，你摸两张牌并分配给任意角色，"..
   "然后重新声明一张普通锦囊牌。",
   ["zaowang"] = "造王",
-  [":zaowang"] = "限定技，出牌阶段，你可以令一名角色增加1点体力上限、回复1点体力并摸三张牌，若其为：忠臣，当主公死亡时与主公交换身份牌；:"..
+  [":zaowang"] = "限定技，出牌阶段，你可以令一名角色增加1点体力上限、回复1点体力并摸三张牌，若其为：忠臣，当主公死亡时与主公交换身份牌；"..
   "反贼，当其被主公或忠臣杀死时，主公方获胜。",
+  ["#xianlve-invoke"] = "先略：你可以声明“先略”锦囊牌名",
+  ["#xianlve-choice"] = "先略：选择要记录的牌名",
+  ["#xianlve-give"] = "先略：将这些牌分配给任意角色，点“取消”自己保留",
+  ["xianlve_active"] = "先略",
+  ["@xianlve"] = "先略",
+  ["@@zaowang"] = "造王",
+  ["#zaowang-invoke"] = "造王：令一名角色加1点体力上限、回复1点体力并摸三张牌！",
 }
 
 local wuyan = General(extension, "wuyanw", "wu", 4)
