@@ -1272,7 +1272,7 @@ local xianlve = fk.CreateTriggerSkill{
       end
     end
     local choice = player.room:askForChoice(player, names, self.name, "#xianlve-choice")
-    player.room:setPlayerMark(player, "@xianlve", choice)
+    player.room:setPlayerMark(player, self.name, choice)
   end,
 }
 local xianlve_trigger = fk.CreateTriggerSkill{
@@ -1280,8 +1280,8 @@ local xianlve_trigger = fk.CreateTriggerSkill{
   mute = true,
   events = {fk.CardUsing},
   can_trigger = function(self, event, target, player, data)
-    return player:hasSkill("xianlve") and target ~= player and player:getMark("@xianlve") ~= 0 and
-      player:getMark("@xianlve") == data.card.trueName and player:usedSkillTimes(self.name, Player.HistoryTurn) == 0
+    return player:hasSkill("xianlve") and target ~= player and player:getMark("xianlve") ~= 0 and
+      player:getMark("xianlve") == data.card.trueName and player:usedSkillTimes(self.name, Player.HistoryTurn) == 0
   end,
   on_cost = function(self, event, target, player, data)
     return true
@@ -1402,7 +1402,6 @@ Fk:loadTranslationTable{
   ["#xianlve-choice"] = "先略：选择要记录的牌名",
   ["#xianlve-give"] = "先略：将这些牌分配给任意角色，点“取消”自己保留",
   ["xianlve_active"] = "先略",
-  ["@xianlve"] = "先略",
   ["@@zaowang"] = "造王",
   ["#zaowang-invoke"] = "造王：令一名角色加1点体力上限、回复1点体力并摸三张牌！",
 }

@@ -562,9 +562,88 @@ Fk:loadTranslationTable{
   "若该牌与此【出其不意】花色不同，你对其造成1点伤害。",
 }
 
---随机应变♠2
+local adaptationSkill = fk.CreateActiveSkill{
+  name = "adaptation_skill",
+  can_use = function()
+    return false
+  end,
+}
+local adaptationTriggerSkill = fk.CreateTriggerSkill{
+  name = "adaptation_trigger_skill",
+  global = true,
+
+  refresh_events = {fk.AfterCardsMove, fk.CardUsing, fk.CardResponding, fk.TurnEnd},
+  can_refresh = function(self, event, target, player, data)
+    if event == fk.AfterCardsMove then
+      for _, move in ipairs(data) do
+        if move.toArea == Card.PlayerHand and move.to == player.id then
+          return true
+        end
+      end
+    else
+      if target == player then
+        if event == fk.CardUsing or event == fk.CardResponding then
+          return (data.card.type == Card.TypeBasic or data.card:isCommonTrick()) and player.room.current and
+          table.find(player.player_cards[Player.Hand], function(id) return Fk:getCardById(id, true).trueName == "adaptation" end)
+        else
+          return true
+        end
+      end
+    end
+  end,
+  on_refresh = function(self, event, target, player, data)
+    if event == fk.AfterCardsMove then
+      for _, move in ipairs(data) do
+        if move.toArea == Card.PlayerHand and move.to == player.id then
+          for _, info in ipairs(move.moveInfo) do
+            if Fk:getCardById(info.cardId, true).trueName == "adaptation" then
+              local events = player.room.logic:getEventsOfScope(GameEvent.UseCard, 999, function(e)
+                local use = e.data[1]
+                return use.from == player.id
+              end, Player.HistoryTurn)
+            end
+          end
+        end
+      end
+    elseif event == fk.CardUsing or event == fk.CardResponding then
+      for _, id in ipairs(player.player_cards[Player.Hand]) do
+        if Fk:getCardById(id, true).trueName == "adaptation" then
+          player.room:setCardMark(Fk:getCardById(id, true), "adaptation", data.card.name)
+        end
+      end
+    else
+      for _, id in ipairs(Fk:getAllCardIds()) do
+        if Fk:getCardById(id, true).trueName == "adaptation" then
+          player.room:setCardMark(Fk:getCardById(id, true), "adaptation", 0)
+        end
+      end
+    end
+  end,
+}
+local adaptationFilterSkill = fk.CreateFilterSkill{
+  name = "adaptation_filter_skill",
+  mute = true,
+  global = true,
+  card_filter = function(self, card, player)
+    return card:getMark("adaptation") ~= 0
+  end,
+  view_as = function(self, card)
+    return Fk:cloneCard(card:getMark("adaptation"), card.suit, card.number)
+  end,
+}
+local adaptation = fk.CreateTrickCard{
+  name = "adaptation",
+  skill = adaptationSkill,
+}
+--Fk:addSkill(adaptationTriggerSkill)
+--Fk:addSkill(adaptationFilterSkill)
+extension:addCards{
+  --adaptation:clone(Card.Spade, 2),
+}
 Fk:loadTranslationTable{
   ["adaptation"] = "随机应变",
+  ["adaptation_filter_skill"] = "随机应变",
+  [":adaptation"] = "锦囊牌<br/><b>效果</b>：此牌视为你本回合使用或打出的上一张基本牌或普通锦囊牌。",
 }
 
 local foresightSkill = fk.CreateActiveSkill{

@@ -700,7 +700,7 @@ local lianzhuw_trigger = fk.CreateTriggerSkill{
     if event == fk.GameStart then
       return player:hasSkill(self.name, true)
     elseif event == fk.EventAcquireSkill or event == fk.EventLoseSkill then
-      return data == self
+      return target == player and data == self
     else
       return target == player and player:hasSkill(self.name, true, true)
     end
@@ -708,10 +708,8 @@ local lianzhuw_trigger = fk.CreateTriggerSkill{
   on_refresh = function(self, event, target, player, data)
     local room = player.room
     if event == fk.GameStart or event == fk.EventAcquireSkill then
-      if player:hasSkill(self.name, true) then
-        for _, p in ipairs(room:getOtherPlayers(player)) do
-          room:handleAddLoseSkills(p, "lianzhuw&", nil, false, true)
-        end
+      for _, p in ipairs(room:getOtherPlayers(player)) do
+        room:handleAddLoseSkills(p, "lianzhuw&", nil, false, true)
       end
     elseif event == fk.EventLoseSkill or event == fk.Deathed then
       for _, p in ipairs(room:getOtherPlayers(player, true, true)) do
