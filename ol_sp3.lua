@@ -1470,7 +1470,7 @@ Fk:loadTranslationTable{
   ["@zhuyan2"] = "手牌",
 }
 
-local zhouqun = General(extension, "ol__zhouqun", "shu", 4)
+local zhouqun = General(extension, "ol__zhouqun", "shu", 3)
 local tianhou = fk.CreateTriggerSkill{
   name = "tianhou",
   anim_type = "control",
@@ -1859,11 +1859,11 @@ local weigu = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     if event == fk.TurnEnd then
-      local draw = true
+      local draw = false
       for _, id in ipairs(Fk:getAllCardIds()) do
         local card = Fk:getCardById(id)
         if card.type == Card.TypeBasic and player:usedCardTimes(card.trueName, Player.HistoryTurn) > 0 then
-          draw = false
+          draw = true
           break
         end
       end
