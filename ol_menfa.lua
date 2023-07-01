@@ -881,7 +881,7 @@ local bolong = fk.CreateActiveSkill{
     end
     local card = room:askForCard(player, 1, 1, true, self.name, false, ".", "#bolong-slash::"..target.id)
     room:obtainCard(target.id, card[1], false, fk.ReasonGive)
-    room:useVirtualCard("slash", nil, player, target, self.name, true)
+    room:useVirtualCard("thunder__slash", nil, player, target, self.name, true)
   end,
 }
 local zhongliu = fk.CreateTriggerSkill{
@@ -926,10 +926,11 @@ wangling:addSkill(zhongliu)
 Fk:loadTranslationTable{
   ["olz__wangling"] = "王淩",
   ["bolong"] = "驳龙",
-  [":bolong"] = "出牌阶段限一次，你可以令一名其他角色选择一项：1.你交给其一张牌，视为对其使用一张【杀】；2.交给你与你手牌数等量张牌，视为对你使用一张【酒】。",
+  [":bolong"] = "出牌阶段限一次，你可以令一名其他角色选择一项：1.你交给其一张牌，视为对其使用一张雷【杀】；"..
+  "2.交给你与你手牌数等量张牌，视为对你使用一张【酒】。",
   ["zhongliu"] = "中流",
   [":zhongliu"] = "宗族技，锁定技，当你使用牌时，若不为同族角色的手牌，你视为未发动武将牌上的技能。",
-  ["#bolong-card"] = "驳龙：交给 %src %arg张牌视为对其使用【酒】，否则其交给你一张牌视为对你使用【杀】",
-  ["#bolong-slash"] = "驳龙：交给 %dest 一张牌，视为对其使用【杀】",
+  ["#bolong-card"] = "驳龙：交给 %src %arg张牌视为对其使用【酒】，否则其交给你一张牌视为对你使用雷【杀】",
+  ["#bolong-slash"] = "驳龙：交给 %dest 一张牌，视为对其使用雷【杀】",
 }
 return extension
