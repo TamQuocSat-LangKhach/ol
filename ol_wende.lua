@@ -141,7 +141,7 @@ Fk:loadTranslationTable{
   [":qiangshou"] = "锁定技，若你的装备区里有宝物牌，你至其他角色的距离-1。",
 }
 
---local huaxin = General(extension, "ol__huaxin", "wei", 3)
+local huaxin = General(extension, "ol__huaxin", "wei", 3)
 local ol__caozhao = fk.CreateActiveSkill{
   name = "ol__caozhao",
   anim_type = "control",
@@ -277,8 +277,8 @@ local ol__xibing_prohibit = fk.CreateProhibitSkill{
 ol__caozhao:addRelatedSkill(ol__caozhao_record)
 ol__caozhao:addRelatedSkill(ol__caozhao_filter)
 ol__xibing:addRelatedSkill(ol__xibing_prohibit)
---huaxin:addSkill(ol__caozhao)
---huaxin:addSkill(ol__xibing)
+huaxin:addSkill(ol__caozhao)
+huaxin:addSkill(ol__xibing)
 Fk:loadTranslationTable{
   ["ol__huaxin"] = "华歆",
   ["ol__caozhao"] = "草诏",
