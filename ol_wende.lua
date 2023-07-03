@@ -999,6 +999,9 @@ local sanchen = fk.CreateActiveSkill{
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
     local target = room:getPlayerById(effect.tos[1])
+    if player:hasSkill("zhaotao", true) and player:usedSkillTimes("zhaotao", Player.HistoryGame) == 0 then
+      room:addPlayerMark(player, "@sanchen")
+    end
     room:addPlayerMark(target, "sanchen-turn", 1)
     target:drawCards(3, self.name)
     local cards = room:askForDiscard(target, 3, 3, true, self.name, false, ".", "#sanchen-discard:"..player.id)
@@ -1024,6 +1027,7 @@ local zhaotao = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
+    room:setPlayerMark(player, "@sanchen", 0)
     room:changeMaxHp(player, -1)
     room:handleAddLoseSkills(player, "pozhu", nil)
   end,
@@ -1073,6 +1077,7 @@ Fk:loadTranslationTable{
   ["pozhu"] = "破竹",
   [":pozhu"] = "出牌阶段，你可将一张手牌当【出其不意】使用，若此【出其不意】未造成伤害，此技能无效直到回合结束。",
   ["#sanchen-discard"] = "三陈：弃置三张牌，若类别各不相同则你摸一张牌且 %src 可以再发动“三陈”",
+  ["@sanchen"] = "三陈",
 
   ["$sanchen1"] = "陈书弼国，当一而再、再而三。	",
   ["$sanchen2"] = "勘除弼事，三陈而就。",
