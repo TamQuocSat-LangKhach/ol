@@ -1544,7 +1544,7 @@ Fk:loadTranslationTable{
   ["@zhuyan2"] = "手牌",
 }
 
-local zhouqun = General(extension, "ol__zhouqun", "shu", 3)
+local zhouqun = General(extension, "ol__zhouqun", "shu", 4)
 local tianhou = fk.CreateTriggerSkill{
   name = "tianhou",
   anim_type = "control",
@@ -1623,7 +1623,7 @@ local tianhou = fk.CreateTriggerSkill{
 }
 local tianhou1 = fk.CreateTriggerSkill{
   name = "tianhou1",
-  anim_type = "control",
+  anim_type = "offensive",
   frequency = Skill.Compulsory,
   events = {fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
@@ -1665,7 +1665,7 @@ local tianhou2 = fk.CreateTriggerSkill{
 }
 local tianhou3 = fk.CreateTriggerSkill{
   name = "tianhou3",
-  anim_type = "control",
+  anim_type = "offensive",
   events = {fk.DamageCaused, fk.Damaged},
   frequency = Skill.Compulsory,
   can_trigger = function(self, event, target, player, data)
@@ -1707,7 +1707,7 @@ local tianhou3 = fk.CreateTriggerSkill{
 }
 local tianhou4 = fk.CreateTriggerSkill{
   name = "tianhou4",
-  anim_type = "control",
+  anim_type = "offensive",
   frequency = Skill.Compulsory,
   events = {fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
