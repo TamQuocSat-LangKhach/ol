@@ -101,6 +101,7 @@ local chuyuan = fk.CreateTriggerSkill{
     local room = player.room
     room:doIndicate(player.id, {target.id})
     target:drawCards(1, self.name)
+    if target:isKongcheng() then return end
     local card = room:askForCard(target, 1, 1, false, self.name, false, ".", "#chuyuan-card:"..player.id)
     player:addToPile("caopi_chu", card, false, self.name)
   end,

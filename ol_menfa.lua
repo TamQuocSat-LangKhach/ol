@@ -449,13 +449,15 @@ local zhanding = fk.CreateViewAsSkill{
 }
 local zhanding_record = fk.CreateTriggerSkill{
   name = "#zhanding_record",
-  anim_type = "offensive",
-
-  refresh_events = {fk.CardUseFinished},
-  can_refresh = function(self, event, target, player, data)
+  mute = true,
+  events = {fk.CardUseFinished},
+  can_trigger = function(self, event, target, player, data)
     return target == player and table.contains(data.card.skillNames, "zhanding")
   end,
-  on_refresh = function(self, event, target, player, data)
+  on_cost = function(self, event, target, player, data)
+    return true
+  end,
+  on_use = function(self, event, target, player, data)
     if data.damageDealt then
       local n = #player.player_cards[Player.Hand] - player:getMaxCards()
       if n < 0 then
