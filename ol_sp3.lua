@@ -67,7 +67,7 @@ local huiyun_trigger = fk.CreateTriggerSkill{
     else
       if self.cost_data == "huiyun1-round" then
         --FIXME：这里需要大量可用判断！满血吃桃、重复挂闪电等
-        local use = room:askForUseCard(to, Fk:getCardById(id).name, "^jink,nullification|.|.|.|.|.|"..tostring(id), "#huiyun1-card", true)
+        local use = room:askForUseCard(to, Fk:getCardById(id).name, "^(jink,nullification)|.|.|.|.|.|"..tostring(id), "#huiyun1-card", true)
         if use then
           room:useCard(use)
           room:delay(1000)
@@ -76,7 +76,7 @@ local huiyun_trigger = fk.CreateTriggerSkill{
           end
         end
       elseif self.cost_data == "huiyun2-round" then
-        local use = room:askForUseCard(to, "", "^jink,nullification|.|.|hand", "#huiyun2-card", true)
+        local use = room:askForUseCard(to, "", "^(jink,nullification)|.|.|hand", "#huiyun2-card", true)
         if use then
           --if not CanUseCard(use.card, player.id) then return end
           room:useCard(use)
@@ -1106,7 +1106,8 @@ local daili = fk.CreateTriggerSkill{
   anim_type = "drawcard",
   events = {fk.TurnEnd},
   can_trigger = function(self, event, target, player, data)
-    return player:hasSkill(self.name) and (player:getMark("@$daili") == 0 or #player:getMark("@$daili") % 2 == 0)
+    return player:hasSkill(self.name) and (player:isKongcheng() or
+      #table.filter(player.player_cards[Player.Hand], function(id) return Fk:getCardById(id):getMark("@@daili") > 0 end) % 2 == 0)
   end,
   on_use = function(self, event, target, player, data)
     player:turnOver()
@@ -1119,36 +1120,33 @@ local daili = fk.CreateTriggerSkill{
     if event == fk.CardShown then
       return target == player and player:hasSkill(self.name, true)
     else
-      return player:getMark(self.name) ~= 0
+      return player:getMark("@$daili") ~= 0
     end
   end,
   on_refresh = function(self, event, target, player, data)
+    local room = player.room
     local mark = player:getMark("@$daili")
-    local mark2 = player:getMark(self.name)
     if event == fk.CardShown then
       if mark == 0 then mark = {} end
-      if mark2 == 0 then mark2 = {} end
       for _, id in ipairs(data.cardIds) do
-        table.insert(mark, Fk:getCardById(id, true).name)
-        table.insert(mark2, id)
+        if Fk:getCardById(id):getMark("@@daili") == 0 then
+          table.insert(mark, Fk:getCardById(id, true).name)
+          room:setCardMark(Fk:getCardById(id, true), "@@daili", 1)
+        end
       end
-      player.room:setPlayerMark(player, "@$daili", mark)
-      player.room:setPlayerMark(player, self.name, mark2)
+      room:setPlayerMark(player, "@$daili", mark)
     else
       for _, move in ipairs(data) do
         if move.from == player.id then
           for _, info in ipairs(move.moveInfo) do
-            if info.fromArea == Card.PlayerHand then
-              if table.contains(mark2, info.cardId) then
-                table.removeOne(mark, Fk:getCardById(info.cardId, true).name)
-                table.removeOne(mark2, info.cardId)
-              end
+            if info.fromArea == Card.PlayerHand and Fk:getCardById(info.cardId, true):getMark("@@daili") > 0 then
+              table.removeOne(mark, Fk:getCardById(info.cardId, true).name)
+              room:setCardMark(Fk:getCardById(info.cardId, true), "@@daili", 0)
             end
           end
         end
       end
-      player.room:setPlayerMark(player, "@$daili", mark)
-      player.room:setPlayerMark(player, self.name, mark2)
+      room:setPlayerMark(player, "@$daili", mark)
     end
   end,
 }
@@ -1158,6 +1156,7 @@ Fk:loadTranslationTable{
   ["daili"] = "带砺",
   [":daili"] = "每回合结束时，若你有偶数张展示过的手牌，你可以翻面，摸三张牌并展示之。",
   ["@$daili"] = "带砺",
+  ["@@daili"] = "带砺",
 }
 
 local sunhong = General(extension, "sunhong", "wu", 3)

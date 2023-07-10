@@ -1597,13 +1597,13 @@ local bingxin = fk.CreateViewAsSkill{
   end,
   enabled_at_play = function(self, player)
     local cards = player.player_cards[Player.Hand]
-    return #cards == player.hp and (player.dying or
-      (table.every(cards, function (id) return Fk:getCardById(id).color ==Fk:getCardById(cards[1]).color end)))
+    return ((player.hp < 1 and player:isKongcheng()) or
+    (#cards == player.hp and table.every(cards, function (id) return Fk:getCardById(id).color ==Fk:getCardById(cards[1]).color end)))
   end,
   enabled_at_response = function(self, player, response)
     local cards = player.player_cards[Player.Hand]
-    return not response and #cards == player.hp and (player.dying or
-    (table.every(cards, function (id) return Fk:getCardById(id).color ==Fk:getCardById(cards[1]).color end)))
+    return not response and ((player.hp < 1 and player:isKongcheng()) or
+      (#cards == player.hp and table.every(cards, function (id) return Fk:getCardById(id).color ==Fk:getCardById(cards[1]).color end)))
   end,
 }
 wangxiang:addSkill(bingxin)

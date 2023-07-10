@@ -18,7 +18,7 @@ local tuogu = fk.CreateTriggerSkill{
     self.cost_data = {}
     local skills = table.map(Fk.generals[target.general].skills, function(s) return s.name end)
     for _, skill in ipairs(skills) do
-      if target:hasSkill(skill, true, true) and skill.frequency ~= Skill.Limited and skill.frequency ~= Skill.Wake and
+      if target:hasSkill(skill, true, true) and Fk.skills[skill].frequency ~= Skill.Limited and Fk.skills[skill].frequency ~= Skill.Wake and
         string.sub(skill, #skill, #skill) ~= "$" and not player:hasSkill(skill, true) then  --TODO: 隐匿技
         table.insertIfNeed(self.cost_data, skill)
       end
@@ -29,13 +29,13 @@ local tuogu = fk.CreateTriggerSkill{
     local room = player.room
     room:doIndicate(player.id, {target.id})
     local choice = room:askForChoice(target, self.cost_data, self.name, "#tuogu-choice:"..player.id)
-    player.tag[self.name] = player.tag[self.name] or {}
-    if #player.tag[self.name] > 0 then
-      room:handleAddLoseSkills(player, choice.."|-"..player.tag[self.name][1], nil, true, true)
+    local mark = player:getMark(self.name)
+    if mark ~= 0 then
+      room:handleAddLoseSkills(player, choice.."|-"..mark, nil, true, true)
     else
       room:handleAddLoseSkills(player, choice, nil, true, true)
     end
-    player.tag[self.name] = {choice}
+    room:setPlayerMark(player, self.name, choice)
   end,
 }
 local shanzhuan = fk.CreateTriggerSkill{
@@ -3712,10 +3712,214 @@ Fk:loadTranslationTable{
   ["#bixin-choice"] = "笔心：选择用来转化的牌的类别",
 }
 
+local godsunquan = General(extension, "godsunquan", "god", 4)
+local yuheng_skills = {
+  --standard
+  "qixi", "keji", "kurou", "lianying", "xiaoji", "jieyin", "ex__zhiheng", "ex__yingzi", "ex__fanjian", "ex__guose",
+  --shzl
+  "tianyi", "yinghun", "haoshi", "dimeng", "jiang", "zhijian",
+  --sp
+  "hongyuan", "duanbing", "fenxun", "mumu", "tanhu", "yanxiao", "anxian",
+  --yjcm
+  "xuanfeng", "ganlu", "pojun", "anxu", "nos__gongqi", "gongqi", "anjian", "zhiyan", "danshou", "shenxing", "bingyi", "zhenshan",
+  "yanzhu", "xingxue", "anguo", "jishe",
+  --ol
+  "canshi", "hongde", "shanxi", "xiashu", "lianpian", "bizheng", "jinzhi", "lanjiang", "yuanchou", "luochong", "qiejian", "xianbi",
+  --mobile
+  "fenyin", "dujin", "chongjian", "mou__kurou", "mou__yingzi", "mou__fanjian", "m_ex__pojun",
+  --tenyear
+  "guanchao", "xunxian", "guolun", "duanfa", "sp__youdi", "qinguo", "zhukou", "jinjian", "jingzao", "xinyou", "zhiren", "jiqiaos", "songshu",
+  "sibian", "tongli", "boyan", "niji",
+  --wandian
+  "wd__kangyin", "wd__kenjian",
+}
+local yuheng = fk.CreateTriggerSkill{
+  name = "yuheng",
+  anim_type = "special",
+  frequency = Skill.Compulsory,
+  events = {fk.EventPhaseChanging, fk.TurnEnd},
+  can_trigger = function(self, event, target, player, data)
+    if target == player then
+      if event == fk.EventPhaseChanging then
+        return player:hasSkill(self.name) and data.from == Player.RoundStart and not player:isNude()
+      else
+        return player:getMark(self.name) ~= 0
+      end
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    if event == fk.EventPhaseChanging then
+      room:askForUseActiveSkill(player, "yuheng_active", "#yuheng-invoke", false)
+    else
+      local skills = player:getMark(self.name)
+      room:setPlayerMark(player, "yuheng", 0)
+      room:handleAddLoseSkills(player, "-"..table.concat(skills, "|-"), nil, true, false)
+      if not player.dead then
+        player:drawCards(#skills, self.name)
+      end
+    end
+  end,
+}
+local yuheng_active = fk.CreateActiveSkill{
+  name = "yuheng_active",
+  mute = true,
+  min_card_num = 1,
+  target_num = 0,
+  card_filter = function(self, to_select, selected)
+    if #selected == 0 then
+      return true
+    else
+      return table.every(selected, function(id) return Fk:getCardById(to_select).suit ~= Fk:getCardById(id).suit end)
+    end
+  end,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    room:throwCard(effect.cards, self.name, player, player)
+    if player.dead then return end
+    local skills = table.random(yuheng_skills, #effect.cards)
+    room:setPlayerMark(player, "yuheng", skills)
+    room:handleAddLoseSkills(player, table.concat(skills, "|"), nil, true, false)
+  end,
+}
+local dili = fk.CreateTriggerSkill{
+  name = "dili",
+  anim_type = "special",
+  events = {fk.GameStart, fk.EventAcquireSkill},
+  frequency = Skill.Wake,
+  can_trigger = function(self, event, target, player, data)
+    return player:hasSkill(self.name) and player:usedSkillTimes(self.name, Player.HistoryGame) == 0
+  end,
+  can_wake = function(self, event, target, player, data)
+    local n = 0
+    for _, s in ipairs(player.player_skills) do
+      if not (s.attached_equip or s.name[#s.name] == "&") then
+        n = n + 1
+      end
+    end
+    return n > player.maxHp
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    room:changeMaxHp(player, -1)
+    if player.dead then return end
+    local skills = {"Cancel"}
+    for _, s in ipairs(player.player_skills) do
+      if not (s.attached_equip or s.name[#s.name] == "&" or s == self) then
+        table.insertIfNeed(skills, s.name)
+      end
+    end
+    local choice = {}
+    while true do
+      local s = room:askForChoice(player, skills, self.name, "#dili-invoke", true)
+      if s == "Cancel" then
+        break
+      else
+        table.removeOne(skills, s)
+        table.insertIfNeed(choice, s)
+      end
+    end
+    if #choice > 0 then
+      room:handleAddLoseSkills(player, "-"..table.concat(choice, "|-"), nil, true, false)
+      skills = {"shengzhi", "quandao", "chigang"}
+      local skill = {}
+      for i = 1, #choice, 1 do
+        if i > 3 then break end
+        table.insert(skill, skills[i])
+      end
+      room:handleAddLoseSkills(player, table.concat(skill, "|"), nil, true, false)
+    end
+  end,
+}
+local shengzhi = fk.CreateTriggerSkill{
+  name = "shengzhi",
+  anim_type = "offensive",
+  frequency = Skill.Compulsory,
+  events = {fk.AfterSkillEffect},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self.name) and player:hasSkill(data) and data.frequency ~= Skill.Compulsory and
+      not data.attached_equip and data.name[#data.name] ~= "&"
+  end,
+  on_use = function(self, event, target, player, data)
+    player.room:setPlayerMark(player, "@@shengzhi-turn", 1)
+  end,
+
+  refresh_events = {fk.AfterCardUseDeclared},
+  can_refresh = function(self, event, target, player, data)
+    return target == player and player:getMark("@@shengzhi-turn") > 0
+  end,
+  on_refresh = function(self, event, target, player, data)
+    player.room:setPlayerMark(player, "@@shengzhi-turn", 0)
+  end,
+}
+local shengzhi_targetmod = fk.CreateTargetModSkill{
+  name = "#shengzhi_targetmod",
+  bypass_times = function(self, player, skill, scope, card, to)
+    return player:getMark("@@shengzhi-turn") > 0
+  end,
+  bypass_distances =  function(self, player, skill, card, to)
+    return player:getMark("@@shengzhi-turn") > 0
+  end,
+}
+local quandao = fk.CreateTriggerSkill{
+  name = "quandao",
+  anim_type = "drawcard",
+  frequency = Skill.Compulsory,
+  events = {fk.CardUsing},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self.name) and (data.card.trueName == "slash" or data.card:isCommonTrick())
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    if player:isKongcheng() then
+      player:drawCards(1, self.name)
+    else
+      local slash = table.filter(player.player_cards[Player.Hand], function(id) return Fk:getCardById(id).trueName == "slash" end)
+      local trick = table.filter(player.player_cards[Player.Hand], function(id) return Fk:getCardById(id):isCommonTrick() end)
+      if #slash == #trick then
+        player:drawCards(1, self.name)
+      else
+        local n = #slash - #trick
+        if n > 0 then
+          room:askForDiscard(player, n, n, false, self.name, false, "slash")
+        else
+          room:askForDiscard(player, -n, -n, false, self.name, false, ".|.|.|.|.|trick")
+        end
+        if not player.dead then
+          player:drawCards(1, self.name)
+        end
+      end
+    end
+  end,
+}
+local chigang = fk.CreateTriggerSkill{
+  name = "chigang",
+  anim_type = "switch",
+  switch_skill_name = "chigang",
+  frequency = Skill.Compulsory,
+  events = {fk.EventPhaseChanging},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self.name) and data.to == Player.Judge
+  end,
+  on_use = function(self, event, target, player, data)
+    if player:getSwitchSkillState(self.name, true) == fk.SwitchYang then
+      data.to = Player.Draw
+    else
+      data.to = Player.Play
+    end
+  end,
+}
+Fk:addSkill(yuheng_active)
+shengzhi:addRelatedSkill(shengzhi_targetmod)
+godsunquan:addSkill(yuheng)
+godsunquan:addSkill(dili)
+godsunquan:addRelatedSkill(shengzhi)
+godsunquan:addRelatedSkill(quandao)
+godsunquan:addRelatedSkill(chigang)
 Fk:loadTranslationTable{
   ["godsunquan"] = "神孙权",
   ["yuheng"] = "驭衡",
-  [":yuheng"] = "锁定技，回合开始时，你弃置任意张花色不同的牌，随机获得等量吴势力角色的技能。回合结束时，你失去以此法获得的技能，摸等量张牌。",
+  [":yuheng"] = "锁定技，回合开始时，你弃置任意张花色不同的牌，随机获得等量吴势力武将的技能。回合结束时，你失去以此法获得的技能，摸等量张牌。",
   ["dili"] = "帝力",
   [":dili"] = "觉醒技，当你的技能数超过体力上限后，你减少1点体力上限，失去任意个其他技能并获得〖圣质〗〖权道〗〖持纲〗中的前等量个。",
   ["shengzhi"] = "圣质",
@@ -3724,6 +3928,11 @@ Fk:loadTranslationTable{
   [":quandao"] = "锁定技，当你使用【杀】或普通锦囊牌时，你将手牌中两者数量弃至相同并摸一张牌。",
   ["chigang"] = "持纲",
   [":chigang"] = "转换技，锁定技，阳：你的判定阶段改为摸牌阶段；阴：你的判定阶段改为出牌阶段。",
+  ["yuheng_active"] = "驭衡",
+  ["#yuheng-invoke"] = "驭衡：弃置任意张花色不同的牌，随机获得等量吴势力武将的技能",
+  ["#dili-invoke"] = "帝力：失去任意个技能，获得〖圣质〗〖权道〗〖持纲〗中的前等量个",
+  [":Cancel"] = "取消",
+  ["@@shengzhi-turn"] = "圣质",
 }
 
 local ahuinan = General(extension, "ahuinan", "qun", 4)
