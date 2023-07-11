@@ -3933,6 +3933,24 @@ Fk:loadTranslationTable{
   ["#dili-invoke"] = "帝力：失去任意个技能，获得〖圣质〗〖权道〗〖持纲〗中的前等量个",
   [":Cancel"] = "取消",
   ["@@shengzhi-turn"] = "圣质",
+  
+  ["$dili1"] = "身处巅峰，览天下大事。",
+  ["$dili2"] = "位居至尊，掌至高之权。",
+  ["$yuheng1"] = "权术妙用，存乎一心。",
+  ["$yuheng2"] = "威权之道，皆在于衡。",
+  ["$shengzhi1"] = "位继父兄，承弘德以继往。",
+  ["$shengzhi2"] = "英魂犹在，履功业而开来。",
+  ["$chigang1"] = "秉承伦常，扶树纲纪。",
+  ["$chigang2"] = "至尊临位，则朝野自肃。",
+  ["$qionglan1"] = "事无巨细，咸既问询。",
+  ["$qionglan2"] = "纵览全局，以小见大。",
+  ["$quandao1"] = "继策掌权，符令吴会。",
+  ["$quandao2"] = "以权驭衡，谋定天下。",
+  ["$jiaohui1"] = "日月交辉，天下大白。",
+  ["$jiaohui2"] = "雄鸡引颈，声鸣百里。",
+  ["$yuanlv1"] = "临江而眺，静观江水东流。",
+  ["$yuanlv2"] = "屹立山巅，笑看大江潮来。",
+  ["~godsunquan"] = "困居江东，枉称至尊……",
 }
 
 local ahuinan = General(extension, "ahuinan", "qun", 4)

@@ -93,7 +93,7 @@ xiahouyuan:addSkill(ol_ex__shebian)
 Fk:loadTranslationTable{
   ["ol_ex__xiahouyuan"] = "界夏侯渊",
   ["ol_ex__shensu"] = "神速",
-  [":ol_ex__shensu"] = "①判定阶段开始前，你可跳过此阶段和摸牌阶段来视为使用普【杀】。②摸牌阶段开始前，你可跳过此阶段并弃置一张装备牌来视为使用普【杀】。③弃牌阶段开始前，你可跳过此阶段并翻面来视为使用普【杀】。",
+  [":ol_ex__shensu"] = "①判定阶段开始前，你可跳过此阶段和摸牌阶段来视为使用普【杀】。②出牌阶段开始前，你可跳过此阶段并弃置一张装备牌来视为使用普【杀】。③弃牌阶段开始前，你可跳过此阶段并翻面来视为使用普【杀】。",
   ["ol_ex__shebian"] = "设变",
   [":ol_ex__shebian"] = "当你翻面后，你可将一名角色装备区里的一张牌置入另一名角色的装备区。",
   ["#ol_ex__shensu1-choose"] = "神速：你可以跳过判定阶段和摸牌阶段，视为使用一张无距离限制的【杀】",
@@ -135,8 +135,9 @@ local ol_ex__jushou = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     player:turnOver()
+    if player.dead then return false end
     room:drawCards(player, 4, self.name)
-
+    if player.dead then return false end
     local jushou_card
     for _, id in pairs(player:getCardIds(Player.Hand)) do
       local card = Fk:getCardById(id)
@@ -403,6 +404,8 @@ local ol_ex__tianxiang = fk.CreateTriggerSkill{
     local cid = self.cost_data[2]
     room:throwCard(cid, self.name, player, player)
 
+    if to.dead then return true end
+
     local choices = {"ol_ex__tianxiang_loseHp"}
     if data.from and not data.from.dead then
       table.insert(choices, "ol_ex__tianxiang_damage")
@@ -410,7 +413,7 @@ local ol_ex__tianxiang = fk.CreateTriggerSkill{
     local choice = room:askForChoice(player, choices, self.name, "#ol_ex__tianxiang-choice::"..to.id)
     if choice == "ol_ex__tianxiang_loseHp" then
       room:loseHp(to, 1, self.name)
-      if room:getCardArea(cid) == Card.DrawPile or room:getCardArea(cid) == Card.DiscardPile then
+      if not to.dead and (room:getCardArea(cid) == Card.DrawPile or room:getCardArea(cid) == Card.DiscardPile) then
         room:obtainCard(to, cid, true, fk.ReasonJustMove)
       end
     else
@@ -487,7 +490,7 @@ local ol_ex__piaoling_delay = fk.CreateTriggerSkill{
       else
         local to = room:getPlayerById(targets[1])
         room:obtainCard(to, data.card, true, fk.ReasonJustMove)
-        if to == player then
+        if to == player and not to.dead then
           room:askForDiscard(to, 1, 1, true, ol_ex__piaoling.name, false, ".", "#ol_ex__piaoling-discard")
         end
       end
@@ -539,7 +542,7 @@ local ol_ex__buqu = fk.CreateTriggerSkill{
     local scar_id =room:getNCards(1)[1]
     local scar = Fk:getCardById(scar_id)
     player:addToPile("ol_ex__buqu_scar", scar_id, true, self.name)
-    if not table.contains(player:getPile("ol_ex__buqu_scar"), scar_id) then return end
+    if player.dead or not table.contains(player:getPile("ol_ex__buqu_scar"), scar_id) then return false end
     local success = true
     for _, id in pairs(player:getPile("ol_ex__buqu_scar")) do
       if id ~= scar_id then
@@ -619,7 +622,9 @@ local ol_ex__fenji = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     player.room:doIndicate(player.id, {target.id})
     player.room:loseHp(player, 1, self.name)
-    target:drawCards(2, self.name)
+    if not target.dead then
+      target:drawCards(2, self.name)
+    end
   end,
 }
 ol_ex__buqu:addRelatedSkill(ol_ex__buqu_maxcards)
@@ -683,6 +688,7 @@ local ol_ex__leiji = fk.CreateTriggerSkill{
             skillName = self.name,
           })
         end
+        if player.dead then return false end
       end
       local targets = player.room:askForChoosePlayers(player, table.map(player.room:getOtherPlayers(player), function (p)
         return p.id end), 1, 1, "#ol_ex__leiji-choose:::" .. x, self.name, true)
@@ -715,7 +721,7 @@ local ol_ex__guidao = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     player.room:retrial(self.cost_data, player, data, self.name, true)
-    if self.cost_data.suit == Card.Spade and self.cost_data.number > 1 and self.cost_data.number < 10 then
+    if not player.dead and self.cost_data.suit == Card.Spade and self.cost_data.number > 1 and self.cost_data.number < 10 then
       player:drawCards(1, self.name)
     end
   end,
@@ -875,6 +881,7 @@ local ol_ex__jieming = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local to = player.room:getPlayerById(self.cost_data)
     to:drawCards(math.min(to.maxHp, 5), self.name)
+    if to.dead then return false end
     local x = #to.player_cards[Player.Hand] - math.min(to.maxHp, 5)
     if x > 0 then
       player.room:askForDiscard(to, x, x, false, self.name, false, ".", "#ol_ex__jieming-discard:::"..x)
@@ -914,9 +921,11 @@ local ol_ex__jianchu = fk.CreateTriggerSkill{
     room:throwCard({id}, self.name, to, player)
     local card = Fk:getCardById(id)
     if card.type == Card.TypeBasic then
-      local cardlist = data.card:isVirtual() and data.card.subcards or {data.card.id}
-      if table.every(cardlist, function(id) return room:getCardArea(id) == Card.Processing end) then
-        room:obtainCard(to.id, data.card, false)
+      if not to.dead then
+        local cardlist = data.card:isVirtual() and data.card.subcards or {data.card.id}
+        if table.every(cardlist, function(id) return room:getCardArea(id) == Card.Processing end) then
+          room:obtainCard(to.id, data.card, false)
+        end
       end
     else
       room:addPlayerMark(player, "ol_ex__jianchu_slash-phase", 1)
@@ -1356,20 +1365,26 @@ local ol_ex__zaiqi = fk.CreateTriggerSkill{
   name = "ol_ex__zaiqi",
   events = {fk.EventPhaseEnd},
   can_trigger = function(self, event, target, player, data)
-    if target == player and player:hasSkill(self.name) and player.phase == Player.Discard and
-        type(player:getMark("ol_ex__zaiqi_record-turn")) == "table" then
-      self.trigger_times = 0
+    if target == player and player:hasSkill(self.name) and player.phase == Player.Discard then
       local ids = player:getMark("ol_ex__zaiqi_record-turn")
-      table.forEach(ids, function(id)
+      if type(ids) ~= "table" then return false end
+      for _, id in ipairs(ids) do
         if player.room:getCardArea(id) == Card.DiscardPile and Fk:getCardById(id).color == Card.Red then
-          self.trigger_times = self.trigger_times + 1
+          return true
         end
-      end)
-      return self.trigger_times > 0
+      end
     end
   end,
   on_cost = function(self, event, target, player, data)
-    local x = self.trigger_times
+    local x = 0
+    local ids = player:getMark("ol_ex__zaiqi_record-turn")
+    if type(ids) ~= "table" then return false end
+    for _, id in ipairs(ids) do
+      if player.room:getCardArea(id) == Card.DiscardPile and Fk:getCardById(id).color == Card.Red then
+        x = x + 1
+      end
+    end
+    if x < 1 then return false end
     local result = player.room:askForChoosePlayers(player, table.map(player.room.alive_players, function (p)
       return p.id end), 1, x, "#ol_ex__zaiqi-choose:::"..x, self.name, true)
     if #result > 0 then
@@ -1383,7 +1398,7 @@ local ol_ex__zaiqi = fk.CreateTriggerSkill{
     local targets = table.map(self.cost_data, function(id)
       return room:getPlayerById(id) end)
 
-    table.forEach(targets, function(p)
+      for _, p in ipairs(targets) do
       if not p.dead then
         local choices = {"ol_ex__zaiqi_draw"}
         if player and not player.dead and player:isWounded() then
@@ -1401,7 +1416,7 @@ local ol_ex__zaiqi = fk.CreateTriggerSkill{
           })
         end
       end
-    end)
+    end
   end,
 
   refresh_events = {fk.AfterCardsMove},
@@ -1685,26 +1700,38 @@ local ol_ex__dimeng_delay = fk.CreateTriggerSkill{
   events = {fk.EventPhaseEnd},
   mute = true,
   can_trigger = function(self, event, target, player, data)
-    if not player.dead and player:usedSkillTimes(ol_ex__dimeng.name, Player.HistoryPhase) > 0
-        and not player:isNude() and type(player:getMark("ol_ex__dimeng_target-phase")) == "table" then
-      self.trigger_times = 0
-      table.forEach(player:getMark("ol_ex__dimeng_target-phase"), function (tos)
+    if not player.dead and player:usedSkillTimes(ol_ex__dimeng.name, Player.HistoryPhase) > 0 and not player:isNude() then
+      local mark = player:getMark("ol_ex__dimeng_target-phase")
+      if type(mark) ~= "table" then return false end
+      for _, tos in ipairs(mark) do
         if type(tos) == "table" and #tos == 2 then
           local p1 = player.room:getPlayerById(tos[1])
           local p2 = player.room:getPlayerById(tos[2])
-          if p1 and p2 and not p1.dead and not p2.dead then
-            self.trigger_times = self.trigger_times + math.abs(p1:getHandcardNum() - p2:getHandcardNum())
+          if p1 and p2 and not p1.dead and not p2.dead and p1:getHandcardNum() ~= p2:getHandcardNum() then
+            return true
           end
         end
-      end)
-      return self.trigger_times > 0
+      end
     end
   end,
   on_cost = function() return true end,
   on_use = function(self, event, target, player, data)
     player.room:notifySkillInvoked(player, ol_ex__dimeng.name, "negative")
-    local x = self.trigger_times
-    player.room:askForDiscard(player, x, x, true, ol_ex__dimeng.name, false, ".", "#ol_ex__dimeng-discard:::"..x)
+    local x = 0
+    local mark = player:getMark("ol_ex__dimeng_target-phase")
+    if type(mark) ~= "table" then return false end
+    for _, tos in ipairs(mark) do
+      if type(tos) == "table" and #tos == 2 then
+        local p1 = player.room:getPlayerById(tos[1])
+        local p2 = player.room:getPlayerById(tos[2])
+        if p1 and p2 and not p1.dead and not p2.dead then
+          x = x + math.abs(p1:getHandcardNum() - p2:getHandcardNum())
+        end
+      end
+    end
+    if x > 0 then
+      player.room:askForDiscard(player, x, x, true, ol_ex__dimeng.name, false, ".", "#ol_ex__dimeng-discard:::"..x)
+    end
   end,
 }
 ol_ex__haoshi:addRelatedSkill(ol_ex__haoshi_active)

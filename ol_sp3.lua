@@ -683,7 +683,7 @@ Fk:loadTranslationTable{
   ["$jianhe2"] = "位登三事，当配龙泉。",
   ["$chuanwu1"] = "祝融侵库，剑怀远志。",
   ["$chuanwu2"] = "斩蛇穿屋，其志绥远。",
-  ["~quhuang"] = "桑化为柏，此非不祥乎？",
+  ["~zhanghua"] = "桑化为柏，此非不祥乎？",
 }
 
 local dongtuna = General(extension, "dongtuna", "qun", 4)
