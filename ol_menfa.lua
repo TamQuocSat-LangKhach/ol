@@ -404,6 +404,184 @@ Fk:loadTranslationTable{
   ["~olz__xuncan"] = "此钗，今日可合乎？",
 }
 
+local xuncai = General(extension, "olz__xuncai", "qun", 3, 3, General.Female)
+local lieshi = fk.CreateActiveSkill{
+  name = "lieshi",
+  anim_type = "offensive",
+  prompt = "#lieshi-active",
+  interaction = function(self)
+    local choiceList = {}
+    if Self:getMark("@@lieshi") == 0 then
+      table.insert(choiceList, "lieshi_prohibit")
+    end
+    local handcards = Self:getCardIds(Player.Hand)
+    if not table.every(handcards, function (id)
+      local card = Fk:getCardById(id)
+      return card.trueName ~= "slash" or Self:prohibitDiscard(card)
+    end) then
+      table.insert(choiceList, "lieshi_slash")
+    end
+    if not table.every(handcards, function (id)
+      local card = Fk:getCardById(id)
+      return card.trueName ~= "jink" or Self:prohibitDiscard(card)
+    end) then
+      table.insert(choiceList, "lieshi_jink")
+    end
+    return UI.ComboBox { choices = choiceList }
+  end,
+  max_card_num = 0,
+  target_num = 1,
+  can_use = function(self, player)
+    return player:getMark("@@lieshi") == 0 or not table.every(player:getCardIds(Player.Hand), function (id)
+      local card = Fk:getCardById(id)
+      return (card.trueName ~= "slash" and card.trueName ~= "jink") or player:prohibitDiscard(card)
+    end)
+  end,
+  card_filter = function() return false end,
+  target_filter = function(self, to_select, selected, selected_cards)
+    return self.interaction.data ~= nil and #selected == 0 and to_select ~= Self.id
+  end,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    local target = room:getPlayerById(effect.tos[1])
+    local choice = self.interaction.data
+    local to = player
+    for i = 1, 2, 1 do
+      if i == 2 then
+        to = target
+        if to.dead then return false end
+        local choiceList = {}
+        if to:getMark("@@lieshi") == 0 then
+          table.insert(choiceList, "lieshi_prohibit")
+        end
+        local handcards = to:getCardIds(Player.Hand)
+        if not table.every(handcards, function (id)
+          local card = Fk:getCardById(id)
+          return card.trueName ~= "slash" or to:prohibitDiscard(card)
+        end) then
+          table.insert(choiceList, "lieshi_slash")
+        end
+        if not table.every(handcards, function (id)
+          local card = Fk:getCardById(id)
+          return card.trueName ~= "jink" or to:prohibitDiscard(card)
+        end) then
+          table.insert(choiceList, "lieshi_jink")
+        end
+        table.removeOne(choiceList, choice)
+        if #choiceList == 0 then return false end
+        choice = room:askForChoice(to, choiceList, self.name, "#lieshi-choice:" .. player.id)
+        --FIXME: 唯一选项自动选择，会暴露手牌信息
+      end
+      if choice == "lieshi_prohibit" then
+        -- TODO: 废除（封印）判定区
+        room:addPlayerMark(to, "@@lieshi")
+        to:throwAllCards("j")
+        if not to.dead then
+          room:damage{
+            from = player,
+            to = to,
+            damage = 1,
+            damageType = fk.FireDamage,
+            skillName = self.name,
+          }
+        end
+      elseif choice == "lieshi_slash" then
+        local cards = table.filter(to:getCardIds(Player.Hand), function (id)
+          local card = Fk:getCardById(id)
+          return card.trueName == "slash" and not to:prohibitDiscard(card)
+        end)
+        if #cards > 0 then
+          room:throwCard(cards, self.name, to)
+        end
+      elseif choice == "lieshi_jink" then
+        local cards = table.filter(to:getCardIds(Player.Hand), function (id)
+          local card = Fk:getCardById(id)
+          return card.trueName == "jink" and not to:prohibitDiscard(card)
+        end)
+        if #cards > 0 then
+          room:throwCard(cards, self.name, to)
+        end
+      end
+    end
+  end,
+}
+local lieshi_prohibit = fk.CreateProhibitSkill{
+  name = "#lieshi_prohibit",
+  is_prohibited = function(self, from, to, card)
+    return to:getMark("@@lieshi") > 0 and card.sub_type == Card.SubtypeDelayedTrick
+  end,
+}
+local dianzhan = fk.CreateTriggerSkill{
+  name = "dianzhan",
+  events = {fk.CardUseFinished},
+  frequency = Skill.Compulsory,
+  anim_type = "drawCard",
+  can_trigger = function(self, event, target, player, data)
+    return player:hasSkill(self.name) and player == target and (data.extra_data or {}).dianzhanFirstCardSuitUsed
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local dianzhan1, dianzhan2 = false, false
+    local tos =TargetGroup:getRealTargets(data.tos)
+    if #tos == 1 then
+      local to = room:getPlayerById(tos[1])
+      if not to.dead and not to.chained then
+        dianzhan1 = true
+        to:setChainState(true)
+      end
+    end
+    if player.dead then return false end
+    local cards = table.filter(player:getCardIds(Player.Hand), function (id)
+      return Fk:getCardById(id).suit == data.card.suit
+    end)
+    if #cards > 0 then
+      dianzhan2 = true
+      room:recastCard(cards, player, self.name)
+    end
+    if dianzhan1 and dianzhan2 and not player.dead then
+      room:drawCards(player, 1, self.name)
+    end
+  end,
+
+  refresh_events = {fk.AfterCardUseDeclared},
+  can_refresh = function(self, event, target, player, data)
+    return player == target and data.card.suit ~= Card.NoSuit and (type(player:getMark("dianzhan_suit-round")) ~= "table"
+      or not table.contains(player:getMark("dianzhan_suit-round"), data.card:getSuitString()))
+  end,
+  on_refresh = function(self, event, target, player, data)
+    local room = player.room
+    local suitRecorded = type(player:getMark("dianzhan_suit-round")) == "table" and player:getMark("dianzhan_suit-round") or {}
+    table.insert(suitRecorded, data.card:getSuitString())
+    room:setPlayerMark(player, "dianzhan_suit-round", suitRecorded)
+    if player:hasSkill(self.name, true) then
+      room:setPlayerMark(player, "@dianzhan_suit-round", table.map(suitRecorded, function (suit)
+        return "log_" .. suit
+      end))
+    end
+    data.extra_data = data.extra_data or {}
+    data.extra_data.dianzhanFirstCardSuitUsed = true
+  end,
+}
+local huanyin = fk.CreateTriggerSkill{
+  name = "huanyin",
+  frequency = Skill.Compulsory,
+  anim_type = "drawcard",
+  events = {fk.EnterDying},
+  can_trigger = function(self, event, target, player, data)
+    return player:hasSkill(self.name) and player == target and player:getHandcardNum() < 4
+  end,
+  on_use = function(self, event, target, player, data)
+    local x = 4 - player:getHandcardNum()
+    if x > 0 then
+      player:drawCards(x, self.name)
+    end
+  end,
+}
+lieshi:addRelatedSkill(lieshi_prohibit)
+xuncai:addSkill(lieshi)
+xuncai:addSkill(dianzhan)
+xuncai:addSkill(huanyin)
+xuncai:addSkill("daojie")
 Fk:loadTranslationTable{
   ["olz__xuncai"] = "荀采",
   ["lieshi"] = "烈誓",
@@ -412,6 +590,14 @@ Fk:loadTranslationTable{
   [":dianzhan"] = "锁定技，当你每轮首次使用一种花色的牌后，你横置此牌唯一目标并重铸此花色的所有手牌，然后若你以此法横置了角色且你以此法重铸了牌，你摸一张牌。",
   ["huanyin"] = "还阴",
   [":huanyin"] = "锁定技，当你进入濒死状态时，你将手牌摸至4张。",
+
+  ["#lieshi-active"] = "发动烈誓，选择你要执行的效果并选择一名其他角色，该角色选择并执行不同的一项",
+  ["#lieshi-choice"] = "烈誓：选择：废除判定区并受到%src造成的1点火焰伤害，或弃置手牌区中所有的【杀】或【闪】",
+  ["lieshi_prohibit"] = "废除判定区并受到1点火焰伤害",
+  ["lieshi_slash"] = "弃置手牌区中所有的【杀】",
+  ["lieshi_jink"] = "弃置手牌区中所有的【闪】",
+  ["@@lieshi"] = "烈誓",
+  ["@dianzhan_suit-round"] = "点盏",
 
   ["$lieshi1"] = "拭刃为誓，女无二夫。",
   ["$lieshi2"] = "霜刃证言，宁死不贰。",
@@ -564,6 +750,14 @@ Fk:loadTranslationTable{
   [":yirong"] = "出牌阶段限两次，你可以将手牌摸/弃至手牌上限并令你手牌上限-1/+1。",
   ["guixiang"] = "贵相",
   [":guixiang"] = "锁定技，你回合内第X个阶段改为出牌阶段（X为你的手牌上限）。",
+
+  ["$yirong1"] = "移花接木，花容更胜从前。",
+  ["$yirong2"] = "花开彼岸，繁荣不减当年。",
+  ["$guixiang1"] = "女相显贵，凤仪从龙。",
+  ["$guixiang2"] = "正官七杀，天生富贵。",
+  ["$muyin1"] = "吴氏一族，感明君青睐。",
+  ["$muyin2"] = "吴门隆盛，闻钟而鼎食。",
+  ["~olz__wuxian"] = "玄德东征，何日归还？",
 }
 
 --韩韶 韩融

@@ -1541,6 +1541,12 @@ Fk:loadTranslationTable{
 
   ["@zhuyan1"] = "体力",
   ["@zhuyan2"] = "手牌",
+
+  ["$zhuyan1"] = "心有灵犀，面如不老之椿。",
+  ["$zhuyan2"] = "驻颜有术，此间永得芳容。",
+  ["$leijie1"] = "欲得长生，必受此劫。",
+  ["$leijie2"] = "雷劫锻体，清瘴涤魂。",
+  ["~lushi"] = "人世寻大道，何其愚也……",
 }
 
 local zhouqun = General(extension, "ol__zhouqun", "shu", 4)

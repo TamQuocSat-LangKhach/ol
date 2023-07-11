@@ -2042,26 +2042,46 @@ Fk:loadTranslationTable{
 }
 
 local qinghegongzhu = General(extension, "qinghegongzhu", "wei", 3, 3, General.Female)
+local zengou_active = fk.CreateActiveSkill{
+  name = "zengou_active",
+  can_use = function() return false end,
+  target_num = 0,
+  max_card_num = 1,
+  min_card_num = 0,
+  card_filter = function(self, to_select, selected)
+    return #selected == 0 and Fk:getCardById(to_select).type ~= Card.TypeBasic and not Self:prohibitDiscard(Fk:getCardById(to_select))
+  end,
+}
 local zengou = fk.CreateTriggerSkill{
   name = "zengou",
   anim_type = "control",
-  events = {fk.PreCardEffect},
+  events = {fk.CardUsing},
   can_trigger = function(self, event, target, player, data)
     return player:hasSkill(self.name) and data.card.name == "jink" and player:inMyAttackRange(player.room:getPlayerById(data.from))
   end,
   on_cost = function(self, event, target, player, data)
-    return player.room:askForSkillInvoke(player, self.name, data, "#zengou-invoke::"..target.id)
+    local _, ret = player.room:askForUseActiveSkill(player, "zengou_active",
+        "#zengou-invoke::"..target.id .. ":" .. data.card:toLogString(), true)
+    if ret then
+      self.cost_data = ret.cards
+      return true
+    end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    room:doIndicate(player.id, {data.from})
-    if #room:askForDiscard(player, 1, 1, true, self.name, true, ".|.|.|.|.|^basic", "#zengou-discard") == 0 then
+    room:doIndicate(player.id, {target.id})
+    if #self.cost_data > 0 then
+      room:throwCard(self.cost_data, self.name, player, player)
+    else
       room:loseHp(player, 1, self.name)
     end
-    if room:getCardArea(data.card) == Card.Processing then
-      room:obtainCard(player.id, data.card, true, fk.ReasonJustMove)
+    if not player.dead then
+      local cardlist = data.card:isVirtual() and data.card.subcards or {data.card.id}
+      if #cardlist > 0 and table.every(cardlist, function(id) return room:getCardArea(id) == Card.Processing end) then
+        room:obtainCard(player.id, data.card, true)
+      end
     end
-    return true
+    data.tos = {}
   end,
 }
 local zhangjiq = fk.CreateTriggerSkill{
@@ -2112,16 +2132,17 @@ local zhangjiq = fk.CreateTriggerSkill{
     end
   end,
 }
+Fk:addSkill(zengou_active)
 qinghegongzhu:addSkill(zengou)
 qinghegongzhu:addSkill(zhangjiq)
 Fk:loadTranslationTable{
   ["qinghegongzhu"] = "清河公主",
   ["zengou"] = "谮构",
+  ["zengou_active"] = "谮构",
   [":zengou"] = "当你攻击范围内一名角色使用【闪】时，你可以弃置一张非基本牌或失去1点体力，令此【闪】无效，然后你获得之。",
   ["zhangjiq"] = "长姬",
   [":zhangjiq"] = "一名角色的结束阶段，若你本回合：造成过伤害，你可以令其摸两张牌；受到过伤害，你可以令其弃置两张牌。",
-  ["#zengou-invoke"] = "谮构：你可以弃置一张非基本牌或失去1点体力令 %dest 的【闪】无效，你获得之",
-  ["#zengou-discard"] = "谮构：弃置一张非基本牌，或点“取消”失去1点体力",
+  ["#zengou-invoke"] = "谮构：你可以弃置一张非基本牌（不选牌则失去1点体力），令 %dest 使用的 %arg 无效且你获得之",
   ["#zhangji-draw"] = "长姬：你可以令 %dest 摸两张牌",
   ["#zhangji-discard"] = "长姬：你可以令 %dest 弃置两张牌",
 
@@ -3908,6 +3929,27 @@ local chigang = fk.CreateTriggerSkill{
     end
   end,
 }
+local qionglan = fk.CreateTriggerSkill{
+  name = "qionglan",
+  frequency = Skill.Compulsory,
+  can_trigger = function(self, event, target, player, data)
+    return false
+  end,
+}
+local jiaohui = fk.CreateTriggerSkill{
+  name = "jiaohui",
+  frequency = Skill.Compulsory,
+  can_trigger = function(self, event, target, player, data)
+    return false
+  end,
+}
+local yuanlv = fk.CreateTriggerSkill{
+  name = "yuanlv",
+  frequency = Skill.Compulsory,
+  can_trigger = function(self, event, target, player, data)
+    return false
+  end,
+}
 Fk:addSkill(yuheng_active)
 shengzhi:addRelatedSkill(shengzhi_targetmod)
 godsunquan:addSkill(yuheng)
@@ -3915,6 +3957,9 @@ godsunquan:addSkill(dili)
 godsunquan:addRelatedSkill(shengzhi)
 godsunquan:addRelatedSkill(quandao)
 godsunquan:addRelatedSkill(chigang)
+godsunquan:addRelatedSkill(qionglan)
+godsunquan:addRelatedSkill(jiaohui)
+godsunquan:addRelatedSkill(yuanlv)
 Fk:loadTranslationTable{
   ["godsunquan"] = "神孙权",
   ["yuheng"] = "驭衡",
@@ -3932,8 +3977,13 @@ Fk:loadTranslationTable{
   ["#dili-invoke"] = "帝力：失去任意个技能，获得〖圣质〗〖权道〗〖持纲〗中的前等量个",
   [":Cancel"] = "取消",
   ["@@shengzhi-turn"] = "圣质",
+  ["qionglan"] = "穹览",
+  [":qionglan"] = "此东吴命运线未开启。",
+  ["jiaohui"] = "交辉",
+  [":jiaohui"] = "此东吴命运线未开启。",
+  ["yuanlv"] = "渊虑",
+  [":yuanlv"] = "此东吴命运线未开启。",
 
-  
   ["$dili1"] = "身处巅峰，览天下大事。",
   ["$dili2"] = "位居至尊，掌至高之权。",
   ["$yuheng1"] = "权术妙用，存乎一心。",

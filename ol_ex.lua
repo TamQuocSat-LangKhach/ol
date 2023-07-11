@@ -923,7 +923,7 @@ local ol_ex__jianchu = fk.CreateTriggerSkill{
     if card.type == Card.TypeBasic then
       if not to.dead then
         local cardlist = data.card:isVirtual() and data.card.subcards or {data.card.id}
-        if table.every(cardlist, function(id) return room:getCardArea(id) == Card.Processing end) then
+        if #cardlist > 0 and table.every(cardlist, function(id) return room:getCardArea(id) == Card.Processing end) then
           room:obtainCard(to.id, data.card, false)
         end
       end
