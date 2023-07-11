@@ -3715,21 +3715,20 @@ Fk:loadTranslationTable{
 local godsunquan = General(extension, "godsunquan", "god", 4)
 local yuheng_skills = {
   --standard
-  "qixi", "keji", "kurou", "lianying", "xiaoji", "jieyin", "ex__zhiheng", "ex__yingzi", "ex__fanjian", "ex__guose",
+  "qixi", "keji", "kurou", "xiaoji", "jieyin", "ex__zhiheng", "ex__yingzi", "ex__fanjian", "ex__guose",
   --shzl
   "tianyi", "yinghun", "haoshi", "dimeng", "jiang", "zhijian",
   --sp
   "hongyuan", "duanbing", "fenxun", "mumu", "tanhu", "yanxiao", "anxian",
   --yjcm
-  "xuanfeng", "ganlu", "pojun", "anxu", "nos__gongqi", "gongqi", "anjian", "zhiyan", "danshou", "shenxing", "bingyi", "zhenshan",
+  "xuanfeng", "pojun", "anxu", "nos__gongqi", "gongqi", "anjian", "zhiyan", "danshou", "shenxing", "bingyi", "zhenshan",
   "yanzhu", "xingxue", "anguo", "jishe",
   --ol
-  "canshi", "hongde", "shanxi", "xiashu", "lianpian", "bizheng", "jinzhi", "lanjiang", "yuanchou", "luochong", "qiejian", "xianbi",
+  "canshi", "hongde", "shanxi", "xiashu", "lianpian", "bizheng", "lanjiang", "yuanchou", "xianbi",
   --mobile
-  "fenyin", "dujin", "chongjian", "mou__kurou", "mou__yingzi", "mou__fanjian", "m_ex__pojun",
+  "dujin", "chongjian", "mou__kurou", "mou__fanjian", "m_ex__pojun",
   --tenyear
-  "guanchao", "xunxian", "guolun", "duanfa", "sp__youdi", "qinguo", "zhukou", "jinjian", "jingzao", "xinyou", "zhiren", "jiqiaos",
-  "ty__songshu", "sibian", "tongli", "boyan", "niji",
+  "xunxian", "guolun", "duanfa", "sp__youdi", "zhukou", "jinjian", "jingzao", "xinyou", "zhiren", "sibian", "tongli", "boyan", "niji",
   --wandian
   "wd__kangyin", "wd__kenjian",
 }
@@ -3933,6 +3932,7 @@ Fk:loadTranslationTable{
   ["#dili-invoke"] = "帝力：失去任意个技能，获得〖圣质〗〖权道〗〖持纲〗中的前等量个",
   [":Cancel"] = "取消",
   ["@@shengzhi-turn"] = "圣质",
+
   
   ["$dili1"] = "身处巅峰，览天下大事。",
   ["$dili2"] = "位居至尊，掌至高之权。",
