@@ -3728,8 +3728,8 @@ local yuheng_skills = {
   --mobile
   "fenyin", "dujin", "chongjian", "mou__kurou", "mou__yingzi", "mou__fanjian", "m_ex__pojun",
   --tenyear
-  "guanchao", "xunxian", "guolun", "duanfa", "sp__youdi", "qinguo", "zhukou", "jinjian", "jingzao", "xinyou", "zhiren", "jiqiaos", "songshu",
-  "sibian", "tongli", "boyan", "niji",
+  "guanchao", "xunxian", "guolun", "duanfa", "sp__youdi", "qinguo", "zhukou", "jinjian", "jingzao", "xinyou", "zhiren", "jiqiaos",
+  "ty__songshu", "sibian", "tongli", "boyan", "niji",
   --wandian
   "wd__kangyin", "wd__kenjian",
 }
