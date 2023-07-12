@@ -5,6 +5,158 @@ Fk:loadTranslationTable{
   ["ol_sp3"] = "OL专属3",
 }
 
+local ol__zhugejin = General(extension, "ol__zhugejin", "wu", 3)
+local ol__hongyuan = fk.CreateTriggerSkill{
+  name = "ol__hongyuan",
+  anim_type = "defensive",
+  events = {fk.AfterCardsMove},
+  can_trigger = function(self, event, target, player, data)
+    if player:hasSkill(self.name) and player:usedSkillTimes(self.name, Player.HistoryPhase) < 1 and not player:isNude() then
+      local currentplayer = player.room.current
+      if currentplayer and currentplayer.phase <= Player.Finish and currentplayer.phase >= Player.Start then
+        local x = 0
+        for _, move in ipairs(data) do
+          if move.to == player.id and move.toArea == Card.PlayerHand then
+            x = x + #move.moveInfo
+          end
+        end
+        return x > 1
+      end
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local targets = table.map(room:getOtherPlayers(player, false), function(p)
+      return p.id
+    end)
+    for _ = 1, 2, 1 do
+      if player.dead or player:isNude() then break end
+      local tos, cardId = room:askForChooseCardAndPlayers(
+        player,
+        targets,
+        1,
+        1,
+        ".",
+        "#ol__hongyuan-give",
+        self.name,
+        true,
+        true
+      )
+      if #tos > 0 then
+        room:obtainCard(tos[1], cardId, false, fk.ReasonGive)
+        targets = table.filter(targets, function (pid)
+          return tos[1] ~= pid and not room:getPlayerById(pid).dead
+        end)
+        if #targets < 1 then break end
+      else
+        break
+      end
+    end
+  end,
+}
+local ol__mingzhe = fk.CreateTriggerSkill{
+  name = "ol__mingzhe",
+  frequency = Skill.Compulsory,
+  anim_type = "defensive",
+  events = {fk.AfterCardsMove},
+  can_trigger = function(self, event, target, player, data)
+    if player:hasSkill(self.name) and player.phase ~= Player.Play then
+      for _, move in ipairs(data) do
+        if move.from == player.id and (move.to ~= player.id or (move.toArea ~= Card.PlayerHand and move.toArea ~= Card.PlayerEquip)) then
+          for _, info in ipairs(move.moveInfo) do
+            if (info.fromArea == Card.PlayerHand or info.fromArea == Card.PlayerEquip) and
+            Fk:getCardById(info.cardId).color == Card.Red then
+              return true
+            end
+          end
+        end
+      end
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    player:drawCards(1, self.name)
+  end,
+}
+ol__zhugejin:addSkill("huanshi")
+ol__zhugejin:addSkill(ol__hongyuan)
+ol__zhugejin:addSkill(ol__mingzhe)
+Fk:loadTranslationTable{
+  ["ol__zhugejin"] = "诸葛瑾",
+  ["ol__huanshi"] = "缓释",
+  [":ol__huanshi"] = "当一名角色的判定牌生效前，你可以令其观看你的牌并用其中一张牌代替判定牌。",
+  ["ol__hongyuan"] = "弘援",
+  [":ol__hongyuan"] = "每阶段限一次，当你一次获得至少两张牌后，你可以交给至多两名其他角色各一张牌。",
+  ["ol__mingzhe"] = "明哲",
+  [":ol__mingzhe"] = "锁定技，当你于出牌阶段外失去红色牌后，你摸一张牌。",
+
+  ["#ol__hongyuan-give"] = "弘援：你可以选择一张牌交给一名角色",
+
+  ["$ol__huanshi1"] = "不因困顿夷初志，肯为联蜀改阵营。",
+  ["$ol__huanshi2"] = "合纵连横，只为天下苍生。",
+  ["$ol__hongyuan1"] = "吾已料有所困，援兵不久必至。",
+  ["$ol__hongyuan2"] = "恪守信义，方为上策。",
+  ["$ol__mingzhe1"] = "乱世，当稳中求胜。",
+  ["$ol__mingzhe2"] = "明哲维天，临君下土。",
+  ["~ol__zhugejin"] = "联盟若能得以维系，吾……无他愿矣……",
+}
+
+local ol__guyong = General(extension, "ol__guyong", "wu", 3)
+local ol__bingyi = fk.CreateTriggerSkill{
+  name = "ol__bingyi",
+  anim_type = "defensive",
+  events = {fk.AfterCardsMove},
+  can_trigger = function(self, event, target, player, data)
+    if player:hasSkill(self.name) and player:usedSkillTimes(self.name, Player.HistoryPhase) < 1 and not player:isKongcheng() then
+      local currentplayer = player.room.current
+      if currentplayer and currentplayer.phase <= Player.Finish and currentplayer.phase >= Player.Start then
+        for _, move in ipairs(data) do
+          if move.from == player.id and move.moveReason == fk.ReasonDiscard then
+            for _, info in ipairs(move.moveInfo) do
+              if info.fromArea == Card.PlayerHand or info.fromArea == Card.PlayerEquip then
+                return true
+              end
+            end
+          end
+        end
+      end
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local cards = player.player_cards[Player.Hand]
+    player:showCards(cards)
+    if #cards > 1 then
+      for _, id in ipairs(cards) do
+        if Fk:getCardById(id).color == Card.NoColor or Fk:getCardById(id).color ~= Fk:getCardById(cards[1]).color then
+          return false
+        end
+      end
+    end
+    local tos = room:askForChoosePlayers(player, table.map(room:getOtherPlayers(player, false), function(p)
+      return p.id end), 1, #cards, "#ol__bingyi-choose:::"..#cards, self.name, true)
+    table.insert(tos, player.id)
+    room:sortPlayersByAction(tos)
+    for _, pid in ipairs(tos) do
+      local p = room:getPlayerById(pid)
+      if not p.dead then
+        room:drawCards(p, 1, self.name)
+      end
+    end
+  end,
+}
+ol__guyong:addSkill("shenxing")
+ol__guyong:addSkill(ol__bingyi)
+Fk:loadTranslationTable{
+  ["ol__guyong"] = "顾雍",
+  ["ol__bingyi"] = "秉壹",
+  [":ol__bingyi"] = "每阶段限一次，当你的牌被弃置后，你可以展示所有手牌，若颜色均相同，你令你与至多X名角色各摸一张牌（X为你的手牌数）。",
+  ["#ol__bingyi-choose"] = "秉壹：你可以与至多%arg名其他角色各摸一张牌，点取消则仅你摸牌",
+  
+  ["$ol__bingyi1"] = "秉直进谏，勿藏私心！",
+  ["$ol__bingyi2"] = "秉公守一，不负圣恩！",
+  ["~ol__guyong"] = "此番患疾，吾必不起……",
+}
+
 local huban = General(extension, "ol__huban", "wei", 4)
 local huiyun = fk.CreateViewAsSkill{
   name = "huiyun",
