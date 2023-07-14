@@ -5,6 +5,94 @@ Fk:loadTranslationTable{
   ["ol_ex"] = "OL界",
 }
 
+local lvmeng = General(extension, "ol_ex__lvmeng", "wu", 4)
+local ol_ex__qinxue = fk.CreateTriggerSkill{
+  name = "ol_ex__qinxue",
+  frequency = Skill.Wake,
+  events = {fk.EventPhaseStart},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self.name) and
+      (player.phase == Player.Start or player.phase == Player.Finish) and
+      player:usedSkillTimes(self.name, Player.HistoryGame) == 0
+  end,
+  can_wake = function(self, event, target, player, data)
+    return (player:getHandcardNum() - player.hp > 1)
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    room:changeMaxHp(player, -1)
+    local choices = {"draw2"}
+    if player:isWounded() then
+      table.insert(choices, "recover")
+    end
+    local choice = room:askForChoice(player, choices, self.name)
+    if choice == "draw2" then
+      room:drawCards(player, 2, self.name)
+    elseif choice == "recover" then
+      room:recover({
+        who = player,
+        num = 1,
+        recoverBy = player,
+        skillName = self.name
+      })
+    end
+    room:handleAddLoseSkills(player, "gongxin", nil)
+  end,
+}
+local ol_ex__botu = fk.CreateTriggerSkill{
+  name = "ol_ex__botu",
+  anim_type = "drawcard",
+  events = {fk.EventPhaseChanging},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self.name) and data.to == Player.NotActive
+    and player:usedSkillTimes(self.name, Player.HistoryRound) < math.min(3, #player.room.alive_players)
+    and type(player:getMark("ol_ex__botu-turn")) == "table" and #player:getMark("ol_ex__botu-turn") == 4
+  end,
+  on_use = function(self, event, target, player, data)
+    player:gainAnExtraTurn()
+  end,
+
+  refresh_events = {fk.AfterCardsMove},
+  can_refresh = function(self, event, target, player, data)
+    return player.phase ~= Player.NotActive
+  end,
+  on_refresh = function(self, event, target, player, data)
+    local room = player.room
+    local suitsRecorded = player:getMark("ol_ex__botu-turn")
+    if type(suitsRecorded) ~= "table" then
+      suitsRecorded = {}
+    end
+    for _, move in ipairs(data) do
+      if move.toArea == Card.DiscardPile then
+        for _, info in ipairs(move.moveInfo) do
+          table.insertIfNeed(suitsRecorded, Fk:getCardById(info.cardId):getSuitString(true))
+        end
+      end
+    end
+    room:setPlayerMark(player, "ol_ex__botu-turn", suitsRecorded)
+    room:setPlayerMark(player, "@ol_ex__botu-turn", player:hasSkill(self.name, true) and #suitsRecorded > 0 and suitsRecorded or 0)
+  end,
+}
+lvmeng:addSkill("keji")
+lvmeng:addSkill(ol_ex__qinxue)
+lvmeng:addSkill(ol_ex__botu)
+lvmeng:addRelatedSkill("gongxin")
+Fk:loadTranslationTable{
+  ["ol_ex__lvmeng"] = "界吕蒙",
+  ["ol_ex__qinxue"] = "勤学",
+  [":ol_ex__qinxue"] = "觉醒技，准备阶段或结束阶段，若你的手牌数比体力值多2或更多，你减1点体力上限，回复1点体力或摸两张牌，然后获得技能〖攻心〗。",
+  ["ol_ex__botu"] = "博图",
+  [":ol_ex__botu"] = "每轮限X次（X为存活角色数且最多为3），回合结束时，若本回合内置入弃牌堆的牌包含四种花色，你可以获得一个额外回合。",
+
+  ["@ol_ex__botu-turn"] = "博图",
+
+  ["$ol_ex__qinxue1"] = "士别三日，刮目相看！",
+  ["$ol_ex__qinxue2"] = "吴下阿蒙，今非昔比！",
+  ["$ol_ex__botu1"] = "厚积而薄发。",
+  ["$ol_ex__botu2"] = "我胸怀的是这天下！",
+  ["~ol_ex__lvmeng"] = "以后……就交给年轻人了……",
+}
+
 local xiahouyuan = General(extension, "ol_ex__xiahouyuan", "wei", 4)
 local ol_ex__shensu = fk.CreateTriggerSkill{
   name = "ol_ex__shensu",
@@ -2707,6 +2795,72 @@ Fk:loadTranslationTable{
   ["$ol_ex__duanchang1"] = "红颜留塞外，愁思欲断肠。",
   ["$ol_ex__duanchang2"] = "莫吟苦辛曲，此生谁忍闻。",
   ["~ol_ex__caiwenji"] = "飘飘外域里，何日能归乡？",
+}
+
+--local zhangzhaozhanghong = General(extension, "ol_ex__zhangzhaozhanghong", "wu", 3)
+local ol_ex__zhijian = fk.CreateActiveSkill{
+  name = "ol_ex__zhijian",
+  anim_type = "support",
+  card_num = 1,
+  target_num = 1,
+  card_filter = function(self, to_select, selected)
+    return #selected == 0 and Fk:getCardById(to_select).type == Card.TypeEquip
+  end,
+  target_filter = function(self, to_select, selected, cards)
+    return #selected == 0 and #cards == 1 and to_select ~= Self.id
+  end,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    local target = room:getPlayerById(effect.tos[1])
+    local card = Fk:getCardById(effect.cards[1])
+
+    local existingEquipId = target:getEquipment(card.sub_type)
+    if existingEquipId then
+      room:moveCards(
+        {
+          ids = { existingEquipId },
+          from = target.id,
+          toArea = Card.DiscardPile,
+          moveReason = fk.ReasonPutIntoDiscardPile,
+          proposer = effect.from,
+          skillName = self.name,
+        },
+        {
+          ids = effect.cards,
+          from = effect.from,
+          to = target.id,
+          toArea = Card.PlayerEquip,
+          moveReason = fk.ReasonPut,
+          proposer = effect.from,
+          skillName = self.name,
+        }
+      )
+    else
+      room:moveCards({
+        ids = effect.cards,
+        from = effect.from,
+        to = target.id,
+        toArea = Card.PlayerEquip,
+        moveReason = fk.ReasonPut,
+        proposer = effect.from,
+        skillName = self.name,
+      })
+    end
+  
+    if not player.dead then
+      room:drawCards(player, 1, self.name)
+    end
+  end,
+}
+
+--zhangzhaozhanghong:addSkill(ol_ex__zhijian)
+--zhangzhaozhanghong:addSkill(ol_ex__guzheng)
+Fk:loadTranslationTable{
+  ["ol_ex__zhangzhaozhanghong"] = "界张昭张纮",
+  ["ol_ex__zhijian"] = "直谏",
+  [":ol_ex__zhijian"] = "出牌阶段，你可以将一张装备牌置于其他角色装备区（替换原装备），然后摸一张牌。",
+  ["ol_ex__guzheng"] = "固政",
+  [":ol_ex__guzheng"] = "每阶段限一次，当其他角色的至少两张牌因弃置而置入弃牌堆后，你可以令其获得其中一张牌，然后你可以获得剩余牌。",
 }
 
 return extension

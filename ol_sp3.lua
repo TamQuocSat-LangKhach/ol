@@ -151,10 +151,217 @@ Fk:loadTranslationTable{
   ["ol__bingyi"] = "秉壹",
   [":ol__bingyi"] = "每阶段限一次，当你的牌被弃置后，你可以展示所有手牌，若颜色均相同，你令你与至多X名角色各摸一张牌（X为你的手牌数）。",
   ["#ol__bingyi-choose"] = "秉壹：你可以与至多%arg名其他角色各摸一张牌，点取消则仅你摸牌",
-  
+
   ["$ol__bingyi1"] = "秉直进谏，勿藏私心！",
   ["$ol__bingyi2"] = "秉公守一，不负圣恩！",
   ["~ol__guyong"] = "此番患疾，吾必不起……",
+}
+
+local ol__zhoufei = General(extension, "ol__zhoufei", "wu", 3, 3, General.Female)
+local ol__liangyin = fk.CreateTriggerSkill{
+  name = "ol__liangyin",
+  events = {fk.AfterCardsMove},
+  mute = true,
+  can_trigger = function(self, event, target, player, data)
+    if player:hasSkill(self.name) then
+      for _, move in ipairs(data) do
+        if move.toArea == Card.PlayerSpecial then
+          if player:getMark("liangyin1used-turn") == 0 then
+            for _, info in ipairs(move.moveInfo) do
+              if info.fromArea ~= Card.PlayerSpecial then
+                return true
+              end
+            end
+          end
+        elseif player:getMark("liangyin2used-turn") == 0 then
+          for _, info in ipairs(move.moveInfo) do
+            if info.fromArea == Card.PlayerSpecial then
+              return true
+            end
+          end
+        end
+      end
+    end
+  end,
+  on_trigger = function(self, event, target, player, data)
+    local room = player.room
+    local drawcard, discard = false, false
+    for _, move in ipairs(data) do
+      if move.toArea == Card.PlayerSpecial then
+        if player:getMark("liangyin1used-turn") == 0 then
+          for _, info in ipairs(move.moveInfo) do
+            if info.fromArea ~= Card.PlayerSpecial then
+              room:setPlayerMark(player, "liangyin1used-turn", 1)
+              drawcard = true
+            end
+          end
+        end
+      elseif player:getMark("liangyin2used-turn") == 0 then
+        for _, info in ipairs(move.moveInfo) do
+          if info.fromArea == Card.PlayerSpecial then
+            room:setPlayerMark(player, "liangyin2used-turn", 1)
+            discard = true
+          end
+        end
+      end
+    end
+    if drawcard then
+      self.cost_data = "drawcard"
+      self:doCost(event, target, player, data)
+    end
+    if discard and player:hasSkill(self.name) and not player:isNude() then
+      self.cost_data = "discard"
+      self:doCost(event, target, player, data)
+    end
+  end,
+  on_cost = function(self, event, target, player, data)
+    local choice = self.cost_data
+    local targets = table.filter(player.room.alive_players, function (p)
+      return p ~= player and (choice == "drawcard" or not p:isNude())
+    end)
+    local to = player.room:askForChoosePlayers(player, table.map(targets, function (p)
+      return p.id end), 1, 1, "#ol__liangyin-" .. choice, self.name, true)
+    if #to > 0 then
+      self.cost_data = {to[1], choice}
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local tar = room:getPlayerById(self.cost_data[1])
+    local choice = self.cost_data[2]
+    if choice == "drawcard" then
+      room:notifySkillInvoked(player, self.name, "support")
+      room:broadcastSkillInvoke(self.name)
+      room:drawCards(player, 1, self.name)
+      if not tar.dead then
+        room:drawCards(tar, 1, self.name)
+      end
+    elseif choice == "discard" then
+      room:notifySkillInvoked(player, self.name, "control")
+      room:broadcastSkillInvoke(self.name)
+      room:askForDiscard(player, 1, 1, true, self.name, false)
+      if not tar.dead then 
+        room:askForDiscard(tar, 1, 1, true, self.name, false)
+      end
+    end
+    if player.dead then return false end
+    local x = #player:getPile("ol__kongsheng_harp")
+    local targets = {}
+    if player:getHandcardNum() == x and player:isWounded() then
+      table.insert(targets, player.id)
+    end
+    if not tar.dead and tar:getHandcardNum() == x and tar:isWounded() then
+      table.insert(targets, tar.id)
+    end
+    if #targets == 0 then return false end
+    local tos = player.room:askForChoosePlayers(player, targets, 1, 1, "#ol__liangyin-recover", self.name, true)
+    if #tos > 0 then
+      local to = room:getPlayerById(tos[1])
+      room:recover({
+        who = to,
+        num = 1,
+        recoverBy = player,
+        skillName = self.name
+      })
+    end
+  end,
+}
+local ol__kongsheng = fk.CreateTriggerSkill{
+  name = "ol__kongsheng",
+  anim_type = "defensive",
+  events = {fk.EventPhaseStart},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self.name) and (player.phase == Player.Start or
+    (player.phase == Player.Finish and #player:getPile("ol__kongsheng_harp") > 0))
+  end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    if player.phase == Player.Start then
+      local cards = room:askForCard(player, 1, 998, true, self.name, true, "", "#ol__kongsheng-invoke")
+      if #cards > 0 then
+        self.cost_data = cards
+        return true
+      end
+    elseif player.phase == Player.Finish then
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    if player.phase == Player.Start then
+      local dummy = Fk:cloneCard("dilu")
+      dummy:addSubcards(self.cost_data)
+      player:addToPile("ol__kongsheng_harp", self.cost_data, true, self.name)
+    elseif player.phase == Player.Finish then
+      local room = player.room
+      local cards = table.filter(player:getPile("ol__kongsheng_harp"), function (id)
+        return Fk:getCardById(id).type ~= Card.TypeEquip
+      end)
+      if #cards == 0 then return false end
+      local dummy = Fk:cloneCard("dilu")
+      dummy:addSubcards(cards)
+      room:obtainCard(player.id, dummy, true, fk.ReasonJustMove)
+      if player.dead or #player:getPile("ol__kongsheng_harp") == 0 then return false end
+      local targets = table.filter(room.alive_players, function (p)
+        return table.find(player:getPile("ol__kongsheng_harp"), function (id)
+          local card = Fk:getCardById(id)
+          return card.type == Card.TypeEquip and not p:prohibitUse(card) and not p:isProhibited(p, card) and
+            card.skill:canUse(p, card)
+        end)
+      end)
+      if #targets == 0 then return false end
+      local tos = room:askForChoosePlayers(player, table.map(targets, function (p)
+        return p.id end), 1, 1, "#ol__kongsheng-choose", self.name, false)
+      if #tos == 0 then return false end
+      local to = room:getPlayerById(tos[1])
+      while true do
+        if player.dead or to.dead then break end
+        local to_use = table.find(player:getPile("ol__kongsheng_harp"), function (id)
+          local card = Fk:getCardById(id)
+          return card.type == Card.TypeEquip and not to:prohibitUse(card) and not to:isProhibited(to, card) and
+            card.skill:canUse(to, card)
+        end)
+        if to_use == nil then break end
+        room:moveCards({
+          from = player.id,
+          ids = {to_use},
+          toArea = Card.Processing,
+          moveReason = fk.ReasonUse,
+          skillName = self.name,
+        })
+        room:useCard({
+          from = to.id,
+          tos = {{to.id}},
+          card = Fk:getCardById(to_use),
+        })
+      end
+      if not to.dead then
+        room:loseHp(to, 1, self.name)
+      end
+    end
+  end,
+}
+ol__zhoufei:addSkill(ol__liangyin)
+ol__zhoufei:addSkill(ol__kongsheng)
+Fk:loadTranslationTable{
+  ["ol__zhoufei"] = "周妃",
+  ["ol__liangyin"] = "良姻",
+  [":ol__liangyin"] = "当每回合首次有牌移出/移入游戏后，你可以与一名其他角色各摸/弃置一张牌，然后你可以令其中一名手牌数为X的角色回复1点体力（X为“箜”数）。",
+  ["ol__kongsheng"] = "箜声",
+  [":ol__kongsheng"] = "准备阶段，你可以将任意张牌置于你的武将牌上，称为“箜”。结束阶段，你获得“箜”中的非装备牌，然后令一名角色使用剩余“箜”并失去1点体力。",
+
+  ["#ol__liangyin-drawcard"] = "你可以发动良姻，选择一名角色，与其各摸一张牌",
+  ["#ol__liangyin-discard"] = "你可以发动良姻，选择一名角色，与其各弃置一张牌",
+  ["#ol__liangyin-recover"] = "良姻：可以选择一名角色，令其回复1点体力",
+  ["#ol__kongsheng-invoke"] = "你可以发动箜声，选择任意张牌作为“箜”置于武将牌上",
+  ["#ol__kongsheng-choose"] = "箜声：选择一名角色，令其使用“箜”中的装备牌并失去1点体力",
+  ["ol__kongsheng_harp"] = "箜",
+
+  ["$ol__liangyin1"] = "碧水云月间，良缘情长在。",
+  ["$ol__liangyin2"] = "皓月皎，花景明，两心同。",
+  ["$ol__kongsheng1"] = "歌尽桃花颜，箜鸣玉娇黛。",
+  ["$ol__kongsheng2"] = "箜篌双丝弦，心有千绪结。",
+  ["~ol__zhoufei"] = "梧桐半枯衰，鸳鸯白头散……",
 }
 
 local huban = General(extension, "ol__huban", "wei", 4)
