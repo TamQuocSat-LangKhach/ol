@@ -173,13 +173,13 @@ local benyu = fk.CreateTriggerSkill{
   anim_type = "masochism",
   events ={fk.Damaged},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name) and data.from and not data.from.dead and #player.player_cards[Player.Hand] ~= #data.from.player_cards[Player.Hand]
+    return target == player and player:hasSkill(self.name) and data.from and not data.from.dead and player:getHandcardNum() ~= #data.from.player_cards[Player.Hand]
   end,
   on_cost = function(self, event, target, player, data)
     local room = player.room
-    if #player.player_cards[Player.Hand] > #data.from.player_cards[Player.Hand] then
+    if player:getHandcardNum() > #data.from.player_cards[Player.Hand] then
       local _, discard = room:askForUseActiveSkill(player, "discard_skill", "#benyu-discard::"..data.from.id..":"..#data.from.player_cards[Player.Hand] + 1, true,{
-        num = #player.player_cards[Player.Hand],
+        num = player:getHandcardNum(),
         min_num = #data.from.player_cards[Player.Hand] + 1,
         include_equip = false,
         reason = self.name,
@@ -190,7 +190,7 @@ local benyu = fk.CreateTriggerSkill{
         return true
       end
     else
-      if #player.player_cards[Player.Hand] < math.min(#data.from.player_cards[Player.Hand], 5) then
+      if player:getHandcardNum() < math.min(#data.from.player_cards[Player.Hand], 5) then
         return room:askForSkillInvoke(player, self.name)
       end
     end
@@ -205,7 +205,7 @@ local benyu = fk.CreateTriggerSkill{
         skillName = self.name,
       }
     else
-      player:drawCards(math.min(5, #data.from.player_cards[Player.Hand]) - #player.player_cards[Player.Hand])
+      player:drawCards(math.min(5, #data.from.player_cards[Player.Hand]) - player:getHandcardNum())
     end
   end,
 }
@@ -2412,7 +2412,7 @@ local beizhan = fk.CreateTriggerSkill{
   on_refresh = function(self, event, target, player, data)
     local room = player.room
     room:setPlayerMark(target, self.name, 0)
-    if table.every(room:getOtherPlayers(player), function(p) return #player.player_cards[Player.Hand] >= p:getHandcardNum() end) then
+    if table.every(room:getOtherPlayers(player), function(p) return player:getHandcardNum() >= p:getHandcardNum() end) then
     room:addPlayerMark(target, "@@beizhan-turn", 1)
     end
   end,
@@ -2704,7 +2704,7 @@ local qingzhong = fk.CreateTriggerSkill{
   end,
   on_refresh = function(self, event, target, player, data)
     local room = player.room
-    local n = #player.player_cards[Player.Hand]
+    local n = player:getHandcardNum()
     for _, p in ipairs(room:getOtherPlayers(player)) do
       if p:getHandcardNum() < n then
         n = p:getHandcardNum()
@@ -2959,14 +2959,8 @@ local lingren = fk.CreateTriggerSkill{
   anim_type = "offensive",
   events = {fk.TargetSpecified},
   can_trigger = function(self, event, target, player, data)
-    if target == player and player:hasSkill(self.name) and player.phase == Player.Play and player:usedSkillTimes(self.name, Player.HistoryPhase) == 0 then
-      if data.firstTarget and #AimGroup:getAllTargets(data.tos) > 0 then
-        local pattern = "slash,duel,savage_assault,archery_attack,fire_attack"
-        if data.card:matchPattern(pattern) then
-          return true
-        end
-      end
-    end
+    return target == player and player:hasSkill(self.name) and player.phase == Player.Play and data.firstTarget and data.card.is_damage_card and
+      #AimGroup:getAllTargets(data.tos) > 0 and player:usedSkillTimes(self.name, Player.HistoryPhase) == 0
   end,
   on_cost = function(self, event, target, player, data)
     local to = player.room:askForChoosePlayers(player, data.tos[1], 1, 1, "#lingren-choose", self.name, true)
@@ -3001,26 +2995,55 @@ local lingren = fk.CreateTriggerSkill{
       end
     end
     right = right + #choices
-    if right > 0 then data.card.extra_data = {self.name, self.cost_data} end  --can't use data.additionalDamage here!
-    if right > 1 then player:drawCards(2) end
-    if right > 2 then room:handleAddLoseSkills(player, "ex__jianxiong|xingshang", nil, true, false) end
+    if right > 0 then
+      data.extra_data = data.extra_data or {}
+      data.extra_data.lingren = {player.id, self.cost_data}
+    end
+    if right > 1 then
+      player:drawCards(2, self.name)
+    end
+    if right > 2 then
+      local skills = {}
+      if not player:hasSkill("ex__jianxiong", true) then
+        table.insert(skills, "ex__jianxiong")
+      end
+      if not player:hasSkill("xingshang", true) then
+        table.insert(skills, "xingshang")
+      end
+      room:setPlayerMark(player, self.name, skills)
+      room:handleAddLoseSkills(player, table.concat(skills, "|"), nil, true, false)
+    end
   end,
-
-  refresh_events = {fk.DamageCaused, fk.EventPhaseChanging},
-  can_refresh = function(self, event, target, player, data)
-    if target == player and player:hasSkill(self.name, true) then
+}
+local lingren_trigger = fk.CreateTriggerSkill {
+  name = "#lingren_trigger",
+  mute = true,
+  events = {fk.DamageCaused, fk.EventPhaseChanging},
+  can_trigger = function(self, event, target, player, data)
+    if target == player then
       if event == fk.DamageCaused then
-        return data.card and data.card.extra_data and data.card.extra_data[1] == self.name and data.card.extra_data[2] == data.to.id
+        local e = player.room.logic:getCurrentEvent():findParent(GameEvent.UseCard)
+        if e then
+          local use = e.data[1]
+          return use.extra_data and use.extra_data.lingren and
+            use.extra_data.lingren[1] == player.id and use.extra_data.lingren[2] == data.to.id
+        end
       else
-        return data.to == Player.Start
+        return data.from == Player.RoundStart and player:getMark("lingren") ~= 0
       end
     end
   end,
-  on_refresh = function(self, event, target, player, data)
+  on_cost = function(self, event, target, player, data)
+    return true
+  end,
+  on_use = function(self, event, target, player, data)
     if event == fk.DamageCaused then
       data.damage = data.damage + 1
     else
-      player.room:handleAddLoseSkills(player, "-ex__jianxiong|-xingshang", nil, true, false)
+      local room = player.room
+      local skills = player:getMark("lingren")
+      room:setPlayerMark(player, "lingren", 0)
+      room:handleAddLoseSkills(player, "-"..table.concat(skills, "|-"), nil, true, false)
     end
   end,
 }
@@ -3030,34 +3053,30 @@ local fujian = fk.CreateTriggerSkill {
   frequency = Skill.Compulsory,
   events = {fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
-    if target == player and player:hasSkill(self.name) and player.phase == Player.Finish then
-      self.cost_data = #player.player_cards[Player.Hand]
-      for _, p in ipairs(player.room:getOtherPlayers(player)) do
-        if p:getHandcardNum() < self.cost_data then
-          self.cost_data = p:getHandcardNum()
-        end
-      end
-      return self.cost_data > 0
-    end
+    return target == player and player:hasSkill(self.name) and player.phase == Player.Finish and
+      not table.find(player.room.alive_players, function(p) return p:isKongcheng() and p ~= player end)
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
+    local n = player:getHandcardNum()
+    for _, p in ipairs(player.room:getOtherPlayers(player)) do
+      if p:getHandcardNum() < n then
+        n = p:getHandcardNum()
+      end
+    end
     local to = table.random(room:getOtherPlayers(player))
     room:doIndicate(player.id, {to.id})
-    local cards = {}
-    while #cards < self.cost_data do
-      local id = to.player_cards[Player.Hand][math.random(1, #to.player_cards[Player.Hand])]
-      table.insertIfNeed(cards, id)
-    end
+    local cards = table.random(to.player_cards[Player.Hand], n)
     room:fillAG(player, cards)
     room:delay(5000)
     room:closeAG(player)
   end,
 }
+lingren:addRelatedSkill(lingren_trigger)
 caoying:addSkill(lingren)
+caoying:addSkill(fujian)
 caoying:addRelatedSkill("ex__jianxiong")
 caoying:addRelatedSkill("xingshang")
-caoying:addSkill(fujian)
 Fk:loadTranslationTable{
   ["caoying"] = "曹婴",
   ["lingren"] = "凌人",

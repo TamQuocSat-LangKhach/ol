@@ -3736,20 +3736,19 @@ Fk:loadTranslationTable{
 local godsunquan = General(extension, "godsunquan", "god", 4)
 local yuheng_skills = {
   --standard
-  "qixi", "keji", "kurou", "xiaoji", "jieyin", "ex__zhiheng", "ex__yingzi", "ex__fanjian", "ex__guose",
+  "keji", "xiaoji", "jieyin", "ex__zhiheng", "ex__yingzi", "ex__fanjian", "ex__guose",
   --shzl
-  "tianyi", "yinghun", "haoshi", "dimeng", "jiang", "zhijian",
+  "tianyi", "yinghun", "haoshi", "jiang", "zhijian",
   --sp
-  "hongyuan", "duanbing", "fenxun", "mumu", "tanhu", "yanxiao", "anxian",
+  "hongyuan", "duanbing", "fenxun", "mumu", "tanhu", "yanxiao",
   --yjcm
-  "xuanfeng", "pojun", "anxu", "nos__gongqi", "gongqi", "anjian", "zhiyan", "danshou", "shenxing", "bingyi", "zhenshan",
-  "yanzhu", "xingxue", "anguo", "jishe",
+  "xuanfeng", "pojun", "anxu", "gongqi", "anjian", "zhiyan", "danshou", "shenxing", "bingyi", "yanzhu", "anguo", "jishe",
   --ol
-  "canshi", "hongde", "shanxi", "xiashu", "lianpian", "bizheng", "lanjiang", "yuanchou", "xianbi",
+  "canshi", "shanxi", "xiashu", "lianpian", "bizheng", "lanjiang", "yuanchou", "xianbi",
   --mobile
   "dujin", "chongjian", "mou__kurou", "mou__fanjian", "m_ex__pojun",
   --tenyear
-  "xunxian", "guolun", "duanfa", "sp__youdi", "zhukou", "jinjian", "jingzao", "xinyou", "zhiren", "sibian", "tongli", "boyan", "niji",
+  "xunxian", "guolun", "duanfa", "sp__youdi", "zhukou", "jinjian", "jingzao", "xinyou", "zhiren", "sibian", "boyan", "niji",
   --wandian
   "wd__kangyin", "wd__kenjian",
 }
