@@ -2797,10 +2797,11 @@ Fk:loadTranslationTable{
   ["~ol_ex__caiwenji"] = "飘飘外域里，何日能归乡？",
 }
 
---local zhangzhaozhanghong = General(extension, "ol_ex__zhangzhaozhanghong", "wu", 3)
+local zhangzhaozhanghong = General(extension, "ol_ex__zhangzhaozhanghong", "wu", 3)
 local ol_ex__zhijian = fk.CreateActiveSkill{
   name = "ol_ex__zhijian",
   anim_type = "support",
+  prompt = "#ol_ex__zhijian-active",
   card_num = 1,
   target_num = 1,
   card_filter = function(self, to_select, selected)
@@ -2813,7 +2814,6 @@ local ol_ex__zhijian = fk.CreateActiveSkill{
     local player = room:getPlayerById(effect.from)
     local target = room:getPlayerById(effect.tos[1])
     local card = Fk:getCardById(effect.cards[1])
-
     local existingEquipId = target:getEquipment(card.sub_type)
     if existingEquipId then
       room:moveCards(
@@ -2846,21 +2846,142 @@ local ol_ex__zhijian = fk.CreateActiveSkill{
         skillName = self.name,
       })
     end
-  
     if not player.dead then
       room:drawCards(player, 1, self.name)
     end
   end,
 }
+local ol_ex__guzheng = fk.CreateTriggerSkill{
+  name = "ol_ex__guzheng",
+  anim_type = "support",
+  events = {fk.AfterCardsMove},
+  can_trigger = function(self, event, target, player, data)
+    if player:hasSkill(self.name) and player:usedSkillTimes(self.name, Player.HistoryPhase) < 1 then
+      local currentplayer = player.room.current
+      if currentplayer and currentplayer.phase <= Player.Finish and currentplayer.phase >= Player.Start then
+        local guzheng_pairs = {}
+        for _, move in ipairs(data) do
+          if move.moveReason == fk.ReasonDiscard and move.from ~= nil and move.from ~= player.id then
+            local guzheng_value = guzheng_pairs[move.from] or {}
+            for _, info in ipairs(move.moveInfo) do
+              if info.fromArea == Card.PlayerHand or info.fromArea == Card.PlayerEquip then
+                table.insert(guzheng_value, info.cardId)
+              end
+            end
+            guzheng_pairs[move.from] = guzheng_value
+          end
+        end
+        for _, value in pairs(guzheng_pairs) do
+          if #value > 1 and not table.every(value, function (id)
+            return player.room:getCardArea(id) ~= Card.DiscardPile
+          end) then
+            return true
+          end
+        end
+      end
+    end
+  end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    local guzheng_pairs = {}
+    for _, move in ipairs(data) do
+      if move.moveReason == fk.ReasonDiscard and move.from ~= nil and move.from ~= player.id then
+        local guzheng_value = guzheng_pairs[move.from] or {}
+        for _, info in ipairs(move.moveInfo) do
+          if info.fromArea == Card.PlayerHand or info.fromArea == Card.PlayerEquip then
+            table.insert(guzheng_value, info.cardId)
+          end
+        end
+        guzheng_pairs[move.from] = guzheng_value
+      end
+    end
+    local targets = {}
+    for key, value in pairs(guzheng_pairs) do
+      if #value > 1 and not table.every(value, function (id)
+        return room:getCardArea(id) ~= Card.DiscardPile
+      end) then
+        table.insert(targets, key)
+      end
+    end
 
---zhangzhaozhanghong:addSkill(ol_ex__zhijian)
---zhangzhaozhanghong:addSkill(ol_ex__guzheng)
+    if #targets == 1 then
+      if room:askForSkillInvoke(player, self.name, nil, "#ol_ex__guzheng-invoke::"..targets[1]) then
+        self.cost_data = {targets[1], guzheng_pairs[targets[1]]}
+        return true
+      end
+    elseif #targets > 1 then
+      targets = room:askForChoosePlayers(player, targets, 1, 1, "#ol_ex__guzheng-choose", self.name, false)
+      if #targets > 0 then
+        self.cost_data = {targets[1], guzheng_pairs[targets[1]]}
+        return true
+      end
+    end
+    
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local cards = table.filter(self.cost_data[2], function (id)
+      return room:getCardArea(id) == Card.DiscardPile
+    end)
+    if #cards == 0 then return false end
+    local to_return = table.random(cards, 1)
+    local get_other = false
+    if #cards > 1 then
+      local result = room:askForCustomDialog(player, self.name,
+      "packages/ol/qml/GuZhengBox.qml", {
+        cards,
+        "#guzheng-choose",
+      })
+      if result ~= "" then
+        local reply = json.decode(result)
+        to_return = reply.cards
+        get_other = reply.choice == "guzheng_yes"
+      end
+    end
+    local moveInfos = {}
+    table.insert(moveInfos, {
+      ids = to_return,
+      to = self.cost_data[1],
+      toArea = Card.PlayerHand,
+      moveReason = fk.ReasonJustMove,
+      proposer = player.id,
+      skillName = self.name,
+    })
+    table.removeOne(cards, to_return[1])
+    if get_other and #cards > 0 then
+      table.insert(moveInfos, {
+        ids = cards,
+        to = player.id,
+        toArea = Card.PlayerHand,
+        moveReason = fk.ReasonJustMove,
+        proposer = player.id,
+        skillName = self.name,
+      })
+    end
+    room:moveCards(table.unpack(moveInfos))
+  end,
+}
+zhangzhaozhanghong:addSkill(ol_ex__zhijian)
+zhangzhaozhanghong:addSkill(ol_ex__guzheng)
 Fk:loadTranslationTable{
   ["ol_ex__zhangzhaozhanghong"] = "界张昭张纮",
   ["ol_ex__zhijian"] = "直谏",
   [":ol_ex__zhijian"] = "出牌阶段，你可以将一张装备牌置于其他角色装备区（替换原装备），然后摸一张牌。",
   ["ol_ex__guzheng"] = "固政",
   [":ol_ex__guzheng"] = "每阶段限一次，当其他角色的至少两张牌因弃置而置入弃牌堆后，你可以令其获得其中一张牌，然后你可以获得剩余牌。",
+
+  ["#ol_ex__zhijian-active"] = "发动直谏，选择一张装备牌置入其他角色的装备区（替换原装备）",
+  ["#ol_ex__guzheng-invoke"] = "你可以发动固政，令%dest获得其此次弃置的牌中的一张，然后你获得剩余牌",
+  ["#ol_ex__guzheng-choose"] = "你可以发动固政，令一名角色获得其此次弃置的牌中的一张，然后你获得剩余牌",
+  ["#guzheng-choose"] = "固政：选择一张牌还给该角色",
+  ["guzheng_yes"] = "确定，获得剩余牌",
+  ["guzheng_no"] = "确定，不获得剩余牌",
+
+  ["$ol_ex__zhijian1"] = "",
+  ["$ol_ex__zhijian2"] = "",
+  ["$ol_ex__guzheng1"] = "",
+  ["$ol_ex__guzheng2"] = "",
+  ["~ol_ex__zhangzhaozhanghong"] = "",
 }
 
 return extension
