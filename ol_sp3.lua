@@ -659,6 +659,12 @@ Fk:loadTranslationTable{
   ["#ol__tongdu-choose"] = "统度：你可以令一名其他角色交给你一张手牌，出牌阶段结束时你将之置于牌堆顶",
   ["#ol__tongdu-give"] = "统度：你须交给 %src 一张手牌，出牌阶段结束时将之置于牌堆顶",
   ["#ol__zhubi-card"] = "铸币：重铸一张牌，摸到的“币”可以在你的结束阶段和牌堆底牌交换",
+
+  ["$ol__tongdu1"] = "上下调度，臣工皆有所为。",
+  ["$ol__tongdu2"] = "统筹部划，不糜国利分毫。",
+  ["$ol__zhubi1"] = "钱货之通者，在乎币。",
+  ["$ol__zhubi2"] = "融金为料，可铸五铢。",
+  ["~ol__liuba"] = "恨未见，铸兵为币之日……",
 }
 
 Fk:loadTranslationTable{
@@ -1131,6 +1137,10 @@ Fk:loadTranslationTable{
   [":jianman"] = "锁定技，每回合结束时，若本回合前两张基本牌的使用者：均为你，你视为使用其中的一张牌；仅其中之一为你，你弃置另一名使用者一张牌。",
   ["#jianman-choice"] = "选择视为使用的牌名",
   ["#jianman-choose"] = "鹣蛮：选择视为使用【%arg】的目标",
+
+  ["$jianman1"] = "鹄巡山野，见腐羝而聒鸣！",
+  ["$jianman2"] = "我蛮夷也，进退可无矩。",
+  ["~dongtuna"] = "孟获小儿，安敢杀我！",
 }
 
 local zhangyi = General(extension, "ol__zhangyiy", "shu", 4)
@@ -1213,6 +1223,12 @@ Fk:loadTranslationTable{
   ["#kangrui-invoke"] = "亢锐：你可以摸一张牌，令 %dest 回复1点体力或本回合下次造成伤害+1",
   ["kangrui_damage"] = "本回合下次造成伤害+1，造成伤害后本回合手牌上限改为0",
   ["#kangrui-choice"] = "亢锐：选择令 %dest 执行的一项",
+
+  ["$dianjun1"] = "大将军勿忧，翼可领后军。",
+  ["$dianjun2"] = "诸将速行，某自领军殿后！",
+  ["$kangrui1"] = "尔等魍魉，愿试吾剑之利乎！",
+  ["$kangrui2"] = "诸君努力，克复中原指日可待！",
+  ["~ol__zhangyiy"] = "伯约不见疲惫之国力乎？",
 }
 
 local maxiumatie = General(extension, "maxiumatie", "qun", 4)
@@ -1275,6 +1291,10 @@ Fk:loadTranslationTable{
   ["kenshang"] = "垦伤",
   [":kenshang"] = "你可以将至少两张牌当【杀】使用，然后目标可以改为等量的角色。你以此法使用的【杀】结算后，若这些牌数大于此牌造成的伤害，你摸一张牌。",
   ["#kenshang-choose"] = "垦伤：你可以将目标改为指定%arg名角色",
+
+  ["$kenshang1"] = "择兵选将，一击而大白。",
+  ["$kenshang2"] = "纵横三辅，垦伤庸富。",
+  ["~maxiumatie"] = "我兄弟，愿随父帅赴死。",
 }
 
 local zhujun = General(extension, "ol__zhujun", "qun", 4)
@@ -1308,6 +1328,10 @@ Fk:loadTranslationTable{
   ["cuipo"] = "摧破",
   [":cuipo"] = "锁定技，当你每回合使用第X张牌时（X为此牌牌名字数），若为【杀】或伤害锦囊牌，此牌伤害+1，否则你摸一张牌。",
   ["@cuipo-turn"] = "摧破",
+
+  ["$cuipo1"] = "虎贲冯河，何惧千城！",
+  ["$cuipo2"] = "长锋在手，万寇辟易。",
+  ["~ol__zhujun"] = "李郭匹夫，安敢辱我！",
 }
 
 local wangguan = General(extension, "wangguan", "wei", 3)
@@ -1516,6 +1540,10 @@ Fk:loadTranslationTable{
   [":daili"] = "每回合结束时，若你有偶数张展示过的手牌，你可以翻面，摸三张牌并展示之。",
   ["@$daili"] = "带砺",
   ["@@daili"] = "带砺",
+
+  ["$daili1"] = "国朝倾覆，吾宁当为降虏乎！",
+  ["$daili2"] = "弃百姓之所仰，君子不为也。",
+  ["~luoxian"] = "汉亡矣，命休矣……",
 }
 
 local sunhong = General(extension, "sunhong", "wu", 3)

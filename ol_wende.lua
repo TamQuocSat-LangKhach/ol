@@ -182,6 +182,12 @@ Fk:loadTranslationTable{
   ["#qiaoyan-card"] = "巧言：将一张牌置为“珠”",
   ["#ol__xianzhu-choose"] = "献珠：令一名角色获得“珠”（%arg）",
   ["#ol__xianzhu-slash"] = "献珠：选择你攻击范围内一名角色，视为 %dest 对其使用【杀】",
+
+  ["$qiaoyan1"] = "此事不宜迟，在于速决。",
+  ["$qiaoyan2"] = "公若到彼，贵不可言。",
+  ["$ol__xianzhu1"] = "馈珠之恩，望将军莫忘。",
+  ["$ol__xianzhu2"] = "愿以珠为礼，与卿交好，而休刀兵。",
+  ["~ol__lisu"] = "忘恩负义之徒！",
 }
 
 local simazhou = General(extension, "simazhou", "jin", 4)
@@ -368,6 +374,12 @@ Fk:loadTranslationTable{
   ["#caiwang-nullification"] = "才望：你可以将最后一张装备当【无懈可击】使用",
   ["#caiwang-slash"] = "才望：你可以将最后一张判定区内的牌当【杀】使用或打出",
   ["@@naxiang"] = "纳降",
+
+  ["$caiwang1"] = "才气不俗，声望四海。",
+  ["$caiwang2"] = "绥怀之称，监守邺城。",
+  ["$naxiang1"] = "奉命伐吴，得胜纳降。",
+  ["$naxiang2"] = "进军逼江，震慑吴贼。",
+  ["~simazhou"] = "恩赐重物，病身难消受……",
 }
 
 Fk:loadTranslationTable{
@@ -532,6 +544,12 @@ Fk:loadTranslationTable{
   ["#ol__caozhao-choose"] = "草诏：你可以将这张牌交给一名其他角色",
   ["#ol__caozhao_filter"] = "草诏",
   ["#ol__xibing-invoke"] = "息兵：你可以弃置你或 %dest 两张牌，然后手牌数少的角色摸两张牌",
+
+  ["$ol__caozhao1"] = "草诏所宣，密勿从事。",
+  ["$ol__caozhao2"] = "惩恶扬功，四方之纲。",
+  ["$ol__xibing1"] = "讲信修睦，息兵不功。",
+  ["$ol__xibing2"] = "天时未至，周武还师。",
+  ["~ol__huaxin"] = "死国，甚无谓也！",
 }
 
 local zhanghuyuechen = General(extension, "zhanghuyuechen", "jin", 4)
@@ -642,7 +660,17 @@ Fk:loadTranslationTable{
   ["#xijue_tuxi-invoke"] = "袭爵：你可以移去1个“爵”标记发动〖突袭〗",
   ["#xijue_xiaoguo-invoke"] = "袭爵：你可以移去1个“爵”标记对 %dest 发动〖骁果〗",
   ["#xijue_tuxi"] = "突袭",
+  [":#xijue_tuxi"] = "摸牌阶段，你可以少摸任意张牌，获得等量其他角色各一张手牌。",
   ["#xijue_xiaoguo"] = "骁果",
+  [":#xijue_xiaoguo"] = "其他角色结束阶段开始时，你可以弃置一张基本牌。若如此做，该角色需弃置一张装备牌并令你摸一张牌，否则受到你对其造成的1点伤害。",
+
+  ["$xijue1"] = "承爵于父，安能辱之！",
+  ["$xijue2"] = "虎父安有犬子乎！",
+  ["$#xijue_tuxi1"] = "动如霹雳，威震枭首！",
+  ["$#xijue_tuxi2"] = "行略如风，摧枯拉朽！",
+  ["$#xijue_xiaoguo1"] = "大丈夫生于世，当沙场效忠！",
+  ["$#xijue_xiaoguo2"] = "骁勇善战，刚毅果断！",
+  ["~zhanghuyuechen"] = "儿有辱……父亲威名……",
 }
 
 local xiahouhui = General(extension, "xiahouhui", "jin", 3, 3, General.Female)
@@ -1811,6 +1839,12 @@ Fk:loadTranslationTable{
   ["#xiongshu-cost"] = "凶竖：你可以弃置%arg张牌展示 %dest 一张手牌，猜测其此阶段是否会使用同名牌",
   ["yes"] = "是",
   ["no"] = "否",
+
+  ["$xiongshu1"] = "怀志拥权，谁敢不服？",
+  ["$xiongshu2"] = "天下凶凶，由我一人。",
+  ["$jianhui1"] = "一箭之仇，十年不忘！",
+  ["$jianhui2"] = "此仇不报，怨恨难消！",
+  ["~ol__jiachong"] = "任元褒，吾与汝势不两立！",
 }
 
 local wangxiang = General(extension, "wangxiang", "jin", 3)

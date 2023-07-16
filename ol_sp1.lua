@@ -888,12 +888,21 @@ local jici = fk.CreateTriggerSkill{
   anim_type = "special",
   events = {fk.PindianCardsDisplayed},
   can_trigger = function(self, event, target, player, data)
-    return player:hasSkill(self.name) and data.reason == "gushe" and data.fromCard.number <= player:getMark("@raoshe")
+    if player:hasSkill(self.name) then
+      if player == data.from then
+        return data.fromCard.number <= player:getMark("@raoshe")
+      elseif data.results[player.id] then
+        return data.results[player.id].toCard.number <= player:getMark("@raoshe")
+      end
+    end
   end,
   on_use = function(self, event, target, player, data)
-    if data.fromCard.number < player:getMark("@raoshe") then
+    if player == data.from then
       data.fromCard.number = data.fromCard.number + player:getMark("@raoshe")
-    else
+    elseif data.results[player.id] then
+      data.results[player.id].toCard.number = data.results[player.id].toCard.number + player:getMark("@raoshe")
+    end
+    if player.phase == Player.Play then
       player:setSkillUseHistory("gushe", 0, Player.HistoryPhase)
     end
   end,
@@ -906,7 +915,7 @@ Fk:loadTranslationTable{
   [":gushe"] = "出牌阶段限一次，你可以用一张手牌与至多三名角色同时拼点，然后依次结算拼点结果，没赢的角色选择一项：1.弃置一张牌；2.令你摸一张牌。"..
   "若拼点没赢的角色是你，你需先获得一个“饶舌”标记（你有7个饶舌标记时，你死亡）。",
   ["jici"] = "激词",
-  [":jici"] = "当你发动〖鼓舌〗拼点的牌亮出后，若点数小于X，你可令点数+X；若点数等于X，视为你此回合未发动过〖鼓舌〗。（X为你“饶舌”标记的数量）。",
+  [":jici"] = "当你的拼点牌亮出后，若点数不大于X，你可令点数+X并视为此回合未发动过〖鼓舌〗。（X为你“饶舌”标记的数量）。",
   ["@raoshe"] = "饶舌",
   ["#gushe-discard"] = "鼓舌：你需弃置一张牌，否则 %dest 摸一张牌",
 
@@ -1479,6 +1488,12 @@ Fk:loadTranslationTable{
   ["#bingzheng-card"] = "秉正：你可以交给 %dest 一张牌",
   ["#sheyan-choose"] = "舍宴：你可以为%arg增加/减少一个目标",
   ["#collateral-choose"] = "请为对 %dest 使用的%arg指定被杀的目标",
+
+  ["$bingzheng1"] = "自古，就是邪不胜正！",
+  ["$bingzheng2"] = "主公面前，岂容小人搬弄是非！",
+  ["$sheyan1"] = "公事为重，宴席不去也罢。",
+  ["$sheyan2"] = "还是改日吧。",
+  ["~dongyun"] = "大汉，要亡于宦官之手了……",
 }
 
 local mazhong = General(extension, "mazhong", "shu", 4)
@@ -1545,6 +1560,10 @@ Fk:loadTranslationTable{
   ["fuman"] = "抚蛮",
   [":fuman"] = "出牌阶段，你可以将一张【杀】交给一名本回合未获得过“抚蛮”牌的其他角色，然后其于下个回合结束之前使用“抚蛮”牌时，你摸一张牌。",
   ["#fuman_record"] = "抚蛮",
+
+  ["$fuman1"] = "恩威并施，蛮夷可为我所用！",
+  ["$fuman2"] = "发兵器啦！",
+  ["~mazhong"] = "丞相不在，你们竟然……",
 }
 
 local heqi = General(extension, "heqi", "wu", 4)
@@ -1642,7 +1661,15 @@ Fk:loadTranslationTable{
   ["qizhou"] = "绮胄",
   [":qizhou"] = "锁定技，你根据装备区里牌的花色数获得以下技能：1种以上-〖马术〗；2种以上-〖英姿〗；3种以上-〖短兵〗；4种-〖奋威〗。",
   ["shanxi"] = "闪袭",
-  [":shanxi"] = "出牌阶段限一次，你可以弃置一张红色基本牌，然后弃置攻击范围内的一名其他角色的一张牌，若弃置的牌是【闪】，你观看其手牌，若弃置的不是【闪】，其观看你的手牌。",
+  [":shanxi"] = "出牌阶段限一次，你可以弃置一张红色基本牌，然后弃置攻击范围内的一名其他角色的一张牌，若弃置的牌是【闪】，你观看其手牌，"..
+  "若弃置的不是【闪】，其观看你的手牌。",
+
+  --["$ex__yingzi1"] = "人靠衣装马靠鞍！",
+  --["$duanbing1"] = "可真是一把好刀啊！",
+  --["$fenwei1"] = "恩威并施，蛮夷可为我所用！",
+  ["$shanxi1"] = "敌援未到，需要速战速决！",
+  ["$shanxi2"] = "快马加鞭，赶在敌人戒备之前！",
+  ["~heqi"] = "别拿走我的装备！",
 }
 
 local kanze = General(extension, "kanze", "wu", 3)
@@ -2436,6 +2463,12 @@ Fk:loadTranslationTable{
   ["#beizhan-choose"] = "备战：指定一名角色，若手牌少于X则补至X张（X为其体力上限且最多为5）；<br>"..
   "若其回合开始时手牌数为最多，则使用牌不能指定其他角色为目标",
   ["@@beizhan-turn"] = "备战",
+
+  ["$gangzhi1"] = "只恨箭支太少，不能射杀汝等！",
+	["$gangzhi2"] = "死便死，降？断不能降！",
+	["$beizhan1"] = "十，则围之；五，则攻之！",
+	["$beizhan2"] = "今伐曹氏，譬如覆手之举。",
+  ["~ol__shenpei"] = "吾君在北，但求面北而亡。",
 }
 
 local xunchen = General(extension, "ol__xunchen", "qun", 3)
@@ -2951,6 +2984,14 @@ Fk:loadTranslationTable{
   ["#ol__xushen-choose"] = "许身：你可以令一名男性角色选择是否变身为关索！",
   ["#ol__xushen-invoke"]= "许身：你可以变身为关索！",
   ["#ol__zhennan_trigger"] = "镇南",
+
+  ["$ol__wuniang1"] = "虽为女子身，不输男儿郎。",
+  ["$ol__wuniang2"] = "剑舞轻盈，沙场克敌。",
+  ["$ol__xushen1"] = "救命之恩，涌泉相报。",
+  ["$ol__xushen2"] = "解我危难，报君华彩。",
+  ["$ol__zhennan1"] = "镇守南中，夫君无忧。",
+  ["$ol__zhennan2"] = "与君携手，定平蛮夷。",
+  ["~ol__baosanniang"] = "我还想与你，共骑这雪花驹……",
 }
 
 local caoying = General(extension, "caoying", "wei", 4, 4, General.Female)
@@ -3089,6 +3130,14 @@ Fk:loadTranslationTable{
   ["lingren_trick"] = "有锦囊牌",
   ["lingren_equip"] = "有装备牌",
   ["lingren_end"] = "结束",
+
+  ["$lingren1"] = "敌势已缓，休要走了老贼！",
+  ["$lingren2"] = "精兵如炬，困龙难飞！",
+  ["$fujian1"] = "兵者，诡道也。",
+  ["$fujian2"] = "粮资军备，一览无遗。",
+  --["$ex__jianxiong1"] = "且收此弩箭，不日奉还。",
+  --["$xingshang1"] = "此刀枪军械，尽归我有。",
+  ["~caoying"] = "曹魏天下存，魂归故土安……",
 }
 
 local xujing = General(extension, "ol__xujing", "shu", 3)
@@ -3278,6 +3327,10 @@ Fk:loadTranslationTable{
   ["#neifa_trigger-choose"] = "内伐：你可以为%arg增加/减少一个目标",
   ["#neifa_trigger"] = "内伐",
   ["#neifa_draw"] = "内伐",
+
+  ["$neifa1"] = "自相恩残，相煎何急。",
+  ["$neifa2"] = "同室内伐，贻笑外人。",
+  ["~yuantanyuanshang"] = "兄弟难齐心，该有此果……",
 }
 
 local sunshao = General(extension, "ol__sunshao", "wu", 3)

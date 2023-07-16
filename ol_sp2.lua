@@ -101,6 +101,12 @@ Fk:loadTranslationTable{
   ["#tuogu-choice"] = "托孤：选择令 %src 获得的一个技能",
   ["#shanzhuan-invoke"] = "擅专：你可以将 %dest 一张牌置于其判定区，红色视为【乐不思蜀】，黑色视为【兵粮寸断】",
   ["#shanzhuan-draw"] = "擅专：你可以摸一张牌",
+
+  ["$tuogu1"] = "君托以六尺之孤，爽，当寄百里之命。",
+  ["$tuogu2"] = "先帝以大事托我，任重而道远。	",
+  ["$shanzhuan1"] = "打入冷宫，禁足绝食。",
+  ["$shanzhuan2"] = "我言既出，谁敢不从？",
+  ["~caoshuang"] = "悔不该降了司马懿。",
 }
 --群张辽 2020.10.26
 
@@ -399,6 +405,10 @@ Fk:loadTranslationTable{
   ["wangong"] = "挽弓",
   [":wangong"] = "锁定技，若你使用的上一张牌是基本牌，你使用【杀】无距离和次数限制且造成的伤害+1。",
   ["@@wangong"] = "挽弓",
+
+  ["$wangong1"] = "强弓挽之，以射长箭！",
+  ["$wangong2"] = "挽弓如月，克定江夏！",
+  ["~ol__huangzu"] = "命也……势也……",
 }
 -- 黄承彦 2021.7.15
 
@@ -473,6 +483,10 @@ Fk:loadTranslationTable{
   ["juguan"] = "拒关",
   [":juguan"] = "出牌阶段限一次，你可将一张手牌当【杀】或【决斗】使用。若受到此牌伤害的角色未在你的下回合开始前对你造成过伤害，你的下个摸牌阶段摸牌数+2。",
   ["@@juguan"] = "拒关",
+
+  ["$juguan1"] = "吾欲自立，举兵拒关。",
+  ["$juguan2"] = "自立门户，拒关不开。",
+  ["~gaogan"] = "天不助我！",
 }
 
 local duxi = General(extension, "duxi", "wei", 3)
@@ -683,6 +697,12 @@ Fk:loadTranslationTable{
   ["#quxi-choice"] = "驱徙：请选择要移动的标记",
   ["#quxi-move"] = "驱徙：请选择获得「%arg」的角色",
   ["@bixiong"] = "避凶",
+
+  ["$quxi1"] = "不自改悔，终须驱徙。",
+  ["$quxi2"] = "奈何驱徙，不使存活。",
+  ["$bixiong1"] = "避凶而从吉，以趋荆州。",
+  ["$bixiong2"] = "逢凶化吉，遇难成祥。",
+  ["~duxi"] = "避凶不及，难……也……",
 }
 
 local lvkuanglvxiang = General(extension, "ol__lvkuanglvxiang", "qun", 4)
@@ -753,6 +773,12 @@ Fk:loadTranslationTable{
   ["#qigong-use"] = "齐攻：你可以对 %dest 使用一张【杀】（无距离限制且不可被响应）",
   ["#liehou-give"] = "列侯：你需交给 %src 一张手牌",
   ["#liehou-choose"] = "列侯：将一张手牌交给攻击范围内另一名角色",
+
+  ["$qigong1"] = "打虎亲兄弟！",
+  ["$qigong2"] = "兄弟齐心，其利断金！",
+  ["$liehou1"] = "识时务者为俊杰。",
+  ["$liehou2"] = "丞相有令，尔敢不从？",
+  ["~ol__lvkuanglvxiang"] = "此处可是新野……",
 }
 
 Fk:loadTranslationTable{
@@ -1141,7 +1167,7 @@ local dingcuo = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local cards = player:drawCards(2, self.name)
-    if Fk:getCardById(cards[1]).color ~= Fk:getCardById(cards[2]).color then
+    if Fk:getCardById(cards[1]).color ~= Fk:getCardById(cards[2]).color and not player:isKongcheng() then
       player.room:askForDiscard(player, 1, 1, false, self.name, false, ".")
     end
   end
@@ -1160,6 +1186,12 @@ Fk:loadTranslationTable{
   ["#juanxia-choose"] = "狷狭：你可以选择一名角色，依次视为对其使用至多两张仅指定唯一目标的普通锦囊牌",
   ["#juanxia-invoke"] = "狷狭：你可以视为对 %dest 再使用一张锦囊",
   ["#juanxia-slash"] = "狷狭：是否视为对 %src 使用【杀】？（共%arg张，第%arg2张）",
+
+  ["$juanxia1"] = "汝有何功？竟能居我之上！",
+  ["$juanxia2"] = "恃才傲立，恩怨必偿。",
+  ["$dingcuo1"] = "丞相新丧，吾当继之！",
+  ["$dingcuo2"] = "规画分部，筹度粮谷。",
+  ["~ol__yangyi"] = "魏延庸奴，吾，誓杀汝！",
 }
 
 local zhuling = General(extension, "ol__zhuling", "wei", 4)
@@ -1230,6 +1262,10 @@ Fk:loadTranslationTable{
   [":jixian"] = "摸牌阶段结束时，你可以视为对符合以下任意条件的一名其他角色使用一张【杀】并摸X张牌（X为其符合的条件数）："..
   "1.装备区里有防具牌；2.技能数多于你；3.未受伤。然后若此【杀】未造成伤害，你失去1点体力。",
   ["#jixian-choose"] = "急陷：你可以视为使用【杀】并摸牌，若未造成伤害则失去1点体力",
+
+  ["$jixian1"] = "全军出击，速攻敌城。",
+  ["$jixian2"] = "勿以我为念，攻城！",
+  ["~ol__zhuling"] = "母亲，弟弟，我来了……",
 }
 
 local zhanghe = General(extension, "ol__zhanghe", "qun", 4)
@@ -1312,6 +1348,10 @@ Fk:loadTranslationTable{
   ["zhanghe_xuan"] = "旋",
   ["#ol__zhouxuan-invoke"] = "周旋：你可以将至多5张手牌置为“旋”",
   ["#ol__zhouxuan-discard"] = "周旋：请移去一张“旋”",
+
+  ["$ol__zhouxuan1"] = "详勘细察，洞若观火。",
+  ["$ol__zhouxuan2"] = "知敌底细，方能百战百胜。",
+  ["~ol__zhanghe"] = "我终究是看不透这人心。",
 }
 
 local dongzhao = General(extension, "ol__dongzhao", "wei", 3)
@@ -1466,6 +1506,12 @@ Fk:loadTranslationTable{
   ["xianlve_active"] = "先略",
   ["@@zaowang"] = "造王",
   ["#zaowang-invoke"] = "造王：令一名角色加1点体力上限、回复1点体力并摸三张牌！",
+
+  ["$xianlve1"] = "行略于先，未雨绸缪。",
+  ["$xianlve2"] = "先见梧叶，而后知秋。",
+  ["$zaowang1"] = "大魏当兴，吾主可王。",
+  ["$zaowang2"] = "身加九锡，当君不让。",
+  ["~ol__dongzhao"] = "昭，一心向魏，绝无二心……",
 }
 
 local wuyan = General(extension, "wuyanw", "wu", 4)
@@ -1521,6 +1567,10 @@ Fk:loadTranslationTable{
   ["#lanjiang-choose"] = "澜江：是否令 %dest 摸一张牌？",
   ["#lanjiang-damage"] = "澜江：你可以对其中一名角色造成1点伤害",
   ["#lanjiang-draw"] = "澜江：你可以令其中一名角色摸一张牌",
+
+  ["$lanjiang1"] = "一人擒虎力，千军拗锋芒。",
+  ["$lanjiang2"] = "勇力擎四疆，狂澜涌八荒。",
+  ["~wuyanw"] = "世间再无擒虎客……",
 }
 
 local chendeng = General(extension, "ol__chendeng", "qun", 4)
@@ -1600,6 +1650,10 @@ Fk:loadTranslationTable{
   ["@fengji_draw"] = "丰积:摸牌",
   ["@fengji_slash"] = "丰积:使用杀",
   ["#fengji-choose"] = "丰积：你可以令一名其他角色下回合%arg+2",
+
+  ["$fengji1"] = "取舍有道，待机而赢。",
+  ["$fengji2"] = "此退彼进，月亏待盈。",
+  ["~ol__chendeng"] = "可无命，不可无脍……",
 }
 
 local tianyu = General(extension, "ol__tianyu", "wei", 4)
@@ -1720,6 +1774,12 @@ Fk:loadTranslationTable{
   ["left"] = "←顺时针方向",
   ["right"] = "逆时针方向→",
   ["#zhuitao-choose"] = "追讨：你可以选择一名角色，你至其距离-1直到你对其造成伤害",
+
+  ["$saodi1"] = "狄获悬野，秋风扫之！",
+  ["$saodi2"] = "戎狄作乱，岂能坐视！",
+  ["$zhuitao1"] = "敌将休走，汝命休矣！",
+  ["$zhuitao2"] = "长缨在手，敌寇何逃！",
+  ["~ol__tianyu"] = "命数之沙，已尽矣……",
 }
 
 local fanjiangzhangda = General(extension, "fanjiangzhangda", "wu", 4)
@@ -1826,6 +1886,12 @@ Fk:loadTranslationTable{
   [":yuanchou"] = "锁定技，你使用的黑色【杀】无视目标角色防具，其他角色对你使用的黑色【杀】无视你的防具。",
   ["juesheng"] = "决生",
   [":juesheng"] = "限定技，你可以视为使用一张伤害为X的【决斗】（X为目标角色本局使用【杀】的数量且至少为1），然后其获得本技能直到其下回合结束。",
+
+  ["$yuanchou1"] = "鞭挞之仇，不共戴天！",
+  ["$yuanchou2"] = "三将军怎可如此对待我二人！",
+  ["$juesheng1"] = "向死而生，索性拼个鱼死网破！",
+  ["$juesheng2"] = "张翼德，我二人报仇来了！",
+  ["~fanjiangzhangda"] = "吴侯救我！",
 }
 
 local yanghu = General(extension, "ol__yanghu", "jin", 4)
@@ -2039,6 +2105,16 @@ Fk:loadTranslationTable{
   ["#chongxin-card"] = "崇信：请重铸一张牌",
   ["#weishu-draw"] = "卫戍：令一名角色摸一张牌",
   ["#weishu-discard"] = "卫戍：弃置一名其他角色的一张牌",
+
+  ["$huaiyuan1"] = "当怀远志，砥砺奋进。",
+  ["$huaiyuan2"] = "举有成资，谋有全策。",
+  ["$chongxin1"] = "非诚不行，无信不立。",
+  ["$chongxin2"] = "以诚待人，可得其心。",
+  ["$dezhang1"] = "以德怀柔，广得军心。",
+  ["$dezhang2"] = "德彰四海，威震八荒。",
+  ["$weishu1"] = "水来土掩，兵来将挡。",
+  ["$weishu2"] = "吴人来犯，当用心戒备。",
+  ["~ol__yanghu"] = "当断不断，反受其乱……",
 }
 
 local qinghegongzhu = General(extension, "qinghegongzhu", "wei", 3, 3, General.Female)
@@ -2428,6 +2504,12 @@ Fk:loadTranslationTable{
   [":panqin"] = "出牌和弃牌阶段结束时，你可以将弃牌堆中你本阶段弃置的牌当【南蛮入侵】使用，若此牌目标数不小于这些牌的数量，你执行并移除〖蛮王〗的最后一项。",
   ["@manwang"] = "蛮王",
   ["#panqin-invoke"] = "叛侵：你可以将弃牌堆中的%arg张牌当【南蛮入侵】使用",
+
+  ["$manwang1"] = "不服王命，纵兵凶战危，也应以血相偿！",
+  ["$manwang2"] = "夷汉所服，据南中诸郡，当以蛮王为号！",
+  ["$panqin1"] = "百兽嘶鸣筋骨振，蛮王起兮万人随！",
+  ["$panqin2"] = "呼勒格诗惹之民，召南中群雄复起！",
+  ["~sp__menghuo"] = "有材而得生，无材而得纵……",
 }
 
 Fk:loadTranslationTable{
@@ -2526,6 +2608,12 @@ Fk:loadTranslationTable{
   ["#liejie-cost"] = "烈节：弃置至多三张牌并摸等量牌，然后可以弃置 %dest 你弃置红色牌数的牌",
   ["#liejie-invoke"] = "烈节：弃置至多三张牌并摸等量牌",
   ["#liejie-discard"] = "烈节：你可以弃置 %dest 至多%arg张牌",
+
+  ["$yuanzi1"] = "不过是些身外之物罢了。",
+  ["$yuanzi2"] = "兹之家资，将军可尽取之。",
+  ["$liejie1"] = "头可断，然节不可夺。",
+  ["$liejie2"] = "血可流，而志不可改。",
+  ["~weizi"] = "敌军势众，速退！",
 }
 
 local guohuai = General(extension, "guohuaij", "jin", 3, 3, General.Female)
@@ -2770,6 +2858,10 @@ Fk:loadTranslationTable{
   ["@@tongxie"] = "同协",
   ["#tongxie-slash"] = "同协：你可以对 %dest 使用一张【杀】（无距离限制）",
   ["#tongxie-loseHp"] = "同协：%dest 受到伤害，你可以失去1点体力防止之",
+
+  ["$tongxie1"] = "分则必败，合则可胜！",
+  ["$tongxie2"] = "唯同心协力，方可破敌。",
+  ["~ol__zhaoyan"] = "援军不至，樊城之围难解……",
 }
 
 local zhouchu = General(extension, "ol__zhouchu", "jin", 4)
@@ -3250,6 +3342,12 @@ Fk:loadTranslationTable{
   ["#kanpod_prey"] = "勘破",
   ["#kanpod-invoke"] = "勘破：你可以观看 %dest 的手牌并获得其中一张%arg牌",
   ["@gengzhan-phase"] = "更战",
+
+  ["$kanpod1"] = "兵锋相交，便可知其玄机。",
+  ["$kanpod2"] = "先发一军，以探敌营虚实。",
+  ["$gengzhan1"] = "将无常败，军可常胜。",
+  ["$gengzhan2"] = "前进可活，后退即死。",
+  ["~dengzhong"] = "杀身报国，死得其所。",
 }
 
 local xiahouxuan = General(extension, "xiahouxuan", "wei", 3)
@@ -3509,6 +3607,14 @@ Fk:loadTranslationTable{
   ["#zeyue-choose"] = "迮阅：你可以令一名角色失去一个技能，其每轮视为对你使用【杀】，造成伤害后恢复失去的技能",
   ["#zeyue-choice"] = "迮阅：选择令 %dest 失去的一个技能",
   ["#zeyue_record"] = "迮阅",
+
+  ["$huanfu1"] = "宦海浮沉，莫问前路。",
+  ["$huanfu2"] = "仕途险恶，吉凶难料。",
+  ["$qingyix1"] = "布政得失，愿与诸君共议。",
+  ["$qingyix2"] = "领军伐谋，还请诸位献策。",
+  ["$zeyue1"] = "以令相迮，束阀阅之家。",
+  ["$zeyue2"] = "以正相争，清朝野之妒。",
+  ["~xiahouxuan"] = "玉山倾颓心无尘……",
 }
 
 local zhangzhi = General(extension, "zhangzhi", "qun", 3)
@@ -3731,6 +3837,15 @@ Fk:loadTranslationTable{
   [":bixinEx"] = "你可以声明一种牌的类型并摸1张牌（每种类型限3次），将所有此类型手牌当你本轮未使用过的基本牌使用。",
   ["#bixin-invoke"] = "笔心：你可以声明一种牌的类型并摸3张牌，将所有此类型手牌当一种基本牌使用",
   ["#bixin-choice"] = "笔心：选择用来转化的牌的类别",
+
+  ["$bixin1"] = "携笔落云藻，文书剖纤毫。",
+  ["$bixin2"] = "执纸抒胸臆，挥笔涕汍澜。",
+  ["$ximo1"] = "帛尽漂洗，以待后用。",
+  ["$ximo2"] = "故帛无尽，而笔不停也。",
+  ["$ximo3"] = "以帛为纸，临池习书。",
+  ["$feibai1"] = "字之体势，一笔而成。",
+  ["$feibai2"] = "超前绝伦，独步无双。",
+  ["~zhangzhi"] = "力透三分，何以言老……",
 }
 
 local godsunquan = General(extension, "godsunquan", "god", 4)
@@ -4073,6 +4188,10 @@ Fk:loadTranslationTable{
   ["jueman"] = "蟨蛮",
   [":jueman"] = "锁定技，每回合结束时，若本回合前两张基本牌的使用者：均不为你，你视为使用本回合第三张使用的基本牌；仅其中之一为你，你摸一张牌。",
   ["#jueman-choose"] = "蟨蛮：选择视为使用【%arg】的目标",
+
+  ["$jueman1"] = "伤人之蛇蝎，向来善藏行。",
+  ["$jueman2"] = "我不欲伤人，奈何人自伤。",
+  ["~ahuinan"] = "什么？大王要杀我？",
 }
 
 return extension
