@@ -138,4 +138,163 @@ Fk:loadTranslationTable{
   "且至多为5），然后你对其造成1点伤害。",
 }
 
+local shangyangReformSkill = fk.CreateActiveSkill{
+  name = "shangyang_reform_skill",
+  target_num = 1,
+  target_filter = function(self, to_select)
+    return to_select ~= Self.id
+  end,
+  on_effect = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    local target = room:getPlayerById(effect.to)
+    room:damage({
+      from = player,
+      to = target,
+      card = effect.card,
+      damage = math.random(2),
+      skillName = self.name
+    })
+  end,
+}
+local shangyangReformTrigger = fk.CreateTriggerSkill{
+  name = "shangyang_reform_trigger",
+  mute = true,
+  global = true,
+  priority = 0, -- game rule
+  events = {fk.EnterDying},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and data.damage and data.damage.card and data.damage.card.name == "shangyang_reform" and
+      data.damage.from and not data.damage.from.dead
+  end,
+  on_cost = function(self, event, target, player, data)
+    return true
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local judge = {
+      who = data.damage.from,
+      reason = "shangyang_reform_skill",
+      pattern = ".|.|spade,club",
+    }
+    room:judge(judge)
+    if judge.card.color == Card.Black then
+      data.extra_data = data.extra_data or {}
+      data.extra_data.shangyangReform = true
+    end
+  end,
+}
+local shangyangReformProhibit = fk.CreateProhibitSkill{
+  name = "#shangyang_reform_prohibit",
+  global = true,
+  prohibit_use = function(self, player, card)
+    if card.name == "peach" and not player.dying then
+      if RoomInstance and RoomInstance.logic:getCurrentEvent().event == GameEvent.Dying then
+        local data = RoomInstance.logic:getCurrentEvent().data[1]
+        return data and data.extra_data and data.extra_data.shangyangReform
+      end
+    end
+  end,
+}
+Fk:addSkill(shangyangReformTrigger)
+Fk:addSkill(shangyangReformProhibit)
+local shangyangReform = fk.CreateTrickCard{
+  name = "&shangyang_reform",
+  skill = shangyangReformSkill,
+  is_damage_card = true,
+}
+extension:addCards({
+  shangyangReform:clone(Card.Spade, 5),
+  shangyangReform:clone(Card.Spade, 7),
+  shangyangReform:clone(Card.Spade, 9),
+})
+Fk:loadTranslationTable{
+  ["shangyang_reform"] = "商鞅变法",
+  ["shangyang_reform_skill"] = "商鞅变法",
+  [":shangyang_reform"] = "锦囊牌<br/><b>时机</b>：出牌阶段<br/><b>目标</b>：一名其他角色<br/><b>效果</b>：你对目标角色造成随机1~2点伤害，"..
+  "若其因此伤害进入濒死状态，你判定，若为黑色，除其以外的角色不能对其使用【桃】直到濒死结算结束。",
+}
+
+local qinDragonSwordSkill = fk.CreateTriggerSkill{
+  name = "#qin_dragon_sword_skill",
+  attached_equip = "qin_dragon_sword",
+  events = {fk.AfterCardUseDeclared},
+  frequency = Skill.Compulsory,
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self.name) and data.card:isCommonTrick() and
+      player:usedSkillTimes(self.name, Player.HistoryTurn) == 0
+  end,
+  on_use = function(self, event, target, player, data)
+    data.prohibitedCardNames = {"nullification"}
+  end,
+}
+Fk:addSkill(qinDragonSwordSkill)
+local qinDragonSword = fk.CreateWeapon{
+  name = "&qin_dragon_sword",
+  suit = Card.Heart,
+  number = 2,
+  attack_range = 4,
+  equip_skill = qinDragonSwordSkill,
+}
+extension:addCard(qinDragonSword)
+Fk:loadTranslationTable{
+  ["qin_dragon_sword"] = "真龙长剑",
+  ["#qin_dragon_sword_skill"] = "真龙长剑",
+  [":qin_dragon_sword"] = "装备牌·武器<br/><b>攻击范围</b>：4<br/><b>武器技能</b>：锁定技，你每回合使用的第一张普通锦囊牌不能被【无懈可击】响应。",
+}
+
+local qinSealSkill = fk.CreateTriggerSkill{
+  name = "#qin_seal_skill",
+  mute = true,
+  events = {fk.EventPhaseStart},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self.name) and player.phase == Player.Play
+  end,
+  on_cost = function(self, event, target, player, data)
+    local success, dat = player.room:askForUseActiveSkill(player, "qin_seal_viewas", "#qin_seal-choice", true)
+    if success then
+      self.cost_data = dat
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local card = Fk.skills["qin_seal_viewas"]:viewAs(self.cost_data.cards)
+    player.room:useCard{
+      from = player.id,
+      tos = table.map(self.cost_data.targets, function(id) return {id} end),
+      card = card,
+    }
+  end,
+}
+local qinSealViewAs = fk.CreateViewAsSkill{
+  name = "qin_seal_viewas",
+  interaction = function()
+    return UI.ComboBox {choices = {"savage_assault", "archery_attack", "god_salvation", "amazing_grace"}}
+  end,
+  card_filter = function(self, to_select, selected)
+    return false
+  end,
+  view_as = function(self, cards)
+    if not self.interaction.data then return end
+    local card = Fk:cloneCard(self.interaction.data)
+    card.skillName = "#qin_seal_skill"
+    return card
+  end,
+}
+Fk:addSkill(qinSealSkill)
+Fk:addSkill(qinSealViewAs)
+local qinSeal = fk.CreateTreasure{
+  name = "&qin_seal",
+  suit = Card.Heart,
+  number = 7,
+  equip_skill = qinSealSkill,
+}
+extension:addCard(qinSeal)
+Fk:loadTranslationTable{
+  ["qin_seal"] = "传国玉玺",
+  ["#qin_seal_skill"] = "传国玉玺",
+  [":qin_seal"] = "装备牌·宝物<br/><b>宝物技能</b>：出牌阶段开始时，你可以视为使用【南蛮入侵】、【万箭齐发】、【桃园结义】或【五谷丰登】。",
+  ["qin_seal_viewas"] = "传国玉玺",
+  ["#qin_seal-choice"] = "传国玉玺：你可以视为使用一种锦囊",
+}
+
 return extension
