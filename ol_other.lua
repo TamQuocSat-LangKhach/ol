@@ -423,7 +423,8 @@ Fk:loadTranslationTable{
 
   ["$qin__bianfa"] = "前世不同教，何古之法？",
   ["$qin__limu"] = "立木之言，汇聚民心。",
-  ["$qin__kencao"] = "农静，诛愚乱农之民，欲农，则草必垦矣。",
+  ["$qin__kencao"] = "农静，诛愚乱农之民欲农，则草必垦矣。",
+  ["~shangyang"] = "无人可依，变法难行……",
 }
 
 Fk:loadTranslationTable{
@@ -437,7 +438,8 @@ Fk:loadTranslationTable{
   ["$qin__lianheng"] = "连横之术，可破合纵之策。",
   ["$qin__xichu"] = "楚王欲贪，此戏方成。",
   ["$qin__xiongbian"] = "据坛雄辩，无人可驳！",
-  ["$qin__xiongbian"] = "巧舌如簧，虚实乱象。",
+  ["$qin__qiaoshe"] = "巧舌如簧，虚实乱象。",
+  ["~zhangyiq"] = "连横之道，后世难存……",
 }
 
 local yingzheng = General(extension, "yingzheng", "qin", 4)
@@ -551,6 +553,7 @@ Fk:loadTranslationTable{
   ["$qin__shihuang"] = "吾，才是万世的开始！",
   ["$qin__zulong"] = "得龙血脉，万物初始！",
   ["$qin__fenshu"] = "愚民怎识得天下大智慧？",
+  ["~yingzheng"] = "咳咳……拿孤的金丹……",
 }
 
 local lvbuwei = General(extension, "lvbuwei", "qin", 4)
@@ -712,6 +715,7 @@ Fk:loadTranslationTable{
   ["$qin__chunqiu"] = "吕氏春秋，举世之著作！",
   ["$qin__baixiang"] = "入秦拜相，权倾朝野！",
   ["$qin__zhongfu"] = "吾有一日，便护国一日安康！",
+  ["~lvbuwei"] = "酖酒入肠，魂落异乡……",
 }
 
 local zhaoji = General(extension, "zhaoji", "qin", 3, 3, General.Female)
@@ -865,6 +869,7 @@ Fk:loadTranslationTable{
   ["$qin__daqi"] = "大期之时，福运轮转。",
   ["$qin__xianji"] = "妾身能得垂爱，是妾身福气。",
   ["$qin__huoluan"] = "这天下都是我的，我有什么不能做的？",
+  ["~zhaoji"] = "人间冷暖尝尽，富贵轮回成空……",
 }
 
 local miyue = General(extension, "miyue", "qin", 3, 3, General.Female)
@@ -1030,6 +1035,7 @@ Fk:loadTranslationTable{
   ["$qin__taihou"] = "本太后在此，岂容汝等放肆！",
   ["$qin__youmie"] = "美色误人，红颜灭国哟。",
   ["$qin__yintui"] = "妾身为国尽心，你们怎可如此待我？",
+  ["~miyue"] = "年老色衰，繁华已逝……",
 }
 
 return extension
