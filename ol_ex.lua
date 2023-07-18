@@ -597,7 +597,7 @@ Fk:loadTranslationTable{
   ["ol_ex__hongyan"] = "红颜",
   [":ol_ex__hongyan"] = "锁定技，①你的♠牌视为<font color='red'>♥</font>牌。②若你的装备区里有<font color='red'>♥</font>牌，你的手牌上限初值改为体力上限。",
   ["ol_ex__piaoling"] = "飘零",
-  ["#ol_ex__piaoling_delay"] = "飘零",  
+  ["#ol_ex__piaoling_delay"] = "飘零",
   [":ol_ex__piaoling"] = "结束阶段，你可判定，然后当判定结果确定后，若为<font color='red'>♥</font>，你选择：1.将判定牌置于牌堆顶；2.令一名角色获得判定牌，若其为你，你弃置一张牌。",
 
   ["#ol_ex__tianxiang-choose"] = "天香：弃置一张<font color='red'>♥</font>手牌并选择一名其他角色",
@@ -2045,16 +2045,15 @@ local ol_ex__luanwu = fk.CreateActiveSkill{
           return p.id
         end)
         if #luanwu_targets > 1 then
-          local tos = room:askForChoosePlayers(target, luanwu_targets, 1, 1, "#ol_ex__luanwu-slash", self.name, false, true)
-          if #tos == 1 then
-            luanwu_targets = tos
-          else
-            luanwu_targets = {luanwu_targets[1]}
-          end
+          luanwu_targets = room:askForChoosePlayers(target, luanwu_targets, 1, 1, "#ol_ex__luanwu-slash", self.name, true, true)
         end
-        local use = room:askForUseCard(target, "slash", "slash", "#ol_ex__luanwu-use::" .. luanwu_targets[1], true, { must_targets = luanwu_targets})
-        if use then
-          room:useCard(use)
+        if #luanwu_targets == 1 then
+          local use = room:askForUseCard(target, "slash", "slash", "#ol_ex__luanwu-use::" .. luanwu_targets[1], true, { must_targets = luanwu_targets})
+          if use then
+            room:useCard(use)
+          else
+            room:loseHp(target, 1, self.name)
+          end
         else
           room:loseHp(target, 1, self.name)
         end
@@ -2120,7 +2119,7 @@ Fk:loadTranslationTable{
   ["#ol_ex__weimu_trigger"] = "帷幕",
   [":ol_ex__weimu"] = "锁定技，①你不是黑色锦囊牌的合法目标。②当你于回合内受到伤害时，你防止此伤害，摸2X张牌（X为伤害值）。",
 
-  ["#ol_ex__luanwu-slash"] = "乱武：选择距离最近的一名角色，然后对其使用一张【杀】",
+  ["#ol_ex__luanwu-slash"] = "乱武：选择距离最近的一名角色，然后对其使用一张【杀】，或点取消则失去1点体力",
   ["#ol_ex__luanwu-use"] = "乱武：你需要对包含%dest在内的角色使用一张【杀】，否则失去1点体力",
   ["#ol_ex__luanwu-choose"] = "乱武：你可以视为使用一张【杀】，选择此【杀】的目标",
 
@@ -2786,7 +2785,7 @@ Fk:loadTranslationTable{
   ["ol_ex__caiwenji"] = "界蔡文姬",
   ["ol_ex__beige"] = "悲歌",
   [":ol_ex__beige"] = "当一名角色受到【杀】造成的伤害后，若你有牌，你可以令其进行一次判定，然后你可以弃置一张牌，根据判定结果执行：红桃，其回复1点体力；方块，其摸两张牌；梅花，伤害来源弃置两张牌；黑桃，伤害来源将武将牌翻面；点数相同，你获得你弃置的牌；花色相同，你获得判定牌。",
- 
+
   ["#ol_ex__beige-invoke"] = "悲歌：你可以令%dest进行判定",
   ["#ol_ex__beige-discard"] = "悲歌：你可以弃置一张牌令%dest根据判定的花色执行对应效果",
 
@@ -2871,8 +2870,8 @@ local ol_ex__guzheng = fk.CreateTriggerSkill{
             guzheng_pairs[move.from] = guzheng_value
           end
         end
-        for _, value in pairs(guzheng_pairs) do
-          if #value > 1 and not table.every(value, function (id)
+        for key, value in pairs(guzheng_pairs) do
+          if not player.room:getPlayerById(key).dead and #value > 1 and not table.every(value, function (id)
             return player.room:getCardArea(id) ~= Card.DiscardPile
           end) then
             return true
@@ -2897,13 +2896,12 @@ local ol_ex__guzheng = fk.CreateTriggerSkill{
     end
     local targets = {}
     for key, value in pairs(guzheng_pairs) do
-      if #value > 1 and not table.every(value, function (id)
+      if not room:getPlayerById(key).dead and #value > 1 and not table.every(value, function (id)
         return room:getCardArea(id) ~= Card.DiscardPile
       end) then
         table.insert(targets, key)
       end
     end
-
     if #targets == 1 then
       if room:askForSkillInvoke(player, self.name, nil, "#ol_ex__guzheng-invoke::"..targets[1]) then
         self.cost_data = {targets[1], guzheng_pairs[targets[1]]}
@@ -2916,7 +2914,6 @@ local ol_ex__guzheng = fk.CreateTriggerSkill{
         return true
       end
     end
-    
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room

@@ -278,7 +278,7 @@ local ol__kongsheng = fk.CreateTriggerSkill{
   on_cost = function(self, event, target, player, data)
     local room = player.room
     if player.phase == Player.Start then
-      local cards = room:askForCard(player, 1, 998, true, self.name, true, "", "#ol__kongsheng-invoke")
+      local cards = room:askForCard(player, 1, 998, true, self.name, true, ".", "#ol__kongsheng-invoke")
       if #cards > 0 then
         self.cost_data = cards
         return true

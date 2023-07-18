@@ -68,6 +68,7 @@ GraphicsBox {
         enabled: root.selected_ids.length == 1
         onClicked: {
           close();
+          roomScene.state = "notactive";
           const reply = JSON.stringify(
             {
               cards: root.selected_ids,
@@ -82,6 +83,7 @@ GraphicsBox {
         enabled: root.selected_ids.length == 1
         onClicked: {
           close();
+          roomScene.state = "notactive";
           const reply = JSON.stringify(
             {
               cards: root.selected_ids,
