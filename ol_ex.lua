@@ -2904,11 +2904,12 @@ local ol_ex__guzheng = fk.CreateTriggerSkill{
     end
     if #targets == 1 then
       if room:askForSkillInvoke(player, self.name, nil, "#ol_ex__guzheng-invoke::"..targets[1]) then
+        room:doIndicate(player.id, targets)
         self.cost_data = {targets[1], guzheng_pairs[targets[1]]}
         return true
       end
     elseif #targets > 1 then
-      targets = room:askForChoosePlayers(player, targets, 1, 1, "#ol_ex__guzheng-choose", self.name, false)
+      targets = room:askForChoosePlayers(player, targets, 1, 1, "#ol_ex__guzheng-choose", self.name)
       if #targets > 0 then
         self.cost_data = {targets[1], guzheng_pairs[targets[1]]}
         return true

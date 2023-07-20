@@ -294,6 +294,113 @@ Fk:loadTranslationTable{
 
 }
 
+local hanba = General(extension, "hanba", "qun", 4, 4, General.Female)
+local fentian = fk.CreateTriggerSkill{
+  name = "fentian",
+  anim_type = "control",
+  events = {fk.EventPhaseStart},
+  frequency = Skill.Compulsory,
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self.name) and player.phase == Player.Finish and
+    player:getHandcardNum() < player.hp and table.find(player.room.alive_players, function (p)
+      return player:inMyAttackRange(p) and not p:isNude()
+    end)
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local targets = table.filter(room.alive_players, function (p)
+      return player:inMyAttackRange(p) and not p:isNude()
+    end)
+    if #targets == 0 then return false end
+    local tos = room:askForChoosePlayers(player, table.map(targets, function (p)
+      return p.id end), 1, 1, "#fentian-choose", self.name, false)
+    if #tos > 0 then
+      local id = room:askForCardChosen(player, room:getPlayerById(tos[1]), "he", self.name)
+      player:addToPile("fentian_burn", id, true, self.name)
+    end
+  end,
+}
+local fentian_attackrange = fk.CreateAttackRangeSkill{
+  name = "#fentian_attackrange",
+  correct_func = function (self, from, to)
+    return from:hasSkill(fentian.name) and #from:getPile("fentian_burn") or 0
+  end,
+}
+local zhiri = fk.CreateTriggerSkill{
+  name = "zhiri",
+  frequency = Skill.Wake,
+  events = {fk.EventPhaseStart},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self.name) and
+      player.phase == Player.Start and
+      player:usedSkillTimes(self.name, Player.HistoryGame) == 0
+  end,
+  can_wake = function(self, event, target, player, data)
+    return #player:getPile("fentian_burn") > 2
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    room:changeMaxHp(player, -1)
+    room:handleAddLoseSkills(player, "xintan", nil)
+  end,
+}
+local xintan = fk.CreateActiveSkill{
+  name = "xintan",
+  anim_type = "offensive",
+  prompt = "#xintan-active",
+  card_num = 2,
+  target_num = 1,
+  expand_pile = "fentian_burn",
+  can_use = function(self, player)
+    return #player:getPile("fentian_burn") > 1 and player:usedSkillTimes(self.name, Player.HistoryPhase) == 0
+  end,
+  target_filter = function(self, to_select, selected, selected_cards)
+    return #selected_cards == 2 and #selected == 0
+  end,
+  card_filter = function(self, to_select, selected)
+    return #selected < 2 and Self:getPileNameOfId(to_select) == "fentian_burn"
+  end,
+  on_use = function(self, room, effect)
+    room:moveCards({
+      from = effect.from,
+      ids = effect.cards,
+      toArea = Card.DiscardPile,
+      moveReason = fk.ReasonPutIntoDiscardPile,
+      skillName = self.name,
+    })
+    room:loseHp(room:getPlayerById(effect.tos[1]), 1, self.name)
+  end,
+}
+fentian:addRelatedSkill(fentian_attackrange)
+hanba:addSkill(fentian)
+hanba:addSkill(zhiri)
+hanba:addRelatedSkill(xintan)
+
+Fk:loadTranslationTable{
+  ["hanba"] = "旱魃",
+  ["fentian"] = "焚天",
+  [":fentian"] = "锁定技，结束阶段，若你的手牌数小于你的体力值，你将攻击范围内的一名角色的一张牌置于你的武将牌上，称为“焚”；"..
+  "你的攻击范围+X（X为“焚”数）。",
+  ["zhiri"] = "炙日",
+  [":zhiri"] = "觉醒技，准备阶段，若你的“焚”数不小于3，你减1点体力上限，获得“心惔”。",
+  ["xintan"] = "心惔",
+  [":xintan"] = "出牌阶段限一次，你可将两张“焚”置入弃牌堆并选择一名角色，该角色失去1点体力。",
+
+  ["fentian_burn"] = "焚",
+  ["#fentian-choose"] = "焚天：选择一名角色，将其一张牌作为你的“焚”",
+  ["#xintan-active"] = "发动心惔，选择两张“焚”牌置入弃牌堆并选择一名角色，令其失去1点体力",
+
+	["$fentian1"] = "烈火燎原，焚天灭地！",
+	["$fentian2"] = "骄阳似火，万物无生！",
+	["$zhiri1"] = "好舒服，这太阳的力量！",
+	["$zhiri2"] = "你以为这样就已经结束了？",
+	["$xintan1"] = "让心中之火慢慢吞噬你吧！哈哈哈哈哈哈！",
+	["$xintan2"] = "人人心中都有一团欲望之火！",
+	["~hanba"] = "应龙，是你在呼唤我吗……",
+
+}
+
+
 --官渡群张郃 辛评 韩猛
 
 local shangyang = General(extension, "shangyang", "qin", 4)
