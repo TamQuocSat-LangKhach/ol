@@ -3,6 +3,7 @@ extension.extensionName = "ol"
 
 Fk:loadTranslationTable{
   ["ol_other"] = "OL-其他",
+  ["qin"] = "秦",
 }
 
 local godzhenji = General(extension, "godzhenji", "god", 3, 3, General.Female)

@@ -2368,6 +2368,181 @@ Fk:loadTranslationTable{
   ["#daiyuan-active"] = "待援：选择一张基本牌，然后选择拥有“待援”的角色对其使用此牌（无次数限制）",
 }
 
---孟达
+local mengda = General(extension, "ol__mengda", "shu", 4)
+local goude = fk.CreateTriggerSkill{
+  name = "goude",
+  anim_type = "control",
+  events = {fk.EventPhaseChanging},
+  can_trigger = function(self, event, target, player, data)
+    if player:hasSkill(self.name) and data.to == Player.NotActive then
+      local room = player.room
+      for _, p in ipairs(room.alive_players) do
+        if p.kingdom == player.kingdom then
+          local events = room.logic:getEventsOfScope(GameEvent.MoveCards, 1, function(e)
+            local move = e.data[1]
+            if move.to == p.id and move.toArea == Player.Hand and move.moveReason == fk.ReasonDraw and #move.ids == 1 then
+              return true
+            elseif move.moveReason == fk.ReasonDiscard and (move.proposer == p or move.proposer == p.id) and #move.ids == 1 then
+              return true  --FIXME: 手牌！
+              --[[for _, info in ipairs(move.moveInfo) do
+                if info.fromArea == Card.PlayerHand then
+                  return true
+                end
+              end]]
+            end
+          end, Player.HistoryTurn)
+          if #events > 0 then return true end
+          events = room.logic:getEventsOfScope(GameEvent.UseCard, 1, function(e)
+            local use = e.data[1]
+            return use.from == p.id and use.card.trueName == "slash" and use.card:getEffectiveId() == nil
+          end, Player.HistoryTurn)
+          if #events > 0 then return true end
+          events = room.logic:getEventsOfScope(GameEvent.SkillEffect, 1, function(e)
+            local dat = e.data
+            return dat[2] == p and table.contains({"huashen", "os__chijie", "bianzhuang", "qyt__lianli"}, dat[3].name)  --FIXME: 耦！
+          end, Player.HistoryTurn)
+          if #events > 0 then return true end
+        end
+      end
+    end
+  end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    local choices = {"Cancel", "draw1", "goude2", "goude3", "goude4"}
+    if table.every(room.alive_players, function(pl) return pl:isKongcheng() end) then
+      table.removeOne(choices, "goude2")
+    end
+    for _, p in ipairs(room.alive_players) do
+      if p.kingdom == player.kingdom then
+        local events
+        if table.contains(choices, "draw1") then
+          events = room.logic:getEventsOfScope(GameEvent.MoveCards, 1, function(e)
+            local move = e.data[1]
+            if move.to == p.id and move.toArea == Player.Hand and move.moveReason == fk.ReasonDraw and #move.ids == 1 then
+              return true
+            end
+          end, Player.HistoryTurn)
+          if #events > 0 then
+            table.removeOne(choices, "draw1")
+          end
+        end
+        if table.contains(choices, "goude2") then
+          events = room.logic:getEventsOfScope(GameEvent.MoveCards, 1, function(e)
+            local move = e.data[1]
+            if move.to == p.id and move.toArea == Player.Hand and move.moveReason == fk.ReasonDraw and #move.ids == 1 then
+              return true
+            end
+            if move.moveReason == fk.ReasonDiscard and (move.proposer == p or move.proposer == p.id) and #move.ids == 1 then
+              return true  --FIXME: 手牌！
+              --[[for _, info in ipairs(move.moveInfo) do
+                if info.fromArea == Card.PlayerHand then
+                  return true
+                end
+              end]]
+            end
+          end, Player.HistoryTurn)
+          if #events > 0 then
+            table.removeOne(choices, "goude2")
+          end
+        end
+        if table.contains(choices, "goude3") then
+          events = room.logic:getEventsOfScope(GameEvent.UseCard, 1, function(e)
+            local use = e.data[1]
+            return use.from == p.id and use.card.trueName == "slash" and use.card:getEffectiveId() == nil
+          end, Player.HistoryTurn)
+          if #events > 0 then
+            table.removeOne(choices, "goude3")
+          end
+        end
+        if table.contains(choices, "goude4") then
+          events = room.logic:getEventsOfScope(GameEvent.SkillEffect, 1, function(e)
+            local dat = e.data
+            return dat[2] == p and table.contains({"huashen", "os__chijie", "bianzhuang", "qyt__lianli"}, dat[3].name)  --FIXME: 耦！
+          end, Player.HistoryTurn)
+          if #events > 0 then
+            table.removeOne(choices, "goude4")
+          end
+        end
+      end
+    end
+    if #choices == 1 then return end
+    local choice
+    while choice ~= "Cancel" do
+      choice = room:askForChoice(player, choices, self.name, "#goude-choice")--, false, {"Cancel", "draw1", "goude2", "goude3", "goude4"}
+      if choice == "draw1" or choice == "goude4" then
+        self.cost_data = {choice}
+        return true
+      elseif choice == "goude2" then
+        local targets = table.map(table.filter(room.alive_players, function(pl)
+          return not pl:isKongcheng() end), function(pl) return pl.id end)
+        local to = room:askForChoosePlayers(player, targets, 1, 1, "#goude-choose", self.name, true)
+        if #to > 0 then
+          self.cost_data = {choice, to[1]}
+          return true
+        end
+      elseif choice == "goude3" then
+        local success, dat = room:askForUseViewAsSkill(player, "goude_viewas", "#goude-slash", true)
+        if success then
+          self.cost_data = {choice, dat}
+          return true
+        end
+      end
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    if self.cost_data[1] == "draw1" then
+      player:drawCards(1, self.name)
+    elseif self.cost_data[1] == "goude2" then
+      local to = room:getPlayerById(self.cost_data[2])
+      local id = room:askForCardChosen(player, to, "h", self.name)
+      room:throwCard({id}, self.name, to, player)
+    elseif self.cost_data[1] == "goude3" then
+      local card = Fk.skills["goude_viewas"]:viewAs(self.cost_data[2].cards)
+      room:useCard{
+        from = player.id,
+        tos = table.map(self.cost_data[2].targets, function(id) return {id} end),
+        card = card,
+        extraUse = true,
+      }
+    elseif self.cost_data[1] == "goude4" then
+      local allKingdoms = {}
+      allKingdoms = table.simpleClone(Fk.kingdoms)
+      local exceptedKingdoms = {"god", player.kingdom}
+      for _, kingdom in ipairs(exceptedKingdoms) do
+        table.removeOne(allKingdoms, kingdom)
+      end
+      player.kingdom = room:askForChoice(player, allKingdoms, "AskForKingdom", "#ChooseInitialKingdom")
+      room:broadcastProperty(player, "kingdom")
+    end
+  end,
+}
+local goude_viewas = fk.CreateViewAsSkill{
+  name = "goude_viewas",
+  pattern = "slash",
+  card_filter = function()
+    return false
+  end,
+  view_as = function(self, cards)
+    local card = Fk:cloneCard("slash")
+    card.skillName = "goude"
+    return card
+  end,
+}
+Fk:addSkill(goude_viewas)
+mengda:addSkill(goude)
+Fk:loadTranslationTable{
+  ["ol__mengda"] = "孟达",
+  ["goude"] = "苟得",
+  [":goude"] = "每回合结束时，若有势力相同的角色此回合执行过以下效果，你可以执行另一项：1.摸一张牌；2.弃置一名角色一张手牌；"..
+  "3.视为使用一张【杀】；4.变更势力。",
+  ["#goude-choice"] = "苟得：你可以选择执行一项",
+  ["goude2"] = "弃置一名角色一张手牌",
+  ["goude3"] = "视为使用一张【杀】",
+  ["goude4"] = "变更势力",
+  ["#goude-choose"] = "苟得：选择一名角色，弃置其一张手牌",
+  ["#goude-slash"] = "苟得：视为使用一张【杀】",
+  ["goude_viewas"] = "苟得",
+}
 
 return extension
