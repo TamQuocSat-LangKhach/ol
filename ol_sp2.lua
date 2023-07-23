@@ -1045,8 +1045,290 @@ Fk:loadTranslationTable{
 }
 
 --冯方女
+local fengfangnv = General(extension, "ol__fengfangnv", "qun", 3, 3, General.Female)
 
+local zhuangshu = fk.CreateTriggerSkill{
+  name = "zhuangshu",
+  events = {fk.GameStart, fk.EventPhaseChanging},
+  anim_type = "support",
+  mute = true,
+  can_trigger = function(self, event, target, player, data)
+    if not player:hasSkill(self.name) then return false end
+    if event == fk.GameStart then
+      return player:getEquipment(Card.SubtypeTreasure) == nil and table.find(player.room.void, function (id)
+        local card_name = Fk:getCardById(id).name
+        return card_name == "jade_comb" or card_name == "rhino_comb" or card_name == "golden_comb"
+      end)
+    elseif event == fk.EventPhaseChanging then
+      return data.from == Player.NotActive and not target.dead and target:getEquipment(Card.SubtypeTreasure) == nil and not player:isNude()
+    end
+  end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    if event == fk.GameStart then
+      local combs = table.filter(room.void, function (id)
+        local card_name = Fk:getCardById(id).name
+        return card_name == "jade_comb" or card_name == "rhino_comb" or card_name == "golden_comb"
+      end)
+      if #combs == 0 then return false end
+      local move_to_notify = {}   ---@type CardsMoveStruct
+      move_to_notify.toArea = Card.PlayerHand
+      move_to_notify.to = player.id
+      move_to_notify.moveInfo = {}
+      move_to_notify.moveReason = fk.ReasonJustMove
+      for _, id in ipairs(combs) do
+        table.insert(move_to_notify.moveInfo,
+        { cardId = id, fromArea = Card.Void })
+      end
+      room:notifyMoveCards({player}, {move_to_notify})
+      local card = room:askForCard(player, 1, 1, false, self.name, true, tostring(Exppattern{ id = combs }), "#zhuangshu-choose")
+      move_to_notify = {}   ---@type CardsMoveStruct
+      move_to_notify.from = player.id
+      move_to_notify.toArea = Card.Void
+      move_to_notify.moveInfo = {}
+      move_to_notify.moveReason = fk.ReasonJustMove
+      for _, id in ipairs(combs) do
+        table.insert(move_to_notify.moveInfo,
+        { cardId = id, fromArea = Card.PlayerHand})
+      end
+      room:notifyMoveCards({player}, {move_to_notify})
+      if #card > 0 then
+        self.cost_data = card
+        return true
+      end
+    elseif event == fk.EventPhaseChanging then
+      local card = room:askForDiscard(player, 1, 1, true, self.name, true, ".", "#zhuangshu-cost::" .. target.id, true)
+      if #card > 0 then
+        room:doIndicate(player.id, {target.id})
+        self.cost_data = card
+        return true
+      end
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    room:notifySkillInvoked(player, self.name)
+    room:broadcastSkillInvoke(self.name, math.random(2))
+    if event == fk.GameStart then
+      room:moveCards({
+        fromArea = Card.Void,
+        ids = self.cost_data,
+        to = player.id,
+        toArea = Card.PlayerEquip,
+        moveReason = fk.ReasonPut,
+        proposer = player.id,
+        skillName = self.name,
+      })
+    elseif event == fk.EventPhaseChanging then
+      local card_type = Fk:getCardById(self.cost_data[1]):getTypeString()
+      room:throwCard(self.cost_data, self.name, player, player)
+      if target.dead or target:getEquipment(Card.SubtypeTreasure) ~= nil then return false end
+      local card_types = {"basic", "trick", "equip"}
+      local comb_names = {"jade_comb", "rhino_comb", "golden_comb"}
+      if not table.contains(card_types, card_type) then return false end
+      local comb_name = comb_names[table.indexOf(card_types, card_type)]
+      local comb_id = nil
+      local from_player = nil
+      for _, p in ipairs(room.alive_players) do
+        comb_id = table.find(p:getCardIds("e"), function (id)
+          return Fk:getCardById(id).name == comb_name
+        end)
+        if comb_id ~= nil then
+          from_player = p.id
+          break
+        end
+      end
+      if comb_id ~= nil then
+        room:moveCards({
+          from = from_player,
+          fromArea = Card.PlayerEquip,
+          ids = {comb_id},
+          to = target.id,
+          toArea = Card.PlayerEquip,
+          moveReason = fk.ReasonPut,
+          proposer = player.id,
+          skillName = self.name,
+        })
+        return false
+      end
+      comb_id = table.find(room.void, function (id)
+        return Fk:getCardById(id).name == comb_name
+      end)
+      if comb_id == nil then return false end
+      room:moveCards({
+        fromArea = Card.Void,
+        ids = {comb_id},
+        to = target.id,
+        toArea = Card.PlayerEquip,
+        moveReason = fk.ReasonPut,
+        proposer = player.id,
+        skillName = self.name,
+      })
+    end
+  end,
+
+  refresh_events = {fk.BeforeCardsMove},
+  can_refresh = function(self, event, target, player, data)
+    return true
+  end,
+  on_refresh = function(self, event, target, player, data)
+    local hold_areas = {Card.PlayerEquip, Card.Processing, Card.Void}
+    local comb_names = {"jade_comb", "rhino_comb", "golden_comb"}
+    local mirror_moves = {}
+    local ids = {}
+    for _, move in ipairs(data) do
+      if not table.contains(hold_areas, move.toArea) then
+        local move_info = {}
+        local mirror_info = {}
+        for _, info in ipairs(move.moveInfo) do
+          local id = info.cardId
+          if table.contains(comb_names, Fk:getCardById(id).name) then
+            table.insert(mirror_info, info)
+            table.insert(ids, id)
+          else
+            table.insert(move_info, info)
+          end
+        end
+        if #mirror_info > 0 then
+          move.moveInfo = move_info
+          local mirror_move = table.clone(move)
+          mirror_move.to = nil
+          mirror_move.toArea = Card.Void
+          mirror_move.moveInfo = mirror_info
+          table.insert(mirror_moves, mirror_move)
+        end
+      end
+    end
+    if #ids > 0 then
+      player.room:sendLog{
+        type = "#destructDerivedCards",
+        card = ids,
+      }
+    end
+    table.insertTable(data, mirror_moves)
+  end,
+}
+local chuiti_viewas = fk.CreateViewAsSkill{
+  name = "chuiti_viewas",
+  card_filter = function(self, to_select, selected)
+    if #selected == 0 then
+      local ids = Self:getMark("chuiti_cards")
+      return type(ids) == "table" and table.contains(ids, to_select)
+    end
+  end,
+  view_as = function(self, cards)
+    if #cards == 1 then
+      return Fk:getCardById(cards[1])
+    end
+  end,
+}
+Fk:addSkill(chuiti_viewas)
+local chuitiCheak = function (player, move_from)
+  if move_from == nil then return false end
+  if player.id == move_from then return true end
+  local target = player.room:getPlayerById(move_from)
+  local treasure_id = target:getEquipment(Card.SubtypeTreasure)
+  return treasure_id ~= nil and table.contains({"jade_comb", "rhino_comb", "golden_comb"}, Fk:getCardById(treasure_id).name)
+end
+local chuiti = fk.CreateTriggerSkill{
+  name = "chuiti",
+  events = {fk.AfterCardsMove},
+  can_trigger = function(self, event, target, player, data)
+    if not player:hasSkill(self.name) or player:usedSkillTimes(self.name, Player.HistoryTurn) > 0 then return false end
+    for _, move in ipairs(data) do
+      if move.toArea == Card.DiscardPile and move.moveReason == fk.ReasonDiscard and chuitiCheak(player, move.from) then
+        for _, info in ipairs(move.moveInfo) do
+          if (info.fromArea == Card.PlayerHand or info.fromArea == Card.PlayerEquip) and
+              player.room:getCardArea(info.cardId) == Card.DiscardPile then
+            local card = Fk:getCardById(info.cardId)
+            if not player:prohibitUse(card) and player:canUse(card) then
+              return true
+            end
+          end
+        end
+      end
+    end
+  end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    local ids = {}
+    for _, move in ipairs(data) do
+      if move.toArea == Card.DiscardPile and move.moveReason == fk.ReasonDiscard and chuitiCheak(player, move.from) then
+        for _, info in ipairs(move.moveInfo) do
+          if (info.fromArea == Card.PlayerHand or info.fromArea == Card.PlayerEquip) and
+              player.room:getCardArea(info.cardId) == Card.DiscardPile then
+            local card = Fk:getCardById(info.cardId)
+            if not player:prohibitUse(card) and player:canUse(card) then
+              table.insert(ids, info.cardId)
+            end
+          end
+        end
+      end
+    end
+    if #ids == 0 then return false end
+    local move_to_notify = {}   ---@type CardsMoveStruct
+    move_to_notify.toArea = Card.PlayerHand
+    move_to_notify.to = player.id
+    move_to_notify.moveInfo = {}
+    move_to_notify.moveReason = fk.ReasonJustMove
+    for _, id in ipairs(ids) do
+      table.insert(move_to_notify.moveInfo,
+      { cardId = id, fromArea = Card.Void })
+    end
+    room:notifyMoveCards({player}, {move_to_notify})
+    room:setPlayerMark(player, "chuiti_cards", ids)
+    local success, dat = room:askForUseViewAsSkill(player, "chuiti_viewas", "#chuiti-invoke", true, Util.DummyTable, true)
+    room:setPlayerMark(player, "chuiti_cards", 0)
+    move_to_notify = {}   ---@type CardsMoveStruct
+    move_to_notify.from = player.id
+    move_to_notify.toArea = Card.Void
+    move_to_notify.moveInfo = {}
+    move_to_notify.moveReason = fk.ReasonJustMove
+    for _, id in ipairs(ids) do
+      table.insert(move_to_notify.moveInfo,
+      { cardId = id, fromArea = Card.PlayerHand})
+    end
+    room:notifyMoveCards({player}, {move_to_notify})
+    if success then
+      self.cost_data = dat
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local card = Fk.skills["chuiti_viewas"]:viewAs(self.cost_data.cards)
+    player.room:moveCards({
+      from = player.id,
+      ids = self.cost_data.cards,
+      toArea = Card.Processing,
+      moveReason = fk.ReasonUse,
+      skillName = self.name,
+    })
+    player.room:useCard{
+      from = player.id,
+      tos = table.map(self.cost_data.targets, function(id) return {id} end),
+      card = card,
+    }
+  end,
+}
+fengfangnv:addSkill(zhuangshu)
+fengfangnv:addSkill(chuiti)
 Fk:loadTranslationTable{
+  ["ol__fengfangnv"] = "冯方女",
+  ["zhuangshu"] = "妆梳",
+  [":zhuangshu"] = "游戏开始时，你可以将一张“宝梳”置入你的装备区。一名角色的回合开始时，你可以弃置一张牌，将一张“宝梳”置入其宝物区"..
+  "（牌的类别决定“宝梳”种类：基本牌-【琼梳】、锦囊牌-【犀梳】、装备牌-【金梳】，若场上已有则改为移至其装备区）。"..
+  "当“宝梳”进入非装备区时，销毁之。",
+  ["chuiti"] = "垂涕",
+  ["chuiti_viewas"] = "垂涕",
+  [":chuiti"] = "每回合限一次，当你或装备区有“宝梳”的角色的一张牌因弃置而置入弃牌堆后，若你能使用此牌，你可以使用之（有次数限制）。",
+
+  ["#destructDerivedCards"] = "%card 被销毁了",
+
+  ["#zhuangshu-choose"] = "是否使用妆梳，选择一张“宝梳”置入你的装备区",
+  ["#zhuangshu-cost"] = "是否使用妆梳，弃置一张牌，将对应种类的“宝梳”置入%dest的装备区<br>"..
+    "基本牌-【琼梳】、锦囊牌-【犀梳】、装备牌-【金梳】",
+  ["#chuiti-invoke"] = "是否使用垂涕，使用其中被弃置的牌",
+
   ["$zhuangshu1"] = "殿前妆梳，风姿绝世。",
   ["$zhuangshu2"] = "顾影徘徊，丰容靓饰。",
   ["$zhuangshu3"] = "鬓怯琼梳，朱颜消瘦。",

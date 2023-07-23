@@ -138,6 +138,127 @@ Fk:loadTranslationTable{
   "且至多为5），然后你对其造成1点伤害。",
 }
 
+local jadeCombSkill = fk.CreateTriggerSkill{
+  name = "#jade_comb_skill",
+  mute = true,
+  events = {fk.DamageInflicted},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self.name)
+  end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    local x = data.damage
+    local pattern
+    if player:getEquipment(Card.SubtypeTreasure) then
+      pattern = ".|.|.|.|.|.|^"..tostring(player:getEquipment(Card.SubtypeTreasure))
+    else
+      pattern = "."
+    end
+    local cards = room:askForDiscard(player, x, x, true, self.name, true, pattern, "#jade_comb-invoke:::"..tostring(x), true)
+    if #cards > 0 then
+      self.cost_data = cards
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    player.room:broadcastSkillInvoke("zhuangshu", 3)
+    player.room:throwCard(self.cost_data, "jade_comb", player, player)
+    return true
+  end,
+}
+Fk:addSkill(jadeCombSkill)
+local jadeComb = fk.CreateTreasure{
+  name = "&jade_comb",
+  suit = Card.Spade,
+  number = 12,
+  equip_skill = jadeCombSkill,
+}
+extension:addCard(jadeComb)
+
+Fk:loadTranslationTable{
+  ["jade_comb"] = "琼梳",
+  ["#jade_comb_skill"] = "琼梳",
+  [":jade_comb"] = "装备牌·宝物<br/><b>宝物技能</b>：当你受到伤害时，你可以弃置X张牌（X为伤害值），防止此伤害。",
+
+  ["#jade_comb-invoke"] = "是否使用 琼梳，弃置%arg张牌来防止此伤害",
+}
+
+local rhinoCombSkill = fk.CreateTriggerSkill{
+  name = "#rhino_comb_skill",
+  mute = true,
+  events = {fk.EventPhaseChanging},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self.name) and data.to == Player.Judge
+  end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    local choices = {"rhino_comb_judge", "Cancel"}
+    if not player.skipped_phases[Player.Discard] then
+      table.insert(choices, 2, "rhino_comb_discard")
+    end
+    self.cost_data = room:askForChoice(player, choices, self.name)
+    return self.cost_data ~= "Cancel"
+  end,
+  on_use = function(self, event, target, player, data)
+    player.room:broadcastSkillInvoke("zhuangshu", 4)
+    if self.cost_data == "rhino_comb_judge" then
+      player:skip(Player.Judge)
+      return true
+    elseif self.cost_data == "rhino_comb_discard" then
+      player:skip(Player.Discard)
+    end
+  end,
+}
+Fk:addSkill(rhinoCombSkill)
+local rhinoComb = fk.CreateTreasure{
+  name = "&rhino_comb",
+  suit = Card.Club,
+  number = 12,
+  equip_skill = rhinoCombSkill,
+}
+extension:addCard(rhinoComb)
+
+Fk:loadTranslationTable{
+  ["rhino_comb"] = "犀梳",
+  ["#rhino_comb_skill"] = "犀梳",
+  [":rhino_comb"] = "装备牌·宝物<br/><b>宝物技能</b>：判定阶段开始前，你可选择：1.跳过此阶段；2.跳过此回合的弃牌阶段。",
+
+  ["rhino_comb_judge"] = "跳过判定阶段",
+  ["rhino_comb_discard"] = "跳过弃牌阶段",
+}
+
+local goldenCombSkill = fk.CreateTriggerSkill{
+  name = "#golden_comb_skill",
+  mute = true,
+  events = {fk.EventPhaseEnd},
+  frequency = Skill.Compulsory,
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self.name) and player.phase == Player.Play
+    and player:getHandcardNum() < math.min(player:getMaxCards(), 5)
+  end,
+  on_use = function(self, event, target, player, data)
+    player.room:broadcastSkillInvoke("zhuangshu", 5)
+    local x = math.min(player:getMaxCards(), 5) - player:getHandcardNum()
+    if x > 0 then
+      player:drawCards(x, self.name)
+    end
+  end,
+}
+Fk:addSkill(goldenCombSkill)
+local goldenComb = fk.CreateTreasure{
+  name = "&golden_comb",
+  suit = Card.Heart,
+  number = 12,
+  equip_skill = goldenCombSkill,
+}
+extension:addCard(goldenComb)
+
+Fk:loadTranslationTable{
+  ["golden_comb"] = "金梳",
+  ["#golden_comb_skill"] = "金梳",
+  [":golden_comb"] = "装备牌·宝物<br/><b>宝物技能</b>：锁定技，出牌阶段结束时，你将手牌补至X张（X为你的手牌上限且至多为5）。",
+}
+
 local shangyangReformSkill = fk.CreateActiveSkill{
   name = "shangyang_reform_skill",
   target_num = 1,
