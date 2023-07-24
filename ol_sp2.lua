@@ -1044,9 +1044,7 @@ Fk:loadTranslationTable{
   ["~zuofen"] = "惨怆愁悲……",
 }
 
---冯方女
 local fengfangnv = General(extension, "ol__fengfangnv", "qun", 3, 3, General.Female)
-
 local zhuangshu = fk.CreateTriggerSkill{
   name = "zhuangshu",
   events = {fk.GameStart, fk.EventPhaseChanging},
@@ -3957,6 +3955,7 @@ local bixin = fk.CreateTriggerSkill{
         table.insert(types, type)
       end
     end
+    if #types == 0 then return true end
     local choice = room:askForChoice(player, types, self.name, "#bixin-choice")
     room:addPlayerMark(player, "bixin_"..choice, 1)
     player:drawCards(3, self.name)
@@ -3966,19 +3965,7 @@ local bixin = fk.CreateTriggerSkill{
         table.insert(cards, id)
       end
     end
-    if #cards == 0 then
-      player:addSkillUseHistory("ximo", 1)  --FIXME: 耦了耦了
-      room:broadcastSkillInvoke("ximo")
-      room:notifySkillInvoked(player, "ximo")
-      for _, type in ipairs({"basic", "trick", "equip"}) do
-        room:setPlayerMark(player, "bixin_"..type, 0)
-      end
-      if player:usedSkillTimes("ximo", Player.HistoryGame) > 2 then
-        room:handleAddLoseSkills(player, "-ximo|feibai", nil, true, false)
-        room:handleAddLoseSkills(player, "-bixin|bixinEx", nil, false, true)
-      end
-      return
-    end
+    if #cards == 0 then return true end
     local card = Fk.skills["bixin_viewas"]:viewAs(self.cost_data.cards)
     card:addSubcards(cards)
     room:useCard{
@@ -4021,7 +4008,7 @@ local bixinEx_trigger = fk.CreateTriggerSkill{
   mute = true,
   priority = 10,
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name, true) and table.contains(data.card.skillNames, "bixin")
+    return target == player and table.contains(data.card.skillNames, "bixin")
   end,
   on_cost = function(self, event, target, player, data)
     return true
@@ -4034,6 +4021,7 @@ local bixinEx_trigger = fk.CreateTriggerSkill{
         table.insert(types, type)
       end
     end
+    if #types == 0 then return true end
     local choice = room:askForChoice(player, types, "bixin", "#bixin-choice")
     room:addPlayerMark(player, "bixin_"..choice, 1)
     player:drawCards(1, "bixin")
@@ -4061,9 +4049,9 @@ local ximo = fk.CreateTriggerSkill{
   name = "ximo",
   anim_type = "special",
   frequency = Skill.Compulsory,
-  events = {fk.AfterCardUseDeclared},
+  events = {fk.AfterSkillEffect},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name) and table.contains(data.card.skillNames, "bixin")
+    return target == player and player:hasSkill(self.name) and data.name == "bixin"
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
