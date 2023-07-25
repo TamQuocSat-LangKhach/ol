@@ -2120,8 +2120,8 @@ Fk:loadTranslationTable{
   ["$xingzhao1"] = "精挑细选，方能成百年之计。",
   ["$xingzhao2"] = "拿些上好的木料来。",
   --["$xunxun1"] = "让我先探他一探。",
-  --["$xunxun2"] = "偷工减料要不得啊……",
-  ["~tangzi"] = "父亲，孩儿来见你了。",
+  --["$xunxun2"] = "船，也不是一天就能造出来的。",
+  ["~tangzi"] = "偷工减料要不得啊……",
 }
 
 local wangyun = General(extension, "wangyun", "qun", 4)
@@ -2818,14 +2818,16 @@ local lianpian = fk.CreateTriggerSkill{
   anim_type = "drawcard",
   events = {fk.TargetSpecified},
   can_trigger = function(self, event, target, player, data)
-    if target == player and player:hasSkill(self.name) and player.phase == Player.Play and data.firstTarget and player:usedSkillTimes(self.name) < 3 then
+    if target == player and player:hasSkill(self.name) and player.phase == Player.Play and data.firstTarget and
+      player:usedSkillTimes(self.name, Player.HistoryPhase) < 3 then
       return self.cost_data and #self.cost_data > 0
     end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
     local card = player:drawCards(1, self.name)
-    if #self.cost_data > 1 or self.cost_data[1] ~= player.id then
+    if (#self.cost_data > 1 or self.cost_data[1] ~= player.id) and 
+      room:getCardOwner(id) == player and room:getCardArea(id) == Card.PlayerHand then
       local tos = room:askForChoosePlayers(player, self.cost_data, 1, 1, "#lianpian-choose", self.name, true)
       if #tos > 0 and tos[1] ~= player.id then
         room:obtainCard(tos[1], card[1], false, fk.ReasonGive)
@@ -2912,14 +2914,16 @@ local jianji = fk.CreateActiveSkill{
   target_filter = function(self, to_select, selected)
     return #selected == 0 and to_select ~= Self.id
   end,
-  on_use = function(self, room, use)
-    local target = room:getPlayerById(use.tos[1])
+  on_use = function(self, room, effect)
+    local target = room:getPlayerById(effect.tos[1])
     local id = target:drawCards(1, self.name)[1]
-    local name = Fk:getCardById(id).trueName
-    if name ~= "jink" and name ~= "nullification" then
-      local _use = room:askForUseCard(target, Fk:getCardById(id).name, ".|.|.|.|.|.|"..tostring(id), "#jianji-invoke", true)
-      if _use then
-        room:useCard(_use)
+    if room:getCardOwner(id) == target and room:getCardArea(id) == Card.PlayerHand then
+      local card = Fk:getCardById(id)
+      if not target:prohibitUse(card) and target:canUse(card) then
+        local use = room:askForUseCard(target,card.name, ".|.|.|.|.|.|"..tostring(id), "#jianji-invoke", true)
+        if use then
+          room:useCard(use)
+        end
       end
     end
   end,
