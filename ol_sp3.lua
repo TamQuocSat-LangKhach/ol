@@ -2481,7 +2481,7 @@ local goude = fk.CreateTriggerSkill{
           return true
         end
       elseif choice == "goude3" then
-        local success, dat = room:askForUseViewAsSkill(player, "goude_viewas", "#goude-slash", true)
+        local success, dat = room:askForUseActiveSkill(player, "goude_viewas", "#goude-slash", true)
         if success then
           self.cost_data = {choice, dat}
           return true

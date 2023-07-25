@@ -872,7 +872,7 @@ local liuju = fk.CreateTriggerSkill{
     }
     room:notifyMoveCards({loser}, {fakemove})
     room:setPlayerMark(loser, "liuju_cards", ids)
-    local success, dat = room:askForUseViewAsSkill(loser, "liuju_viewas", "#liuju-use", true)
+    local success, dat = room:askForUseActiveSkill(loser, "liuju_viewas", "#liuju-use", true)
     room:setPlayerMark(loser, "liuju_cards", 0)
     fakemove = {
       from = loser.id,
@@ -1103,7 +1103,7 @@ local huanjia = fk.CreateTriggerSkill{
     }
     room:notifyMoveCards({winner}, {fakemove})
     room:setPlayerMark(winner, "huanjia_cards", ids)
-    local success, dat = room:askForUseViewAsSkill(winner, "huanjia_viewas", "#huanjia-use:"..player.id, true)
+    local success, dat = room:askForUseActiveSkill(winner, "huanjia_viewas", "#huanjia-use:"..player.id, true)
     room:setPlayerMark(winner, "huanjia_cards", 0)
     fakemove = {
       from = winner.id,
@@ -1182,6 +1182,14 @@ Fk:loadTranslationTable{
   ["#huanjia-use"] = "缓颊：你可以使用一张拼点牌，若未造成伤害则 %src 获得另一张，若造成伤害则其失去一个技能",
   ["#huanjia-choice"] = "缓颊：你需失去一个技能",
   ["huanjia_viewas"] = "缓颊",
+
+  ["$lianhe1"] = "枯草难存于劲风，唯抱簇得生。",
+  ["$lianhe2"] = "吾所来之由，一为好，二为和。",
+  ["$huanjia1"] = "我之所言，皆为君好。",
+  ["$huanjia2"] = "吾言之切切，请君听之。",
+  ["$xumin1"] = "江海陆沉，皆为黎庶之泪。",
+  ["$xumin2"] = "天下汹汹，百姓何辜？",
+  ["~olz__hanrong"] = "天下兴亡，皆苦百姓。",
 }
 
 local wukuang = General(extension, "olz__wukuang", "qun", 4)

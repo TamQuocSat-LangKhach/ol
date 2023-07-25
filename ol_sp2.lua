@@ -284,14 +284,14 @@ local weiyi = fk.CreateTriggerSkill{
 local jinzhi_active = fk.CreateActiveSkill{
   name = "jinzhi_active",
   card_num = function()
-    return Self:usedSkillTimes("jinzhi", Player.HistoryRound)
+    return Self:usedSkillTimes("jinzhi", Player.HistoryRound) + 1
   end,
   target_num = 0,
   card_filter = function(self, to_select, selected, targets)
     if #selected == 0 then
       return true
     else
-      return #selected < Self:usedSkillTimes("jinzhi", Player.HistoryRound) and
+      return #selected <= Self:usedSkillTimes("jinzhi", Player.HistoryRound) and
         Fk:getCardById(to_select).color == Fk:getCardById(selected[1]).color
     end
   end,
@@ -327,13 +327,13 @@ local jinzhi = fk.CreateViewAsSkill{
     player:drawCards(1, self.name)
   end,
   enabled_at_play = function(self, player)
-    local black = #table.filter(player:getCardIds{Player.Hand, Player.Equip}, function(id) return Fk:getCardById(id).color == Card.Black end)
-    local red = #table.filter(player:getCardIds{Player.Hand, Player.Equip}, function(id) return Fk:getCardById(id).color == Card.Red end)
+    local black = #table.filter(player:getCardIds("he"), function(id) return Fk:getCardById(id).color == Card.Black end)
+    local red = #table.filter(player:getCardIds("he"), function(id) return Fk:getCardById(id).color == Card.Red end)
     return math.max(black, red) > player:usedSkillTimes(self.name, Player.HistoryRound)
   end,
   enabled_at_response = function(self, player, response)
-    local black = #table.filter(player:getCardIds{Player.Hand, Player.Equip}, function(id) return Fk:getCardById(id).color == Card.Black end)
-    local red = #table.filter(player:getCardIds{Player.Hand, Player.Equip}, function(id) return Fk:getCardById(id).color == Card.Red end)
+    local black = #table.filter(player:getCardIds("he"), function(id) return Fk:getCardById(id).color == Card.Black end)
+    local red = #table.filter(player:getCardIds("he"), function(id) return Fk:getCardById(id).color == Card.Red end)
     return math.max(black, red) > player:usedSkillTimes(self.name, Player.HistoryRound)
   end,
 }
@@ -1275,7 +1275,7 @@ local chuiti = fk.CreateTriggerSkill{
     end
     room:notifyMoveCards({player}, {move_to_notify})
     room:setPlayerMark(player, "chuiti_cards", ids)
-    local success, dat = room:askForUseViewAsSkill(player, "chuiti_viewas", "#chuiti-invoke", true, Util.DummyTable, true)
+    local success, dat = room:askForUseActiveSkill(player, "chuiti_viewas", "#chuiti-invoke", true, Util.DummyTable, true)
     room:setPlayerMark(player, "chuiti_cards", 0)
     move_to_notify = {}   ---@type CardsMoveStruct
     move_to_notify.from = player.id
@@ -2570,7 +2570,7 @@ local luochong = fk.CreateTriggerSkill{
     elseif choice == "luochong2" then
       room:loseHp(to, 1, self.name)
     elseif choice == "luochong3" then
-      if #to:getCardIds{Player.Hand, Player.Equip} < 3 then
+      if #to:getCardIds("he") < 3 then
         to:throwAllCards("he")
       else
         room:askForDiscard(to, 2, 2, true, self.name, false)
@@ -2644,7 +2644,7 @@ Fk:loadTranslationTable{
   ["luochong3"] = "弃置两张牌",
   ["luochong4"] = "摸两张牌",
   ["#aichen-choice"] = "哀尘：移除一种“落宠”选项",
-  
+
   ["$luochong1"] = "宠至莫言非，思移难恃貌。",
   ["$luochong2"] = "君王一时情，安有恩长久。",
   ["$aichen1"] = "泪干红落面，心结发垂头。",
@@ -3697,7 +3697,7 @@ local qingyix = fk.CreateActiveSkill{
         if #id == 1 then
           id = id[1]
         else
-          id = table.random(p:getCardIds{Player.Hand, Player.Equip})
+          id = table.random(p:getCardIds("he"))
         end
         p.tag[self.name] = id
       end
