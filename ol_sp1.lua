@@ -800,7 +800,8 @@ local yawang = fk.CreateTriggerSkill{
 local yawang_prohibit = fk.CreateProhibitSkill{
   name = "#yawang_prohibit",
   prohibit_use = function(self, player, card)
-    return player.phase == Player.Play and player:getMark("@yawang-turn") >= player:getMark("yawang-turn")
+    return player:usedSkillTimes("yawang", Player.HistoryTurn) > 0 and player.phase == Player.Play and
+      player:getMark("@yawang-turn") >= player:getMark("yawang-turn")
   end,
 }
 local xunzhi = fk.CreateTriggerSkill{
@@ -1557,6 +1558,7 @@ local fuhan = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
+    local n = player:getMark("@meiying")
     room:setPlayerMark(player, "@meiying", 0)
     local generals = table.map(Fk:getGeneralsRandomly(5, Fk:getAllGenerals(), table.map(room:getAllPlayers(), function(p)
       return p.general end), (function(p) return (p.kingdom ~= "shu") end)), function(g) return g.name end)
@@ -1565,7 +1567,7 @@ local fuhan = fk.CreateTriggerSkill{
       general = table.random(generals)
     end
     room:changeHero(player, general, false, false, true)
-    local maxHp = math.max(player:usedSkillTimes("fanghun", Player.HistoryGame), 2)
+    local maxHp = math.max(n + player:usedSkillTimes("fanghun", Player.HistoryGame), 2)
     maxHp = math.min(maxHp, 8)
     room:changeMaxHp(player, maxHp - player.maxHp)
     player.gender = Fk.generals[player.general].gender
