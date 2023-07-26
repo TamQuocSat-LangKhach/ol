@@ -1515,4 +1515,205 @@ Fk:loadTranslationTable{
   ["$zhongliu2"] = "行舟至中流而遇浪，大风起兮。",
   ["~olz__wangling"] = "淩忠心可鉴，死亦未悔……",
 }
+
+local zhongyan = General(extension, "olz__zhongyan", "jin", 3, 3, General.Female)
+local guangu = fk.CreateActiveSkill{
+  name = "guangu",
+  anim_type = "switch",
+  switch_skill_name = "guangu",
+  card_num = 0,
+  target_num = function(self)
+    if Self:getSwitchSkillState(self.name, false) == fk.SwitchYang then
+      return 0
+    else
+      return 1
+    end
+  end,
+  prompt = function(self)
+    if Self:getSwitchSkillState(self.name, false) == fk.SwitchYang then
+      return "#guangu-yang"
+    else
+      return "#guangu-yin"
+    end
+  end,
+  can_use = function(self, player)
+    return player:usedSkillTimes(self.name, Player.HistoryPhase) == 0
+  end,
+  card_filter = function(self, to_select, selected)
+    return false
+  end,
+  target_filter = function(self, to_select, selected)
+    if Self:getSwitchSkillState(self.name, false) == fk.SwitchYang then
+      return false
+    else
+      return #selected == 0 and not Fk:currentRoom():getPlayerById(to_select):isKongcheng()
+    end
+  end,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    local status = player:getSwitchSkillState(self.name, true) == fk.SwitchYang and "yang" or "yin"
+    local target = player
+    local choices = {}
+    if status == "yang" then
+      choices = {"1", "2", "3", "4"}
+    else
+      target = room:getPlayerById(effect.tos[1])
+      for i = 1, math.min(4, target:getHandcardNum()), 1 do
+        table.insert(choices, tostring(i))
+      end
+    end
+    local choice = tonumber(room:askForChoice(player, choices, self.name, "#guangu-choice"))
+    room:setPlayerMark(player, "@guangu", choice)
+    local ids = {}
+    if status == "yang" then
+      ids = room:getNCards(choice)
+    elseif status == "yin" then
+      ids = table.simpleClone(table.random(target:getCardIds("h"), choice))
+    end
+    local fakemove = {
+      toArea = Card.PlayerHand,
+      to = player.id,
+      moveInfo = table.map(ids, function(id) return {cardId = id, fromArea = Card.Void} end),
+      moveReason = fk.ReasonJustMove,
+    }
+    room:notifyMoveCards({player}, {fakemove})
+    local availableCards = {}
+    for _, id in ipairs(ids) do
+      local card = Fk:getCardById(id)
+      if not player:prohibitUse(card) and card.skill:canUse(player) then
+        table.insertIfNeed(availableCards, id)
+      end
+    end
+    room:setPlayerMark(player, "guangu_cards", availableCards)
+    local success, dat = room:askForUseActiveSkill(player, "guangu_viewas", "#guangu-use", true)
+    room:setPlayerMark(player, "guangu_cards", 0)
+    fakemove = {
+      from = player.id,
+      toArea = Card.Void,
+      moveInfo = table.map(ids, function(id) return {cardId = id, fromArea = Card.PlayerHand} end),
+      moveReason = fk.ReasonJustMove,
+    }
+    room:notifyMoveCards({player}, {fakemove})
+    if status == "yang" then
+      if success then
+        table.removeOne(ids, dat.cards[1])
+      end
+      for i = #ids, 1, -1 do
+        table.insert(room.draw_pile, 1, ids[i])
+      end
+    end
+    if success then
+      local from = player.id
+      if status == "yin" then
+        from = target.id
+      end
+      room:moveCards({
+        from = from,
+        ids = dat.cards,
+        toArea = Card.Processing,
+        moveReason = fk.ReasonUse,
+        skillName = self.name,
+      })
+      local card = Fk.skills["guangu_viewas"]:viewAs(dat.cards)
+      room:useCard{
+        from = player.id,
+        tos = table.map(dat.targets, function(id) return {id} end),
+        card = card,
+        extraUse = true,
+      }
+    end
+  end,
+}
+local guangu_viewas = fk.CreateViewAsSkill{
+  name = "guangu_viewas",
+  card_filter = function(self, to_select, selected)
+    if #selected == 0 then
+      local ids = Self:getMark("guangu_cards")
+      return type(ids) == "table" and table.contains(ids, to_select)
+    end
+  end,
+  view_as = function(self, cards)
+    if #cards == 1 then
+      return Fk:getCardById(cards[1])
+    end
+  end,
+}
+local xiaoyong = fk.CreateTriggerSkill{
+  name = "xiaoyong",
+  anim_type = "special",
+  frequency = Skill.Compulsory,
+  events = {fk.CardUsing},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self.name) and player.phase ~= Player.NotActive and
+      data.extra_data and data.extra_data.xiaoyong and player:getMark("@guangu") == data.extra_data.xiaoyong
+  end,
+  on_use = function(self, event, target, player, data)
+    player:setSkillUseHistory("guangu", 0, Player.HistoryPhase)
+  end,
+
+  refresh_events = {fk.CardUsing},
+  can_refresh = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self.name) and player.phase ~= Player.NotActive
+  end,
+  on_refresh = function(self, event, target, player, data)
+    local mark = player:getMark("xiaoyong-turn")
+    if mark == 0 then mark = {} end
+    local n = #Fk:translate(data.card.trueName) / 3
+    if not table.contains(mark, n) then
+      table.insert(mark, n)
+      data.extra_data = data.extra_data or {}
+      data.extra_data.xiaoyong = n
+    end
+    player.room:setPlayerMark(player, "xiaoyong-turn", mark)
+  end,
+}
+local baozu = fk.CreateTriggerSkill{
+  name = "baozu",
+  anim_type = "support",
+  frequency = Skill.Limited,
+  events = {fk.EnterDying},
+  can_trigger = function(self, event, target, player, data)
+    return player:hasSkill(self.name) and target.dying and
+      table.find({"olz__zhong", "zhongyao", "zhonghui", "zhongyan"}, function(name) return string.find(target.general, name) end) and
+      player:usedSkillTimes(self.name, Player.HistoryGame) == 0
+  end,
+  on_cost = function(self, event, target, player, data)
+    return player.room:askForSkillInvoke(player, self.name, nil, "#baozu-invoke::"..target.id)
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    room:doIndicate(player.id, {target.id})
+    if not target.chained then
+      target:setChainState(true)
+    end
+    if not target.dead and target:isWounded() then
+      room:recover({
+        who = target,
+        num = 1,
+        recoverBy = player,
+        skillName = self.name
+      })
+    end
+  end,
+}
+Fk:addSkill(guangu_viewas)
+zhongyan:addSkill(guangu)
+zhongyan:addSkill(xiaoyong)
+zhongyan:addSkill(baozu)
+Fk:loadTranslationTable{
+  ["olz__zhongyan"] = "钟琰",
+  ["guangu"] = "观骨",
+  [":guangu"] = "转换技，出牌阶段限一次，阳：你可以观看牌堆顶至多四张牌；阴：你可以观看一名角色至多四张手牌。然后你可以使用其中一张牌。",
+  ["xiaoyong"] = "啸咏",
+  [":xiaoyong"] = "锁定技，当你于回合内首次使用牌名字数为X的牌时（X为你上次发动〖观骨〗观看牌数），你视为未发动〖观骨〗。",
+  ["baozu"] = "保族",
+  [":baozu"] = "宗族技，限定技，当同族角色进入濒死状态时，你可以令其横置并回复1点体力。",
+  ["#guangu-yang"] = "观骨：你可以观看牌堆顶至多四张牌，然后使用其中一张牌",
+  ["#guangu-yin"] = "观骨：你可以观看一名角色至多四张手牌，然后使用其中一张牌",
+  ["#guangu-choice"] = "观骨：选择你要观看的牌数",
+  ["@guangu"] = "观骨",
+  ["guangu_viewas"] = "观骨",
+  ["#guangu-use"] = "观骨：你可以使用其中一张牌",
+  ["#baozu-invoke"] = "保族：你可以令 %dest 横置并回复1点体力",
+}
 return extension
