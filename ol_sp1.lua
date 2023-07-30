@@ -1985,6 +1985,7 @@ Fk:loadTranslationTable{
 }
 
 local liuqi = General(extension, "liuqi", "qun", 3)
+liuqi.subkingdom = "shu"
 local wenji = fk.CreateTriggerSkill{
   name = "wenji",
   anim_type = "control",
@@ -2815,6 +2816,7 @@ Fk:loadTranslationTable{
 --刘晔
 
 local sufei = General(extension, "ol__sufei", "wu", 4)
+sufei.subkingdom = "qun"
 local lianpian = fk.CreateTriggerSkill{
   name = "lianpian",
   anim_type = "drawcard",
@@ -2868,6 +2870,7 @@ Fk:loadTranslationTable{
 }
 
 local huangquan = General(extension, "ol__huangquan", "shu", 3)
+huangquan.subkingdom = "wei"
 local dianhu = fk.CreateTriggerSkill{
   name = "dianhu",
   events = {fk.GameStart, fk.Damage, fk.HpRecover},

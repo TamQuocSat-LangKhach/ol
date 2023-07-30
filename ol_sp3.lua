@@ -2369,6 +2369,7 @@ Fk:loadTranslationTable{
 }
 
 local mengda = General(extension, "ol__mengda", "shu", 4)
+mengda.subkingdom = "wei"
 local goude = fk.CreateTriggerSkill{
   name = "goude",
   anim_type = "control",
@@ -2543,6 +2544,213 @@ Fk:loadTranslationTable{
   ["#goude-choose"] = "苟得：选择一名角色，弃置其一张手牌",
   ["#goude-slash"] = "苟得：视为使用一张【杀】",
   ["goude_viewas"] = "苟得",
+}
+
+local wenqin = General(extension, "ol__wenqin", "wei", 4)
+wenqin.subkingdom = "wu"
+local guangao = fk.CreateTriggerSkill{
+  name = "guangao",
+  anim_type = "control",
+  events = {fk.TargetSpecifying, fk.TargetSpecified},
+  can_trigger = function(self, event, target, player, data)
+    if player:hasSkill(self.name) and data.card.trueName == "slash" then
+      if event == fk.TargetSpecifying then
+        return target == player and table.find(player.room:getOtherPlayers(player), function(p)
+          return not table.contains(AimGroup:getAllTargets(data.tos), p.id) and
+            not player:isProhibited(p, data.card) and player:inMyAttackRange(p) end)
+      else
+        return data.extra_data and data.extra_data.guangao and table.contains(data.extra_data.guangao, player.id) and
+          player:getHandcardNum() % 2 == 0
+      end
+    end
+  end,
+  on_cost = function(self, event, target, player, data)
+    if event == fk.TargetSpecifying then
+      local room = player.room
+      local targets = table.map(table.filter(room:getOtherPlayers(player), function(p)
+        return not table.contains(AimGroup:getAllTargets(data.tos), p.id) and
+          not player:isProhibited(p, data.card) and player:inMyAttackRange(p) end), function(p) return p.id end)
+      local tos = room:askForChoosePlayers(player, targets, 1, 1, "#guangao-choose:::"..data.card:toLogString(), self.name, true)
+      if #tos > 0 then
+        self.cost_data = tos
+        return true
+      end
+    else
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    if event == fk.TargetSpecifying then
+      for _, id in ipairs(self.cost_data) do
+        room:doIndicate(player.id, {id})
+        TargetGroup:pushTargets(data.targetGroup, id)
+      end
+      data.extra_data = data.extra_data or {}
+      data.extra_data.guangao = data.extra_data.guangao or {}
+      table.insertIfNeed(data.extra_data.guangao, player.id)
+    else
+      player:drawCards(1, self.name)
+      local targets = AimGroup:getAllTargets(data.tos)
+      local tos = room:askForChoosePlayers(player, targets, 1, #targets, "#guangao-cancel:::"..data.card:toLogString(), self.name, true)
+      if #tos > 0 then
+        for _, id in ipairs(tos) do
+          table.insertIfNeed(data.nullifiedTargets, id)
+        end
+      end
+    end
+  end,
+}
+local guangao_trigger = fk.CreateTriggerSkill{
+  name = "#guangao_trigger",
+  mute = true,
+  events = {fk.TargetSpecifying},
+  can_trigger = function(self, event, target, player, data)
+    if target == player and data.card.trueName == "slash" then
+      return table.find(player.room:getOtherPlayers(player), function(p)
+        return p:hasSkill("guangao") and not table.contains(AimGroup:getAllTargets(data.tos), p.id) and
+        not player:isProhibited(p, data.card) and player:inMyAttackRange(p) end)
+    end
+  end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    local targets = table.map(table.filter(room:getOtherPlayers(player), function(p)
+      return p:hasSkill("guangao") and not table.contains(AimGroup:getAllTargets(data.tos), p.id) and
+      not player:isProhibited(p, data.card) and player:inMyAttackRange(p) end), function(p) return p.id end)
+    local tos = room:askForChoosePlayers(player, targets, 1, #targets, "#guangao2-choose:::"..data.card:toLogString(), "guangao", true)
+    if #tos > 0 then
+      self.cost_data = tos
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    room:broadcastSkillInvoke("guangao")
+    data.extra_data = data.extra_data or {}
+    data.extra_data.guangao = data.extra_data.guangao or {}
+    for _, id in ipairs(self.cost_data) do
+      room:notifySkillInvoked(room:getPlayerById(id), "guangao", "negative")
+      room:doIndicate(player.id, {id})
+      TargetGroup:pushTargets(data.targetGroup, id)
+      table.insertIfNeed(data.extra_data.guangao, id)
+    end
+  end,
+}
+local huiqi = fk.CreateTriggerSkill{
+  name = "huiqi",
+  frequency = Skill.Wake,
+  anim_type = "offensive",
+  events = {fk.EventPhaseChanging},
+  can_trigger = function(self, event, target, player, data)
+    return player:hasSkill(self.name) and
+      data.to == Player.NotActive and
+      player:usedSkillTimes(self.name, Player.HistoryGame) == 0
+  end,
+  can_wake = function(self, event, target, player, data)
+    local room = player.room
+    local targets = {}
+    local events = room.logic:getEventsOfScope(GameEvent.UseCard, 999, function(e)
+      local use = e.data[1]
+      for _, id in ipairs(TargetGroup:getRealTargets(use.tos)) do
+        table.insertIfNeed(targets, id)
+      end
+    end, Player.HistoryTurn)
+    return #targets == 3 and table.contains(targets, player.id)
+  end,
+  on_use = function(self, event, target, player, data)
+    player.room:handleAddLoseSkills(player, "xieju", nil, true, false)
+    player:gainAnExtraTurn(true)
+  end,
+}
+local xieju = fk.CreateActiveSkill{
+  name = "xieju",
+  anim_type = "offensive",
+  card_num = 0,
+  min_target_num = 1,
+  prompt = "#xieju",
+  can_use = function(self, player)
+    return player:usedSkillTimes(self.name, Player.HistoryPhase) == 0 and player:getMark("xieju-turn") ~= 0
+  end,
+  card_filter = function(self, to_select, selected)
+    return false
+  end,
+  target_filter = function(self, to_select, selected)
+    return Self:getMark("xieju-turn") ~= 0 and table.contains(Self:getMark("xieju-turn"), to_select)
+  end,
+  on_use = function(self, room, effect)
+    for _, id in ipairs(effect.tos) do
+      local target = room:getPlayerById(id)
+      if not target.dead and target:canUse(Fk:cloneCard("slash")) then
+        local success, dat = room:askForUseViewAsSkill(target, "xieju_viewas", "#xieju-slash", false)
+        if success then
+          local card = Fk.skills["xieju_viewas"]:viewAs(dat.cards)
+          room:useCard{
+            from = target.id,
+            tos = table.map(dat.targets, function(id) return {id} end),
+            card = card,
+            extraUse = true,
+          }
+        end
+      end
+    end
+  end,
+}
+local xieju_record = fk.CreateTriggerSkill{
+  name = "#xieju_record",
+
+  refresh_events = {fk.TargetConfirmed},
+  can_refresh = function(self, event, target, player, data)
+    return player:hasSkill("xieju", true)
+  end,
+  on_refresh = function(self, event, target, player, data)
+    local mark = player:getMark("xieju-turn")
+    if mark == 0 then mark = {} end
+    for _, id in ipairs(TargetGroup:getRealTargets(data.tos)) do
+      table.insertIfNeed(mark, id)
+    end
+    player.room:setPlayerMark(player, "xieju-turn", mark)
+  end,
+}
+local xieju_viewas = fk.CreateViewAsSkill{
+  name = "xieju_viewas",
+  pattern = "slash",
+  card_filter = function()
+    return false
+  end,
+  view_as = function(self, cards)
+    local card = Fk:cloneCard("slash")
+    card.skillName = "xieju"
+    return card
+  end,
+}
+local xieju_targetmod = fk.CreateTargetModSkill{
+  name = "#xieju_targetmod",
+  bypass_times = function(self, player, skill, scope, card)
+    return card and table.contains(card.skillNames, "xieju")
+  end,
+}
+guangao:addRelatedSkill(guangao_trigger)
+xieju:addRelatedSkill(xieju_record)
+xieju:addRelatedSkill(xieju_targetmod)
+Fk:addSkill(xieju_viewas)
+wenqin:addSkill(guangao)
+wenqin:addSkill(huiqi)
+wenqin:addRelatedSkill(xieju)
+Fk:loadTranslationTable{
+  ["ol__wenqin"] = "文钦",
+  ["guangao"] = "犷骜",
+  [":guangao"] = "你使用【杀】可以额外指定一个目标；其他角色使用【杀】可以额外指定你为目标（均有距离限制）。以此法使用的【杀】指定目标后，"..
+  "若你的手牌数为偶数，你摸一张牌，令此【杀】对任意名角色无效。",
+  ["huiqi"] = "彗企",
+  [":huiqi"] = "觉醒技，每个回合结束时，若本回合仅有包括你的三名角色成为过牌的目标，你获得〖偕举〗并执行一个额外回合。",
+  ["xieju"] = "偕举",
+  [":xieju"] = "出牌阶段限一次，你可以令任意名本回合成为过牌的目标的角色各视为使用一张【杀】。",
+  ["#guangao-choose"] = "犷骜：你可以为此%arg额外指定一个目标",
+  ["#guangao2-choose"] = "犷骜：此%arg可以额外指定有技能“犷骜”的角色为目标",
+  ["#guangao-cancel"] = "犷骜：你可以令此%arg对任意名角色无效",
+  ["#xieju"] = "偕举：你可以令任意名角色各视为使用一张【杀】",
+  ["#xieju-slash"] = "偕举：请视为使用一张【杀】",
+  ["xieju_viewas"] = "偕举",
 }
 
 return extension

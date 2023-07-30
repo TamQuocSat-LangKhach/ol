@@ -1229,8 +1229,8 @@ local lianzhuw = fk.CreateActiveSkill{
         room:recastCard(card, player, self.name)
         if color ~= "nocolor" then
           local color2 = Fk:getCardById(card[1]):getColorString()
-          if color2 ~= "nocolor" and color2 ~= color and player:getMaxCards() > 0 then
-            room:addPlayerMark(player, MarkEnum.MinusMaxCards, 1)
+          if color2 ~= "nocolor" and color2 == color then
+            room:addPlayerMark(player, MarkEnum.AddMaxCards, 1)
           end
         end
       end
@@ -1244,7 +1244,8 @@ local lianzhuw = fk.CreateActiveSkill{
       else
         target = room:getPlayerById(table.random(targets))
       end
-      local use1 = room:askForUseCard(player, "slash", "slash", "#lianzhuw-slash::"..target.id, true, {must_targets = {target.id}})
+      local use1 = room:askForUseCard(player, "slash", "slash", "#lianzhuw-slash::"..target.id, true,
+        {must_targets = {target.id}, bypass_distances = true, bypass_times = true})
       if use1 then
         room:useCard(use1)
         if not player.dead and not target.dead then
@@ -1253,13 +1254,14 @@ local lianzhuw = fk.CreateActiveSkill{
           if color == "nocolor" then
             prompt = "#lianzhuw-slash::"..target.id
           end
-          local use2 = room:askForUseCard(player, "slash", "slash", prompt, true, {must_targets = {target.id}})
+          local use2 = room:askForUseCard(player, "slash", "slash", prompt, true,
+            {must_targets = {target.id}, bypass_distances = true, bypass_times = true})
           if use2 then
             room:useCard(use2)
             if color ~= "nocolor" then
               local color2 = use2.card:getColorString()
-              if color2 ~= "nocolor" and color2 == color then
-                room:addPlayerMark(player, MarkEnum.AddMaxCards, 1)
+              if color2 ~= "nocolor" and color2 ~= color and player:getMaxCards() > 0 then
+                room:addPlayerMark(player, MarkEnum.MinusMaxCards, 1)
               end
             end
           end
@@ -1351,8 +1353,8 @@ local lianzhuw_active = fk.CreateActiveSkill{
         room:recastCard(card, src, "lianzhuw")
         if color ~= "nocolor" then
           local color2 = Fk:getCardById(card[1]):getColorString()
-          if color2 ~= "nocolor" and color2 ~= color and src:getMaxCards() > 0 then
-            room:addPlayerMark(src, MarkEnum.MinusMaxCards, 1)
+          if color2 ~= "nocolor" and color2 == color then
+            room:addPlayerMark(src, MarkEnum.AddMaxCards, 1)
           end
         end
       end
@@ -1366,7 +1368,8 @@ local lianzhuw_active = fk.CreateActiveSkill{
       else
         target = room:getPlayerById(table.random(targets))
       end
-      local use1 = room:askForUseCard(player, "slash", "slash", "#lianzhuw-slash::"..target.id, true, {must_targets = {target.id}})
+      local use1 = room:askForUseCard(player, "slash", "slash", "#lianzhuw-slash::"..target.id, true,
+        {must_targets = {target.id}, bypass_distances = true, bypass_times = true})
       if use1 then
         room:useCard(use1)
       end
@@ -1380,13 +1383,14 @@ local lianzhuw_active = fk.CreateActiveSkill{
             prompt = "#lianzhuw-slash::"..target.id
           end
         end
-        local use2 = room:askForUseCard(src, "slash", "slash", prompt, true, {must_targets = {target.id}})
+        local use2 = room:askForUseCard(src, "slash", "slash", prompt, true,
+          {must_targets = {target.id}, bypass_distances = true, bypass_times = true})
         if use2 then
           room:useCard(use2)
           if color ~= "nocolor" then
             local color2 = use2.card:getColorString()
-            if color2 ~= "nocolor" and color2 == color then
-              room:addPlayerMark(src, MarkEnum.AddMaxCards, 1)
+            if color2 ~= "nocolor" and color2 ~= color and src:getMaxCards() > 0 then
+              room:addPlayerMark(src, MarkEnum.MinusMaxCards, 1)
             end
           end
         end
@@ -1401,17 +1405,17 @@ wukuang:addSkill("muyin")
 Fk:loadTranslationTable{
   ["olz__wukuang"] = "吴匡",
   ["lianzhuw"] = "联诛",
-  [":lianzhuw"] = "转换技，每名角色出牌阶段限一次，阳：其可以与你各重铸一张牌，若颜色不同，你的手牌上限-1；"..
-  "阴：你选择一名在你或其攻击范围内的角色，其可以与你各对目标使用一张【杀】，若颜色相同，你的手牌上限+1。",
-  ["#lianzhuw1-card"] = "联诛：你可以重铸一张牌，若不为%arg，你手牌上限-1",
+  [":lianzhuw"] = "转换技，每名角色出牌阶段限一次，阳：其可以与你各重铸一张牌，若颜色相同，你的手牌上限+1；"..
+  "阴：你选择一名在你或其攻击范围内的角色，其可以与你各对目标使用一张【杀】，若颜色不同，你的手牌上限-1。",
+  ["#lianzhuw1-card"] = "联诛：你可以重铸一张牌，若为%arg，你手牌上限+1",
   ["#lianzhuw2-card"] = "联诛：你可以重铸一张牌",
   ["#lianzhuw1-choose"] = "联诛：选择一名你攻击范围内的角色",
   ["#lianzhuw2-choose"] = "联诛：选择一名你或 %src 攻击范围内的角色",
-  ["#lianzhuw1-slash"] = "联诛：你可以对 %dest 使用一张【杀】，若为%arg，你手牌上限+1",
+  ["#lianzhuw1-slash"] = "联诛：你可以对 %dest 使用一张【杀】，若不为%arg，你手牌上限-1",
   ["#lianzhuw-slash"] = "联诛：你可以对 %dest 使用一张【杀】",
   ["lianzhuw&"] = "联诛",
-  [":lianzhuw&"] = "出牌阶段限一次，若吴匡的〖联诛〗为：阳：你可以与其各重铸一张牌，若颜色不同，其手牌上限-1；"..
-  "阴：其选择一名在你或其攻击范围内的角色，你可以与吴匡各对目标使用一张【杀】，若颜色相同，其手牌上限+1。",
+  [":lianzhuw&"] = "出牌阶段限一次，若吴匡的〖联诛〗为：阳：你可以与其各重铸一张牌，若颜色相同，其手牌上限+1；"..
+  "阴：其选择一名在你或其攻击范围内的角色，你可以与吴匡各对目标使用一张【杀】，若颜色不同，其手牌上限-1。",
 }
 
 local wangyun = General(extension, "olz__wangyun", "qun", 3)
