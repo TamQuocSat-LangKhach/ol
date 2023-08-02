@@ -2193,179 +2193,83 @@ Fk:loadTranslationTable{
 --local caoxi = General(extension, "caoxi", "wei", 3)
 
 local haopu = General(extension, "haopu", "shu", 4)
-local daiyuan = fk.CreateActiveSkill{
-  name = "daiyuan",
-  anim_type = "drawcard",
-  card_num = 1,
-  target_num = 0,
-  prompt = "#daiyuan-invoke",
+local zhenying = fk.CreateActiveSkill{
+  name = "zhenying",
+  anim_type = "control",
+  card_num = 0,
+  target_num = 1,
+  prompt = "#zhenying",
   can_use = function(self, player)
-    return player:usedSkillTimes(self.name, Player.HistoryPhase) == 0
+    return player:usedCardTimes(self.name, Player.HistoryPhase) < 2
   end,
   card_filter = function(self, to_select, selected)
-    if #selected == 0 then
-      local card = Fk:getCardById(to_select)
-      if card.type == Card.TypeBasic then
-        if card.trueName == "slash" or card.trueName == "jink" or (card.trueName == "peach" and not Self:isWounded()) then
-          return false
-        else
-          return not Self:isProhibited(Self, card)
-        end
-      end
-    end
+    return false
   end,
-  on_use = function(self, room, effect)
-    local player = room:getPlayerById(effect.from)
-    local card = Fk:getCardById(effect.cards[1])
-    room:useCard{
-      from = effect.from,
-      tos = {{effect.from}},
-      card = card,
-      extraUse = true,
-    }
-    if not player.dead and player:getHandcardNum() < player:getMaxCards() then
-      player:drawCards(player:getMaxCards() - player:getHandcardNum(), self.name)
-    end
-  end,
-}
-local daiyuan_trigger = fk.CreateTriggerSkill{
-  name = "#daiyuan_trigger",
-
-  refresh_events = {fk.GameStart, fk.EventAcquireSkill, fk.EventLoseSkill, fk.Deathed},
-  can_refresh = function(self, event, target, player, data)
-    if event == fk.GameStart then
-      return player:hasSkill(self.name, true)
-    elseif event == fk.EventAcquireSkill or event == fk.EventLoseSkill then
-      return target == player and data == self
-    else
-      return target == player and player:hasSkill(self.name, true, true)
-    end
-  end,
-  on_refresh = function(self, event, target, player, data)
-    local room = player.room
-    if event == fk.GameStart or event == fk.EventAcquireSkill then
-      for _, p in ipairs(room:getOtherPlayers(player)) do
-        room:handleAddLoseSkills(p, "daiyuan&", nil, false, true)
-      end
-    elseif event == fk.EventLoseSkill or event == fk.Deathed then
-      for _, p in ipairs(room:getOtherPlayers(player, true, true)) do
-        room:handleAddLoseSkills(p, "-daiyuan&", nil, false, true)
-      end
-    end
-  end,
-}
-local daiyuan_active = fk.CreateActiveSkill{
-  name = "daiyuan&",
-  mute = true,
-  card_num = 1,
-  target_num = 1,
-  prompt = "#daiyuan-active",
-  can_use = function(self, player)
-    return player:usedSkillTimes(self.name, Player.HistoryPhase) == 0 and not player:isKongcheng()
-  end,
-  card_filter = function(self, to_select, selected, targets)
-    if #selected == 0 then
-      local card = Fk:getCardById(to_select)
-      return card.type == Card.TypeBasic and card.trueName ~= "jink"
-    end
-  end,
-  target_filter = function(self, to_select, selected, selected_cards)
-    if #selected == 0 and #selected_cards == 1 and to_select ~= Self.id and Fk:currentRoom():getPlayerById(to_select):hasSkill("daiyuan") then
-      local card = Fk:getCardById(selected_cards[1])
-      local target = Fk:currentRoom():getPlayerById(to_select)
-      if card.trueName == "peach" and not target:isWounded() then
-        return false
-      else
-        return card.skill:targetFilter(to_select, {}, {}, card) and not Self:isProhibited(target, card)
-      end
-    end
+  target_filter = function(self, to_select, selected)
+    return #selected == 0 and to_select ~= Self.id and Self:getHandcardNum() >= Fk:currentRoom():getPlayerById(to_select):getHandcardNum()
   end,
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
     local target = room:getPlayerById(effect.tos[1])
-    local card = Fk:getCardById(effect.cards[1])
-    if card.is_damage_card then
-      room:broadcastSkillInvoke("daiyuan")
-      room:notifySkillInvoked(target, "daiyuan", "negative")
-    else
-      room:broadcastSkillInvoke("daiyuan")
-      room:notifySkillInvoked(target, "daiyuan", "support")
+    local tos = {player, target}
+    for _, p in ipairs(tos) do
+      local choices = {"0", "1", "2"}
+      p.request_data = json.encode({choices, choices, self.name, "#zhenying-choice"})
     end
-    room:useCard{
-      from = effect.from,
-      tos = {{target.id}},
-      card = card,
-      extraUse = true,
-    }
-    if target.dead then return end
-    if player.hp > target.hp then
-      if target:getHandcardNum() < target:getMaxCards() then
-        target:drawCards(target:getMaxCards() - target:getHandcardNum(), "daiyuan")
+    room:notifyMoveFocus(tos, self.name)
+    room:doBroadcastRequest("AskForChoice", tos)
+    for _, p in ipairs(tos) do
+      local n
+      if p.reply_ready then
+        n = p:getHandcardNum() - tonumber(p.client_reply)
+      else
+        n = p:getHandcardNum() - 2
       end
-    elseif not target:isNude() then
-      local id = room:askForCardChosen(player, target, "he", "daiyuan")
-      room:obtainCard(player.id, id, false, fk.ReasonPrey)
+      room:setPlayerMark(p, "zhenying-tmp", n)
+      if n > 0 then
+        local extraData = {
+          num = n,
+          min_num = n,
+          include_equip = false,
+          pattern = ".",
+          reason = self.name,
+        }
+        p.request_data = json.encode({ "choose_cards_skill", "#zhenying-discard:::"..n, true, json.encode(extraData) })
+      end
+    end
+    room:notifyMoveFocus(tos, self.name)
+    room:doBroadcastRequest("AskForUseActiveSkill", tos)
+    for _, p in ipairs(tos) do
+      local n = p:getMark("zhenying-tmp")
+      if n < 0 then
+        p:drawCards(-n, self.name)
+      elseif n > 0 then
+        if p.reply_ready then
+          local replyCard = json.decode(p.client_reply).card
+          room:throwCard(json.decode(replyCard).subcards, self.name, p, p)
+        else
+          room:throwCard(table.random(p:getCardIds("h"), n), self.name, p, p)
+        end
+      end
+      room:setPlayerMark(p, "zhenying-tmp", 0)
+    end
+    if not player.dead and not target.dead and player:getHandcardNum() ~= target:getHandcardNum() then
+      local from, to = player, target
+      if player:getHandcardNum() > target:getHandcardNum() then
+        from, to = target, player
+      end
+      room:useVirtualCard("duel", nil, from, to, self.name)
     end
   end,
 }
-local weigu = fk.CreateTriggerSkill{
-  name = "weigu",
-  anim_type = "drawcard",
-  frequency = Skill.Compulsory,
-  events = {fk.TurnEnd, fk.EventPhaseStart},
-  can_trigger = function(self, event, target, player, data)
-    if player:hasSkill(self.name) then
-      if event == fk.TurnEnd then
-        return target ~= player
-      else
-        return target == player and player.phase == Player.Finish
-      end
-    end
-  end,
-  on_use = function(self, event, target, player, data)
-    local room = player.room
-    if event == fk.TurnEnd then
-      local draw = false
-      for _, id in ipairs(Fk:getAllCardIds()) do
-        local card = Fk:getCardById(id)
-        if card.type == Card.TypeBasic and player:usedCardTimes(card.trueName, Player.HistoryTurn) > 0 then
-          draw = true
-          break
-        end
-      end
-      if draw then
-        player:drawCards(1, self.name)
-        if player:getMaxCards() > 0 then
-          room:addPlayerMark(player, MarkEnum.MinusMaxCards, 1)
-        end
-      else
-        room:addPlayerMark(player, MarkEnum.AddMaxCards, 1)
-      end
-    else
-      room:setPlayerMark(player, MarkEnum.AddMaxCards, 0)
-      room:setPlayerMark(player, MarkEnum.AddMaxCardsInTurn, 0)
-      room:setPlayerMark(player, MarkEnum.MinusMaxCards, 0)
-      room:setPlayerMark(player, MarkEnum.MinusMaxCardsInTurn, 0)
-    end
-  end,
-}
-daiyuan:addRelatedSkill(daiyuan_trigger)
-Fk:addSkill(daiyuan_active)
-haopu:addSkill(daiyuan)
-haopu:addSkill(weigu)
+haopu:addSkill(zhenying)
 Fk:loadTranslationTable{
   ["haopu"] = "郝普",
-  ["daiyuan"] = "待援",
-  [":daiyuan"] = "每名角色的出牌阶段限一次，其可以选择一张基本牌对你使用（无次数限制）。此牌结算结束后，若你的体力值不大于其，"..
-  "你将手牌摸至手牌上限，否则其获得你一张牌。",
-  ["weigu"] = "维谷",
-  [":weigu"] = "锁定技，其他角色的回合结束时，若你本回合使用过基本牌，你摸一张牌且你的手牌上限-1（至少为0），否则你的手牌上限+1。"..
-  "结束阶段，你将手牌上限重置为体力值。",
-  ["#daiyuan-invoke"] = "待援：选择一张基本牌对自己使用，然后将手牌摸至手牌上限",
-  ["daiyuan&"] = "待援",
-  [":daiyuan&"] = "出牌阶段限一次，你可以选择一张基本牌对郝普使用（无次数限制）。此牌结算结束后，若其体力值不大于你，"..
-  "其将手牌摸至手牌上限，否则你获得其一张牌。",
-  ["#daiyuan-active"] = "待援：选择一张基本牌，然后选择拥有“待援”的角色对其使用此牌（无次数限制）",
+  ["zhenying"] = "震荧",
+  [":zhenying"] = "出牌阶段限两次，你可以与一名手牌数不大于你的其他角色同时摸或弃置手牌至至多两张，然后手牌数较少的角色视为对另一名角色使用【决斗】。",
+  ["#zhenying"] = "震荧：与一名角色同时选择将手牌调整至0~2",
+  ["#zhenying-choice"] = "震荧：选择你要调整至的手牌数",
+  ["#zhenying-discard"] = "震荧：请弃置%arg张手牌",
 }
 
 local mengda = General(extension, "ol__mengda", "shu", 4)

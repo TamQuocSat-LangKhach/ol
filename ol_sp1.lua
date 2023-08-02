@@ -88,7 +88,12 @@ local aocai = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local ids = room:getNCards(2)
+    local ids
+    if player:isKongcheng() then
+      ids = room:getNCards(4)
+    else
+      ids = room:getNCards(2)
+    end
     local fakemove = {
       toArea = Card.PlayerHand,
       to = player.id,
@@ -230,7 +235,7 @@ local duwu_trigger = fk.CreateTriggerSkill{
     if event == fk.EnterDying then
       data.extra_data = data.extra_data or {}
       data.extra_data.duwu = player.id
-    elseif data.extra_data.duwu == player.id then
+    elseif data.extra_data.duwu == player.id and not target.dead then
       local room = player.room
       room:setPlayerMark(player, "@@duwu-turn", 1)
       room:loseHp(player, 1, "duwu")
@@ -245,10 +250,10 @@ zhugeke:addSkill(duwu)
 Fk:loadTranslationTable{
   ["zhugeke"] = "诸葛恪",
   ["aocai"] = "傲才",
-  [":aocai"] = "当你于回合外需要使用或打出一张基本牌时，你可以观看牌堆顶的两张牌，若你观看的牌中有此牌，你可以使用或打出之。",
+  [":aocai"] = "当你于回合外需要使用或打出一张基本牌时，你可以观看牌堆顶的两张牌（若你没有手牌则改为四张），若你观看的牌中有此牌，你可以使用或打出之。",
   ["duwu"] = "黩武",
   [":duwu"] = "出牌阶段，你可以弃置X张牌对你攻击范围内的一名其他角色造成1点伤害（X为该角色的体力值）。"..
-  "若你以此法令该角色进入濒死状态，则濒死状态结算后你失去1点体力，且本回合不能再发动〖黩武〗。",
+  "若其因此进入濒死状态且被救回，则濒死状态结算后你失去1点体力，且本回合不能再发动〖黩武〗。",
   ["aocai_use"] = "傲才",
   ["aocai_response"] = "傲才",
   ["#aocai-use"] = "傲才：你可以使用其中你需要的牌",
@@ -680,23 +685,32 @@ local fengpo = fk.CreateTriggerSkill{
   events ={fk.TargetSpecified},
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(self.name) and (data.card.trueName == "slash" or data.card.trueName == "duel") and
-      player:usedCardTimes("slash") + player:usedCardTimes("duel") <= 1 and player.phase == Player.Play
+      player:usedCardTimes("slash") + player:usedCardTimes("duel") <= 1 and data.firstTarget
+  end,
+  on_cost = function(self, event, target, player, data)
+    return player.room:askForSkillInvoke(player, self.name, nil, "#fengpo-invoke::"..data.to..":"..data.card:toLogString())
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
     local to = room:getPlayerById(data.to)
-    if to:isKongcheng() then return end
     local n = 0
-    for _, id in ipairs(to:getCardIds(Player.Hand)) do
+    for _, id in ipairs(to:getCardIds("he")) do
       if Fk:getCardById(id).suit == Card.Diamond then
         n = n + 1
       end
     end
-    local choice = room:askForChoice(player, {"fengpo_draw", "fengpo_damage"}, self.name)
+    local choice = room:askForChoice(player, {"fengpo_draw", "fengpo_damage"}, self.name,
+      "#fengpo-choice::"..data.to..":"..data.card:toLogString())
     if choice == "fengpo_draw" then
-      player:drawCards(n, self.name)
+      if n > 0 then
+        player:drawCards(n, self.name)
+      end
+      data.additionalDamage = (data.additionalDamage or 0) + 1
     else
-      data.additionalDamage = (data.additionalDamage or 0) + n
+      player:drawCards(1, self.name)
+      if n > 0 then
+        data.additionalDamage = (data.additionalDamage or 0) + n
+      end
     end
   end,
 }
@@ -705,10 +719,12 @@ mayunlu:addSkill(fengpo)
 Fk:loadTranslationTable{
   ["mayunlu"] = "马云騄",
   ["fengpo"] = "凤魄",
-  [":fengpo"] = "当你于出牌阶段内使用的第一张【杀】或【决斗】仅指定唯一目标后，你可以选择一项:1.摸X张牌；"..
-  "2.此牌造成的伤害+X。（X为其<font color='red'>♦</font>手牌数）",
-  ["fengpo_draw"] = "摸X张牌",
-  ["fengpo_damage"] = "伤害+X",
+  [":fengpo"] = "当你每回合首次使用【杀】或【决斗】指定目标后，你可以选择一项：1.摸X张牌，此牌伤害+1；2.摸一张牌，此牌伤害+X"..
+  "（X为其<font color='red'>♦</font>牌数）。",
+  ["fengpo_draw"] = "摸X张牌，伤害+1",
+  ["fengpo_damage"] = "摸一张牌，伤害+X",
+  ["#fengpo-invoke"] = "凤魄：你可以令你对 %dest 使用的%arg发动“凤魄”",
+  ["#fengpo-choice"] = "凤魄：选择你对 %dest 使用的%arg执行一项",
 
   ["$fengpo1"] = "等我提枪上马，打你个落花流水！",
   ["$fengpo2"] = "对付你，用不着我家哥哥亲自上阵！",
