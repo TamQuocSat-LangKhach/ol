@@ -291,7 +291,7 @@ local jinzhi_active = fk.CreateActiveSkill{
     if #selected == 0 then
       return true
     else
-      return #selected <= Self:usedSkillTimes("jinzhi", Player.HistoryRound) and
+      return #selected <= Self:usedSkillTimes("jinzhi", Player.HistoryRound) + 1 and
         Fk:getCardById(to_select).color == Fk:getCardById(selected[1]).color
     end
   end,
@@ -351,7 +351,8 @@ Fk:loadTranslationTable{
   ["#weiyi3-invoke"] = "威仪：你可以令 %dest 回复1点体力",
   ["#weiyi-choice"] = "威仪：选择令 %dest 执行的一项",
   ["#jinzhi-discard"] = "锦织：弃置%arg张颜色相同的牌，摸一张牌，视为使用此基本牌",
-  
+  ["jinzhi_active"] = "锦织",
+
   ["$weiyi1"] = "无威仪者，不可奉社稷。",
   ["$weiyi2"] = "有威仪者，进止雍容。",
   ["$jinzhi1"] = "织锦为旗，以扬威仪。",
@@ -684,8 +685,9 @@ duxi:addSkill(bixiong)
 Fk:loadTranslationTable{
   ["duxi"] = "杜袭",
   ["quxi"] = "驱徙",
-  [":quxi"] = "限定技，出牌阶段结束时，你可以跳过弃牌阶段并翻至背面，选择两名手牌数不同的其他角色，其中手牌少的角色获得另一名角色一张牌并获得「丰」，另一名角色获得「歉」。<br>"..
-  "有「丰」的角色摸牌阶段摸牌数+1，有「歉」的角色摸牌阶段摸牌数-1。当有「丰」或「歉」的角色死亡时或每轮开始时，你可以转移「丰」「歉」。",
+  [":quxi"] = "限定技，出牌阶段结束时，你可以跳过弃牌阶段并翻至背面，选择两名手牌数不同的其他角色，其中手牌少的角色获得另一名角色一张牌并获得「丰」，"..
+  "另一名角色获得「歉」。有「丰」的角色摸牌阶段摸牌数+1，有「歉」的角色摸牌阶段摸牌数-1。当有「丰」或「歉」的角色死亡时或每轮开始时，<br>"..
+  "你可以转移「丰」「歉」。",
   ["bixiong"] = "避凶",
   [":bixiong"] = "锁定技，若你于弃牌阶段弃置了手牌，直到你的下回合开始，其他角色不能使用与这些牌花色相同的牌指定你为目标。",
   ["#quxi-invoke"] = "驱徙：选择两名手牌数不同的其他角色，手牌少的角色获得多的角色一张牌并获得「丰」，手牌多的角色获得「歉」",

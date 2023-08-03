@@ -56,6 +56,10 @@ Fk:loadTranslationTable{
 local honeyTrapSkill = fk.CreateActiveSkill{
   name = "honey_trap_skill",
   target_num = 1,
+  mod_target_filter = function(self, to_select, selected, user, card, distance_limited)
+    local target = Fk:currentRoom():getPlayerById(to_select)
+    return to_select ~= Self.id and not target:isKongcheng() and target.gender == General.Male
+  end,
   target_filter = function(self, to_select)
     local target = Fk:currentRoom():getPlayerById(to_select)
     return to_select ~= Self.id and not target:isKongcheng() and target.gender == General.Male
@@ -76,9 +80,9 @@ local honeyTrapSkill = fk.CreateActiveSkill{
       end
     end
     local from, to = player, target
-    if #player.player_cards[Player.Hand] == #target.player_cards[Player.Hand] then
+    if player:getHandcardNum() == target:getHandcardNum() then
       return
-    elseif #player.player_cards[Player.Hand] > #target.player_cards[Player.Hand] then
+    elseif player:getHandcardNum() > target:getHandcardNum() then
       from, to = target, player
     end
     room:damage({
@@ -107,6 +111,9 @@ Fk:loadTranslationTable{
 local daggarInSmileSkill = fk.CreateActiveSkill{
   name = "daggar_in_smile_skill",
   target_num = 1,
+  mod_target_filter = function(self, to_select, selected, user, card, distance_limited)
+    return to_select ~= Self.id
+  end,
   target_filter = function(self, to_select)
     return to_select ~= Self.id
   end,
@@ -262,6 +269,9 @@ Fk:loadTranslationTable{
 local shangyangReformSkill = fk.CreateActiveSkill{
   name = "shangyang_reform_skill",
   target_num = 1,
+  mod_target_filter = function(self, to_select, selected, user, card, distance_limited)
+    return to_select ~= Self.id
+  end,
   target_filter = function(self, to_select)
     return to_select ~= Self.id
   end,
@@ -308,7 +318,7 @@ local shangyangReformProhibit = fk.CreateProhibitSkill{
   name = "#shangyang_reform_prohibit",
   global = true,
   prohibit_use = function(self, player, card)
-    if card.name == "peach" and not player.dying then
+    if card and card.name == "peach" and not player.dying then
       if RoomInstance and RoomInstance.logic:getCurrentEvent().event == GameEvent.Dying then
         local data = RoomInstance.logic:getCurrentEvent().data[1]
         return data and data.extra_data and data.extra_data.shangyangReform

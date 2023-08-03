@@ -36,6 +36,7 @@ local iceSlashSkill = fk.CreateActiveSkill{
   max_phase_use_time = 1,
   target_num = 1,
   can_use = slash.skill.canUse,
+  mod_target_filter = slash.skill.modTargetFilter,
   target_filter = slash.skill.targetFilter,
   on_effect = function(self, room, effect)
     local to = effect.to
@@ -64,7 +65,7 @@ local IceDamageSkill = fk.CreateTriggerSkill{
     for i = 1, 2 do
       if to:isNude() then break end
       local card = room:askForCardChosen(player, to, "he", self.name)
-      room:throwCard(card, self.name, to, player)
+      room:throwCard({card}, self.name, to, player)
     end
     return true
   end
@@ -472,6 +473,9 @@ extension:addCards{
 local drowningSkill = fk.CreateActiveSkill{
   name = "drowningskill",
   target_num = 1,
+  mod_target_filter = function(self, to_select, selected, user, card, distance_limited)
+    return to_select ~= Self.id
+  end,
   target_filter = function(self, to_select, selected)
     return to_select ~= Self.id
   end,
@@ -524,6 +528,9 @@ Fk:loadTranslationTable{
 local unexpectationSkill = fk.CreateActiveSkill{
   name = "unexpectation_skill",
   target_num = 1,
+  mod_target_filter = function(self, to_select, selected, user, card, distance_limited)
+    return to_select ~= Self.id and not Fk:currentRoom():getPlayerById(to_select):isKongcheng()
+  end,
   target_filter = function(self, to_select)
     return to_select ~= Self.id and not Fk:currentRoom():getPlayerById(to_select):isKongcheng()
   end,
@@ -648,6 +655,9 @@ Fk:loadTranslationTable{
 
 local foresightSkill = fk.CreateActiveSkill{
   name = "foresight_skill",
+  mod_target_filter = function(self, to_select, selected, user, card, distance_limited)
+    return true
+  end,
   on_use = function(self, room, cardUseEvent)
     if not cardUseEvent.tos or #TargetGroup:getRealTargets(cardUseEvent.tos) == 0 then
       cardUseEvent.tos = {{cardUseEvent.from}}
@@ -679,6 +689,9 @@ Fk:loadTranslationTable{
 local chasingNearSkill = fk.CreateActiveSkill{
   name = "chasing_near_skill",
   target_num = 1,
+  mod_target_filter = function(self, to_select, selected, user, card, distance_limited)
+    return to_select ~= Self.id and not Fk:currentRoom():getPlayerById(to_select):isAllNude()
+  end,
   target_filter = function(self, to_select, selected)
     return to_select ~= Self.id and not Fk:currentRoom():getPlayerById(to_select):isAllNude()
   end,
