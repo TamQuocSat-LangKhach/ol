@@ -2044,16 +2044,9 @@ local ol_ex__luanwu = fk.CreateActiveSkill{
         end), function (p)
           return p.id
         end)
-        if #luanwu_targets > 1 then
-          luanwu_targets = room:askForChoosePlayers(target, luanwu_targets, 1, 1, "#ol_ex__luanwu-slash", self.name, true, true)
-        end
-        if #luanwu_targets == 1 then
-          local use = room:askForUseCard(target, "slash", "slash", "#ol_ex__luanwu-use::" .. luanwu_targets[1], true, { must_targets = luanwu_targets})
-          if use then
-            room:useCard(use)
-          else
-            room:loseHp(target, 1, self.name)
-          end
+        local use = room:askForUseCard(target, "slash", "slash", "#ol_ex__luanwu-use", true, { exclusive_targets = luanwu_targets})
+        if use then
+          room:useCard(use)
         else
           room:loseHp(target, 1, self.name)
         end
@@ -2119,8 +2112,7 @@ Fk:loadTranslationTable{
   ["#ol_ex__weimu_trigger"] = "帷幕",
   [":ol_ex__weimu"] = "锁定技，①你不是黑色锦囊牌的合法目标。②当你于回合内受到伤害时，你防止此伤害，摸2X张牌（X为伤害值）。",
 
-  ["#ol_ex__luanwu-slash"] = "乱武：选择距离最近的一名角色，然后对其使用一张【杀】，或点取消则失去1点体力",
-  ["#ol_ex__luanwu-use"] = "乱武：你需要对包含%dest在内的角色使用一张【杀】，否则失去1点体力",
+  ["#ol_ex__luanwu-use"] = "乱武：你需要对距离最近的一名角色使用一张【杀】，否则失去1点体力",
   ["#ol_ex__luanwu-choose"] = "乱武：你可以视为使用一张【杀】，选择此【杀】的目标",
 
   ["$ol_ex__wansha1"] = "有谁敢试试？",
