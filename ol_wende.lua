@@ -2021,7 +2021,7 @@ local wanyi = fk.CreateTriggerSkill{
     if event == fk.TargetSpecified then
       room:doIndicate(player.id, {TargetGroup:getRealTargets(data.tos)[1]})
       local id = room:askForCardChosen(player, room:getPlayerById(TargetGroup:getRealTargets(data.tos)[1]), "he", self.name)
-      player:addToPile(self.name, id, false, self.name)
+      player:addToPile(self.name, id, true, self.name) --原为false
     else
       local targets = table.map(room.alive_players, function(p) return p.id end)
       local to = room:askForChoosePlayers(player, targets, 1, 1, "#wanyi-card", self.name, false)

@@ -1185,14 +1185,14 @@ local tuifeng_trigger = fk.CreateTriggerSkill{
       skillName = "tuifeng",
     })
     player:drawCards(2 * n, "tuifeng")
-    room:addPlayerMark(player, "tuifeng-turn", n)
+    room:addPlayerMark(player, "@tuifeng-turn", n)
   end,
 }
 local tuifeng_targetmod = fk.CreateTargetModSkill{
   name = "#tuifeng_targetmod",
   residue_func = function(self, player, skill, scope)
-    if player:getMark("tuifeng-turn") > 0 and skill.trueName == "slash_skill" and scope == Player.HistoryPhase then
-      return player:getMark("tuifeng-turn")
+    if player:getMark("@tuifeng-turn") > 0 and skill.trueName == "slash_skill" and scope == Player.HistoryPhase then
+      return player:getMark("@tuifeng-turn")
     end
   end,
 }
@@ -1205,6 +1205,8 @@ Fk:loadTranslationTable{
   [":tuifeng"] = "当你受到1点伤害后，你可以将一张牌置于武将牌上，称为“锋”。准备阶段开始时，若你的武将牌上有“锋”，你将所有“锋”置入弃牌堆，"..
   "摸2X张牌，然后你于此回合的出牌阶段内使用【杀】的次数上限+X（X为你此次置入弃牌堆的“锋”数）。",
   ["#tuifeng_trigger"] = "推锋",
+  ["#tuifeng-cost"] = "推锋：你可以将一张牌置于武将牌上，称为“锋”",
+  ["@tuifeng-turn"] = "推锋",
 
   ["$tuifeng1"] = "摧锋陷阵，以杀贼首！",
   ["$tuifeng2"] = "敌锋之锐，我已尽知。",
