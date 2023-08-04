@@ -490,7 +490,7 @@ local qin__kencao = fk.CreateTriggerSkill{
   events = {fk.Damage},
   frequency = Skill.Compulsory,
   can_trigger = function(self, event, target, player, data)
-    return player:hasSkill(self.name) and not target.dead
+    return player:hasSkill(self.name) and target and not target.dead
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
