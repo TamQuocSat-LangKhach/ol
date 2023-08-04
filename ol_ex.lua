@@ -2124,22 +2124,6 @@ Fk:loadTranslationTable{
   ["~ol_ex__jiaxu"] = "此劫，我亦有所算……",
 }
 
-local ol_ex__qiaobian_select = fk.CreateActiveSkill{
-  name = "#ol_ex__qiaobian_select",
-  anim_type = "offensive",
-  can_use = function() return false end,
-  target_num = 0,
-  max_card_num = 1,
-  min_card_num = function ()
-    if Self:getMark("@ol_ex__qiaobian_change") > 0 then
-      return 0
-    end
-    return 1
-  end,
-  card_filter = function(self, to_select, selected)
-    return #selected == 0 and not Self:prohibitDiscard(Fk:getCardById(to_select))
-  end,
-}
 local ol_ex__qiaobian = fk.CreateTriggerSkill{
   name = "ol_ex__qiaobian",
   anim_type = "control",
@@ -2168,8 +2152,16 @@ local ol_ex__qiaobian = fk.CreateTriggerSkill{
         [6] = "phase_discard",
         [7] = "phase_finish",
       }
-      local _, ret = player.room:askForUseActiveSkill(player, "#ol_ex__qiaobian_select", "#ol_ex__qiaobian-invoke:::" .. phase_name_table[data.to], true)
-      if ret then
+      local discard_data = {
+        num = 1,
+        min_num = player:getMark("@ol_ex__qiaobian_change") == 0 and 1 or 0,
+        include_equip = true,
+        skillName = self.name,
+        pattern = ".",
+      }
+      local success, ret = player.room:askForUseActiveSkill(player, "discard_skill",
+        "#ol_ex__qiaobian-invoke:::" .. phase_name_table[data.to], true, discard_data)
+      if success then
         self.cost_data = ret.cards
         return true
       end
@@ -2216,14 +2208,12 @@ local ol_ex__qiaobian = fk.CreateTriggerSkill{
     end
   end,
 }
-ol_ex__qiaobian:addRelatedSkill(ol_ex__qiaobian_select)
 local zhanghe = General(extension, "ol_ex__zhanghe", "wei", 4)
 zhanghe:addSkill(ol_ex__qiaobian)
 
 Fk:loadTranslationTable{
   ["ol_ex__zhanghe"] = "界张郃",
   ["ol_ex__qiaobian"] = "巧变",
-  ["#ol_ex__qiaobian_select"] = "巧变",
   [":ol_ex__qiaobian"] = "游戏开始时，你获得2枚“变”标记。你可以弃置一张牌或移除1枚“变”标记并跳过你的一个阶段（准备阶段和结束阶段除外）：若跳过摸牌阶段，你可以获得至多两名角色的各一张手牌；若跳过出牌阶段，你可以移动场上的一张牌。结束阶段开始时，若你的手牌数与之前你的每一回合结束阶段开始时的手牌数均不相等，你获得1枚“变”标记。",
 
   ["@ol_ex__qiaobian_change"] = "变",
@@ -2967,11 +2957,11 @@ Fk:loadTranslationTable{
   ["guzheng_yes"] = "确定，获得剩余牌",
   ["guzheng_no"] = "确定，不获得剩余牌",
 
-  ["$ol_ex__zhijian1"] = "",
-  ["$ol_ex__zhijian2"] = "",
-  ["$ol_ex__guzheng1"] = "",
-  ["$ol_ex__guzheng2"] = "",
-  ["~ol_ex__zhangzhaozhanghong"] = "",
+  ["$ol_ex__zhijian1"] = "君有恙，臣等当舍命除之。",
+  ["$ol_ex__zhijian2"] = "臣有言在喉，不吐不快。",
+  ["$ol_ex__guzheng1"] = "兴国为任，可驱百里之行。",
+  ["$ol_ex__guzheng2"] = "固政之责，在君亦在臣。",
+  ["~ol_ex__zhangzhaozhanghong"] = "老臣年迈，无力为继……",
 }
 
 return extension

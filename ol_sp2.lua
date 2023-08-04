@@ -2400,16 +2400,7 @@ Fk:loadTranslationTable{
 }
 
 local qinghegongzhu = General(extension, "qinghegongzhu", "wei", 3, 3, General.Female)
-local zengou_active = fk.CreateActiveSkill{
-  name = "zengou_active",
-  can_use = function() return false end,
-  target_num = 0,
-  max_card_num = 1,
-  min_card_num = 0,
-  card_filter = function(self, to_select, selected)
-    return #selected == 0 and Fk:getCardById(to_select).type ~= Card.TypeBasic and not Self:prohibitDiscard(Fk:getCardById(to_select))
-  end,
-}
+
 local zengou = fk.CreateTriggerSkill{
   name = "zengou",
   anim_type = "control",
@@ -2418,9 +2409,16 @@ local zengou = fk.CreateTriggerSkill{
     return player:hasSkill(self.name) and data.card.name == "jink" and player:inMyAttackRange(player.room:getPlayerById(data.from))
   end,
   on_cost = function(self, event, target, player, data)
-    local _, ret = player.room:askForUseActiveSkill(player, "zengou_active",
-        "#zengou-invoke::"..target.id .. ":" .. data.card:toLogString(), true)
-    if ret then
+    local discard_data = {
+      num = 1,
+      min_num = player.hp > 0 and 0 or 1,
+      include_equip = true,
+      skillName = self.name,
+      pattern = ".|.|.|.|.|^basic",
+    }
+    local success, ret = player.room:askForUseActiveSkill(player, "discard_skill",
+      "#zengou-invoke::"..target.id .. ":" .. data.card:toLogString(), true, discard_data)
+    if success then
       self.cost_data = ret.cards
       return true
     end
@@ -2490,13 +2488,11 @@ local zhangjiq = fk.CreateTriggerSkill{
     end
   end,
 }
-Fk:addSkill(zengou_active)
 qinghegongzhu:addSkill(zengou)
 qinghegongzhu:addSkill(zhangjiq)
 Fk:loadTranslationTable{
   ["qinghegongzhu"] = "清河公主",
   ["zengou"] = "谮构",
-  ["zengou_active"] = "谮构",
   [":zengou"] = "当你攻击范围内一名角色使用【闪】时，你可以弃置一张非基本牌或失去1点体力，令此【闪】无效，然后你获得之。",
   ["zhangjiq"] = "长姬",
   [":zhangjiq"] = "一名角色的结束阶段，若你本回合：造成过伤害，你可以令其摸两张牌；受到过伤害，你可以令其弃置两张牌。",
@@ -3325,6 +3321,20 @@ Fk:loadTranslationTable{
   [":liangyuan"] = "每轮各限一次，你可以将全场所有「灵杉」当【酒】、「玉树」当【桃】使用。",
   ["jisi"] = "羁肆",
   [":jisi"] = "限定技，准备阶段，你可以令一名角色获得你武将牌上发动过的一个技能，然后你弃置所有手牌并视为对其使用一张【杀】。",
+
+  ["$huamu1"] = "左杉右树，可共余生。",
+  ["$huamu2"] = "夫君，当与妾共越此人间之阶！",
+  ["$huamu3"] = "一树樱桃带雨红。",
+  ["$huamu4"] = "四月寻春花更香。",
+  ["$huamu5"] = "灵之来兮如云。",
+  ["$huamu6"] = "山重水复，心有灵犀。",
+  ["$qianmeng1"] = "前盟已断，杉树长别。",
+  ["$qianmeng2"] = "苍山有灵，杉树相依。",
+  ["$liangyuan1"] = "千古奇遇，共剪西窗。",
+  ["$liangyuan2"] = "金玉良缘，来日方长。",
+  ["$jisi1"] = "心若野马，不系璇台。",
+  ["$jisi2"] = "被褐怀玉，天放不羁。",
+  ["~ol__zhouchu"] = "爱恨有泪，聚散无常……",
 }
 
 local wangyan = General(extension, "wangyan", "jin", 3)
