@@ -364,6 +364,177 @@ Fk:loadTranslationTable{
   ["~ol__zhoufei"] = "梧桐半枯衰，鸳鸯白头散……",
 }
 
+local hetaihou = General(extension, "ol__hetaihou", "qun", 3, 3, General.Female)
+local ol__zhendu = fk.CreateTriggerSkill{
+  name = "ol__zhendu",
+  anim_type = "offensive",
+  events = {fk.EventPhaseStart},
+  can_trigger = function(self, event, target, player, data)
+    return player:hasSkill(self.name) and target.phase == Player.Play and not player:isKongcheng() and not target.dead
+  end,
+  on_cost = function(self, event, target, player, data)
+    local card = player.room:askForDiscard(player, 1, 1, false, self.name, true, ".", "#ol__zhendu-invoke::"..target.id, true)
+    if #card > 0 then
+      player.room:doIndicate(player.id, {target.id})
+      self.cost_data = card
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    room:throwCard(self.cost_data, self.name, player, player)
+    if not target.dead and room:useVirtualCard("analeptic", nil, target, target, self.name, false) and player ~= target and not target.dead then
+      room:damage{
+        from = player,
+        to = target,
+        damage = 1,
+        skillName = self.name,
+      }
+    end
+  end,
+}
+local ol__qiluan = fk.CreateTriggerSkill{
+  name = "ol__qiluan",
+  anim_type = "offensive",
+  events = {fk.EventPhaseChanging},
+  can_trigger = function(self, event, target, player, data)
+    if data.to == Player.NotActive and player:hasSkill(self.name) then
+      local logic = player.room.logic
+      local deathevents = logic.event_recorder[GameEvent.Death] or Util.DummyTable
+      local turnevents = logic.event_recorder[GameEvent.Turn] or Util.DummyTable
+      return #deathevents > 0 and #turnevents > 0 and deathevents[#deathevents].id > turnevents[#turnevents].id
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local x = 0
+    player.room.logic:getEventsOfScope(GameEvent.Death, 1, function (e)
+      local deathData = e.data[1]
+      if deathData.damage and deathData.damage.from == player then
+        x = x + 3
+      else
+        x = x + 1
+      end
+      return false
+    end, Player.HistoryTurn)
+    if x > 0 then
+      player:drawCards(x, self.name)
+    end
+  end,
+}
+hetaihou:addSkill(ol__zhendu)
+hetaihou:addSkill(ol__qiluan)
+Fk:loadTranslationTable{
+  ["ol__hetaihou"] = "何太后",
+  ["ol__zhendu"] = "鸩毒",
+  [":ol__zhendu"] = "一名角色的出牌阶段开始时，你可以弃置一张手牌。若如此做，该角色视为使用一张【酒】，然后若该角色不为你，你对其造成1点伤害。",
+  ["ol__qiluan"] = "戚乱",
+  [":ol__qiluan"] = "一名角色回合结束时，你可摸X张牌（X为本回合死亡的角色数，其中每有一名角色是你杀死的，你多摸两张牌）。",
+  ["#ol__zhendu-invoke"] = "鸩毒：你可以弃置一张手牌视为 %dest 使用一张【酒】，然后你对其造成1点伤害",
+
+  ["$ol__zhendu1"] = "想要母平子贵？你这是妄想。",
+  ["$ol__zhendu2"] = "这皇宫，只能有一位储君。",
+  ["$ol__qiluan1"] = "权力，只有掌握在自己手里才安心。",
+  ["$ol__qiluan2"] = "有兄长在，我何愁不能继续享受。",
+  ["~ol__hetaihou"] = "扰乱朝堂之事，我怎么会做……",
+}
+
+local machao = General(extension, "ol__machao", "qun", 4)
+local ol__zhuiji = fk.CreateTriggerSkill{
+  name = "ol__zhuiji",
+  anim_type = "control",
+  events = {fk.TargetSpecified},
+  frequency = Skill.Compulsory,
+  can_trigger = function(self, event, target, player, data)
+    if not (target == player and player:hasSkill(self.name) and data.card.trueName == "slash") then return false end
+    local to = player.room:getPlayerById(data.to)
+    return not to.dead and not to:isNude()
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    room:doIndicate(player.id, {data.to})
+    local to = room:getPlayerById(data.to)
+    local x = #to:getCardIds("e")
+    local cards = room:askForDiscard(to, 1, 1, true, self.name, x > 0, ".", "#ol__zhuiji-discard")
+    if #cards == 0 and x > 0 then
+      to:throwAllCards("e")
+      if not to.dead then
+        room:drawCards(to, x, self.name)
+      end
+    end
+  end,
+}
+local ol__zhuiji_distance = fk.CreateDistanceSkill{
+  name = "#ol__zhuiji_distance",
+  frequency = Skill.Compulsory,
+  correct_func = function(self, from, to)
+    if from:hasSkill(ol__zhuiji.name) then
+      if from.hp > to.hp then
+        from:setFixedDistance(to, 1)
+      else
+        from:removeFixedDistance(to)
+      end
+    end
+    return 0
+  end,
+}
+local ol__shichou = fk.CreateTriggerSkill{
+  name = "ol__shichou",
+  anim_type = "offensive",
+  events = {fk.AfterCardTargetDeclared},
+  can_trigger = function(self, event, target, player, data)
+    if target == player and player:hasSkill(self.name) and data.card.trueName == "slash" then
+      local current_targets = TargetGroup:getRealTargets(data.tos)
+      for _, p in ipairs(player.room.alive_players) do
+        if not table.contains(current_targets, p.id) and not player:isProhibited(p, data.card) and
+            data.card.skill:modTargetFilter(p.id, current_targets, data.from, data.card, true) then
+          return true
+        end
+      end
+    end
+  end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    local current_targets = TargetGroup:getRealTargets(data.tos)
+    local targets = {}
+    for _, p in ipairs(room.alive_players) do
+      if not table.contains(current_targets, p.id) and not player:isProhibited(p, data.card) and
+          data.card.skill:modTargetFilter(p.id, current_targets, data.from, data.card, true) then
+        table.insert(targets, p.id)
+      end
+    end
+    local n = player:getLostHp() + 1
+    local tos = room:askForChoosePlayers(player, targets, 1, n,
+    "#ol__shichou-choose:::"..data.card:toLogString()..":"..tostring(n), self.name, true)
+    if #tos > 0 then
+      self.cost_data = tos
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    table.insertTable(data.tos, table.map(self.cost_data, function (p)
+      return {p}
+    end))
+  end,
+}
+ol__zhuiji:addRelatedSkill(ol__zhuiji_distance)
+machao:addSkill(ol__zhuiji)
+machao:addSkill(ol__shichou)
+
+Fk:loadTranslationTable{
+  ["ol__machao"] = "马超",
+  ["ol__zhuiji"] = "追击",
+  [":ol__zhuiji"] = "锁定技，你计算与体力值不大于你的角色的距离始终为1。当你使用【杀】指定距离为1的角色为目标后，其弃置一张牌或弃置装备区里的所有牌并摸等量的牌。",
+  ["ol__shichou"] = "誓仇",
+  [":ol__shichou"] = "你使用【杀】可以多选择至多X+1名角色为目标（X为你已损失的体力值）。",
+
+  ["#ol__zhuiji-discard"] = "追击：选择一张牌弃置，或点取消则弃置装备区里的所有牌并摸等量的牌",
+  ["#ol__shichou-choose"] = "是否使用誓仇，为此【%arg】额外指定至多%arg2个目标",
+
+  ["$ol__shichou1"] = "你们一个都别想跑！",
+  ["$ol__shichou2"] = "新仇旧恨，一并结算！",
+  ["~ol__machao"] = "父亲！父亲！！",
+}
+
 local huban = General(extension, "ol__huban", "wei", 4)
 local huiyun = fk.CreateViewAsSkill{
   name = "huiyun",
