@@ -67,9 +67,9 @@ local beishi = fk.CreateTriggerSkill{
   frequency = Skill.Compulsory,
   events = {fk.AfterCardsMove},
   can_trigger = function(self, event, target, player, data)
-    if player:hasSkill(self.name) and player:isWounded() and player.tag["beishi"] then
+    if player:hasSkill(self.name) and player:isWounded() and player:getMark("beishi") ~= 0 then
       for _, move in ipairs(data) do
-        if move.from == player.tag["beishi"] and player.room:getPlayerById(move.from):isKongcheng() then
+        if move.from == player:getMark("beishi") and player.room:getPlayerById(move.from):isKongcheng() then
           for _, info in ipairs(move.moveInfo) do
             if info.fromArea == Card.PlayerHand then
               return true
@@ -115,7 +115,7 @@ local daojie = fk.CreateTriggerSkill{
         local targets = {}
         for _, p in ipairs(room:getAlivePlayers()) do
           if table.find({"olz__xun", "xunchen", "xunyu", "xunyou"}, function(name)
-              return string.find(p.general, name) end) then
+              return string.find(p.general, name) or string.find(p.deputyGeneral, name) end) then
             table.insert(targets, p.id)
           end
         end
@@ -645,7 +645,7 @@ local zhanding_record = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     if data.damageDealt then
-      local n = #player.player_cards[Player.Hand] - player:getMaxCards()
+      local n = player:getHandcardNum() - player:getMaxCards()
       if n < 0 then
         player:drawCards(-n, self.name)
       elseif n > 0 then
@@ -662,23 +662,38 @@ local muyin = fk.CreateTriggerSkill{
   events = {fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
     if target == player and player:hasSkill(self.name) and player.phase == Player.Start then
-      self.muyin_tos = {}
+      local tos = {}
       local n = player:getMaxCards()
-      for _, p in ipairs(player.room:getAlivePlayers()) do
+      for _, p in ipairs(player.room.alive_players) do
         if p:getMaxCards() > n then
           n = p:getMaxCards()
         end
       end
-      for _, p in ipairs(player.room:getAlivePlayers()) do
-        if (string.find(p.general, "olz__wu") or string.find(p.general, "wuxian")) and p:getMaxCards() < n then
-          table.insert(self.muyin_tos, p.id)
+      for _, p in ipairs(player.room.alive_players) do
+        if table.find({"olz__wu", "wuyi", "wuxian", "wuxian"}, function(name)
+          return string.find(p.general, name) or string.find(p.deputyGeneral, name) end) and p:getMaxCards() < n then
+          table.insert(tos, p.id)
         end
       end
-      return #self.muyin_tos > 0
+      return #tos > 0
     end
   end,
   on_cost = function(self, event, target, player, data)
-    local to = player.room:askForChoosePlayers(player, self.muyin_tos, 1, 1, "#muyin-choose", self.name, true)
+    local room = player.room
+    local targets = {}
+    local n = player:getMaxCards()
+    for _, p in ipairs(room.alive_players) do
+      if p:getMaxCards() > n then
+        n = p:getMaxCards()
+      end
+    end
+    for _, p in ipairs(room.alive_players) do
+      if table.find({"olz__wu", "wuyi", "wuxian", "wuxian"}, function(name)
+        return string.find(p.general, name) or string.find(p.deputyGeneral, name) end) and p:getMaxCards() < n then
+        table.insert(targets, p.id)
+      end
+    end
+    local to = room:askForChoosePlayers(player, targets, 1, 1, "#muyin-choose", self.name, true)
     if #to > 0 then
       self.cost_data = to[1]
       return true
@@ -707,14 +722,14 @@ local yirong = fk.CreateActiveSkill{
   target_num = 0,
   card_num = 0,
   can_use = function(self, player)
-    return player:usedSkillTimes(self.name, Player.HistoryPhase) < 2 and #player.player_cards[Player.Hand] ~= player:getMaxCards()
+    return player:usedSkillTimes(self.name, Player.HistoryPhase) < 2 and player:getHandcardNum() ~= player:getMaxCards()
   end,
   card_filter = function(self, to_select, selected)
     return false
   end,
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
-    local n = #player.player_cards[Player.Hand] - player:getMaxCards()
+    local n = player:getHandcardNum() - player:getMaxCards()
     if n < 0 then
       player:drawCards(-n, self.name)
       if player:getMaxCards() > 0 then
@@ -1643,7 +1658,7 @@ local zhongliu = fk.CreateTriggerSkill{
             if move.from and move.toArea == Card.Processing then
               local p = player.room:getPlayerById(move.from)
               if table.find({"olz__wang", "wangyun", "wangling", "wangchang", "wanghun"}, function(name)
-                return string.find(p.general, name) end) then
+                return string.find(p.general, name) or string.find(p.deputyGeneral, name) end) then
                 for _, info in ipairs(move.moveInfo) do
                   if info.fromArea == Card.PlayerHand then
                     return false
@@ -1895,7 +1910,7 @@ local baozu = fk.CreateTriggerSkill{
   can_trigger = function(self, event, target, player, data)
     return player:hasSkill(self.name) and target.dying and
       table.find({"olz__zhong", "zhongyao", "zhongyu", "zhonghui", "zhongyan"}, function(name)
-        return string.find(target.general, name) end) and
+        return string.find(target.general, name) or string.find(target.deputyGeneral, name) end) and
       player:usedSkillTimes(self.name, Player.HistoryGame) == 0
   end,
   on_cost = function(self, event, target, player, data)
@@ -2037,7 +2052,7 @@ Fk:loadTranslationTable{
   [":xieshu"] = "当你使用牌造成伤害后或受到牌造成的伤害后，你可以弃置X张牌（X为此牌牌名字数），摸你已损失体力值张数的牌。",
   ["#yuzhi-card"] = "迂志：请展示一张手牌，摸其牌名字数的牌",
   ["@yuzhi"] = "迂志",
-  ["yuzhi2"] = "失去宗族技",
+  ["yuzhi2"] = "失去〖保族〗",
   ["#xieshu-invoke"] = "挟术：你可以弃%arg张牌，摸%arg2张牌",
 }
 
