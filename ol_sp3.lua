@@ -1892,7 +1892,7 @@ local xinggu = fk.CreateTriggerSkill{
       end
       local dummy = Fk:cloneCard("dilu")
       dummy:addSubcards(table.random(cards, 3))
-      player:addToPile(self.name, dummy)
+      player:addToPile(self.name, dummy, true, self.name)
     else
       local card = room:getCardsFromPileByRule(".|.|diamond")
       if #card > 0 then
