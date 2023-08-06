@@ -1871,6 +1871,7 @@ local bingxin = fk.CreateViewAsSkill{
     return false
   end,
   view_as = function(self, cards)
+    if not self.interaction.data then return end
     local card = Fk:cloneCard(self.interaction.data)
     card.skillName = self.name
     return card
