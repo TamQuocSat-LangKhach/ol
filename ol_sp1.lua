@@ -605,6 +605,9 @@ local bushi = fk.CreateTriggerSkill{
   name = "bushi",
   anim_type = "masochism",
   events = {fk.Damaged},
+  can_trigger = function(self, event, target, player, data)
+    return player:hasSkill(self.name) and (target == player or data.from == player) and #player:getPile("zhanglu_mi") > 0 and not (data.from.dead or data.to.dead)
+  end,
   on_trigger = function(self, event, target, player, data)
     if player:hasSkill(self.name) then
       self.cancel_cost = false
