@@ -5,7 +5,6 @@ local ol_wende = require "packages/ol/ol_wende"
 local ol_menfa = require "packages/ol/ol_menfa"
 local ol_other = require "packages/ol/ol_other"
 local ol_ex = require "packages/ol/ol_ex"
-local variation = require "packages/ol/variation"
 local ol_token = require "packages/ol/ol_token"
 
 return {
@@ -16,6 +15,5 @@ return {
   ol_menfa,
   ol_other,
   ol_ex,
-  variation,
   ol_token,
 }
