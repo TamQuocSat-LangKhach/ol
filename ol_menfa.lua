@@ -1680,6 +1680,15 @@ local zhongliu = fk.CreateTriggerSkill{
         player:setSkillUseHistory(s.name, 0, Player.HistoryPhase)
       end
     end
+    if player.deputyGeneral ~= "" then
+      for _, s in ipairs(Fk.generals[player.deputyGeneral].skills) do
+        if s.frequency == Skill.Limited then
+          player:setSkillUseHistory(s.name, 0, Player.HistoryGame)
+        else
+          player:setSkillUseHistory(s.name, 0, Player.HistoryPhase)
+        end
+      end
+    end
   end,
 }
 mingjiew:addRelatedSkill(mingjiew_trigger)
@@ -2054,6 +2063,154 @@ Fk:loadTranslationTable{
   ["@yuzhi"] = "迂志",
   ["yuzhi2"] = "失去〖保族〗",
   ["#xieshu-invoke"] = "挟术：你可以弃%arg张牌，摸%arg2张牌",
+}
+
+local wanghun = General(extension, "olz__wanghun", "jin", 3)
+local fuxun = fk.CreateActiveSkill{
+  name = "fuxun",
+  anim_type = "control",
+  min_card_num = 0,
+  max_card_num = 1,
+  target_num = 1,
+  prompt = "#fuxun",
+  can_use = function(self, player)
+    return player:usedSkillTimes(self.name, Player.HistoryPhase) == 0
+  end,
+  card_filter = function(self, to_select, selected)
+    return #selected == 0 and Fk:currentRoom():getCardArea(to_select) ~= Player.Equip
+  end,
+  target_filter = function(self, to_select, selected, selected_cards)
+    if #selected == 0 and to_select ~= Self.id then
+      return #selected_cards == 0 and not Fk:currentRoom():getPlayerById(to_select):isKongcheng() or #selected_cards == 1
+    end
+  end,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    local target = room:getPlayerById(effect.tos[1])
+    if #effect.cards == 0 then
+      local id = room:askForCardChosen(player, target, "h", self.name)
+      room:moveCards({
+        from = target.id,
+        ids = {id},
+        to = player.id,
+        toArea = Player.Hand,
+        moveReason = fk.ReasonPrey,
+        proposer = player.id,
+        skillName = self.name,
+      })
+    else
+      room:moveCards({
+        from = player.id,
+        ids = effect.cards,
+        to = target.id,
+        toArea = Player.Hand,
+        moveReason = fk.ReasonGive,
+        proposer = player.id,
+        skillName = self.name,
+      })
+    end
+    if player:getHandcardNum() == target:getHandcardNum() and not player.dead then
+      local events = room.logic:getEventsOfScope(GameEvent.MoveCards, 1, function(e)
+        local move = e.data[1]
+        return move.skillName ~= self.name and
+          ((move.to == target.id and move.toArea == Card.PlayerHand) or (move.from == target.id and move.fromArea == Card.PlayerHand))
+      end, Player.HistoryPhase)
+      if #events > 0 then return end
+      local success, data = room:askForUseActiveSkill(player, "fuxun_viewas", "#fuxun-use", true)
+      if success then
+        local card = Fk.skills["fuxun_viewas"]:viewAs(data.cards)
+        room:useCard{
+          from = player.id,
+          tos = table.map(data.targets, function(id) return {id} end),
+          card = card,
+          extraUse = true,
+        }
+      end
+    end
+  end,
+}
+local fuxun_viewas = fk.CreateViewAsSkill{
+  name = "fuxun_viewas",
+  interaction = function()
+    local names = {}
+    for _, id in ipairs(Fk:getAllCardIds()) do
+      local card = Fk:getCardById(id)
+      if card.type == Card.TypeBasic and not card.is_derived then
+        table.insertIfNeed(names, card.name)
+      end
+    end
+    if #names == 0 then return end
+    return UI.ComboBox {choices = names}
+  end,
+  card_filter = function(self, to_select, selected)
+    return #selected == 0
+  end,
+  view_as = function(self, cards)
+    if #cards ~= 1 or not self.interaction.data then return end
+    local card = Fk:cloneCard(self.interaction.data)
+    card:addSubcard(cards[1])
+    card.skillName = "fuxun"
+    return card
+  end,
+}
+local fuxun_targetmod = fk.CreateTargetModSkill{
+  name = "#fuxun_targetmod",
+  bypass_times = function(self, player, skill, scope, card, to)
+    return card and table.contains(card.skillNames, "fuxun")
+  end,
+}
+local chenya = fk.CreateTriggerSkill{
+  name = "chenya",
+  anim_type = "support",
+  events = {fk.AfterSkillEffect},
+  can_trigger = function(self, event, target, player, data)
+    return player:hasSkill(self.name) and target and not target.dead and not target:isKongcheng() and
+      (((data:isInstanceOf(ActiveSkill) or data:isInstanceOf(ViewAsSkill)) and
+      table.find({"出牌阶段限一次", "阶段技", "每阶段限一次"}, function(str) return string.find(Fk:translate(":"..data.name), str) end)) or
+      (data:isInstanceOf(TriggerSkill) and string.sub(Fk:translate(":"..data.name), 1, 21) == "出牌阶段限一次")) and
+      not data.attached_equip and data.name[#data.name] ~= "&"
+  end,
+  on_cost = function(self, event, target, player, data)
+    return player.room:askForSkillInvoke(player, self.name, nil, "#chenya-invoke::"..target.id)
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    room:doIndicate(player.id, {target.id})
+    local success, dat = room:askForUseActiveSkill(target, "chenya_active", "#chenya-card:::"..target:getHandcardNum(), true)
+    if success then
+      room:recastCard(dat.cards, target, self.name)
+    end
+  end,
+}
+local chenya_active = fk.CreateActiveSkill{
+  name = "chenya_active",
+  mute = true,
+  min_card_num = 1,
+  target_num = 0,
+  card_filter = function(self, to_select, selected)
+   local card = Fk:getCardById(to_select)
+   return Self:getHandcardNum() == #Fk:translate(card.trueName) / 3
+  end,
+}
+Fk:addSkill(fuxun_viewas)
+Fk:addSkill(chenya_active)
+fuxun:addRelatedSkill(fuxun_targetmod)
+wanghun:addSkill(fuxun)
+wanghun:addSkill(chenya)
+wanghun:addSkill("zhongliu")
+Fk:loadTranslationTable{
+  ["olz__wanghun"] = "王浑",
+  ["fuxun"] = "抚循",
+  [":fuxun"] = "出牌阶段限一次，你可以交给一名其他角色一张手牌或获得一名其他角色一张手牌，然后若其手牌数与你相同且本阶段未因此法以外的方式"..
+  "变化过，你可以将一张牌当任意基本牌使用。",
+  ["chenya"] = "沉雅",
+  [":chenya"] = "一名角色发动“出牌阶段限一次”的技能后，你可以令其重铸任意张牌名字数为X的牌（X为其手牌数）。",
+  ["#fuxun"] = "抚循：交给或获得一名角色一张手牌，然后若手牌数相同且符合一定条件，你可以将一张牌当任意基本牌使用",
+  ["fuxun_viewas"] = "抚循",
+  ["#fuxun-use"] = "抚循：你可以将一张牌当任意基本牌使用",
+  ["#chenya-invoke"] = "沉雅：你可以令 %dest 重铸牌",
+  ["chenya_active"] = "沉雅",
+  ["#chenya-card"] = "沉雅：你可以重铸任意张牌名字数为%arg的牌",
 }
 
 return extension
