@@ -4387,6 +4387,12 @@ local bixinEx_trigger = fk.CreateTriggerSkill{
       end
     end
     if #cards > 0 then
+      room:moveCards({
+        ids = cards,
+        from = player.id,
+        toArea = Card.Processing,
+        moveReason = fk.ReasonUse,
+      })
       data.card:addSubcards(cards)  --甚至可以手动加子卡
       return false
     else
