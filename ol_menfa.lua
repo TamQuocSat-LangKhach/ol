@@ -1046,7 +1046,7 @@ local lianhe_trigger = fk.CreateTriggerSkill{
         if move.moveReason == fk.ReasonDraw then
           return true
         else
-          n = n + #move.ids
+          n = n + #move.moveInfo
         end
       end
     end, Player.HistoryPhase)

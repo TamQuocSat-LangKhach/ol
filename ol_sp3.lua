@@ -2456,15 +2456,14 @@ local goude = fk.CreateTriggerSkill{
         if p.kingdom == player.kingdom then
           local events = room.logic:getEventsOfScope(GameEvent.MoveCards, 1, function(e)
             local move = e.data[1]
-            if move.to == p.id and move.toArea == Player.Hand and move.moveReason == fk.ReasonDraw and #move.ids == 1 then
+            if move.to == p.id and move.toArea == Player.Hand and move.moveReason == fk.ReasonDraw and #move.moveInfo == 1 then
               return true
-            elseif move.moveReason == fk.ReasonDiscard and (move.proposer == p or move.proposer == p.id) and #move.ids == 1 then
-              return true  --FIXME: 手牌！
-              --[[for _, info in ipairs(move.moveInfo) do
+            elseif move.moveReason == fk.ReasonDiscard and (move.proposer == p or move.proposer == p.id) and #move.moveInfo == 1 then
+              for _, info in ipairs(move.moveInfo) do
                 if info.fromArea == Card.PlayerHand then
                   return true
                 end
-              end]]
+              end
             end
           end, Player.HistoryTurn)
           if #events > 0 then return true end
@@ -2494,7 +2493,7 @@ local goude = fk.CreateTriggerSkill{
         if table.contains(choices, "draw1") then
           events = room.logic:getEventsOfScope(GameEvent.MoveCards, 1, function(e)
             local move = e.data[1]
-            if move.to == p.id and move.toArea == Player.Hand and move.moveReason == fk.ReasonDraw and #move.ids == 1 then
+            if move.to == p.id and move.toArea == Player.Hand and move.moveReason == fk.ReasonDraw and #move.moveInfo == 1 then
               return true
             end
           end, Player.HistoryTurn)
@@ -2505,16 +2504,15 @@ local goude = fk.CreateTriggerSkill{
         if table.contains(choices, "goude2") then
           events = room.logic:getEventsOfScope(GameEvent.MoveCards, 1, function(e)
             local move = e.data[1]
-            if move.to == p.id and move.toArea == Player.Hand and move.moveReason == fk.ReasonDraw and #move.ids == 1 then
+            if move.to == p.id and move.toArea == Player.Hand and move.moveReason == fk.ReasonDraw and #move.moveInfo == 1 then
               return true
             end
-            if move.moveReason == fk.ReasonDiscard and (move.proposer == p or move.proposer == p.id) and #move.ids == 1 then
-              return true  --FIXME: 手牌！
-              --[[for _, info in ipairs(move.moveInfo) do
+            if move.moveReason == fk.ReasonDiscard and (move.proposer == p or move.proposer == p.id) and #move.moveInfo == 1 then
+              for _, info in ipairs(move.moveInfo) do
                 if info.fromArea == Card.PlayerHand then
                   return true
                 end
-              end]]
+              end
             end
           end, Player.HistoryTurn)
           if #events > 0 then
@@ -2544,7 +2542,7 @@ local goude = fk.CreateTriggerSkill{
     if #choices == 1 then return end
     local choice
     while choice ~= "Cancel" do
-      choice = room:askForChoice(player, choices, self.name, "#goude-choice")--, false, {"Cancel", "draw1", "goude2", "goude3", "goude4"}
+      choice = room:askForChoice(player, choices, self.name, "#goude-choice", false, {"Cancel", "draw1", "goude2", "goude3", "goude4"})
       if choice == "draw1" or choice == "goude4" then
         self.cost_data = {choice}
         return true
