@@ -1055,12 +1055,14 @@ local zhuangshu = fk.CreateTriggerSkill{
   can_trigger = function(self, event, target, player, data)
     if not player:hasSkill(self.name) then return false end
     if event == fk.GameStart then
-      return player:getEquipment(Card.SubtypeTreasure) == nil and table.find(player.room.void, function (id)
+      return player:getEquipment(Card.SubtypeTreasure) == nil and #player:getAvailableEquipSlots(Card.SubtypeTreasure) > 0 and
+      table.find(player.room.void, function (id)
         local card_name = Fk:getCardById(id).name
         return card_name == "jade_comb" or card_name == "rhino_comb" or card_name == "golden_comb"
       end)
     elseif event == fk.EventPhaseChanging then
-      return data.from == Player.NotActive and not target.dead and target:getEquipment(Card.SubtypeTreasure) == nil and not player:isNude()
+      return data.from == Player.NotActive and not target.dead and target:getEquipment(Card.SubtypeTreasure) == nil and
+      #target:getAvailableEquipSlots(Card.SubtypeTreasure) > 0 and not player:isNude()
     end
   end,
   on_cost = function(self, event, target, player, data)
@@ -1122,7 +1124,8 @@ local zhuangshu = fk.CreateTriggerSkill{
     elseif event == fk.EventPhaseChanging then
       local card_type = Fk:getCardById(self.cost_data[1]):getTypeString()
       room:throwCard(self.cost_data, self.name, player, player)
-      if target.dead or target:getEquipment(Card.SubtypeTreasure) ~= nil then return false end
+      if target.dead or target:getEquipment(Card.SubtypeTreasure) ~= nil or
+        #target:getAvailableEquipSlots(Card.SubtypeTreasure) == 0 then return false end
       local card_types = {"basic", "trick", "equip"}
       local comb_names = {"jade_comb", "rhino_comb", "golden_comb"}
       if not table.contains(card_types, card_type) then return false end

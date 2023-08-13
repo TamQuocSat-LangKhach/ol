@@ -2775,8 +2775,12 @@ local ol_ex__zhijian = fk.CreateActiveSkill{
   card_filter = function(self, to_select, selected)
     return #selected == 0 and Fk:getCardById(to_select).type == Card.TypeEquip
   end,
-  target_filter = function(self, to_select, selected, cards)
-    return #selected == 0 and #cards == 1 and to_select ~= Self.id
+  target_filter = function(self, to_select, selected, selected_cards)
+    if #selected == 0 and #selected_cards == 1 then
+      local target = Fk:currentRoom():getPlayerById(to_select)
+      local card = Fk:getCardById(selected_cards[1])
+      return to_select ~= Self.id and #target:getAvailableEquipSlots(card.sub_type) > 0
+    end
   end,
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
