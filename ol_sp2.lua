@@ -1296,13 +1296,6 @@ local chuiti = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local card = Fk.skills["chuiti_viewas"]:viewAs(self.cost_data.cards)
-    player.room:moveCards({
-      from = player.id,
-      ids = self.cost_data.cards,
-      toArea = Card.Processing,
-      moveReason = fk.ReasonUse,
-      skillName = self.name,
-    })
     player.room:useCard{
       from = player.id,
       tos = table.map(self.cost_data.targets, function(id) return {id} end),
@@ -4391,12 +4384,6 @@ local bixinEx_trigger = fk.CreateTriggerSkill{
       end
     end
     if #cards > 0 then
-      room:moveCards({
-        ids = cards,
-        from = player.id,
-        toArea = Card.Processing,
-        moveReason = fk.ReasonUse,
-      })
       data.card:addSubcards(cards)  --甚至可以手动加子卡
       return false
     else

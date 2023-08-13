@@ -320,13 +320,6 @@ local ol__kongsheng = fk.CreateTriggerSkill{
           return card.type == Card.TypeEquip and not to:prohibitUse(card) and not to:isProhibited(to, card) and to:canUse(card)
         end)
         if to_use == nil then break end
-        room:moveCards({
-          from = player.id,
-          ids = {to_use},
-          toArea = Card.Processing,
-          moveReason = fk.ReasonUse,
-          skillName = self.name,
-        })
         room:useCard({
           from = to.id,
           tos = {{to.id}},
