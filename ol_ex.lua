@@ -1454,8 +1454,18 @@ local ol_ex__zaiqi = fk.CreateTriggerSkill{
   events = {fk.EventPhaseEnd},
   can_trigger = function(self, event, target, player, data)
     if target == player and player:hasSkill(self.name) and player.phase == Player.Discard then
-      local ids = player:getMark("ol_ex__zaiqi_record-turn")
-      if type(ids) ~= "table" then return false end
+      local ids = {}
+      local logic = player.room.logic
+      logic:getEventsOfScope(GameEvent.MoveCards, 1, function (e)
+        for _, move in ipairs(e.data) do
+          if move.toArea == Card.DiscardPile then
+            for _, info in ipairs(move.moveInfo) do
+              table.insertIfNeed(ids, info.cardId)
+            end
+          end
+        end
+        return false
+      end, Player.HistoryTurn)
       for _, id in ipairs(ids) do
         if player.room:getCardArea(id) == Card.DiscardPile and Fk:getCardById(id).color == Card.Red then
           return true
@@ -1464,16 +1474,23 @@ local ol_ex__zaiqi = fk.CreateTriggerSkill{
     end
   end,
   on_cost = function(self, event, target, player, data)
-    local x = 0
-    local ids = player:getMark("ol_ex__zaiqi_record-turn")
-    if type(ids) ~= "table" then return false end
-    for _, id in ipairs(ids) do
-      if player.room:getCardArea(id) == Card.DiscardPile and Fk:getCardById(id).color == Card.Red then
-        x = x + 1
+    local ids = {}
+    local room = player.room
+    room.logic:getEventsOfScope(GameEvent.MoveCards, 1, function (e)
+      for _, move in ipairs(e.data) do
+        if move.toArea == Card.DiscardPile then
+          for _, info in ipairs(move.moveInfo) do
+            table.insertIfNeed(ids, info.cardId)
+          end
+        end
       end
-    end
+      return false
+    end, Player.HistoryTurn)
+    local x = #table.filter(ids, function (id)
+      return room:getCardArea(id) == Card.DiscardPile and Fk:getCardById(id).color == Card.Red
+    end)
     if x < 1 then return false end
-    local result = player.room:askForChoosePlayers(player, table.map(player.room.alive_players, function (p)
+    local result = room:askForChoosePlayers(player, table.map(room.alive_players, function (p)
       return p.id end), 1, x, "#ol_ex__zaiqi-choose:::"..x, self.name, true)
     if #result > 0 then
       self.cost_data = result
@@ -1486,7 +1503,7 @@ local ol_ex__zaiqi = fk.CreateTriggerSkill{
     local targets = table.map(self.cost_data, function(id)
       return room:getPlayerById(id) end)
 
-      for _, p in ipairs(targets) do
+    for _, p in ipairs(targets) do
       if not p.dead then
         local choices = {"ol_ex__zaiqi_draw"}
         if player and not player.dead and player:isWounded() then
@@ -1506,30 +1523,8 @@ local ol_ex__zaiqi = fk.CreateTriggerSkill{
       end
     end
   end,
-
-  refresh_events = {fk.AfterCardsMove},
-  can_refresh = function(self, event, target, player, data)
-    if player.phase ~= Player.NotActive then
-      for _, move in ipairs(data) do
-        if move.toArea == Card.DiscardPile then
-          return true
-        end
-      end
-    end
-  end,
-  on_refresh = function(self, event, target, player, data)
-    local mark = player:getMark("ol_ex__zaiqi_record-turn")
-    if mark == 0 then mark = {} end
-    for _, move in ipairs(data) do
-      if move.toArea == Card.DiscardPile then
-        for _, info in ipairs(move.moveInfo) do
-          table.insertIfNeed(mark, info.cardId)
-        end
-      end
-    end
-    player.room:setPlayerMark(player, "ol_ex__zaiqi_record-turn", mark)
-  end,
 }
+
 --[[
 local menghuo = General(extension, "ol_ex__menghuo", "shu", 4)
 menghuo:addSkill("huoshou")
@@ -2549,17 +2544,36 @@ local ol_ex__jiang = fk.CreateTriggerSkill{
     if (event == fk.TargetSpecified or event == fk.TargetConfirmed) and player == target and
       ((data.card.trueName == "slash" and data.card.color == Card.Red) or data.card.name == "duel") then
       return event == fk.TargetConfirmed or data.firstTarget
-    elseif event == fk.AfterCardsMove and (data.extra_data or {}).firstDiscardRedSlashOrDuel then
-      for _, move in ipairs(data) do
-        if move.toArea == Card.DiscardPile and move.moveReason == fk.ReasonDiscard then
-          for _, info in ipairs(move.moveInfo) do
-            local card = Fk:getCardById(info.cardId)
-            if ((card.trueName == "slash" and card.color == Card.Red) or card.name == "duel") and
-                player.room:getCardArea(info.cardId) == Card.DiscardPile then
-              return true
+    elseif event == fk.AfterCardsMove then
+      local x = player:getMark("jiang_record-turn")
+      local room = player.room
+      local move__event = room.logic:getCurrentEvent()
+      if not move__event or (x > 0 and x ~= move__event.id) then return false end
+      local JiangCheck = function(move_data)
+        for _, move in ipairs(move_data) do
+          if move.toArea == Card.DiscardPile and move.moveReason == fk.ReasonDiscard then
+            for _, info in ipairs(move.moveInfo) do
+              local card = Fk:getCardById(info.cardId)
+              if ((card.trueName == "slash" and card.color == Card.Red) or card.name == "duel") and
+                  player.room:getCardArea(info.cardId) == Card.DiscardPile then
+                return true
+              end
             end
           end
         end
+      end
+      if JiangCheck(data) then
+        if x == 0 then
+          room.logic:getEventsOfScope(GameEvent.MoveCards, 1, function (e)
+            if JiangCheck(e.data) then
+              x = e.id
+              room:setPlayerMark(player, "jiang_record-turn", x)
+              return true
+            end
+            return false
+          end, Player.HistoryTurn)
+        end
+        return x == move__event.id
       end
     end
   end,
@@ -2584,33 +2598,6 @@ local ol_ex__jiang = fk.CreateTriggerSkill{
       if #dummy.subcards > 0 then
         room:obtainCard(player, dummy, true, fk.ReasonJustMove)
       end
-    end
-  end,
-
-  refresh_events = {fk.AfterCardsMove, fk.TurnEnd},
-  can_refresh = function(self, event, target, player, data)
-    if event == fk.AfterCardsMove and not player.room:getTag("firstDiscardRedSlashOrDuelRecord") then
-      for _, move in ipairs(data) do
-        if move.toArea == Card.DiscardPile and move.moveReason == fk.ReasonDiscard then
-          for _, info in ipairs(move.moveInfo) do
-            local card = Fk:getCardById(info.cardId)
-            if (card.trueName == "slash" and card.color == Card.Red) or card.name == "duel" then
-              return true
-            end
-          end
-        end
-      end
-    elseif event == fk.TurnEnd and player == target then
-      return player.room:getTag("firstDiscardRedSlashOrDuelRecord")
-    end
-  end,
-  on_refresh = function(self, event, target, player, data)
-    if event == fk.AfterCardsMove then
-      player.room:setTag("firstDiscardRedSlashOrDuelRecord", true)
-      data.extra_data = data.extra_data or {}
-      data.extra_data.firstDiscardRedSlashOrDuel = true
-    elseif event == fk.TurnEnd then
-      player.room:setTag("firstDiscardRedSlashOrDuelRecord", false)
     end
   end,
 }
