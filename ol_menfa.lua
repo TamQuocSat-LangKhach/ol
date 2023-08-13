@@ -1758,6 +1758,7 @@ Fk:loadTranslationTable{
   ["~olz__wangling"] = "淩忠心可鉴，死亦未悔……",
 }
 
+--[[
 local zhongyan = General(extension, "olz__zhongyan", "jin", 3, 3, General.Female)
 local guangu = fk.CreateActiveSkill{
   name = "guangu",
@@ -1951,6 +1952,7 @@ Fk:loadTranslationTable{
   ["#guangu-use"] = "观骨：你可以使用其中一张牌",
   ["#baozu-invoke"] = "保族：你可以令 %dest 横置并回复1点体力",
 }
+--]]
 
 local zhonghui = General(extension, "olz__zhonghui", "wei", 3, 4)
 local yuzhi = fk.CreateTriggerSkill{
