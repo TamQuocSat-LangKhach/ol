@@ -1573,6 +1573,14 @@ local mingjiew_record = fk.CreateTriggerSkill{
           room:setPlayerMark(p, "mingjiew_cards", 0)
           if success then
             table.removeOne(ids, dat.cards[1])
+            fakemove = {
+              from = p.id,
+              toArea = Card.Processing,
+              moveInfo = table.map(dat.cards, function(id) return {cardId = id, fromArea = Card.PlayerHand} end),
+              moveReason = fk.ReasonUse,
+              skillName = self.name,
+            }
+            room:notifyMoveCards({p}, {fakemove})
             local card = Fk.skills["mingjiew_viewas"]:viewAs(dat.cards)
             room:useCard{
               from = p.id,
