@@ -135,13 +135,6 @@ local aocai = fk.CreateTriggerSkill{
       table.insert(room.draw_pile, 1, ids[i])
     end
     if success then
-      room:moveCards({
-        from = player.id,
-        ids = dat.cards,
-        toArea = Card.Processing,
-        moveReason = fk.ReasonUse,
-        skillName = self.name,
-      })
       if event == fk.AskForCardUse then
         local card = Fk.skills["aocai_use"]:viewAs(dat.cards)
         data.result = {

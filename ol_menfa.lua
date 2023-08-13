@@ -888,13 +888,6 @@ local liuju = fk.CreateTriggerSkill{
     room:notifyMoveCards({loser}, {fakemove})
     if success then
       local card = Fk.skills["liuju_viewas"]:viewAs(dat.cards)
-      room:moveCards({
-        from = loser.id,
-        ids = dat.cards,
-        toArea = Card.Processing,
-        moveReason = fk.ReasonUse,
-        skillName = self.name,
-      })
       room:useCard{
         from = loser.id,
         tos = table.map(dat.targets, function(id) return {id} end),
@@ -1119,13 +1112,6 @@ local huanjia = fk.CreateTriggerSkill{
     room:notifyMoveCards({winner}, {fakemove})
     if success then
       local card = Fk.skills["huanjia_viewas"]:viewAs(dat.cards)
-      room:moveCards({
-        from = winner.id,
-        ids = dat.cards,
-        toArea = Card.Processing,
-        moveReason = fk.ReasonUse,
-        skillName = self.name,
-      })
       local use = {
         from = winner.id,
         tos = table.map(dat.targets, function(id) return {id} end),
@@ -1587,14 +1573,6 @@ local mingjiew_record = fk.CreateTriggerSkill{
           room:setPlayerMark(p, "mingjiew_cards", 0)
           if success then
             table.removeOne(ids, dat.cards[1])
-            fakemove = {
-              from = p.id,
-              toArea = Card.Processing,
-              moveInfo = table.map(dat.cards, function(id) return {cardId = id, fromArea = Card.PlayerHand} end),
-              moveReason = fk.ReasonUse,
-              skillName = self.name,
-            }
-            room:notifyMoveCards({p}, {fakemove})
             local card = Fk.skills["mingjiew_viewas"]:viewAs(dat.cards)
             room:useCard{
               from = p.id,
@@ -1758,7 +1736,6 @@ Fk:loadTranslationTable{
   ["~olz__wangling"] = "淩忠心可鉴，死亦未悔……",
 }
 
---[[
 local zhongyan = General(extension, "olz__zhongyan", "jin", 3, 3, General.Female)
 local guangu = fk.CreateActiveSkill{
   name = "guangu",
@@ -1838,17 +1815,6 @@ local guangu = fk.CreateActiveSkill{
       end
     end
     if success then
-      local from = player.id
-      if status == "yin" then
-        from = target.id
-      end
-      room:moveCards({
-        from = from,
-        ids = dat.cards,
-        toArea = Card.Processing,
-        moveReason = fk.ReasonUse,
-        skillName = self.name,
-      })
       local card = Fk.skills["guangu_viewas"]:viewAs(dat.cards)
       room:useCard{
         from = player.id,
@@ -1952,7 +1918,6 @@ Fk:loadTranslationTable{
   ["#guangu-use"] = "观骨：你可以使用其中一张牌",
   ["#baozu-invoke"] = "保族：你可以令 %dest 横置并回复1点体力",
 }
---]]
 
 local zhonghui = General(extension, "olz__zhonghui", "wei", 3, 4)
 local yuzhi = fk.CreateTriggerSkill{
