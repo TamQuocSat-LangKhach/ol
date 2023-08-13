@@ -2012,7 +2012,7 @@ local ol_ex__wansha_invalidity = fk.CreateInvaliditySkill {
   invalidity_func = function(self, from, skill)
     if table.contains(from.player_skills, skill) and not from.dying and skill.frequency ~= Skill.Compulsory
     and skill.frequency ~= Skill.Wake and not (skill.attached_equip or skill.name:endsWith("&")) then
-      return table.find(Fk:currentRoom().alive_players, function(p)
+      return table.find(Fk:currentRoom().players, function(p)
         return p.dying
       end) and table.find(Fk:currentRoom().alive_players, function(p)
         return p.phase ~= Player.NotActive and p:hasSkill(ol_ex__wansha.name) and p ~= from

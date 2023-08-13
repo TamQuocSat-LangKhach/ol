@@ -468,7 +468,7 @@ local ol__zhuiji_distance = fk.CreateDistanceSkill{
   frequency = Skill.Compulsory,
   correct_func = function(self, from, to)
     if from:hasSkill(ol__zhuiji.name) then
-      if from.hp > to.hp then
+      if from.hp >= to.hp then
         from:setFixedDistance(to, 1)
       else
         from:removeFixedDistance(to)
