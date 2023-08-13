@@ -110,7 +110,7 @@ local aocai = fk.CreateTriggerSkill{
             table.insertIfNeed(availableCards, id)
           end
         else
-          if card.skill:canUse(player) then
+          if player:canUse(card) then
             table.insertIfNeed(availableCards, id)
           end
         end

@@ -305,8 +305,7 @@ local ol__kongsheng = fk.CreateTriggerSkill{
       local targets = table.filter(room.alive_players, function (p)
         return table.find(player:getPile("ol__kongsheng_harp"), function (id)
           local card = Fk:getCardById(id)
-          return card.type == Card.TypeEquip and not p:prohibitUse(card) and not p:isProhibited(p, card) and
-            card.skill:canUse(p, card)
+          return card.type == Card.TypeEquip and not p:prohibitUse(card) and not p:isProhibited(p, card) and p:canUse(card)
         end)
       end)
       if #targets == 0 then return false end
@@ -318,8 +317,7 @@ local ol__kongsheng = fk.CreateTriggerSkill{
         if player.dead or to.dead then break end
         local to_use = table.find(player:getPile("ol__kongsheng_harp"), function (id)
           local card = Fk:getCardById(id)
-          return card.type == Card.TypeEquip and not to:prohibitUse(card) and not to:isProhibited(to, card) and
-            card.skill:canUse(to, card)
+          return card.type == Card.TypeEquip and not to:prohibitUse(card) and not to:isProhibited(to, card) and to:canUse(card)
         end)
         if to_use == nil then break end
         room:moveCards({

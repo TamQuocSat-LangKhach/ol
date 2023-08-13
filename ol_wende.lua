@@ -212,7 +212,7 @@ local caiwang = fk.CreateViewAsSkill{
     local names = {}
     if Fk.currentResponsePattern == nil then
       local card = Fk:cloneCard("slash")
-      if #Self.player_cards[Player.Judge] == 1 and card.skill:canUse(Self, card) and not Self:prohibitUse(card) then
+      if #Self.player_cards[Player.Judge] == 1 and Self:canUse(card) and not Self:prohibitUse(card) then
         table.insertIfNeed(names, "slash")
       end
     elseif Fk.currentResponsePattern then
@@ -1857,7 +1857,7 @@ local bingxin = fk.CreateViewAsSkill{
     for _, id in ipairs(Fk:getAllCardIds()) do
       local card = Fk:getCardById(id)
       if card.type == Card.TypeBasic and
-        ((Fk.currentResponsePattern == nil and card.skill:canUse(Self)) or
+        ((Fk.currentResponsePattern == nil and Self:canUse(card)) or
         (Fk.currentResponsePattern and Exppattern:Parse(Fk.currentResponsePattern):match(card))) then
         if mark == 0 or (not table.contains(mark, card.trueName)) then
           table.insertIfNeed(names, card.name)
@@ -2108,7 +2108,7 @@ local maihuo_trigger = fk.CreateTriggerSkill{
       local card = Fk:getCardById(player:getPile("yangzhi_huo")[1])
       room:setPlayerMark(player, "maihuo", 0)
       Self = player
-      if to.dead or player:isProhibited(to, card) or not card.skill:canUse(player, card) or
+      if to.dead or player:isProhibited(to, card) or not player:canUse(card) or
         not card.skill:targetFilter(to.id, {}, {}, card) then
         room:notifySkillInvoked(to, "maihuo", "special")
         room:moveCards({

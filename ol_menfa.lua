@@ -411,7 +411,7 @@ local lieshi = fk.CreateActiveSkill{
   prompt = "#lieshi-active",
   interaction = function(self)
     local choiceList = {}
-    if Self:getMark("@@lieshi") == 0 then
+    if not table.contains(Self.sealedSlots, Player.JudgeSlot) then
       table.insert(choiceList, "lieshi_prohibit")
     end
     local handcards = Self:getCardIds(Player.Hand)
@@ -432,7 +432,7 @@ local lieshi = fk.CreateActiveSkill{
   max_card_num = 0,
   target_num = 1,
   can_use = function(self, player)
-    return player:getMark("@@lieshi") == 0 or not table.every(player:getCardIds(Player.Hand), function (id)
+    return not table.contains(player.sealedSlots, Player.JudgeSlot) or not table.every(player:getCardIds(Player.Hand), function (id)
       local card = Fk:getCardById(id)
       return (card.trueName ~= "slash" and card.trueName ~= "jink") or player:prohibitDiscard(card)
     end)
@@ -451,7 +451,7 @@ local lieshi = fk.CreateActiveSkill{
         to = target
         if to.dead then return false end
         local choiceList = {}
-        if to:getMark("@@lieshi") == 0 then
+        if not table.contains(to.sealedSlots, Player.JudgeSlot) then
           table.insert(choiceList, "lieshi_prohibit")
         end
         local handcards = to:getCardIds(Player.Hand)
@@ -473,9 +473,7 @@ local lieshi = fk.CreateActiveSkill{
         --FIXME: 唯一选项自动选择，会暴露手牌信息
       end
       if choice == "lieshi_prohibit" then
-        -- TODO: 废除（封印）判定区
-        room:addPlayerMark(to, "@@lieshi")
-        to:throwAllCards("j")
+        room:abortPlayerArea(to, {Player.JudgeSlot})
         if not to.dead then
           room:damage{
             from = player,
@@ -503,12 +501,6 @@ local lieshi = fk.CreateActiveSkill{
         end
       end
     end
-  end,
-}
-local lieshi_prohibit = fk.CreateProhibitSkill{
-  name = "#lieshi_prohibit",
-  is_prohibited = function(self, from, to, card)
-    return to:getMark("@@lieshi") > 0 and card.sub_type == Card.SubtypeDelayedTrick
   end,
 }
 local dianzhan = fk.CreateTriggerSkill{
@@ -577,7 +569,6 @@ local huanyin = fk.CreateTriggerSkill{
     end
   end,
 }
-lieshi:addRelatedSkill(lieshi_prohibit)
 xuncai:addSkill(lieshi)
 xuncai:addSkill(dianzhan)
 xuncai:addSkill(huanyin)
@@ -596,7 +587,6 @@ Fk:loadTranslationTable{
   ["lieshi_prohibit"] = "废除判定区并受到1点火焰伤害",
   ["lieshi_slash"] = "弃置手牌区中所有的【杀】",
   ["lieshi_jink"] = "弃置手牌区中所有的【闪】",
-  ["@@lieshi"] = "烈誓",
   ["@dianzhan_suit-round"] = "点盏",
 
   ["$lieshi1"] = "拭刃为誓，女无二夫。",
@@ -1588,7 +1578,7 @@ local mingjiew_record = fk.CreateTriggerSkill{
           local availableCards = {}
           for _, id in ipairs(ids) do
             local card = Fk:getCardById(id)
-            if not p:prohibitUse(card) and card.skill:canUse(p) then
+            if not p:prohibitUse(card) and p:canUse(card) then
               table.insertIfNeed(availableCards, id)
             end
           end
@@ -1824,7 +1814,7 @@ local guangu = fk.CreateActiveSkill{
     local availableCards = {}
     for _, id in ipairs(ids) do
       local card = Fk:getCardById(id)
-      if not player:prohibitUse(card) and card.skill:canUse(player) then
+      if not player:prohibitUse(card) and player:canUse(card) then
         table.insertIfNeed(availableCards, id)
       end
     end
