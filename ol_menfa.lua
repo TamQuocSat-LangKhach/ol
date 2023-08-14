@@ -94,37 +94,57 @@ local daojie = fk.CreateTriggerSkill{
   frequency = Skill.Compulsory,
   events = {fk.CardUseFinished},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name) and player:getMark("daojie-turn") == 0 and
-      data.card.type == Card.TypeTrick and not data.card.is_damage_card
+    if player ~= target or not player:hasSkill(self.name) then return false end
+    if data.card.type ~= Card.TypeTrick or data.card.is_damage_card then return false end
+    local room = player.room
+    if data.card:isVirtual() and #data.card.subcards == 0 then return false end
+    local logic = room.logic
+    local use_event = logic:getCurrentEvent()
+    local mark_name = "daojie_record-turn"
+    local mark = player:getMark(mark_name)
+    if mark == 0 then
+      logic:getEventsOfScope(GameEvent.UseCard, 1, function (e)
+        local last_use = e.data[1]
+        if last_use.from == player.id and last_use.card.type == Card.TypeTrick and not last_use.card.is_damage_card then
+          mark = e.id
+          room:setPlayerMark(player, mark_name, mark)
+          return true
+        end
+        return false
+      end, Player.HistoryTurn)
+    end
+    return mark == use_event.id
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    room:addPlayerMark(player, "daojie-turn", 1)
-    local skills = {"daojie_cancel"}
+    local skills = {}
     for _, skill in ipairs(player.player_skills) do
-      if skill.frequency == Skill.Compulsory and not skill.attached_equip then
+      if skill.frequency == Skill.Compulsory and not (skill:isEquipmentSkill() or skill.name:endsWith("&")) then
         table.insert(skills, skill.name)
       end
     end
-    local choice = room:askForChoice(player, skills, self.name, "#daojie-choice", true)
-    if choice == "daojie_cancel" then
+    table.insert(skills, "Cancel")
+    local choice = room:askForChoice(player, skills, self.name, "#daojie-choice")
+    if choice == "Cancel" then
       room:loseHp(player, 1, self.name)
     else
       room:handleAddLoseSkills(player, "-"..choice, nil, true, false)
-      if room:getCardArea(data.card) == Card.Processing then
-        local targets = {}
-        for _, p in ipairs(room:getAlivePlayers()) do
-          if table.find({"olz__xun", "xunchen", "xunyu", "xunyou"}, function(name)
-              return string.find(p.general, name) or string.find(p.deputyGeneral, name) end) then
-            table.insert(targets, p.id)
-          end
+    end
+    if table.every(Card:getIdList(data.card), function (id)
+      return room:getCardArea(id) == Card.Processing
+    end) then
+      local targets = {}
+      for _, p in ipairs(room:getAlivePlayers()) do
+        if table.find({"olz__xun", "xunchen", "xunyu", "xunyou"}, function(name)
+            return string.find(p.general, name) or string.find(p.deputyGeneral, name) end) then
+          table.insert(targets, p.id)
         end
-        local to = room:askForChoosePlayers(player, targets, 1, 1, "#daojie-choose:::"..data.card:toLogString(), self.name, false)
-        if #to == 0 then
-          to = {table.random(targets)}
-        end
-        room:obtainCard(to[1], data.card, true, fk.ReasonPrey)
       end
+      local to = room:askForChoosePlayers(player, targets, 1, 1, "#daojie-choose:::"..data.card:toLogString(), self.name, false)
+      if #to == 0 then
+        to = {table.random(targets)}
+      end
+      room:obtainCard(to[1], data.card, true, fk.ReasonPrey)
     end
   end,
 }
@@ -139,7 +159,7 @@ Fk:loadTranslationTable{
   ["beishi"] = "卑势",
   [":beishi"] = "锁定技，当你首次发动〖三恇〗选择的角色失去最后的手牌后，你回复1点体力。",
   ["daojie"] = "蹈节",
-  [":daojie"] = "宗族技，锁定技，当你每回合首次使用非伤害锦囊牌后，你选择一项：1.失去1点体力；2.失去一个锁定技，然后令一名同族角色获得此牌。",
+  [":daojie"] = "宗族技，锁定技，当你每回合首次使用非伤害锦囊牌后，你选择一项：1.失去1点体力；2.失去一个锁定技。然后令一名同族角色获得此牌。",
   ["#sankuang-choose"] = "三恇：令一名其他角色交给你至少X张牌并获得你使用的%arg",
   ["@sankuang"] = "三恇张数：",
   ["#sankuang-give"] = "三恇：你须交给 %src %arg张牌",
@@ -427,7 +447,7 @@ local lieshi = fk.CreateActiveSkill{
     end) then
       table.insert(choiceList, "lieshi_jink")
     end
-    return UI.ComboBox { choices = choiceList }
+    return UI.ComboBox { choices = choiceList  , all_choices = {"lieshi_prohibit", "lieshi_slash", "lieshi_jink"} }
   end,
   max_card_num = 0,
   target_num = 1,
@@ -450,7 +470,7 @@ local lieshi = fk.CreateActiveSkill{
       if i == 2 then
         to = target
         if to.dead then return false end
-        local choiceList = {}
+        local choiceList, all_choices = {}, {"lieshi_prohibit", "lieshi_slash", "lieshi_jink"}
         if not table.contains(to.sealedSlots, Player.JudgeSlot) then
           table.insert(choiceList, "lieshi_prohibit")
         end
@@ -469,8 +489,7 @@ local lieshi = fk.CreateActiveSkill{
         end
         table.removeOne(choiceList, choice)
         if #choiceList == 0 then return false end
-        choice = room:askForChoice(to, choiceList, self.name, "#lieshi-choice:" .. player.id)
-        --FIXME: 唯一选项自动选择，会暴露手牌信息
+        choice = room:askForChoice(to, choiceList, self.name, "#lieshi-choice:" .. player.id, false, all_choices)
       end
       if choice == "lieshi_prohibit" then
         room:abortPlayerArea(to, {Player.JudgeSlot})
@@ -509,7 +528,26 @@ local dianzhan = fk.CreateTriggerSkill{
   frequency = Skill.Compulsory,
   anim_type = "drawCard",
   can_trigger = function(self, event, target, player, data)
-    return player:hasSkill(self.name) and player == target and (data.extra_data or {}).dianzhanFirstCardSuitUsed
+    if player ~= target or not player:hasSkill(self.name) then return false end
+    local suit = data.card.suit
+    if suit == Card.NoSuit then return false end
+    local room = player.room
+    local logic = room.logic
+    local use_event = logic:getCurrentEvent()
+    local mark_name = "dianzhan_" .. data.card:getSuitString() .. "-round"
+    local mark = player:getMark(mark_name)
+    if mark == 0 then
+      logic:getEventsOfScope(GameEvent.UseCard, 1, function (e)
+        local last_use = e.data[1]
+        if last_use.from == player.id and last_use.card.suit == suit then
+          mark = e.id
+          room:setPlayerMark(player, mark_name, mark)
+          return true
+        end
+        return false
+      end, Player.HistoryRound)
+    end
+    return mark == use_event.id
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
@@ -535,23 +573,22 @@ local dianzhan = fk.CreateTriggerSkill{
     end
   end,
 
-  refresh_events = {fk.AfterCardUseDeclared},
+  refresh_events = {fk.AfterCardUseDeclared, fk.EventLoseSkill},
   can_refresh = function(self, event, target, player, data)
-    return player == target and data.card.suit ~= Card.NoSuit and (type(player:getMark("dianzhan_suit-round")) ~= "table"
-      or not table.contains(player:getMark("dianzhan_suit-round"), data.card:getSuitString()))
+    if event == fk.AfterCardUseDeclared then
+      return player == target and player:hasSkill(self.name, true) and data.card.suit ~= Card.NoSuit
+    elseif event == fk.EventLoseSkill then
+      return target == player and data == self
+    end
   end,
   on_refresh = function(self, event, target, player, data)
-    local room = player.room
-    local suitRecorded = type(player:getMark("dianzhan_suit-round")) == "table" and player:getMark("dianzhan_suit-round") or {}
-    table.insert(suitRecorded, data.card:getSuitString())
-    room:setPlayerMark(player, "dianzhan_suit-round", suitRecorded)
-    if player:hasSkill(self.name, true) then
-      room:setPlayerMark(player, "@dianzhan_suit-round", table.map(suitRecorded, function (suit)
-        return "log_" .. suit
-      end))
+    if event == fk.AfterCardUseDeclared then
+      local suitRecorded = type(player:getMark("@dianzhan_suit-round")) == "table" and player:getMark("@dianzhan_suit-round") or {}
+      table.insertIfNeed(suitRecorded, data.card:getSuitString(true))
+      player.room:setPlayerMark(player, "@dianzhan_suit-round", suitRecorded)
+    elseif event == fk.EventLoseSkill then
+      player.room:setPlayerMark(player, "@dianzhan_suit-round", 0)
     end
-    data.extra_data = data.extra_data or {}
-    data.extra_data.dianzhanFirstCardSuitUsed = true
   end,
 }
 local huanyin = fk.CreateTriggerSkill{
@@ -580,7 +617,7 @@ Fk:loadTranslationTable{
   ["dianzhan"] = "点盏",
   [":dianzhan"] = "锁定技，当你每轮首次使用一种花色的牌后，你横置此牌唯一目标并重铸此花色的所有手牌，然后若你以此法横置了角色且你以此法重铸了牌，你摸一张牌。",
   ["huanyin"] = "还阴",
-  [":huanyin"] = "锁定技，当你进入濒死状态时，你将手牌摸至4张。",
+  [":huanyin"] = "锁定技，当你进入濒死状态时，你将手牌摸至四张。",
 
   ["#lieshi-active"] = "发动烈誓，选择你要执行的效果并选择一名其他角色，该角色选择并执行不同的一项",
   ["#lieshi-choice"] = "烈誓：选择：废除判定区并受到%src造成的1点火焰伤害，或弃置手牌区中所有的【杀】或【闪】",
