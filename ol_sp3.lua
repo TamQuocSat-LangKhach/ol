@@ -193,7 +193,7 @@ local ol__meibu = fk.CreateTriggerSkill{
     room:handleAddLoseSkills(target, 'ol__zhixi', nil, true, true)
 
     if card.trueName ~= 'slash' and not (card.color == Card.Black and card.type == Card.TypeTrick) then
-      room:setPlayerMark(player, "ol_meibu_src-turn", 1)
+      room:setPlayerMark(player, "ol__meibu_src-turn", 1)
     end
   end,
 
