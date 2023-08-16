@@ -157,6 +157,175 @@ Fk:loadTranslationTable{
   ["~ol__guyong"] = "此番患疾，吾必不起……",
 }
 
+local ol__sunluyu = General(extension, 'ol__sunluyu', 'wu', 3, 3, General.Female)
+local ol__meibu_dis = fk.CreateDistanceSkill{
+  name = '#ol__meibu_dis',
+  fixed_func = function(self, from, to)
+    if from:getMark('ol__meibu') > 0 and to:getMark('ol__meibu_src-turn') > 0 then
+      return 1
+    end
+  end,
+}
+local ol__meibu = fk.CreateTriggerSkill{
+  name = "ol__meibu",
+  anim_type = "control",
+  events = {fk.EventPhaseStart},
+  can_trigger = function(self, event, target, player, data)
+    return player:hasSkill(self.name) and target.phase == Player.Play and target ~= player
+      and target:inMyAttackRange(player) and not target:hasSkill('ol__zhixi')
+  end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    local c = room:askForDiscard(player, 1, 1, true, self.name, true,
+      ".", "#ol__meibu-invoke:" .. target.id, true)[1]
+
+    if c then
+      self.cost_data = c
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local c = self.cost_data
+    room:throwCard(c, self.name, player, player)
+    local card = Fk:getCardById(c)
+    room:setPlayerMark(target, "ol__meibu", 1)
+    room:handleAddLoseSkills(target, 'ol__zhixi', nil, true, true)
+
+    if card.trueName ~= 'slash' and not (card.color == Card.Black and card.type == Card.TypeTrick) then
+      room:setPlayerMark(player, "ol_meibu_src-turn", 1)
+    end
+  end,
+
+  refresh_events = { fk.TurnEnd },
+  can_refresh = function(self, event, target, player, data)
+    return target == player and target:getMark("ol__meibu") > 0
+  end,
+  on_refresh = function(self, event, target, player, data)
+    local room = player.room
+    room:setPlayerMark(target, "ol__meibu", 0)
+    room:handleAddLoseSkills(target, '-ol__zhixi', nil, true, true)
+  end,
+}
+ol__meibu:addRelatedSkill(ol__meibu_dis)
+ol__sunluyu:addSkill(ol__meibu)
+local ol__mumu_pro = fk.CreateProhibitSkill{
+  name = '#ol__mumu_pro',
+  prohibit_response = function(self, player, card)
+    return card.trueName == 'slash' and player:getMark('@ol__mumu-turn') > 0
+  end,
+  prohibit_use = function(self, player, card)
+    return card.trueName == 'slash' and player:getMark('@ol__mumu-turn') > 0
+  end,
+}
+local ol__mumu = fk.CreateTriggerSkill{
+  name = 'ol__mumu',
+  anim_type = 'control',
+  events = { fk.EventPhaseStart },
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self.name) and player.phase == Player.Play
+  end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    local choices = { "Cancel" }
+    if table.find(room.alive_players, function(p)
+      return p:getEquipment(Card.SubtypeArmor)
+    end) then table.insert(choices, 1, "ol__mumu_get") end
+    if table.find(room:getOtherPlayers(player), function(p)
+      return #p:getCardIds("e") > 0
+    end) then table.insert(choices, 1, "ol__mumu_discard") end
+    local choice = room:askForChoice(player, choices, self.name)
+    if choice ~= "Cancel" then
+      self.cost_data = choice
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    if self.cost_data == 'ol__mumu_discard' then
+      local targets = table.filter(room:getOtherPlayers(player), function(p)
+        return #p:getCardIds("e") > 0
+      end)
+
+      targets = table.map(targets, Util.IdMapper)
+      local pid = room:askForChoosePlayers(player, targets, 1, 1, '#ol__mumu-discard',
+        self.name, false)[1]
+
+      local to = room:getPlayerById(pid)
+      local id = room:askForCardChosen(player, to, "e", self.name)
+      room:throwCard(id, self.name, to, player)
+    else
+      local targets = table.filter(room.alive_players, function(p)
+        return p:getEquipment(Card.SubtypeArmor)
+      end)
+
+      targets = table.map(targets, Util.IdMapper)
+      local pid = room:askForChoosePlayers(player, targets, 1, 1, '#ol__mumu-get',
+        self.name, false)[1]
+
+      local to = room:getPlayerById(pid)
+      local id = to:getEquipment(Card.SubtypeArmor)
+      room:setPlayerMark(player, '@ol__mumu-turn', 1)
+      room:obtainCard(player, id)
+    end
+  end,
+}
+ol__mumu:addRelatedSkill(ol__mumu_pro)
+ol__sunluyu:addSkill(ol__mumu)
+local zhixip = fk.CreateProhibitSkill{
+  name = '#ol__zhixi_pro',
+  prohibit_use = function(self, player)
+    if not player:hasSkill('ol__zhixi') then
+      return false
+    end
+    local mark = player:getMark('@ol__zhixi-phase')
+    if type(mark) == "string" then mark = math.huge end
+    return mark >= player.hp
+  end,
+}
+local zhixi = fk.CreateTriggerSkill{
+  name = 'ol__zhixi',
+  frequency = Skill.Compulsory,
+  refresh_events = { fk.CardUsing },
+  can_refresh = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self.name)
+  end,
+  on_refresh = function(self, event, target, player, data)
+    local room = player.room
+    if data.card.type == Card.TypeTrick then
+      room:setPlayerMark(player, '@ol__zhixi-phase', '∞')
+    elseif type(player:getMark('@ol__zhixi-phase')) == "number" then
+      room:addPlayerMark(player, '@ol__zhixi-phase', 1)
+    end
+  end,
+}
+zhixi:addRelatedSkill(zhixip)
+ol__sunluyu:addRelatedSkill(zhixi)
+Fk:loadTranslationTable{
+  ['ol__sunluyu'] = '孙鲁育',
+  ['ol__meibu'] = '魅步',
+  [':ol__meibu'] = '其他角色的出牌阶段开始时，若你在其攻击范围内，' ..
+    '你可以弃置一张牌，令该角色于本回合内拥有“止息”。' ..
+    '若你以此法弃置的牌不是【杀】或黑色锦囊牌，则本回合其与你距离视为1。',
+  ['#ol__meibu-invoke'] = '魅步：是否弃置一张牌让 %src 本回合获得技能“止息”？',
+  ['ol__mumu'] = '穆穆',
+  [':ol__mumu'] = '出牌阶段开始时，你可以选择一项：1.弃置一名其他角色装备区里的一张牌；2.获得一名角色装备区里的一张防具牌且你本回合不能使用或打出【杀】。',
+  ['ol__mumu_get'] = '获得一名角色装备区的防具，本回合不可出杀',
+  ['ol__mumu_discard'] = '弃置一名其他角色装备区里的一张牌',
+  ['#ol__mumu-discard'] = '穆穆：请选择一名其他角色，弃置其装备区里的一张牌',
+  ['#ol__mumu-get'] = '穆穆：请选择一名角色，获得其防具',
+  ['@ol__mumu-turn'] = '穆穆不能出杀',
+  ['ol__zhixi'] = '止息',
+  [':ol__zhixi'] = '锁定技，出牌阶段你可至多使用X张牌，你使用锦囊牌后，不能再使用牌（X为你的体力值）。',
+  ['@ol__zhixi-phase'] = '止息已使用',
+
+  ['$ol__meibu1'] = '姐姐，妹妹不求达官显贵，但求家人和睦。',
+  ['$ol__meibu2'] = '储君之争，实为仇者快，亲者痛矣。',
+  ['$ol__mumu1'] = '穆穆语言，不惊左右。',
+  ['$ol__mumu2'] = '亲人和睦，国家安定就好。',
+  ['~ol__sunluyu'] = '姐妹之间，何必至此？',
+}
+
 local ol__zhoufei = General(extension, "ol__zhoufei", "wu", 3, 3, General.Female)
 local ol__liangyin = fk.CreateTriggerSkill{
   name = "ol__liangyin",
