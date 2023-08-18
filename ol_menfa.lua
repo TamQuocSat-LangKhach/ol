@@ -1962,6 +1962,14 @@ Fk:loadTranslationTable{
   ["guangu_viewas"] = "观骨",
   ["#guangu-use"] = "观骨：你可以使用其中一张牌",
   ["#baozu-invoke"] = "保族：你可以令 %dest 横置并回复1点体力",
+
+  ["$guangu1"] = "此才拔萃，然观其形骨，恐早夭。",
+  ["$guangu2"] = "绯衣者，汝所拔乎？",
+  ["$xiaoyong1"] = "凉风萧条，露沾我衣。",
+  ["$xiaoyong2"] = "忧来多方，慨然永怀。",
+  ["$baozu1"] = "好女宜家，可度大厄。",
+  ["$baozu2"] = "宗族有难，当施以援手。",
+  ["~olz__zhongyan"] = "此间天下人，皆分一斗之才……",
 }
 
 local zhonghui = General(extension, "olz__zhonghui", "wei", 3, 4)
@@ -2213,6 +2221,14 @@ Fk:loadTranslationTable{
   ["#chenya-invoke"] = "沉雅：你可以令 %dest 重铸牌",
   ["chenya_active"] = "沉雅",
   ["#chenya-card"] = "沉雅：你可以重铸任意张牌名字数为%arg的牌",
+
+  ["$fuxun1"] = "东吴遗民惶惶，宜抚而不宜罚。	",
+  ["$fuxun2"] = "江东新附，不可以严法度之。",
+  ["$chenya1"] = "喜怒不现于形，此为执中之道。",
+  ["$chenya2"] = "胸有万丈之海，故而波澜不惊。",
+  ["$olz__wanghun-zhongliu1"] = "国潮汹涌，当为中流之砥柱。",
+  ["$olz__wanghun-zhongliu2"] = "执剑斩巨浪，息风波者出我辈。",
+  ["~olz__wanghun"] = "灭国之功本属我，奈何枉作他人衣……",
 }
 
 return extension
