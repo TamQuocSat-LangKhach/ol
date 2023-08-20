@@ -520,6 +520,7 @@ local ol_ex__tianxiang = fk.CreateTriggerSkill{
 }
 local ol_ex__hongyan = fk.CreateFilterSkill{
   name = "ol_ex__hongyan",
+  frequency = Skill.Compulsory,
   card_filter = function(self, to_select, player)
     return to_select.suit == Card.Spade and player:hasSkill(self.name)
   end,
@@ -1698,7 +1699,7 @@ local ol_ex__haoshi_delay = fk.CreateTriggerSkill{
       end)
     end
   end,
-  
+
   refresh_events = {fk.EventPhaseChanging},
   can_refresh = function(self, event, target, player, data)
     return player == target and data.from == Player.RoundStart and type(player:getMark("ol_ex__haoshi_target")) == "table"
@@ -1707,6 +1708,81 @@ local ol_ex__haoshi_delay = fk.CreateTriggerSkill{
     player.room:setPlayerMark(player, "ol_ex__haoshi_target", 0)
   end,
 }
+local function swapHandCards(room, from, tos, skillname)
+  local target1 = room:getPlayerById(tos[1])
+  local target2 = room:getPlayerById(tos[2])
+  local cards1 = table.clone(target1.player_cards[Player.Hand])
+  local cards2 = table.clone(target2.player_cards[Player.Hand])
+  local moveInfos = {}
+  if #cards1 > 0 then
+    table.insert(moveInfos, {
+      from = tos[1],
+      ids = cards1,
+      toArea = Card.Processing,
+      moveReason = fk.ReasonExchange,
+      proposer = from,
+      skillName = skillname,
+    })
+  end
+  if #cards2 > 0 then
+    table.insert(moveInfos, {
+      from = tos[2],
+      ids = cards2,
+      toArea = Card.Processing,
+      moveReason = fk.ReasonExchange,
+      proposer = from,
+      skillName = skillname,
+    })
+  end
+  if #moveInfos > 0 then
+    room:moveCards(table.unpack(moveInfos))
+  end
+  moveInfos = {}
+  if not target2.dead then
+    local to_ex_cards = table.filter(cards1, function (id)
+      return room:getCardArea(id) == Card.Processing
+    end)
+    if #to_ex_cards > 0 then
+      table.insert(moveInfos, {
+        ids = to_ex_cards,
+        fromArea = Card.Processing,
+        to = tos[2],
+        toArea = Card.PlayerHand,
+        moveReason = fk.ReasonExchange,
+        proposer = from,
+        skillName = skillname,
+      })
+    end
+  end
+  if not target1.dead then
+    local to_ex_cards = table.filter(cards2, function (id)
+      return room:getCardArea(id) == Card.Processing
+    end)
+    if #to_ex_cards > 0 then
+      table.insert(moveInfos, {
+        ids = to_ex_cards,
+        fromArea = Card.Processing,
+        to = tos[1],
+        toArea = Card.PlayerHand,
+        moveReason = fk.ReasonExchange,
+        proposer = from,
+        skillName = skillname,
+      })
+    end
+  end
+  if #moveInfos > 0 then
+    room:moveCards(table.unpack(moveInfos))
+  end
+  table.insertTable(cards1, cards2)
+  local dis_cards = table.filter(cards1, function (id)
+    return room:getCardArea(id) == Card.Processing
+  end)
+  if #dis_cards > 0 then
+    local dummy = Fk:cloneCard("dilu")
+    dummy:addSubcards(dis_cards)
+    room:moveCardTo(dummy, Card.DiscardPile, nil, fk.ReasonPutIntoDiscardPile, skillname)
+  end
+end
 local ol_ex__dimeng = fk.CreateActiveSkill{
   name = "ol_ex__dimeng",
   anim_type = "control",
@@ -1730,48 +1806,7 @@ local ol_ex__dimeng = fk.CreateActiveSkill{
     end
   end,
   on_use = function(self, room, effect)
-    local cards1 = table.clone(room:getPlayerById(effect.tos[1]).player_cards[Player.Hand])
-    local cards2 = table.clone(room:getPlayerById(effect.tos[2]).player_cards[Player.Hand])
-    local move1 = {
-      from = effect.tos[1],
-      ids = cards1,
-      toArea = Card.Processing,
-      moveReason = fk.ReasonExchange,
-      proposer = effect.from,
-      skillName = self.name,
-    }
-    local move2 = {
-      from = effect.tos[2],
-      ids = cards2,
-      toArea = Card.Processing,
-      moveReason = fk.ReasonExchange,
-      proposer = effect.from,
-      skillName = self.name,
-    }
-    room:moveCards(move1, move2)
-    local move3 = {
-      ids = table.filter(cards1, function (id)
-        return room:getCardArea(id) == Card.Processing
-      end),
-      fromArea = Card.Processing,
-      to = effect.tos[2],
-      toArea = Card.PlayerHand,
-      moveReason = fk.ReasonExchange,
-      proposer = effect.from,
-      skillName = self.name,
-    }
-    local move4 = {
-      ids = table.filter(cards2, function (id)
-        return room:getCardArea(id) == Card.Processing
-      end),
-      fromArea = Card.Processing,
-      to = effect.tos[1],
-      toArea = Card.PlayerHand,
-      moveReason = fk.ReasonExchange,
-      proposer = effect.from,
-      skillName = self.name,
-    }
-    room:moveCards(move3, move4)
+    swapHandCards(room, effect.from, effect.tos, self.name)
     local player = room:getPlayerById(effect.from)
     local targetRecorded = type(player:getMark("ol_ex__dimeng_target-phase")) == "table" and player:getMark("ol_ex__dimeng_target-phase") or {}
     table.insert(targetRecorded, effect.tos)

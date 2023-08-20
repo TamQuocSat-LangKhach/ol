@@ -1225,6 +1225,81 @@ local nishou = fk.CreateTriggerSkill{
     end
   end,
 }
+local function swapHandCards(room, from, tos, skillname)
+  local target1 = room:getPlayerById(tos[1])
+  local target2 = room:getPlayerById(tos[2])
+  local cards1 = table.clone(target1.player_cards[Player.Hand])
+  local cards2 = table.clone(target2.player_cards[Player.Hand])
+  local moveInfos = {}
+  if #cards1 > 0 then
+    table.insert(moveInfos, {
+      from = tos[1],
+      ids = cards1,
+      toArea = Card.Processing,
+      moveReason = fk.ReasonExchange,
+      proposer = from,
+      skillName = skillname,
+    })
+  end
+  if #cards2 > 0 then
+    table.insert(moveInfos, {
+      from = tos[2],
+      ids = cards2,
+      toArea = Card.Processing,
+      moveReason = fk.ReasonExchange,
+      proposer = from,
+      skillName = skillname,
+    })
+  end
+  if #moveInfos > 0 then
+    room:moveCards(table.unpack(moveInfos))
+  end
+  moveInfos = {}
+  if not target2.dead then
+    local to_ex_cards = table.filter(cards1, function (id)
+      return room:getCardArea(id) == Card.Processing
+    end)
+    if #to_ex_cards > 0 then
+      table.insert(moveInfos, {
+        ids = to_ex_cards,
+        fromArea = Card.Processing,
+        to = tos[2],
+        toArea = Card.PlayerHand,
+        moveReason = fk.ReasonExchange,
+        proposer = from,
+        skillName = skillname,
+      })
+    end
+  end
+  if not target1.dead then
+    local to_ex_cards = table.filter(cards2, function (id)
+      return room:getCardArea(id) == Card.Processing
+    end)
+    if #to_ex_cards > 0 then
+      table.insert(moveInfos, {
+        ids = to_ex_cards,
+        fromArea = Card.Processing,
+        to = tos[1],
+        toArea = Card.PlayerHand,
+        moveReason = fk.ReasonExchange,
+        proposer = from,
+        skillName = skillname,
+      })
+    end
+  end
+  if #moveInfos > 0 then
+    room:moveCards(table.unpack(moveInfos))
+  end
+  table.insertTable(cards1, cards2)
+  local dis_cards = table.filter(cards1, function (id)
+    return room:getCardArea(id) == Card.Processing
+  end)
+  if #dis_cards > 0 then
+    local dummy = Fk:cloneCard("dilu")
+    dummy:addSubcards(dis_cards)
+    room:moveCardTo(dummy, Card.DiscardPile, nil, fk.ReasonPutIntoDiscardPile, skillname)
+  end
+end
 local nishou_delay = fk.CreateTriggerSkill{
   name = "#nishou_delay",
   events = {fk.EventPhaseEnd},
@@ -1248,51 +1323,9 @@ local nishou_delay = fk.CreateTriggerSkill{
     end
     local cancelable = table.removeOne(tos, player.id)
     if #tos == 0 then return false end
-    tos = room:askForChoosePlayers(player, tos, 1, 1, "#nishou-choose", self.name, cancelable, true)
+    tos = room:askForChoosePlayers(player, tos, 1, 1, "#nishou-choose", nishou.name, cancelable, true)
     if #tos == 0 then return false end
-
-    local cards1 = table.clone(player.player_cards[Player.Hand])
-    local cards2 = table.clone(room:getPlayerById(tos[1]).player_cards[Player.Hand])
-    local move1 = {
-      from = player.id,
-      ids = cards1,
-      toArea = Card.Processing,
-      moveReason = fk.ReasonExchange,
-      proposer = player.id,
-      skillName = self.name,
-    }
-    local move2 = {
-      from = tos[1],
-      ids = cards2,
-      toArea = Card.Processing,
-      moveReason = fk.ReasonExchange,
-      proposer = player.id,
-      skillName = self.name,
-    }
-    room:moveCards(move1, move2)
-    local move3 = {
-      ids = table.filter(cards1, function (id)
-        return room:getCardArea(id) == Card.Processing
-      end),
-      fromArea = Card.Processing,
-      to = tos[1],
-      toArea = Card.PlayerHand,
-      moveReason = fk.ReasonExchange,
-      proposer = player.id,
-      skillName = self.name,
-    }
-    local move4 = {
-      ids = table.filter(cards2, function (id)
-        return room:getCardArea(id) == Card.Processing
-      end),
-      fromArea = Card.Processing,
-      to = player.id,
-      toArea = Card.PlayerHand,
-      moveReason = fk.ReasonExchange,
-      proposer = player.id,
-      skillName = self.name,
-    }
-    room:moveCards(move3, move4)
+    swapHandCards(room, player.id, {player.id, tos[1]}, nishou.name)
   end,
 }
 nishou:addRelatedSkill(nishou_delay)

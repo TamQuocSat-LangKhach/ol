@@ -147,7 +147,7 @@ Fk:loadTranslationTable{
 
 local jadeCombSkill = fk.CreateTriggerSkill{
   name = "#jade_comb_skill",
-  mute = true,
+  attached_equip = "jade_comb",
   events = {fk.DamageInflicted},
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(self.name)
@@ -192,7 +192,7 @@ Fk:loadTranslationTable{
 
 local rhinoCombSkill = fk.CreateTriggerSkill{
   name = "#rhino_comb_skill",
-  mute = true,
+  attached_equip = "rhino_comb",
   events = {fk.EventPhaseChanging},
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(self.name) and data.to == Player.Judge
@@ -236,7 +236,7 @@ Fk:loadTranslationTable{
 
 local goldenCombSkill = fk.CreateTriggerSkill{
   name = "#golden_comb_skill",
-  mute = true,
+  attached_equip = "golden_comb",
   events = {fk.EventPhaseEnd},
   frequency = Skill.Compulsory,
   can_trigger = function(self, event, target, player, data)
@@ -375,6 +375,7 @@ Fk:loadTranslationTable{
 
 local qinSealSkill = fk.CreateTriggerSkill{
   name = "#qin_seal_skill",
+  attached_equip = "qin_seal",
   mute = true,
   events = {fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)

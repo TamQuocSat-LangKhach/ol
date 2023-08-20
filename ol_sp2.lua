@@ -3588,9 +3588,11 @@ local jisi = fk.CreateTriggerSkill{
       end
       if player.deputyGeneral and player.deputyGeneral ~= "" then
         local all_deputy_skills = Fk.generals[player.deputyGeneral]:getSkillNameList()
-        for _, skill_name in ipairs(all_deputy_skills) do
-          if player:usedSkillTimes(skill_name, Player.HistoryGame) > 0 then
-            return true
+        if table.contains(all_deputy_skills, self.name) then
+          for _, skill_name in ipairs(all_deputy_skills) do
+            if player:usedSkillTimes(skill_name, Player.HistoryGame) > 0 then
+              return true
+            end
           end
         end
       end
@@ -3627,9 +3629,11 @@ local jisi_active = fk.CreateActiveSkill{
     end
     if Self.deputyGeneral and Self.deputyGeneral ~= "" then
       local all_deputy_skills = Fk.generals[Self.deputyGeneral]:getSkillNameList()
-      for _, skill_name in ipairs(all_deputy_skills) do
-        if Self:usedSkillTimes(skill_name, Player.HistoryGame) > 0 then
-          table.insertIfNeed(skills, skill_name)
+      if table.contains(all_deputy_skills, jisi.name) then
+        for _, skill_name in ipairs(all_deputy_skills) do
+          if Self:usedSkillTimes(skill_name, Player.HistoryGame) > 0 then
+            table.insertIfNeed(skills, skill_name)
+          end
         end
       end
     end
