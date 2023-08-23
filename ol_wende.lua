@@ -1496,18 +1496,23 @@ local bolan_skills = {
   --yjcm
   "nos__xuanhuo", "xinzhan", "nos__jujian", "ganlu", "xianzhen", "anxu", "gongqi", "huaiyi", "zhige",
   --ol
-  "ziyuan", "lianzhu", "shanxi", "lianji", "jianji", "liehou", "xianbi", "shidu", "yanxi", "xuanbei", "yushen", "bolong",
+  "ziyuan", "lianzhu", "shanxi", "lianji", "jianji", "liehou", "xianbi", "shidu", "yanxi", "xuanbei", "yushen", "bolong", "fuxun",
   --mobile
-  "wisdom__qiai", "yangjie", "mou__jushou", "mou__fanjian",
+  "wuyuan", "zhujian", "duansuo", "poxiang", "hannan", "shihe", "wisdom__qiai", "shameng", "zundi", "mobile__shangyi", "yangjie",
+  "mou__jushou", "mou__fanjian",
   --overseas
   "os__jimeng", "os__beini", "os__yuejian", "os__waishi", "os__weipo", "os__shangyi",
   --tenyear
   "guolun", "kuiji", "ty__jianji", "caizhuang", "xinyou", "tanbei", "lveming", "ty__songshu", "ty__mouzhu", "libang", "nuchen",
   "weiwu", "ty__qingcheng", "ty__jianshu", "qiangzhiz", "ty__fenglve", "boyan",
   --jsrg
-  "js__yizheng",
+  "js__yizheng", "shelun", "lunshi",
+  --offline
+  "miaojian", "xuepin", "ofl__shameng",
   --wandian
-  "wd__liangce", "wd__kenjian", "wd__suli",
+  "wd__liangce", "wd__kenjian", "wd__zongqin", "wd__suli",
+  --tuguo
+  "tg__bode",
 }
 local bolan = fk.CreateTriggerSkill{
   name = "bolan",

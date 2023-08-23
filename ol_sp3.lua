@@ -2723,13 +2723,14 @@ local goude = fk.CreateTriggerSkill{
       for _, p in ipairs(room.alive_players) do
         if p.kingdom == player.kingdom then
           local events = room.logic:getEventsOfScope(GameEvent.MoveCards, 1, function(e)
-            local move = e.data[1]
-            if move.to == p.id and move.toArea == Player.Hand and move.moveReason == fk.ReasonDraw and #move.moveInfo == 1 then
-              return true
-            elseif move.moveReason == fk.ReasonDiscard and (move.proposer == p or move.proposer == p.id) and #move.moveInfo == 1 then
-              for _, info in ipairs(move.moveInfo) do
-                if info.fromArea == Card.PlayerHand then
-                  return true
+            for _, move in ipairs(e.data) do
+              if move.to == p.id and move.toArea == Player.Hand and move.moveReason == fk.ReasonDraw and #move.moveInfo == 1 then
+                return true
+              elseif move.moveReason == fk.ReasonDiscard and (move.proposer == p or move.proposer == p.id) and #move.moveInfo == 1 then
+                for _, info in ipairs(move.moveInfo) do
+                  if info.fromArea == Card.PlayerHand then
+                    return true
+                  end
                 end
               end
             end
@@ -2760,9 +2761,10 @@ local goude = fk.CreateTriggerSkill{
         local events
         if table.contains(choices, "draw1") then
           events = room.logic:getEventsOfScope(GameEvent.MoveCards, 1, function(e)
-            local move = e.data[1]
-            if move.to == p.id and move.toArea == Player.Hand and move.moveReason == fk.ReasonDraw and #move.moveInfo == 1 then
-              return true
+            for _, move in ipairs(e.data) do
+              if move.to == p.id and move.toArea == Player.Hand and move.moveReason == fk.ReasonDraw and #move.moveInfo == 1 then
+                return true
+              end
             end
           end, Player.HistoryTurn)
           if #events > 0 then
@@ -2771,14 +2773,15 @@ local goude = fk.CreateTriggerSkill{
         end
         if table.contains(choices, "goude2") then
           events = room.logic:getEventsOfScope(GameEvent.MoveCards, 1, function(e)
-            local move = e.data[1]
-            if move.to == p.id and move.toArea == Player.Hand and move.moveReason == fk.ReasonDraw and #move.moveInfo == 1 then
-              return true
-            end
-            if move.moveReason == fk.ReasonDiscard and (move.proposer == p or move.proposer == p.id) and #move.moveInfo == 1 then
-              for _, info in ipairs(move.moveInfo) do
-                if info.fromArea == Card.PlayerHand then
-                  return true
+            for _, move in ipairs(e.data) do
+              if move.to == p.id and move.toArea == Player.Hand and move.moveReason == fk.ReasonDraw and #move.moveInfo == 1 then
+                return true
+              end
+              if move.moveReason == fk.ReasonDiscard and (move.proposer == p or move.proposer == p.id) and #move.moveInfo == 1 then
+                for _, info in ipairs(move.moveInfo) do
+                  if info.fromArea == Card.PlayerHand then
+                    return true
+                  end
                 end
               end
             end

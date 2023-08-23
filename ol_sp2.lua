@@ -3838,7 +3838,118 @@ Fk:loadTranslationTable{
   ["~wangyan"] = "影摇枭鸱动，三窟难得生。",
 }
 
---霍峻2022.10.21
+local huojun = General(extension, "ol__huojun", "shu", 4)
+local qiongshou = fk.CreateTriggerSkill{
+  name = "qiongshou",
+  anim_type = "drawcard",
+  frequency = Skill.Compulsory,
+  events = {fk.GamePrepared},
+  can_trigger = function(self, event, target, player, data)
+    return player:hasSkill(self.name)
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local subtype = {Card.SubtypeWeapon, Card.SubtypeArmor, Card.SubtypeOffensiveRide, Card.SubtypeDefensiveRide, Card.SubtypeTreasure}
+    local slots = {}
+    for _, type in ipairs(subtype) do
+      for i = 1, #player:getAvailableEquipSlots(type), 1 do
+        table.insert(slots, Util.convertSubtypeAndEquipSlot(type))
+      end
+    end
+    room:abortPlayerArea(player, slots)
+    player:drawCards(4, self.name)
+  end,
+}
+local qiongshou_maxcards = fk.CreateMaxCardsSkill{
+  name = "#qiongshou_maxcards",
+  frequency = Skill.Compulsory,
+  correct_func = function(self, player)
+    if player:hasSkill("qiongshou") then
+      return 4
+    else
+      return 0
+    end
+  end,
+}
+local fenrui = fk.CreateTriggerSkill{
+  name = "fenrui",
+  anim_type = "offensive",
+  events = {fk.EventPhaseStart},
+  can_trigger = function(self, event, target, player, data)
+    if target == player and player:hasSkill(self.name) and player.phase == Player.Finish and not player:isNude() then
+      return table.find({Player.WeaponSlot, Player.ArmorSlot, Player.OffensiveRideSlot, Player.DefensiveRideSlot, Player.TreasureSlot},
+        function(slot) return table.contains(player.sealedSlots, slot) end)
+    end
+  end,
+  on_cost = function(self, event, target, player, data)
+    local card = player.room:askForDiscard(player, 1, 1, false, self.name, true, ".", "#fenrui-invoke", true)
+    if #card > 0 then
+      self.cost_data = card
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local choices = {}
+    local slots = {Player.WeaponSlot, Player.ArmorSlot, Player.OffensiveRideSlot, Player.DefensiveRideSlot, Player.TreasureSlot}
+    local subtype = {"weapon", "armor", "offensive_horse", "defensive_horse", "treasure"}
+    for _, slot in ipairs(player.sealedSlots) do
+      if slot ~= Player.JudgeSlot then
+        table.insert(choices, subtype[table.indexOf(slots, slot)])
+      end
+    end
+    if #choices == 0 then return end
+    local choice = room:askForChoice(player, choices, self.name, "#fenrui-choice")
+    room:resumePlayerArea(player, slots[table.indexOf(subtype, choice)])
+    room:throwCard(self.cost_data, self.name, player, player)  --FIXME: 最好应该是用interaction来选
+    if player.dead then return end
+    if choice == "offensive_horse" then
+      choice = "offensive_ride"
+    elseif choice == "defensive_horse" then
+      choice = "defensive_ride"
+    end
+    local id = room:getCardsFromPileByRule(".|.|.|.|.|"..choice, 1, "allPiles")[1]
+    if id then
+      room:useCard({
+        from = player.id,
+        tos = {{player.id}},
+        card = Fk:getCardById(id),
+      })
+    end
+    if not player.dead and player:getMark("@@fenrui") == 0 then
+      local targets = table.map(table.filter(room:getOtherPlayers(player), function(p)
+        return #p:getCardIds("e") < #player:getCardIds("e") end), function(p) return p.id end)
+      if #targets == 0 then return end
+      local to = room:askForChoosePlayers(player, targets, 1, 1, "#fenrui-choose", self.name, true)
+      if #to > 0 then
+        room:setPlayerMark(player, "@@fenrui", 1)
+        to = room:getPlayerById(to[1])
+        room:damage{
+          from = player,
+          to = to,
+          damage = #player:getCardIds("e") - #to:getCardIds("e"),
+          skillName = self.name,
+        }
+      end
+    end
+  end,
+}
+qiongshou:addRelatedSkill(qiongshou_maxcards)
+huojun:addSkill(qiongshou)
+huojun:addSkill(fenrui)
+Fk:loadTranslationTable{
+  ["ol__huojun"] = "霍峻",
+  ["qiongshou"] = "穷守",
+  [":qiongshou"] = "锁定技，游戏开始时，你废除所有装备栏并摸四张牌。你的手牌上限+4。",
+  ["fenrui"] = "奋锐",
+  [":fenrui"] = "结束阶段，你可以弃置一张牌并复原一个装备栏，随机使用一张对应的装备牌，然后每局游戏限一次，你可以对一名装备区牌数小于"..
+  "你的角色造成X点伤害（X为你与其装备区牌数之差）。",
+  ["#fenrui-invoke"] = "奋锐：你可以弃置一张牌恢复一个装备栏，随机使用一张对应的装备牌",
+  ["#fenrui-choice"] = "奋锐：选择你要恢复的栏位",
+  ["@@fenrui"] = "奋锐",
+  ["#fenrui-choose"] = "奋锐：你可以对一名装备少于你的角色造成你与其装备数之差的伤害！（每局限一次）",
+}
+
 local dengzhong = General(extension, "dengzhong", "wei", 4)
 local kanpod = fk.CreateViewAsSkill{
   name = "kanpod",
@@ -4482,17 +4593,22 @@ local yuheng_skills = {
   --standard
   "keji", "xiaoji", "jieyin", "ex__zhiheng", "ex__yingzi", "ex__fanjian", "ex__guose",
   --shzl
-  "tianyi", "yinghun", "haoshi", "jiang", "zhijian",
+  "tianyi", "yinghun", "haoshi", "dimeng", "jiang", "zhijian",
   --sp
   "hongyuan", "duanbing", "fenxun", "mumu", "tanhu", "yanxiao",
   --yjcm
   "xuanfeng", "pojun", "anxu", "gongqi", "anjian", "zhiyan", "danshou", "shenxing", "bingyi", "yanzhu", "anguo", "jishe",
   --ol
-  "canshi", "shanxi", "xiashu", "lianpian", "bizheng", "lanjiang", "yuanchou", "xianbi",
+  "duwu", "canshi", "shanxi", "xiashu", "lianpian", "bizheng", "yidian", "lanjiang", "yuanchou", "ol__hongyuan", "ol__bingyi", "ol__mumu",
+  "xianbi",
   --mobile
-  "dujin", "chongjian", "mou__kurou", "mou__fanjian", "m_ex__pojun",
+  "yingjian", "dujin", "chongjian", "mobile__shangyi", "mobile__diaodu", "yanji", "mou__kurou", "mou__guose", "mou__fanjian", "m_ex__pojun",
   --tenyear
-  "xunxian", "guolun", "duanfa", "sp__youdi", "zhukou", "jinjian", "jingzao", "xinyou", "zhiren", "sibian", "boyan", "niji",
+  "xunxian", "guolun", "duanfa", "sp__youdi", "qinguo", "zhukou", "jinjian", "jingzao", "xinyou", "zhiren", "sibian", "boyan", "niji",
+  --overseas
+  "os__yilie", "os__fenming", "os__shangyi",
+  --offline
+  "miaojian",
   --wandian
   "wd__kangyin", "wd__kenjian",
 }
@@ -4500,11 +4616,11 @@ local yuheng = fk.CreateTriggerSkill{
   name = "yuheng",
   anim_type = "special",
   frequency = Skill.Compulsory,
-  events = {fk.EventPhaseChanging, fk.TurnEnd},
+  events = {fk.TurnStart, fk.TurnEnd},
   can_trigger = function(self, event, target, player, data)
-    if target == player then
-      if event == fk.EventPhaseChanging then
-        return player:hasSkill(self.name) and data.from == Player.RoundStart and not player:isNude()
+    if target == player and player:hasSkill(self.name) then
+      if event == fk.TurnStart then
+        return not player:isNude()
       else
         return player:getMark(self.name) ~= 0
       end
@@ -4512,7 +4628,7 @@ local yuheng = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    if event == fk.EventPhaseChanging then
+    if event == fk.TurnStart then
       room:askForUseActiveSkill(player, "yuheng_active", "#yuheng-invoke", false)
     else
       local skills = player:getMark(self.name)

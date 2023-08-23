@@ -1061,12 +1061,13 @@ local lianhe_trigger = fk.CreateTriggerSkill{
     if #src == 0 then return end
     local n = 0
     local events = room.logic:getEventsOfScope(GameEvent.MoveCards, 3, function(e)
-      local move = e.data[1]
-      if move.to == player.id and move.toArea == Player.Hand then
-        if move.moveReason == fk.ReasonDraw then
-          return true
-        else
-          n = n + #move.moveInfo
+      for _, move in ipairs(e.data) do
+        if move.to == player.id and move.toArea == Player.Hand then
+          if move.moveReason == fk.ReasonDraw then
+            return true
+          else
+            n = n + #move.moveInfo
+          end
         end
       end
     end, Player.HistoryPhase)
@@ -2121,9 +2122,12 @@ local fuxun = fk.CreateActiveSkill{
     end
     if player:getHandcardNum() == target:getHandcardNum() and not player.dead then
       local events = room.logic:getEventsOfScope(GameEvent.MoveCards, 1, function(e)
-        local move = e.data[1]
-        return move.skillName ~= self.name and
-          ((move.to == target.id and move.toArea == Card.PlayerHand) or (move.from == target.id and move.fromArea == Card.PlayerHand))
+        for _, move in ipairs(e.data) do
+          if move.skillName ~= self.name and
+            ((move.to == target.id and move.toArea == Card.PlayerHand) or (move.from == target.id and move.fromArea == Card.PlayerHand)) then
+            return true
+          end
+        end
       end, Player.HistoryPhase)
       if #events > 0 then return end
       local success, data = room:askForUseActiveSkill(player, "fuxun_viewas", "#fuxun-use", true)
