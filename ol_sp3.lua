@@ -631,9 +631,9 @@ local ol__zhendu = fk.CreateTriggerSkill{
 local ol__qiluan = fk.CreateTriggerSkill{
   name = "ol__qiluan",
   anim_type = "offensive",
-  events = {fk.EventPhaseChanging},
+  events = {fk.TurnEnd},
   can_trigger = function(self, event, target, player, data)
-    if data.to == Player.NotActive and player:hasSkill(self.name) then
+    if player:hasSkill(self.name) then
       local logic = player.room.logic
       local deathevents = logic.event_recorder[GameEvent.Death] or Util.DummyTable
       local turnevents = logic.event_recorder[GameEvent.Turn] or Util.DummyTable
@@ -1699,9 +1699,9 @@ local dianjun = fk.CreateTriggerSkill{
   name = "dianjun",
   anim_type = "offensive",
   frequency = Skill.Compulsory,
-  events = {fk.EventPhaseChanging},
+  events = {fk.EventPhaseEnd},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name) and data.to == Player.NotActive
+    return target == player and player:hasSkill(self.name) and player.phase == Player.Finish
   end,
   on_use = function(self, event, target, player, data)
     player.room:damage{
@@ -1743,15 +1743,23 @@ local kangrui = fk.CreateTriggerSkill{
       room:addPlayerMark(target, "kangrui_damage-turn", 1)
     end
   end,
-
-  refresh_events = {fk.DamageCaused},
-  can_refresh = function(self, event, target, player, data)
+}
+local kangrui_delay = fk.CreateTriggerSkill{
+  name = "#kangrui_delay",
+  anim_type = "offensive",
+  events = {fk.DamageCaused},
+  mute = true,
+  can_trigger = function(self, event, target, player, data)
     return target == player and player:getMark("kangrui_damage-turn") > 0
   end,
-  on_refresh = function(self, event, target, player, data)
+  on_cost = function(self, event, target, player, data)
+    return true
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
     data.damage = data.damage + 1
-    player.room:setPlayerMark(player, "kangrui_minus-turn", 1)
-    player.room:setPlayerMark(player, "kangrui_damage-turn", 0)
+    room:setPlayerMark(player, "kangrui_minus-turn", 1)
+    room:setPlayerMark(player, "kangrui_damage-turn", 0)
   end,
 }
 local kangrui_maxcards = fk.CreateMaxCardsSkill{
@@ -1763,16 +1771,18 @@ local kangrui_maxcards = fk.CreateMaxCardsSkill{
   end
 }
 kangrui:addRelatedSkill(kangrui_maxcards)
+kangrui:addRelatedSkill(kangrui_delay)
 zhangyi:addSkill(dianjun)
 zhangyi:addSkill(kangrui)
 Fk:loadTranslationTable{
   ["ol__zhangyiy"] = "张翼",
   ["dianjun"] = "殿军",
-  [":dianjun"] = "锁定技，回合结束时，你受到1点伤害并执行一个额外的出牌阶段。",
+  [":dianjun"] = "锁定技，结束阶段结束时，你受到1点伤害并执行一个额外的出牌阶段。",
   ["kangrui"] = "亢锐",
   [":kangrui"] = "当一名角色于其回合内首次受到伤害后，你可以摸一张牌并令其：1.回复1点体力；2.本回合下次造成的伤害+1，然后当其造成伤害时，其此回合手牌上限改为0。",
   ["#kangrui-invoke"] = "亢锐：你可以摸一张牌，令 %dest 回复1点体力或本回合下次造成伤害+1",
   ["kangrui_damage"] = "本回合下次造成伤害+1，造成伤害后本回合手牌上限改为0",
+  ["#kangrui_delay"] = "亢锐",
   ["#kangrui-choice"] = "亢锐：选择令 %dest 执行的一项",
 
   ["$dianjun1"] = "大将军勿忧，翼可领后军。",
@@ -2828,9 +2838,9 @@ mengda.subkingdom = "wei"
 local goude = fk.CreateTriggerSkill{
   name = "goude",
   anim_type = "control",
-  events = {fk.EventPhaseChanging},
+  events = {fk.TurnEnd},
   can_trigger = function(self, event, target, player, data)
-    if player:hasSkill(self.name) and data.to == Player.NotActive then
+    if player:hasSkill(self.name) then
       local room = player.room
       for _, p in ipairs(room.alive_players) do
         if p.kingdom == player.kingdom then

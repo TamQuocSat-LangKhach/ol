@@ -1049,7 +1049,7 @@ Fk:loadTranslationTable{
 local fengfangnv = General(extension, "ol__fengfangnv", "qun", 3, 3, General.Female)
 local zhuangshu = fk.CreateTriggerSkill{
   name = "zhuangshu",
-  events = {fk.GameStart, fk.EventPhaseChanging},
+  events = {fk.GameStart, fk.TurnStart},
   anim_type = "support",
   mute = true,
   can_trigger = function(self, event, target, player, data)
@@ -1060,9 +1060,9 @@ local zhuangshu = fk.CreateTriggerSkill{
         local card_name = Fk:getCardById(id).name
         return card_name == "jade_comb" or card_name == "rhino_comb" or card_name == "golden_comb"
       end)
-    elseif event == fk.EventPhaseChanging then
-      return data.from == Player.NotActive and not target.dead and target:getEquipment(Card.SubtypeTreasure) == nil and
-      #target:getAvailableEquipSlots(Card.SubtypeTreasure) > 0 and not player:isNude()
+    elseif event == fk.TurnStart then
+      return not target.dead and target:getEquipment(Card.SubtypeTreasure) == nil and not player:isNude() and
+      #target:getAvailableEquipSlots(Card.SubtypeTreasure) > 0
     end
   end,
   on_cost = function(self, event, target, player, data)
@@ -1098,7 +1098,7 @@ local zhuangshu = fk.CreateTriggerSkill{
         self.cost_data = card
         return true
       end
-    elseif event == fk.EventPhaseChanging then
+    elseif event == fk.TurnStart then
       local card = room:askForDiscard(player, 1, 1, true, self.name, true, ".", "#zhuangshu-cost::" .. target.id, true)
       if #card > 0 then
         room:doIndicate(player.id, {target.id})
@@ -1121,7 +1121,7 @@ local zhuangshu = fk.CreateTriggerSkill{
         proposer = player.id,
         skillName = self.name,
       })
-    elseif event == fk.EventPhaseChanging then
+    elseif event == fk.TurnStart then
       local card_type = Fk:getCardById(self.cost_data[1]):getTypeString()
       room:throwCard(self.cost_data, self.name, player, player)
       if target.dead or target:getEquipment(Card.SubtypeTreasure) ~= nil or
@@ -1636,9 +1636,9 @@ local dongzhao = General(extension, "ol__dongzhao", "wei", 3)
 local xianlve = fk.CreateTriggerSkill{
   name = "xianlve",
   anim_type = "control",
-  events = {fk.EventPhaseChanging},
+  events = {fk.TurnStart},
   can_trigger = function(self, event, target, player, data)
-    return target.role == "lord" and player:hasSkill(self.name) and data.from == Player.RoundStart
+    return target.role == "lord" and player:hasSkill(self.name)
   end,
   on_cost = function(self, event, target, player, data)
     return player.room:askForSkillInvoke(player, self.name, data, "#xianlve-invoke")
@@ -2291,11 +2291,9 @@ local chongxin = fk.CreateActiveSkill{
 local dezhang = fk.CreateTriggerSkill{
   name = "dezhang",
   frequency = Skill.Wake,
-  events = {fk.EventPhaseChanging},
+  events = {fk.TurnStart},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name) and
-      data.from == Player.RoundStart and
-      player:usedSkillTimes(self.name, Player.HistoryGame) == 0
+    return target == player and player:hasSkill(self.name) and player:usedSkillTimes(self.name, Player.HistoryGame) == 0
   end,
   can_wake = function(self, event, target, player, data)
     return player:getMark("huaiyuan") == 0
@@ -4618,9 +4616,9 @@ local yuheng = fk.CreateTriggerSkill{
   frequency = Skill.Compulsory,
   events = {fk.TurnStart, fk.TurnEnd},
   can_trigger = function(self, event, target, player, data)
-    if target == player and player:hasSkill(self.name) then
+    if target == player then
       if event == fk.TurnStart then
-        return not player:isNude()
+        return player:hasSkill(self.name) and not player:isNude()
       else
         return player:getMark(self.name) ~= 0
       end

@@ -2648,9 +2648,9 @@ local gangzhi = fk.CreateTriggerSkill{
 local beizhan = fk.CreateTriggerSkill{
   name = "beizhan",
   anim_type = "drawcard",
-  events = {fk.EventPhaseStart},
+  events = {fk.TurnEnd},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name) and player.phase == Player.NotActive
+    return target == player and player:hasSkill(self.name)
   end,
   on_cost = function(self, event, target, player, data)
     local to = player.room:askForChoosePlayers(player, table.map(player.room:getAlivePlayers(), function (p)
@@ -2668,16 +2668,23 @@ local beizhan = fk.CreateTriggerSkill{
     end
     player.room:addPlayerMark(to, self.name, 1)
   end,
-
-  refresh_events = {fk.EventPhaseChanging},
-  can_refresh = function(self, event, target, player, data)
-    return target:getMark(self.name) > 0 and data.to == Player.Start
+}
+local beizhan_delay = fk.CreateTriggerSkill{
+  name = "#beizhan_delay",
+  anim_type = "negative",
+  events = {fk.TurnStart},
+  mute = true,
+  can_trigger = function(self, event, target, player, data)
+    return target:getMark("beizhan") > 0
   end,
-  on_refresh = function(self, event, target, player, data)
+  on_cost = function(self, event, target, player, data)
+    return true
+  end,
+  on_use = function(self, event, target, player, data)
     local room = player.room
     room:setPlayerMark(target, self.name, 0)
     if table.every(room:getOtherPlayers(player), function(p) return player:getHandcardNum() >= p:getHandcardNum() end) then
-    room:addPlayerMark(target, "@@beizhan-turn", 1)
+      room:addPlayerMark(target, "@@beizhan-turn", 1)
     end
   end,
 }
@@ -2687,6 +2694,7 @@ local beizhan_prohibit = fk.CreateProhibitSkill{
     return from:getMark("@@beizhan-turn") > 0 and from ~= to
   end,
 }
+beizhan:addRelatedSkill(beizhan_delay)
 beizhan:addRelatedSkill(beizhan_prohibit)
 shenpei:addSkill(gangzhi)
 shenpei:addSkill(beizhan)
@@ -2699,6 +2707,7 @@ Fk:loadTranslationTable{
   "该角色回合开始时，若其手牌数为全场最多，则其本回合内不能使用牌指定其他角色为目标。",
   ["#beizhan-choose"] = "备战：指定一名角色，若手牌少于X则补至X张（X为其体力上限且最多为5）；<br>"..
   "若其回合开始时手牌数为最多，则使用牌不能指定其他角色为目标",
+  ["#beizhan_delay"] = "备战",
   ["@@beizhan-turn"] = "备战",
 
   ["$gangzhi1"] = "只恨箭支太少，不能射杀汝等！",
