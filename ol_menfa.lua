@@ -632,8 +632,8 @@ Fk:loadTranslationTable{
   ["$dianzhan2"] = "此间皆暗，唯灯瞩明。",
   ["$huanyin1"] = "且将此身，还于阴氏。",
   ["$huanyin2"] = "生不得同户，死可葬同穴乎？",
-  --["$daojie1"] = "荀氏三纲，死不贰嫁。",
-  --["$daojie2"] = "女子有节，宁死蹈之。",
+  ["$daojie_olz__xuncai1"] = "荀氏三纲，死不贰嫁。",
+  ["$daojie_olz__xuncai2"] = "女子有节，宁死蹈之。",
   ["~olz__xuncai"] = "苦难已过，世间大好……",
 }
 

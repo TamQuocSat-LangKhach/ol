@@ -269,6 +269,10 @@ jiwu:addRelatedSkill(jiwu_refresh)
 lvbu3:addSkill("wushuang")
 lvbu3:addSkill(shenqu)
 lvbu3:addSkill(jiwu)
+lvbu3:addRelatedSkill("ol_ex__qiangxi")
+lvbu3:addRelatedSkill("ex__tieji")
+lvbu3:addRelatedSkill("ty_ex__xuanfeng")
+lvbu3:addRelatedSkill("ol_ex__wansha")
 
 Fk:loadTranslationTable{
   ["hulao__godlvbu3"] = "神吕布",
@@ -283,14 +287,14 @@ Fk:loadTranslationTable{
 	["$shenqu2"] = "虎牢关，我一人镇守足矣。",
 	["$jiwu1"] = "我！是不可战胜的！",
 	["$jiwu2"] = "今天！就让你们感受一下真正的绝望！",
-	["$jiwu3"] = "这么想死，那我就成全你！",
-	["$jiwu4"] = "项上人头，待我来取！",
-	["$jiwu5"] = "哈哈哈！破绽百出！",
-	["$jiwu6"] = "我要让这虎牢关下，血流成河！",
-	["$jiwu7"] = "千钧之势，力贯苍穹！",
-	["$jiwu8"] = "风扫六合，威震八荒！",
-	["$jiwu9"] = "蝼蚁！怎容偷生！",
-	["$jiwu10"] = "沉沦吧！在这无边的恐惧！",
+	["$ol_ex__qiangxi_hulao__godlvbu31"] = "这么想死，那我就成全你！",
+	["$ol_ex__qiangxi_hulao__godlvbu32"] = "项上人头，待我来取！",
+	["$ex__tieji_hulao__godlvbu31"] = "哈哈哈！破绽百出！",
+	["$ex__tieji_hulao__godlvbu32"] = "我要让这虎牢关下，血流成河！",
+	["$ty_ex__xuanfeng_hulao__godlvbu31"] = "千钧之势，力贯苍穹！",
+	["$ty_ex__xuanfeng_hulao__godlvbu32"] = "风扫六合，威震八荒！",
+	["$ol_ex__wansha_hulao__godlvbu31"] = "蝼蚁！怎容偷生！",
+	["$ol_ex__wansha_hulao__godlvbu32"] = "沉沦吧！在这无边的恐惧！",
 	["~hulao__godlvbu3"] = "你们的项上人头，我改日再取！",
 
 }

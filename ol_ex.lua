@@ -986,8 +986,8 @@ Fk:loadTranslationTable{
   ["#ol_ex__jieming-choose"] = "节命：你可以令一名角色摸X张牌并将手牌弃至X张（X为其体力上限且至多为5）",
   ["#ol_ex__jieming-discard"] = "节命：选择%arg张手牌弃置",
 
-  ["$ol_ex__quhu1"] = "两虎相斗，旁观成败。",
-  ["$ol_ex__quhu2"] = "驱兽相争，坐收渔利。",
+  ["$quhu_ol_ex__xunyu1"] = "两虎相斗，旁观成败。",
+  ["$quhu_ol_ex__xunyu2"] = "驱兽相争，坐收渔利。",
   ["$ol_ex__jieming1"] = "含气在胸，有进无退。",
   ["$ol_ex__jieming2"] = "蕴节于形，生死无惧。",
   ["~ol_ex__xunyu"] = "一招不慎，为虎所噬……",
