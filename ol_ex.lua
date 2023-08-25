@@ -86,8 +86,12 @@ Fk:loadTranslationTable{
 
   ["@ol_ex__botu-turn"] = "博图",
 
+  ["$keji_ol_ex__lvmeng1"] = "哼，笑到最后的，才是赢家。",
+  ["$keji_ol_ex__lvmeng2"] = "静观其变，相机而动。",
   ["$ol_ex__qinxue1"] = "士别三日，刮目相看！",
   ["$ol_ex__qinxue2"] = "吴下阿蒙，今非昔比！",
+  ["$gongxin_ol_ex__lvmeng1"] = "料敌机先，攻心为上。",
+  ["$gongxin_ol_ex__lvmeng2"] = "你的举动，都在我的掌握之中。",
   ["$ol_ex__botu1"] = "厚积而薄发。",
   ["$ol_ex__botu2"] = "我胸怀的是这天下！",
   ["~ol_ex__lvmeng"] = "以后……就交给年轻人了……",
@@ -1441,10 +1445,10 @@ Fk:loadTranslationTable{
 
   ["@ol_ex__changbiao_draw-phase"] = "长标",
 
-  ["$ol_ex__juxiang1"] = "南兵象阵，刀枪不入！",
-  ["$ol_ex__juxiang2"] = "巨象冲锋，踏平敌阵！",
-  ["$ol_ex__lieren1"] = "烈火飞刃，例无虚发！",
-  ["$ol_ex__lieren2"] = "烈刃一出，谁与争锋？",
+  ["$juxiang_ol_ex__zhurong1"] = "巨象冲锋，踏平敌阵！",
+  ["$juxiang_ol_ex__zhurong2"] = "南兵象阵，刀枪不入！",
+  ["$lieren_ol_ex__zhurong1"] = "烈火飞刃，例无虚发！",
+  ["$lieren_ol_ex__zhurong2"] = "烈刃一出，谁与争锋？",
   ["$ol_ex__changbiao1"] = "长标如虹，以伐蜀汉！",
   ["$ol_ex__changbiao2"] = "长标在此，谁敢拦我？",
   ["~ol_ex__zhurong"] = "这汉人，竟……如此厉害……",
@@ -1606,8 +1610,8 @@ Fk:loadTranslationTable{
   ["@@ol_ex__wulie_lie"] = "烈",
   ["#ol_ex__wulie-choose"] = "武烈：选择任意名角色并失去等量的体力，防止这些角色受到的下次伤害",
 
-  ["$ol_ex__yinghun1"] = "提刀奔走，灭敌不休。",
-  ["$ol_ex__yinghun2"] = "贼寇草莽，我且出战。",
+  ["$yinghun_ol_ex__sunjian1"] = "提刀奔走，灭敌不休。",
+  ["$yinghun_ol_ex__sunjian2"] = "贼寇草莽，我且出战。",
   ["$ol_ex__wulie1"] = "孙武之后，英烈勇战。",
   ["$ol_ex__wulie2"] = "兴义之中，忠烈之名。",
   ["~ol_ex__sunjian"] = "袁术之辈，不可共谋！",
@@ -2005,10 +2009,10 @@ Fk:loadTranslationTable{
 
   ["$ol_ex__jiuchi1"] = "好酒，痛快！",
   ["$ol_ex__jiuchi2"] = "某，千杯不醉！",
-  ["$ol_ex__roulin1"] = "醇酒美人，幸甚乐甚！",
-  ["$ol_ex__roulin2"] = "这些美人，都可进贡。",
-  ["$ol_ex__benghuai1"] = "何人伤我？",
-  ["$ol_ex__benghuai2"] = "酒色伤身呐……",
+  ["$roulin_ol_ex__dongzhuo1"] = "醇酒美人，幸甚乐甚！",
+  ["$roulin_ol_ex__dongzhuo2"] = "这些美人，都可进贡。",
+  ["$benghuai_ol_ex__dongzhuo1"] = "何人伤我？",
+  ["$benghuai_ol_ex__dongzhuo2"] = "酒色伤身呐……",
   ["$ol_ex__baonve1"] = "吾乃人屠，当以兵为贡。",
   ["$ol_ex__baonve2"] = "天下群雄，唯我独尊！",
   ["~ol_ex__dongzhuo"] = "地府……可有美人乎？",
@@ -2452,8 +2456,8 @@ Fk:loadTranslationTable{
   ["$ol_ex__tiaoxin2"] = "宜乘其衅会，以挑敌将。",
   ["$ol_ex__zhiji1"] = "丞相遗志，不死不休！",
   ["$ol_ex__zhiji2"] = "大业未成，矢志不渝！",
-  ["$ol_ex__guanxing1"] = "星象相弦，此乃吉兆！",
-  ["$ol_ex__guanxing2"] = "星之分野，各有所属。",
+  ["$ex__guanxing_ol_ex__jiangwei1"] = "星象相弦，此乃吉兆！",
+  ["$ex__guanxing_ol_ex__jiangwei2"] = "星之分野，各有所属。",
   ["~ol_ex__jiangwei"] = "星散流离……",
 }
 
@@ -2557,14 +2561,14 @@ Fk:loadTranslationTable{
   ["#ol_ex__sishu-choose"] = "思蜀：选择一名角色，令其本局游戏【乐不思蜀】的判定结果反转",
   ["@@ol_ex__sishu_effect"] = "思蜀",
 
-  ["$ol_ex__xiangle1"] = "嘿嘿嘿，还是玩耍快乐。",
-  ["$ol_ex__xiangle2"] = "美好的日子，应该好好享受。",
+  ["$xiangle_ol_ex__liushan1"] = "美好的日子，应该好好享受。",
+  ["$xiangle_ol_ex__liushan2"] = "嘿嘿嘿，还是玩耍快乐。",
   ["$ol_ex__fangquan1"] = "蜀汉有相父在，我可安心。",
   ["$ol_ex__fangquan2"] = "这些事情，你们安排就好。",
   ["$ol_ex__ruoyu1"] = "若愚故泰，巧骗众人。",
   ["$ol_ex__ruoyu2"] = "愚昧者，非真傻也。",
-  ["$ol_ex__jijiang1"] = "爱卿爱卿，快来护驾！",
-  ["$ol_ex__jijiang2"] = "将军快替我，拦下此贼！",
+  ["$jijiang_ol_ex__liushan1"] = "爱卿爱卿，快来护驾！",
+  ["$jijiang_ol_ex__liushan2"] = "将军快替我，拦下此贼！",
   ["$ol_ex__sishu1"] = "蜀乐乡土，怎不思念？",
   ["$ol_ex__sishu2"] = "思乡心切，徘徊惶惶。",
   ["~ol_ex__liushan"] = "将军英勇，我……我投降……",
@@ -2711,10 +2715,10 @@ Fk:loadTranslationTable{
   ["$ol_ex__hunzi2"] = "看汝等大展英气！",
   ["$ol_ex__zhiba1"] = "让将军在此恭候多时了。",
   ["$ol_ex__zhiba2"] = "有诸位将军在，此战岂会不胜？",
-  ["$ol_ex__yingzi1"] = "得公瑾辅助，策必当一战！",
-  ["$ol_ex__yingzi2"] = "公瑾在此，此战无忧！",
-  ["$ol_ex__yinghun1"] = "东吴繁盛，望父亲可知。",
-  ["$ol_ex__yinghun2"] = "父亲，吾定不负你期望！",
+  ["$ex__yingzi_ol_ex__sunce1"] = "得公瑾辅助，策必当一战！",
+  ["$ex__yingzi_ol_ex__sunce2"] = "公瑾在此，此战无忧！",
+  ["$yinghun_ol_ex__sunce1"] = "东吴繁盛，望父亲可知。",
+  ["$yinghun_ol_ex__sunce2"] = "父亲，吾定不负你期望！",
   ["~ol_ex__sunce"] = "汝等，怎能受于吉蛊惑？",
 }
 
@@ -2795,8 +2799,8 @@ Fk:loadTranslationTable{
 
   ["$ol_ex__beige1"] = "箜篌鸣九霄，闻者心俱伤。",
   ["$ol_ex__beige2"] = " 琴弹十八拍，听此双泪流。",
-  ["$ol_ex__duanchang1"] = "红颜留塞外，愁思欲断肠。",
-  ["$ol_ex__duanchang2"] = "莫吟苦辛曲，此生谁忍闻。",
+  ["$duanchang_ol_ex__caiwenji1"] = "红颜留塞外，愁思欲断肠。",
+  ["$duanchang_ol_ex__caiwenji2"] = "莫吟苦辛曲，此生谁忍闻。",
   ["~ol_ex__caiwenji"] = "飘飘外域里，何日能归乡？",
 }
 

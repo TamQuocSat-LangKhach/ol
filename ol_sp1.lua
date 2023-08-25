@@ -904,6 +904,9 @@ Fk:loadTranslationTable{
 
   ["$zhengnan1"] = "全凭丞相差遣，万死不辞！",
   ["$zhengnan2"] = "末将愿承父志，随丞相出征！",
+  ["$wusheng_guansuo"] = "逆贼，可识得关氏之勇？",
+  ["$dangxian_guansuo"] = "各位将军，且让小辈先行出战！",
+  ["$zhiman_guansuo"] = "蛮夷可抚，不可剿！",
   ["~guansuo"] = "只恨天下未平，空留遗志。",
 }
 
@@ -2539,8 +2542,8 @@ Fk:loadTranslationTable{
   ["#chouce-draw"] = "筹策: 令一名角色摸一张牌（若为先辅角色则摸两张）",
   ["#chouce-discard"] = "筹策: 弃置一名角色区域里的一张牌",
 
-  -- ["$tiandu1"] = "天意不可逆。",
-  -- ["$tiandu2"] = "既是如此。",
+  ["$tiandu_xizhicai1"] = "天意，不可逆。",
+  ["$tiandu_xizhicai2"] = "既是如此。",
   ["$xianfu1"] = "辅佐明君，从一而终。",
 	["$xianfu2"] = "吾于此生，竭尽所能。",
 	["$xianfu3"] = "春蚕至死，蜡炬成灰！",

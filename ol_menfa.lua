@@ -172,8 +172,8 @@ Fk:loadTranslationTable{
   ["$sankuang2"] = "天地可敬，可常惧之。",
   ["$beishi1"] = "虎卑其势，将有所逮。",
   ["$beishi2"] = "至山穷水尽，复柳暗花明。",
-  ["$daojie1"] = "此生所重者，慷慨之节也。",
-  ["$daojie2"] = "愿以此身，全清尚之节。",
+  ["$daojie_olz__xunchen1"] = "此生所重者，慷慨之节也。",
+  ["$daojie_olz__xunchen2"] = "愿以此身，全清尚之节。",
   ["~olz__xunchen"] = "行二臣之为，羞见列祖……",
 }
 
@@ -302,8 +302,8 @@ Fk:loadTranslationTable{
   ["$shenjun2"] = "我以天地为师，自可道法自然。",
   ["$balong1"] = "八龙之蜿蜿，云旗之委蛇。",
   ["$balong2"] = "穆王乘八牡，天地恣遨游。",
-  --["$daojie1"] = "荀人如玉，向节而生。",
-  --["$daojie2"] = "竹有其节，焚之不改。",
+  ["$daojie_olz__xunshu1"] = "荀人如玉，向节而生。",
+  ["$daojie_olz__xunshu2"] = "竹有其节，焚之不改。",
   ["~olz__xunshu"] = "天下陆沉，荀氏难支……",
 }
 
@@ -419,8 +419,8 @@ Fk:loadTranslationTable{
   ["$shangshen2"] = "吾妻已逝，吾心悲怆。",
   ["$fenchai1"] = "钗同我心，奈何分之？",
   ["$fenchai2"] = "夫妻分钗，天涯陌路。",
-  --["$daojie1"] = "君子持节，何移情乎？",
-  --["$daojie2"] = "我心慕鸳，从一而终。",
+  ["$daojie_olz__xuncan1"] = "君子持节，何移情乎？",
+  ["$daojie_olz__xuncan2"] = "我心慕鸳，从一而终。",
   ["~olz__xuncan"] = "此钗，今日可合乎？",
 }
 
@@ -632,8 +632,8 @@ Fk:loadTranslationTable{
   ["$dianzhan2"] = "此间皆暗，唯灯瞩明。",
   ["$huanyin1"] = "且将此身，还于阴氏。",
   ["$huanyin2"] = "生不得同户，死可葬同穴乎？",
-  ["$daojie_olz__xuncai1"] = "荀氏三纲，死不贰嫁。",
-  ["$daojie_olz__xuncai2"] = "女子有节，宁死蹈之。",
+  ["$daojie_olz__xuncai1"] = "女子有节，宁死蹈之。",
+  ["$daojie_olz__xuncai2"] = "荀氏三纲，死不贰嫁。",
   ["~olz__xuncai"] = "苦难已过，世间大好……",
 }
 
@@ -740,6 +740,12 @@ Fk:loadTranslationTable{
   ["muyin"] = "穆荫",
   [":muyin"] = "宗族技，准备阶段，你可以令一名手牌上限不为全场最大的同族角色手牌上限+1。",
   ["#muyin-choose"] = "穆荫：你可以令一名同族角色手牌上限+1",
+
+  ["$zhanding1"] = "汝颈硬，比之金铁何如？",
+  ["$zhanding2"] = "魍魉鼠辈，速速系劲伏首！",
+  ["$muyin_olz__wuban1"] = "世代佐忠义，子孙何绝焉？",
+  ["$muyin_olz__wuban2"] = "祖训秉心，其荫何能薄也？",
+  ["~olz__wuban"] = "无胆鼠辈，安敢暗箭伤人……",
 }
 
 local olz__wuxian = General(extension, "olz__wuxian", "shu", 3, 3, General.Female)
@@ -797,8 +803,8 @@ Fk:loadTranslationTable{
   ["$yirong2"] = "移花接木，花容更胜从前。",
   ["$guixiang1"] = "女相显贵，凤仪从龙。",
   ["$guixiang2"] = "正官七杀，天生富贵。",
-  ["$muyin1"] = "吴门隆盛，闻钟而鼎食。",
-  ["$muyin2"] = "吴氏一族，感明君青睐。",
+  ["$muyin_olz__wuxian1"] = "吴门隆盛，闻钟而鼎食。",
+  ["$muyin_olz__wuxian2"] = "吴氏一族，感明君青睐。",
   ["~olz__wuxian"] = "玄德东征，何日归还？",
 }
 
@@ -998,6 +1004,14 @@ Fk:loadTranslationTable{
   ["#liuju-use"] = "留驹：你可以使用其中的非基本牌",
   ["liuju_viewas"] = "留驹",
   ["#xumin"] = "恤民：你可以将一张牌当【五谷丰登】对任意名其他角色使用",
+
+  ["$fangzhen1"] = "百姓罹灾，当施粮以赈。",
+  ["$fangzhen2"] = "开仓放粮，以赈灾民。",
+  ["$liuju1"] = "当逐千里之驹，情深可留嬴城。",
+  ["$liuju2"] = "乡老十里相送，此驹可彰吾情。",
+  ["$xumin_olz__hanshao1"] = "民者，居野而多艰，不可不恤。",
+  ["$xumin_olz__hanshao2"] = "天下之本，上为君，下为民。",
+  ["~olz__hanshao"] = "天地不仁，万物何辜……",
 }
 
 local hanrong = General(extension, "olz__hanrong", "qun", 3)
@@ -1216,9 +1230,9 @@ Fk:loadTranslationTable{
   ["$lianhe2"] = "吾所来之由，一为好，二为和。",
   ["$huanjia1"] = "我之所言，皆为君好。",
   ["$huanjia2"] = "吾言之切切，请君听之。",
-  ["$xumin1"] = "江海陆沉，皆为黎庶之泪。",
-  ["$xumin2"] = "天下汹汹，百姓何辜？",
-  ["~olz__hanrong"] = "天下兴亡，皆苦百姓。",
+  ["$xumin_olz__hanrong1"] = "江海陆沉，皆为黎庶之泪。",
+  ["$xumin_olz__hanrong2"] = "天下汹汹，百姓何辜？",
+  ["~olz__hanrong"] = "天下兴亡，皆苦百姓……",
 }
 
 local wukuang = General(extension, "olz__wukuang", "qun", 4)
@@ -1445,6 +1459,12 @@ Fk:loadTranslationTable{
   ["lianzhuw&"] = "联诛",
   [":lianzhuw&"] = "出牌阶段限一次，若吴匡的〖联诛〗为：阳：你可以与其各重铸一张牌，若颜色相同，其手牌上限+1；"..
   "阴：其选择一名在你或其攻击范围内的角色，你可以与吴匡各对目标使用一张【杀】，若颜色不同，其手牌上限-1。",
+
+  ["$lianzhuw1"] = "奸宦作乱，当联兵伐之。",
+  ["$lianzhuw2"] = "尽诛贼常侍，正在此时。",
+  ["$muyin_olz__wukuang1"] = "家有贵女，其德泽三代。",
+  ["$muyin_olz__wukuang2"] = "吾家当以此女而兴之。",
+  ["~olz__wukuang"] = "孟德何在？本初何在？",
 }
 
 local wangyun = General(extension, "olz__wangyun", "qun", 3)
@@ -1777,8 +1797,8 @@ Fk:loadTranslationTable{
 
   ["$bolong1"] = "驳者，食虎之兽焉，可摄冢虎。",
   ["$bolong2"] = "主上暗弱，当另择明主侍之。",
-  ["$zhongliu1"] = "王门世代骨鲠，皆为国之柱石。",
-  ["$zhongliu2"] = "行舟至中流而遇浪，大风起兮。",
+  ["$zhongliu_olz__wangling1"] = "王门世代骨鲠，皆为国之柱石。",
+  ["$zhongliu_olz__wangling2"] = "行舟至中流而遇浪，大风起兮。",
   ["~olz__wangling"] = "淩忠心可鉴，死亦未悔……",
 }
 
@@ -1968,8 +1988,8 @@ Fk:loadTranslationTable{
   ["$guangu2"] = "绯衣者，汝所拔乎？",
   ["$xiaoyong1"] = "凉风萧条，露沾我衣。",
   ["$xiaoyong2"] = "忧来多方，慨然永怀。",
-  ["$baozu1"] = "好女宜家，可度大厄。",
-  ["$baozu2"] = "宗族有难，当施以援手。",
+  ["$baozu_olz__zhongyan1"] = "好女宜家，可度大厄。",
+  ["$baozu_olz__zhongyan2"] = "宗族有难，当施以援手。",
   ["~olz__zhongyan"] = "此间天下人，皆分一斗之才……",
 }
 
@@ -2230,8 +2250,8 @@ Fk:loadTranslationTable{
   ["$fuxun2"] = "江东新附，不可以严法度之。",
   ["$chenya1"] = "喜怒不现于形，此为执中之道。",
   ["$chenya2"] = "胸有万丈之海，故而波澜不惊。",
-  ["$olz__wanghun-zhongliu1"] = "国潮汹涌，当为中流之砥柱。",
-  ["$olz__wanghun-zhongliu2"] = "执剑斩巨浪，息风波者出我辈。",
+  ["$zhongliu_olz__wanghun1"] = "国潮汹涌，当为中流之砥柱。",
+  ["$zhongliu_olz__wanghun2"] = "执剑斩巨浪，息风波者出我辈。",
   ["~olz__wanghun"] = "灭国之功本属我，奈何枉作他人衣……",
 }
 

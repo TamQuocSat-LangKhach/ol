@@ -91,8 +91,8 @@ Fk:loadTranslationTable{
 
   ["#ol__hongyuan-give"] = "弘援：你可以选择一张牌交给一名角色",
 
-  ["$ol__huanshi1"] = "不因困顿夷初志，肯为联蜀改阵营。",
-  ["$ol__huanshi2"] = "合纵连横，只为天下苍生。",
+  ["$huanshi_ol__zhugejin1"] = "不因困顿夷初志，肯为联蜀改阵营。",
+  ["$huanshi_ol__zhugejin2"] = "合纵连横，只为天下苍生。",
   ["$ol__hongyuan1"] = "吾已料有所困，援兵不久必至。",
   ["$ol__hongyuan2"] = "恪守信义，方为上策。",
   ["$ol__mingzhe1"] = "乱世，当稳中求胜。",
@@ -152,6 +152,8 @@ Fk:loadTranslationTable{
   [":ol__bingyi"] = "每阶段限一次，当你的牌被弃置后，你可以展示所有手牌，若颜色均相同，你令你与至多X名角色各摸一张牌（X为你的手牌数）。",
   ["#ol__bingyi-choose"] = "秉壹：你可以与至多%arg名其他角色各摸一张牌，点取消则仅你摸牌",
 
+  ["$shenxing_ol__guyong1"] = "上兵伐谋，三思而行。",
+  ["$shenxing_ol__guyong2"] = "精益求精，慎之再慎。",
   ["$ol__bingyi1"] = "秉直进谏，勿藏私心！",
   ["$ol__bingyi2"] = "秉公守一，不负圣恩！",
   ["~ol__guyong"] = "此番患疾，吾必不起……",
@@ -2738,6 +2740,16 @@ Fk:loadTranslationTable{
   [":tianhou4"] = "锁定技，其他角色的结束阶段，若其体力值全场最小，其失去1点体力。",
   ["#tianhou-choose"] = "天候：令一名角色获得技能<br>〖%arg〗：%arg2",
   ["#chenshuo-invoke"] = "谶说：你可以展示一张手牌，亮出并获得牌堆顶至多三张相同类型/花色/点数/字数的牌",
+  
+  ["$tianhou1"] = "天象之所显，世事之所为。",
+  ["$tianhou2"] = "雷霆雨露，皆为君恩。",
+  ["$chenshuo1"] = "命数玄奥，然吾可言之。",
+  ["$chenshuo2"] = "天地神鬼之辩，在吾唇舌之间。",
+  ["$tianhou11"] = "七月流火，涸我山泽。",
+  ["$tianhou21"] = "云雾弥野，如夜之幽。",
+  ["$tianhou31"] = "月离于毕，俾滂沱矣。",
+  ["$tianhou41"] = "雪瀑寒霜落，霜下可折竹。",
+  ["~ol__zhouqun"] = "知万物而不知己命，大谬也……",
 }
 
 Fk:loadTranslationTable{
@@ -3010,6 +3022,10 @@ Fk:loadTranslationTable{
   ["#goude-choose"] = "苟得：选择一名角色，弃置其一张手牌",
   ["#goude-slash"] = "苟得：视为使用一张【杀】",
   ["goude_viewas"] = "苟得",
+
+  ["$goude1"] = "蝼蚁尚且偷生，况我大将军乎。",
+  ["$goude2"] = "为保身家性命，做奔臣又如何？",
+  ["~ol__mengda"] = "丞相援军何其远乎？",
 }
 
 local wenqin = General(extension, "ol__wenqin", "wei", 4)
@@ -3217,6 +3233,14 @@ Fk:loadTranslationTable{
   ["#xieju"] = "偕举：你可以令任意名角色各视为使用一张【杀】",
   ["#xieju-slash"] = "偕举：请视为使用一张【杀】",
   ["xieju_viewas"] = "偕举",
+
+  ["$guangao1"] = "策马觅封侯，长驱万里之数。",
+  ["$guangao2"] = "大丈夫行事，焉能畏首畏尾。",
+  ["$huiqi1"] = "今大星西垂，此天降清君侧之证。",
+  ["$huiqi2"] = "彗星坠于西北，此罚天狼之兆。",
+  ["$xieju1"] = "今举大义，誓与仲恭共死。",
+  ["$xieju2"] = "天降大任，当与志士同忾。",
+  ["~ol__wenqin"] = "天不佑国魏！天不佑族文！",
 }
 
 local duanjiong = General(extension, "duanjiong", "qun", 4)
@@ -3408,6 +3432,10 @@ Fk:loadTranslationTable{
   ["#saogu-choose"] = "扫谷：你可以弃置一张牌，令一名其他角色执行“扫谷”当前项",
   ["saogu_viewas"] = "扫谷",
   ["#saogu-use"] = "扫谷：你可以使用其中的【杀】",
+  
+  ["$saogu1"] = "大汉铁骑，必昭卫霍遗风于当年。",
+  ["$saogu2"] = "笑驱百蛮，试问谁敢牧马于中原！",
+  ["~duanjiong"] = "秋霜落，天下寒……",
 }
 
 Fk:loadTranslationTable{

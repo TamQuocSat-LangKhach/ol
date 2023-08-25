@@ -145,7 +145,7 @@ local tianxing = fk.CreateTriggerSkill{
     local dummy = Fk:cloneCard("dilu")
     dummy:addSubcards(player:getPile("caopi_chu"))
     room:obtainCard(player, dummy, false, fk.ReasonJustMove)
-    local choice = room:askForChoice(player, {"rende", "ex__zhiheng", "ol_ex__luanji"}, self.name, "#tianxing-choice", true)  --TODO:ex__rende
+    local choice = room:askForChoice(player, {"ex__rende", "ex__zhiheng", "ol_ex__luanji"}, self.name, "#tianxing-choice", true)  --TODO:ex__rende
     room:handleAddLoseSkills(player, choice.."|-chuyuan", nil)
   end,
 }
@@ -153,9 +153,10 @@ godcaopi:addSkill(chuyuan)
 godcaopi:addSkill(dengji)
 godcaopi:addRelatedSkill("ex__jianxiong")
 godcaopi:addRelatedSkill(tianxing)
-godcaopi:addRelatedSkill("rende")
+godcaopi:addRelatedSkill("ex__rende")
 godcaopi:addRelatedSkill("ex__zhiheng")
 godcaopi:addRelatedSkill("ol_ex__luanji")
+godcaopi:addRelatedSkill("ol_ex__fangquan")
 Fk:loadTranslationTable{
   ["godcaopi"] = "神曹丕",
   ["chuyuan"] = "储元",
@@ -175,12 +176,12 @@ Fk:loadTranslationTable{
   ["$dengji2"] = "今日，便是我称帝之时。",
   ["$tianxing1"] = "孤之行，天之意。",
   ["$tianxing2"] = "我做的决定，便是天的旨意。",
-  ["$jianxiong1-godcaopi"] = "孤之所长，继父之所长。",
-  ["$jianxiong2-godcaopi"] = "乱世枭雄，哼，孤亦是。",
-  ["$rende-godcaopi"] = "这些都是孤赏赐给你的。",
-  ["$zhiheng-godcaopi"] = "有些事情，还需多加思索。",
-  ["$luanji-godcaopi"] = "违逆我的，都该处罚。",
-  ["$fangquan-godcaopi"] = "此等小事，你们处理即可。",
+  ["$ex__jianxiong_godcaopi1"] = "孤之所长，继父之所长。",
+  ["$ex__jianxiong_godcaopi2"] = "乱世枭雄，哼，孤亦是。",
+  ["$ex__rende_godcaopi"] = "这些都是孤赏赐给你的。",
+  ["$ex__zhiheng_godcaopi"] = "有些事情，还需多加思索。",
+  ["$ol_ex__luanji_godcaopi"] = "违逆我的，都该处罚。",
+  ["$ol_ex__fangquan_godcaopi"] = "此等小事，你们处理即可。",
   ["~godcaopi"] = "曹魏锦绣，孤还未看尽……",
 }
 
@@ -772,8 +773,8 @@ local qin__zhongfu = fk.CreateTriggerSkill{
     if not player:hasSkill("ex__jianxiong", true) then
       table.insert(skills, "ex__jianxiong")
     end
-    if not player:hasSkill("rende", true) then
-      table.insert(skills, "rende")
+    if not player:hasSkill("ex__rende", true) then
+      table.insert(skills, "ex__rende")
     end
     if not player:hasSkill("ex__zhiheng", true) then
       table.insert(skills, "ex__zhiheng")
@@ -808,7 +809,7 @@ lvbuwei:addSkill(qin__chunqiu)
 lvbuwei:addSkill(qin__baixiang)
 lvbuwei:addRelatedSkill(qin__zhongfu)
 lvbuwei:addRelatedSkill("ex__jianxiong")
-lvbuwei:addRelatedSkill("rende")
+lvbuwei:addRelatedSkill("ex__rende")
 lvbuwei:addRelatedSkill("ex__zhiheng")
 Fk:loadTranslationTable{
   ["lvbuwei"] = "吕不韦",
@@ -822,7 +823,7 @@ Fk:loadTranslationTable{
   [":qin__zhongfu"] = "锁定技，准备阶段，你随机获得以下一项技能直到你下回合开始：〖奸雄〗、〖仁德〗、〖制衡〗。",
   ["#qin__qihuo"] = "奇货：弃置你一种类别全部的牌，摸两倍的牌",
 
-  --["$qin__jugu"] = "钱财富有，富甲一方。",
+  ["$jugu_lvbuwei"] = "钱财富有，富甲一方。",
   ["$qin__qihuo"] = "奇货可居，慧眼善识。",
   ["$qin__chunqiu"] = "吕氏春秋，举世之著作！",
   ["$qin__baixiang"] = "入秦拜相，权倾朝野！",
