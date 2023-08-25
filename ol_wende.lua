@@ -301,7 +301,7 @@ local caiwang_trigger = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    room:broadcastSkillInvoke("caiwang")
+    player:broadcastSkillInvoke("caiwang")
     room:notifySkillInvoked(player, "caiwang", "control")
     local to = room:getPlayerById(self.cost_data[1])
     room:doIndicate(player.id, {to.id})
@@ -1081,9 +1081,8 @@ local qimei_trigger = fk.CreateTriggerSkill{
     return true
   end,
   on_use = function(self, event, target, player, data)
-    local room = player.room
-    room:broadcastSkillInvoke("qimei")
-    room:notifySkillInvoked(player, "qimei", "drawcard")
+    player:broadcastSkillInvoke("qimei")
+    player.room:notifySkillInvoked(player, "qimei", "drawcard")
     self.cost_data:drawCards(1, "qimei")
   end,
 }
@@ -1126,7 +1125,7 @@ local zhuijix_trigger = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    room:broadcastSkillInvoke("zhuijix")
+    player:broadcastSkillInvoke("zhuijix")
     room:notifySkillInvoked(player, "zhuijix", "negative")
     if player:getMark("zhuiji_recover-phase") > 0 then
       room:setPlayerMark(player, "zhuiji_recover-phase", 0)
@@ -1422,7 +1421,7 @@ local zhongyun2 = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    room:broadcastSkillInvoke("zhongyun")
+    player:broadcastSkillInvoke("zhongyun")
     room:notifySkillInvoked(player, "zhongyun")
     if table.every(room:getOtherPlayers(player), function(p) return p:isNude() end) then
       player:drawCards(1, "zhongyun")
@@ -1588,7 +1587,7 @@ local bolan_active = fk.CreateActiveSkill{
         break
       end
     end
-    room:broadcastSkillInvoke("bolan")
+    target:broadcastSkillInvoke("bolan")
     room:notifySkillInvoked(target, "bolan", "special")
     room:doIndicate(player.id, {target.id})
     room:loseHp(player, 1, "bolan")
@@ -1779,7 +1778,7 @@ local xiongshu = fk.CreateTriggerSkill{
       player.tag[self.name][3] = "yes"
     else
       local room = player.room
-      --room:broadcastSkillInvoke(self.name)
+      --player:broadcastSkillInvoke(self.name)
       room:notifySkillInvoked(player, self.name, "offensive")
       if player.tag[self.name][2] == player.tag[self.name][3] then
         if not target.dead then
@@ -1815,12 +1814,12 @@ local jianhui = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     if event == fk.Damage then
-      --room:broadcastSkillInvoke(self.name)
+      --player:broadcastSkillInvoke(self.name)
       room:notifySkillInvoked(player, self.name, "drawcard")
       player:drawCards(1, self.name)
     else
       if player.tag[self.name] and data.from.id == player.tag[self.name] then
-        --room:broadcastSkillInvoke(self.name)
+        --player:broadcastSkillInvoke(self.name)
         room:notifySkillInvoked(player, self.name, "control")
         if not data.from.dead and not data.from:isNude() then
           room:askForDiscard(data.from, 1, 1, true, self.name, false, ".")
@@ -2107,7 +2106,6 @@ local maihuo_trigger = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    room:broadcastSkillInvoke("maihuo")
     if event == fk.EventPhaseStart then
       local to = room:getPlayerById(player:getMark("maihuo")[1])
       local card = Fk:getCardById(player:getPile("yangzhi_huo")[1])
@@ -2115,6 +2113,7 @@ local maihuo_trigger = fk.CreateTriggerSkill{
       Self = player
       if to.dead or player:isProhibited(to, card) or not player:canUse(card) or
         not card.skill:targetFilter(to.id, {}, {}, card) then
+        to:broadcastSkillInvoke("maihuo")
         room:notifySkillInvoked(to, "maihuo", "special")
         room:moveCards({
           from = player.id,
@@ -2124,6 +2123,7 @@ local maihuo_trigger = fk.CreateTriggerSkill{
           skillName = "maihuo",
         })
       else
+        to:broadcastSkillInvoke("maihuo")
         room:notifySkillInvoked(to, "maihuo", "negative")
         local extra_data = {}
         extra_data.maihuo = true

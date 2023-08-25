@@ -476,14 +476,14 @@ local ol__liangyin = fk.CreateTriggerSkill{
     local choice = self.cost_data[2]
     if choice == "drawcard" then
       room:notifySkillInvoked(player, self.name, "support")
-      room:broadcastSkillInvoke(self.name)
+      player:broadcastSkillInvoke(self.name)
       room:drawCards(player, 1, self.name)
       if not tar.dead then
         room:drawCards(tar, 1, self.name)
       end
     elseif choice == "discard" then
       room:notifySkillInvoked(player, self.name, "control")
-      room:broadcastSkillInvoke(self.name)
+      player:broadcastSkillInvoke(self.name)
       room:askForDiscard(player, 1, 1, true, self.name, false)
       if not tar.dead then 
         room:askForDiscard(tar, 1, 1, true, self.name, false)
@@ -1042,7 +1042,7 @@ local ol__tongdu_trigger = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    room:broadcastSkillInvoke("ol__tongdu")
+    player:broadcastSkillInvoke("ol__tongdu")
     room:notifySkillInvoked(player, "ol__tongdu")
     local id = player:getMark("ol__tongdu-turn")
     room:moveCards({
@@ -1113,7 +1113,7 @@ local ol__zhubi_trigger = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    room:broadcastSkillInvoke("ol__tongdu")
+    player:broadcastSkillInvoke("ol__tongdu")
     room:notifySkillInvoked(player, "ol__tongdu")
     local ids = {}
     for _, id in ipairs(target:getMark("ol__zhubi")) do
@@ -3091,7 +3091,7 @@ local guangao_trigger = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    room:broadcastSkillInvoke("guangao")
+    player:broadcastSkillInvoke("guangao")
     data.extra_data = data.extra_data or {}
     data.extra_data.guangao = data.extra_data.guangao or {}
     for _, id in ipairs(self.cost_data) do

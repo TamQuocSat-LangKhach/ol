@@ -290,7 +290,7 @@ local ol_ex__jiewei_trigger = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    room:broadcastSkillInvoke("ol_ex__jiewei")
+    player:broadcastSkillInvoke("ol_ex__jiewei")
     room:notifySkillInvoked(player, "ol_ex__jiewei", "control")
     room:throwCard(self.cost_data, self.name, player, player)
     local to = room:askForChooseToMoveCardInBoard(player, "#ol_ex__jiewei-choose", "ol_ex__jiewei", true)
@@ -1072,7 +1072,7 @@ local ol_ex__shuangxiong_trigger = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    room:broadcastSkillInvoke("ol_ex__shuangxiong")
+    player:broadcastSkillInvoke("ol_ex__shuangxiong")
     room:notifySkillInvoked(player, "ol_ex__shuangxiong")
     if event == fk.EventPhaseEnd then
       local color = Fk:getCardById(self.cost_data[1]):getColorString()
@@ -1198,7 +1198,7 @@ local ol_ex__luanji_trigger = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    room:broadcastSkillInvoke("ol_ex__luanji")
+    player:broadcastSkillInvoke("ol_ex__luanji")
     room:notifySkillInvoked(player, "ol_ex__luanji", "control")
     TargetGroup:removeTarget(data.tos, self.cost_data)
   end,
@@ -1919,7 +1919,7 @@ local ol_ex__jiuchi_trigger = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     room:notifySkillInvoked(player, "ol_ex__jiuchi", "defensive")
-    room:broadcastSkillInvoke("ol_ex__jiuchi")
+    player:broadcastSkillInvoke("ol_ex__jiuchi")
     room:addPlayerMark(player, "@@ol_ex__benghuai_invalidity-turn")
   end,
 }
@@ -2024,7 +2024,7 @@ local ol_ex__wansha = fk.CreateTriggerSkill{
   end,
   on_refresh = function(self, event, target, player, data)
     player.room:notifySkillInvoked(player, self.name)
-    player.room:broadcastSkillInvoke(self.name)
+    player:broadcastSkillInvoke(self.name)
   end,
 }
 local ol_ex__wansha_prohibit = fk.CreateProhibitSkill{
@@ -2118,7 +2118,7 @@ local ol_ex__weimu_trigger = fk.CreateTriggerSkill{
   on_cost = function() return true end,
   on_use = function(self, event, target, player, data)
     player.room:notifySkillInvoked(player, ol_ex__weimu.name, "defensive")
-    player.room:broadcastSkillInvoke(ol_ex__weimu.name)
+    player:broadcastSkillInvoke(ol_ex__weimu.name)
     player:drawCards(data.damage*2, self.name)
     return true
   end,

@@ -1077,7 +1077,7 @@ local lianhe_trigger = fk.CreateTriggerSkill{
       if player.dead then return end
       if not p.dead then
         room:doIndicate(p.id, {player.id})
-        room:broadcastSkillInvoke("lianhe")
+        player:broadcastSkillInvoke("lianhe")
         room:notifySkillInvoked(p, "lianhe", "drawcard")
         if n < 2 or #player:getCardIds("he") < n - 1 then
           p:drawCards(n + 1, "lianhe")
@@ -1368,7 +1368,7 @@ local lianzhuw_active = fk.CreateActiveSkill{
     room:doIndicate(player.id, {src.id})
     room:setPlayerMark(src, MarkEnum.SwithSkillPreName .. "lianzhuw", src:getSwitchSkillState("lianzhuw", true))
     src:addSkillUseHistory("lianzhuw")
-    room:broadcastSkillInvoke("lianzhuw")
+    src:broadcastSkillInvoke("lianzhuw")
     room:notifySkillInvoked(src, "lianzhuw", "switch")
     if src:getSwitchSkillState("lianzhuw", true) == fk.SwitchYang then
       room:recastCard(effect.cards, player, "lianzhuw")
@@ -1547,7 +1547,7 @@ local mingjiew_trigger = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    room:broadcastSkillInvoke("mingjiew")
+    player:broadcastSkillInvoke("mingjiew")
     room:notifySkillInvoked(player, "mingjiew", "offensive")
     for _, id in ipairs(self.cost_data) do
       room:doIndicate(player.id, {id})
@@ -1589,7 +1589,7 @@ local mingjiew_record = fk.CreateTriggerSkill{
           end
         end
         if #ids == 0 then return end
-        room:broadcastSkillInvoke("mingjiew")
+        p:broadcastSkillInvoke("mingjiew")
         room:notifySkillInvoked(p, "mingjiew", "control")
         local fakemove = {
           toArea = Card.PlayerHand,
@@ -1991,7 +1991,7 @@ local yuzhi = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    room:broadcastSkillInvoke(self.name)
+    player:broadcastSkillInvoke(self.name)
     if event == fk.RoundStart then
       room:notifySkillInvoked(player, self.name, "drawcard")
       local cards = {}

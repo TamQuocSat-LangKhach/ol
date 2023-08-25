@@ -168,7 +168,7 @@ local jadeCombSkill = fk.CreateTriggerSkill{
     end
   end,
   on_use = function(self, event, target, player, data)
-    player.room:broadcastSkillInvoke("zhuangshu", 3)
+    player:broadcastSkillInvoke("zhuangshu", 3)
     player.room:throwCard(self.cost_data, "jade_comb", player, player)
     return true
   end,
@@ -207,7 +207,7 @@ local rhinoCombSkill = fk.CreateTriggerSkill{
     return self.cost_data ~= "Cancel"
   end,
   on_use = function(self, event, target, player, data)
-    player.room:broadcastSkillInvoke("zhuangshu", 4)
+    player:broadcastSkillInvoke("zhuangshu", 4)
     if self.cost_data == "rhino_comb_judge" then
       player:skip(Player.Judge)
       return true
@@ -244,7 +244,7 @@ local goldenCombSkill = fk.CreateTriggerSkill{
     and player:getHandcardNum() < math.min(player:getMaxCards(), 5)
   end,
   on_use = function(self, event, target, player, data)
-    player.room:broadcastSkillInvoke("zhuangshu", 5)
+    player:broadcastSkillInvoke("zhuangshu", 5)
     local x = math.min(player:getMaxCards(), 5) - player:getHandcardNum()
     if x > 0 then
       player:drawCards(x, self.name)
