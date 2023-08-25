@@ -965,7 +965,7 @@ local zhaosong_trigger = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     if event == fk.EnterDying then
-      room:broadcastSkillInvoke("zhaosong", 1)
+      player:broadcastSkillInvoke("zhaosong", 1)
       room:notifySkillInvoked(player, self.name, "support")
       room:removePlayerMark(player, "@@zuofen_lei", 1)
       room:recover({
@@ -976,14 +976,14 @@ local zhaosong_trigger = fk.CreateTriggerSkill{
       })
       player:drawCards(1, self.name)
     elseif event == fk.EventPhaseStart then
-      room:broadcastSkillInvoke("zhaosong", 2)
+      player:broadcastSkillInvoke("zhaosong", 2)
       room:notifySkillInvoked(player, self.name, "control")
       room:removePlayerMark(player, "@@zuofen_fu", 1)
       local to = room:getPlayerById(self.cost_data)
       local cards = room:askForCardsChosen(player, to, 1, 2, "hej", self.name)
       room:throwCard(cards, self.name, to, player)
     else
-      room:broadcastSkillInvoke("zhaosong", 3)
+      player:broadcastSkillInvoke("zhaosong", 3)
       room:notifySkillInvoked(player, self.name, "offensive")
       room:removePlayerMark(player, "@@zuofen_song", 1)
       for _, id in ipairs(self.cost_data) do
@@ -1110,7 +1110,7 @@ local zhuangshu = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     room:notifySkillInvoked(player, self.name)
-    room:broadcastSkillInvoke(self.name, math.random(2))
+    player:broadcastSkillInvoke(self.name, math.random(2))
     if event == fk.GameStart then
       room:moveCards({
         fromArea = Card.Void,
@@ -1595,7 +1595,7 @@ local ol__zhouxuan_trigger = fk.CreateTriggerSkill{
         specialName = "zhanghe_xuan",
       })
     else
-      room:broadcastSkillInvoke("ol__zhouxuan")
+      player:broadcastSkillInvoke("ol__zhouxuan")
       room:notifySkillInvoked(player, "ol__zhouxuan", "drawcard")
       if not table.every(room:getOtherPlayers(player), function(p)
         return #p.player_cards[Player.Hand] < #player.player_cards[Player.Hand] end) then
@@ -1668,7 +1668,7 @@ local xianlve_trigger = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    room:broadcastSkillInvoke("xianlve")
+    player:broadcastSkillInvoke("xianlve")
     room:notifySkillInvoked(player, "xianlve", "drawcard")
     local cards = player:drawCards(2, "xianlve")
     for _, id in ipairs(cards) do
@@ -2073,10 +2073,10 @@ local yuanchou = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     if data.from == player.id then
-      room:broadcastSkillInvoke(self.name, 1)
+      player:broadcastSkillInvoke(self.name, 1)
       room:notifySkillInvoked(player, self.name, "offensive")
     else
-      room:broadcastSkillInvoke(self.name, 2)
+      player:broadcastSkillInvoke(self.name, 2)
       room:notifySkillInvoked(player, self.name, "negative")
     end
     room:addPlayerMark(room:getPlayerById(data.to), fk.MarkArmorNullified)
@@ -3094,7 +3094,7 @@ local tongxie_trigger = fk.CreateTriggerSkill{
       local use = room:askForUseCard(player, "slash", "slash", "#tongxie-slash::"..to, true,
         {must_targets = {to}, bypass_distances = true, bypass_times = true})
       if use then
-        room:broadcastSkillInvoke("tongxie")
+        player:broadcastSkillInvoke("tongxie")
         room:notifySkillInvoked(player, "tongxie", "offensive")
         use.extra_data = use.extra_data or {}
         use.extra_data.tongxie = true
@@ -3102,7 +3102,7 @@ local tongxie_trigger = fk.CreateTriggerSkill{
       end
     else
       if room:askForSkillInvoke(player, "tongxie", nil, "#tongxie-loseHp::"..target.id) then
-        room:broadcastSkillInvoke("tongxie")
+        player:broadcastSkillInvoke("tongxie")
         room:notifySkillInvoked(player, "tongxie", "support")
         room:loseHp(player, 1, "tongxie")
         return true
@@ -3407,7 +3407,7 @@ local huamu = fk.CreateTriggerSkill{
     end
     if #moveInfos > 0 then
       room:notifySkillInvoked(player, self.name)
-      room:broadcastSkillInvoke(self.name, audio_case * 2 + math.random(2))
+      player:broadcastSkillInvoke(self.name, audio_case * 2 + math.random(2))
       room:moveCards(table.unpack(moveInfos))
     end
   end,

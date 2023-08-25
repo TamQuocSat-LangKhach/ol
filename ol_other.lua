@@ -240,7 +240,7 @@ local jiwu = fk.CreateActiveSkill{
     local skill_name = self.interaction.data
     local player = room:getPlayerById(effect.from)
     room:notifySkillInvoked(player, self.name)
-    room:broadcastSkillInvoke(self.name, math.random(2))
+    player:broadcastSkillInvoke(self.name, math.random(2))
     room:throwCard(effect.cards, self.name, player, player)
     local jiwu_skills = type(player:getMark("jiwu_skills")) == "table" and player:getMark("jiwu_skills") or {}
     table.insertIfNeed(jiwu_skills, skill_name)
@@ -454,7 +454,7 @@ local qin__bianfa_trigger = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    room:broadcastSkillInvoke("qin__bianfa")
+    player:broadcastSkillInvoke("qin__bianfa")
     if event == fk.GameStart then
       for i = #room.void, 1, -1 do
         if Fk:getCardById(room.void[i]).trueName == "shangyang_reform" then
@@ -837,7 +837,7 @@ local qin__shanwu = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    room:broadcastSkillInvoke(self.name)
+    player:broadcastSkillInvoke(self.name)
     if event == fk.TargetSpecified then
       room:notifySkillInvoked(player, self.name, "offensive")
       local judge = {
@@ -906,7 +906,7 @@ local qin__daqi_trigger = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    room:broadcastSkillInvoke("qin__daqi")
+    player:broadcastSkillInvoke("qin__daqi")
     room:notifySkillInvoked(player, "qin__daqi", "special")
     room:addPlayerMark(player, "@qin__daqi", 1)
   end,

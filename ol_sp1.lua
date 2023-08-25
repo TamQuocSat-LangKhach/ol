@@ -417,7 +417,7 @@ local canshi = fk.CreateTriggerSkill{
     local n = 0
     for _, p in ipairs(room:getAlivePlayers()) do
       if p:isWounded() or (player:hasSkill("guiming") and p.kingdom == "wu" and p ~= player) then
-        room:broadcastSkillInvoke("guiming")
+        player:broadcastSkillInvoke("guiming")
         n = n + 1
       end
     end
@@ -1014,10 +1014,10 @@ local jili = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     if data.card.is_damage_card or table.contains({"dismantlement", "snatch", "chasing_near"}, data.card.name) or data.card.is_derived  then
-      room:broadcastSkillInvoke(self.name, 1)
+      player:broadcastSkillInvoke(self.name, 1)
       room:notifySkillInvoked(player, self.name, "negative")
     else
-      room:broadcastSkillInvoke(self.name, 2)
+      player:broadcastSkillInvoke(self.name, 2)
       room:notifySkillInvoked(player, self.name, "control")
     end
     if data.from ~= nil then
@@ -1170,7 +1170,7 @@ local tuifeng_trigger = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    room:broadcastSkillInvoke("tuifeng")
+    player:broadcastSkillInvoke("tuifeng")
     room:notifySkillInvoked(player, "tuifeng")
     local n = #player:getPile("tuifeng")
     room:moveCards({
@@ -2438,7 +2438,7 @@ local xianfu = fk.CreateTriggerSkill{
     local room = player.room
     if event == fk.GameStart then
       room:notifySkillInvoked(player, self.name)
-      room:broadcastSkillInvoke(self.name, math.random(2))
+      player:broadcastSkillInvoke(self.name, math.random(2))
       local targets = table.map(room:getOtherPlayers(player), function(p) return p.id end)
       local tos = room:askForChoosePlayers(player, targets, 1, 1, "#xianfu-choose", self.name, false, true)
       local to
@@ -2450,7 +2450,7 @@ local xianfu = fk.CreateTriggerSkill{
       room:setPlayerMark(to, self.name, player.id)
     elseif event == fk.Damaged then
       room:notifySkillInvoked(player, self.name, "negative")
-      room:broadcastSkillInvoke(self.name, math.random(2)+2)
+      player:broadcastSkillInvoke(self.name, math.random(2)+2)
       if player:getMark("@xianfu") == 0 then
         room:setPlayerMark(player, "@xianfu", target.general)
       end
@@ -2461,7 +2461,7 @@ local xianfu = fk.CreateTriggerSkill{
       }
     elseif event == fk.HpRecover then
       room:notifySkillInvoked(player, self.name, "support")
-      room:broadcastSkillInvoke(self.name, math.random(2)+4)
+      player:broadcastSkillInvoke(self.name, math.random(2)+4)
       if player:getMark("@xianfu") == 0 then
         room:setPlayerMark(player, "@xianfu", target.general)
       end
