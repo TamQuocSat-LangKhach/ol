@@ -773,8 +773,8 @@ Fk:loadTranslationTable{
   [":hanyong"] = "当你使用【南蛮入侵】或【万箭齐发】时，若你的体力值小于游戏轮数，你可以令此牌造成的伤害+1。",
   ["@wutugu_ran"] = "燃",
 
-  ["$ranshang1"] = "尔等，竟如此歹毒！",
-  ["$ranshang2"] = "战火燃尽英雄胆！",
+  ["$ranshang1"] = "战火燃尽英雄胆！",
+  ["$ranshang2"] = "尔等，竟如此歹毒！",
   ["$hanyong1"] = "犯我者，杀！",
   ["$hanyong2"] = "藤甲军从无对手，不服来战！",
   ["~wutugu"] = "撤，快撤！",
@@ -3390,8 +3390,8 @@ Fk:loadTranslationTable{
   ["$lingren2"] = "精兵如炬，困龙难飞！",
   ["$fujian1"] = "兵者，诡道也。",
   ["$fujian2"] = "粮资军备，一览无遗。",
-  --["$ex__jianxiong1"] = "且收此弩箭，不日奉还。",
-  --["$xingshang1"] = "此刀枪军械，尽归我有。",
+  ["$ex__jianxiong_caoying"] = "且收此弩箭，不日奉还。",
+  ["$xingshang_caoying"] = "此刀枪军械，尽归我有。",
   ["~caoying"] = "曹魏天下存，魂归故土安……",
 }
 
