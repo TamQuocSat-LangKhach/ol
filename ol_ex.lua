@@ -1544,8 +1544,8 @@ Fk:loadTranslationTable{
   ["ol_ex__zaiqi_draw"] = "摸一张牌",
   ["ol_ex__zaiqi_recover"] = "令其回复体力",
 
-  ["$huoshou_ol_ex__menghuo1"] = "坐据三山，蛮霸四野！",
-  ["$huoshou_ol_ex__menghuo2"] = "啸据哀牢，闻祸而喜！",
+  ["$huoshou_ol_ex__menghuo1"] = "啸据哀牢，闻祸而喜！",
+  ["$huoshou_ol_ex__menghuo2"] = "坐据三山，蛮霸四野！",
   ["$ol_ex__zaiqi1"] = "挫而弥坚，战而弥勇！",
   ["$ol_ex__zaiqi2"] = "蛮人骨硬，其势复来！",
   ["~ol_ex__menghuo"] = "勿再放我，但求速死！",

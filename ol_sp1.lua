@@ -410,27 +410,34 @@ local canshi = fk.CreateTriggerSkill{
   anim_type = "drawcard",
   events ={fk.DrawNCards},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name)
+    return target == player and player:hasSkill(self.name) and not table.every(player.room:getAlivePlayers(false), function (p)
+      return not p:isWounded() and not (player:hasSkill("guiming") and p.kingdom == "wu" and p ~= player)
+    end)
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
     local n = 0
     for _, p in ipairs(room:getAlivePlayers()) do
       if p:isWounded() or (player:hasSkill("guiming") and p.kingdom == "wu" and p ~= player) then
-        player:broadcastSkillInvoke("guiming")
         n = n + 1
       end
     end
     data.n = data.n + n
   end,
-
-  refresh_events ={fk.CardUsing},
-  can_refresh = function(self, event, target, player, data)
+}
+local canshi_delay = fk.CreateTriggerSkill{
+  name = "#canshi_delay",
+  anim_type = "negative",
+  events = {fk.CardUsing},
+  can_trigger = function(self, event, target, player, data)
     return target == player and (data.card.type == Card.TypeBasic or data.card.type == Card.TypeTrick) and
-      player:usedSkillTimes(self.name) > 0 and not player:isNude()
+      player:usedSkillTimes(canshi.name) > 0 and not player:isNude()
   end,
-  on_refresh = function(self, event, target, player, data)
-    player.room:askForDiscard(player, 1, 1, true, self.name)
+  on_cost = function(self, event, target, player, data)
+    return true
+  end,
+  on_use = function(self, event, target, player, data)
+    player.room:askForDiscard(player, 1, 1, true, self.name, false)
   end,
 }
 local chouhai = fk.CreateTriggerSkill{
@@ -449,6 +456,7 @@ local guiming = fk.CreateTriggerSkill{
   name = "guiming$",
   frequency = Skill.Compulsory,
 }
+canshi:addRelatedSkill(canshi_delay)
 sunhao:addSkill(canshi)
 sunhao:addSkill(chouhai)
 sunhao:addSkill(guiming)
@@ -460,6 +468,8 @@ Fk:loadTranslationTable{
   [":chouhai"] = "锁定技，当你受到伤害时，若你没有手牌，你令此伤害+1。",
   ["guiming"] = "归命",
   [":guiming"] = "主公技，锁定技，其他吴势力角色于你的回合内视为已受伤的角色。",
+
+  ["#canshi_delay"] = "残蚀",
 
   ["$canshi1"] = "众人与蝼蚁何异？哈哈哈……",
   ["$canshi2"] = "难道一切不在朕手中？",
@@ -902,7 +912,7 @@ Fk:loadTranslationTable{
   [":xiefang"] = "锁定技，你计算与其他角色的距离-X（X为女性角色数）。",
   ["#zhengnan-choice"] = "征南：选择获得的技能",
 
-  ["$zhengnan1"] = "全凭丞相差遣，万死不辞！",
+  ["$zhengnan1"] = "索全凭丞相差遣，万死不辞！",
   ["$zhengnan2"] = "末将愿承父志，随丞相出征！",
   ["$wusheng_guansuo"] = "逆贼，可识得关氏之勇？",
   ["$dangxian_guansuo"] = "各位将军，且让小辈先行出战！",
@@ -1869,6 +1879,7 @@ heqi:addRelatedSkill("mashu")
 heqi:addRelatedSkill("ex__yingzi")
 heqi:addRelatedSkill("duanbing")
 heqi:addRelatedSkill("fenwei")
+heqi:addRelatedSkill("lanjiang")
 Fk:loadTranslationTable{
   ["heqi"] = "贺齐",
   ["qizhou"] = "绮胄",
@@ -1877,9 +1888,10 @@ Fk:loadTranslationTable{
   [":shanxi"] = "出牌阶段限一次，你可以弃置一张红色基本牌，然后弃置攻击范围内的一名其他角色的一张牌，若弃置的牌是【闪】，你观看其手牌，"..
   "若弃置的不是【闪】，其观看你的手牌。",
 
-  --["$ex__yingzi1"] = "人靠衣装马靠鞍！",
-  --["$duanbing1"] = "可真是一把好刀啊！",
-  --["$fenwei1"] = "恩威并施，蛮夷可为我所用！",
+  ["$ex__yingzi_heqi"] = "人靠衣装马靠鞍！",
+  ["$duanbing_heqi"] = "可真是一把好刀啊！",
+  ["$fenwei_heqi"] = "我的船队，要让全建业城的人都看见！",
+  ["$lanjiang_heqi"] = "大江惊澜，浪涌四极之疆！",
   ["$shanxi1"] = "敌援未到，需要速战速决！",
   ["$shanxi2"] = "快马加鞭，赶在敌人戒备之前！",
   ["~heqi"] = "别拿走我的装备！",
