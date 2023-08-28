@@ -1838,23 +1838,33 @@ local guangu = fk.CreateActiveSkill{
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
     local status = player:getSwitchSkillState(self.name, true) == fk.SwitchYang and "yang" or "yin"
-    local target = player
+    local target = nil
     local ids = {}
     if status == "yang" then
-      local choice = tonumber(room:askForChoice(player, {"1", "2", "3", "4"}, self.name, "#guangu-choice"))
-      ids = room:getNCards(choice)
+      --local choice = tonumber(room:askForChoice(player, {"1", "2", "3", "4"}, self.name, "#guangu-choice"))
+      --仪式选牌！
+      ids = room:askForCardsChosen(player, player, 1, 4, {
+        card_data = {
+          { "Top", {-1,-1,-1,-1} }
+        }
+      }, self.name)
+      ids = room:getNCards(#ids)
     elseif status == "yin" then
       target = room:getPlayerById(effect.tos[1])
       ids = room:askForCardsChosen(player, target, 1, 4, "h", self.name)
     end
-    room:setPlayerMark(player, "@guangu", #ids)
-    local fakemove = {
-      toArea = Card.PlayerHand,
-      to = player.id,
-      moveInfo = table.map(ids, function(id) return {cardId = id, fromArea = Card.Void} end),
-      moveReason = fk.ReasonJustMove,
-    }
-    room:notifyMoveCards({player}, {fakemove})
+    room:setPlayerMark(player, "@guangu-phase", #ids)
+
+    if target == nil or target ~= player then
+      local fakemove = {
+        toArea = Card.PlayerHand,
+        to = player.id,
+        moveInfo = table.map(ids, function(id) return {cardId = id, fromArea = Card.Void} end),
+        moveReason = fk.ReasonJustMove,
+      }
+      room:notifyMoveCards({player}, {fakemove})
+    end
+
     local availableCards = {}
     for _, id in ipairs(ids) do
       local card = Fk:getCardById(id)
@@ -1865,13 +1875,16 @@ local guangu = fk.CreateActiveSkill{
     room:setPlayerMark(player, "guangu_cards", availableCards)
     local success, dat = room:askForUseActiveSkill(player, "guangu_viewas", "#guangu-use", true)
     room:setPlayerMark(player, "guangu_cards", 0)
-    fakemove = {
-      from = player.id,
-      toArea = Card.Void,
-      moveInfo = table.map(ids, function(id) return {cardId = id, fromArea = Card.PlayerHand} end),
-      moveReason = fk.ReasonJustMove,
-    }
-    room:notifyMoveCards({player}, {fakemove})
+
+    if target == nil or target ~= player then
+      local fakemove = {
+        from = player.id,
+        toArea = Card.Void,
+        moveInfo = table.map(ids, function(id) return {cardId = id, fromArea = Card.PlayerHand} end),
+        moveReason = fk.ReasonJustMove,
+      }
+      room:notifyMoveCards({player}, {fakemove})
+    end
     if status == "yang" then
       if success then
         table.removeOne(ids, dat.cards[1])
@@ -1911,27 +1924,29 @@ local xiaoyong = fk.CreateTriggerSkill{
   frequency = Skill.Compulsory,
   events = {fk.CardUsing},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name) and player.phase ~= Player.NotActive and
-      data.extra_data and data.extra_data.xiaoyong and player:getMark("@guangu") == data.extra_data.xiaoyong
+    if target ~= player or not player:hasSkill(self.name) or player:usedSkillTimes("guangu", Player.HistoryPhase) == 0 then return false end
+    local n = #Fk:translate(data.card.trueName) / 3
+    if n ~= player:getMark("@guangu-phase") then return false end
+    local mark = player:getMark("xiaoyong-turn")
+    if type(mark) ~= "table" then mark = {0,0,0,0} end
+    local room = player.room
+    local use_event = room.logic:getCurrentEvent()
+    if mark[n] == 0 then
+      room.logic:getEventsOfScope(GameEvent.UseCard, 1, function (e)
+        local use = e.data[1]
+        if use.from == player.id and #Fk:translate(use.card.trueName) / 3 == n then
+          mark[n] = e.id
+          room:setPlayerMark(player, "xiaoyong-turn", mark)
+          return true
+        end
+        return false
+      end, Player.HistoryTurn)
+    end
+    return use_event.id == mark[n]
   end,
   on_use = function(self, event, target, player, data)
+    player.room:setPlayerMark(player, "@guangu-phase", 0)
     player:setSkillUseHistory("guangu", 0, Player.HistoryPhase)
-  end,
-
-  refresh_events = {fk.CardUsing},
-  can_refresh = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name) and player.phase ~= Player.NotActive
-  end,
-  on_refresh = function(self, event, target, player, data)
-    local mark = player:getMark("xiaoyong-turn")
-    if mark == 0 then mark = {} end
-    local n = #Fk:translate(data.card.trueName) / 3
-    if not table.contains(mark, n) then
-      table.insert(mark, n)
-      data.extra_data = data.extra_data or {}
-      data.extra_data.xiaoyong = n
-    end
-    player.room:setPlayerMark(player, "xiaoyong-turn", mark)
   end,
 }
 local baozu = fk.CreateTriggerSkill{
@@ -1979,7 +1994,7 @@ Fk:loadTranslationTable{
   ["#guangu-yang"] = "观骨：你可以观看牌堆顶至多四张牌，然后使用其中一张牌",
   ["#guangu-yin"] = "观骨：你可以观看一名角色至多四张手牌，然后使用其中一张牌",
   ["#guangu-choice"] = "观骨：选择你要观看的牌数",
-  ["@guangu"] = "观骨",
+  ["@guangu-phase"] = "观骨",
   ["guangu_viewas"] = "观骨",
   ["#guangu-use"] = "观骨：你可以使用其中一张牌",
   ["#baozu-invoke"] = "保族：你可以令 %dest 横置并回复1点体力",
