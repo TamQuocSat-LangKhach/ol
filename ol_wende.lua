@@ -510,7 +510,7 @@ local ol__xibing = fk.CreateTriggerSkill{
     elseif player:getHandcardNum() < data.from:getHandcardNum() then
       p = player
     end
-    if p.dead then return end
+    if not p or p.dead then return end
     p:drawCards(2, self.name)
     local mark = player:getMark("ol__xibing-turn")
     if mark == 0 then mark = {} end

@@ -1707,14 +1707,18 @@ local zhongliu = fk.CreateTriggerSkill{
     end
   end,
   on_use = function(self, event, target, player, data)
-    for _, s in ipairs(Fk.generals[player.general].skills) do
-      if s.frequency == Skill.Limited then
-        player:setSkillUseHistory(s.name, 0, Player.HistoryGame)
-      else
-        player:setSkillUseHistory(s.name, 0, Player.HistoryPhase)
+    if table.find({"olz__wang", "wangyun", "wangling", "wangchang", "wanghun"}, function(name)
+      return string.find(player.general, name) end) then
+      for _, s in ipairs(Fk.generals[player.general].skills) do
+        if s.frequency == Skill.Limited then
+          player:setSkillUseHistory(s.name, 0, Player.HistoryGame)
+        else
+          player:setSkillUseHistory(s.name, 0, Player.HistoryPhase)
+        end
       end
     end
-    if player.deputyGeneral ~= "" then
+    if player.deputyGeneral ~= "" and table.find({"olz__wang", "wangyun", "wangling", "wangchang", "wanghun"}, function(name)
+      return string.find(player.deputyGeneral, name) end) then
       for _, s in ipairs(Fk.generals[player.deputyGeneral].skills) do
         if s.frequency == Skill.Limited then
           player:setSkillUseHistory(s.name, 0, Player.HistoryGame)
@@ -1739,7 +1743,7 @@ Fk:loadTranslationTable{
   [":mingjiew"] = "限定技，出牌阶段，你可以选择一名角色，直到其下回合结束，你使用牌可以额外指定其为目标，且其下回合结束时，"..
   "你可以使用弃牌堆中此回合中被使用过的♠牌和被抵消过的牌。",
   ["zhongliu"] = "中流",
-  [":zhongliu"] = "宗族技，锁定技，当你使用牌时，若不为同族角色的手牌，你视为未发动武将牌上的技能。",
+  [":zhongliu"] = "宗族技，锁定技，当你使用牌时，若不为同族角色的手牌，你视为未发动此武将牌上的技能。",
   ["#jiexuan-yang"] = "解悬：你可以将一张红色牌当【顺手牵羊】使用",
   ["#jiexuan-yin"] = "解悬：你可以将一张黑色牌当【过河拆桥】使用",
   ["@@mingjiew"] = "铭戒",
@@ -2214,9 +2218,8 @@ local chenya = fk.CreateTriggerSkill{
   events = {fk.AfterSkillEffect},
   can_trigger = function(self, event, target, player, data)
     return player:hasSkill(self.name) and target and not target.dead and not target:isKongcheng() and
-      (((data:isInstanceOf(ActiveSkill) or data:isInstanceOf(ViewAsSkill)) and
-      table.find({"出牌阶段限一次", "阶段技", "每阶段限一次"}, function(str) return string.find(Fk:translate(":"..data.name), str) end)) or
-      (data:isInstanceOf(TriggerSkill) and string.sub(Fk:translate(":"..data.name), 1, 21) == "出牌阶段限一次")) and
+      ((data:isInstanceOf(ActiveSkill) or data:isInstanceOf(ViewAsSkill)) and
+      table.find({"出牌阶段限一次", "阶段技", "每阶段限一次"}, function(str) return string.find(Fk:translate(":"..data.name), str) end)) and
       not data.attached_equip and data.name[#data.name] ~= "&"
   end,
   on_cost = function(self, event, target, player, data)

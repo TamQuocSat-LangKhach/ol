@@ -2875,9 +2875,9 @@ local goude = fk.CreateTriggerSkill{
             return use.from == p.id and use.card.trueName == "slash" and use.card:getEffectiveId() == nil
           end, Player.HistoryTurn)
           if #events > 0 then return true end
-          events = room.logic:getEventsOfScope(GameEvent.SkillEffect, 1, function(e)
-            local dat = e.data
-            return dat[2] == p and table.contains({"huashen", "os__chijie", "bianzhuang", "qyt__lianli"}, dat[3].name)  --FIXME: 耦！
+          events = room.logic:getEventsOfScope(GameEvent.ChangeProperty, 1, function(e)
+            local dat = e.data[1]
+            return dat.from == p and dat.results and dat.results["kingdomChange"]
           end, Player.HistoryTurn)
           if #events > 0 then return true end
         end
@@ -2934,9 +2934,9 @@ local goude = fk.CreateTriggerSkill{
           end
         end
         if table.contains(choices, "goude4") then
-          events = room.logic:getEventsOfScope(GameEvent.SkillEffect, 1, function(e)
-            local dat = e.data
-            return dat[2] == p and table.contains({"huashen", "os__chijie", "bianzhuang", "qyt__lianli"}, dat[3].name)  --FIXME: 耦！
+          events = room.logic:getEventsOfScope(GameEvent.ChangeProperty, 1, function(e)
+            local dat = e.data[1]
+            return dat.from == p and dat.results and dat.results["kingdomChange"]
           end, Player.HistoryTurn)
           if #events > 0 then
             table.removeOne(choices, "goude4")
@@ -2985,14 +2985,13 @@ local goude = fk.CreateTriggerSkill{
         extraUse = true,
       }
     elseif self.cost_data[1] == "goude4" then
-      local allKingdoms = {}
-      allKingdoms = table.simpleClone(Fk.kingdoms)
-      local exceptedKingdoms = {"god", player.kingdom}
+      local allKingdoms = {"wei", "shu", "wu", "qun", "jin"}
+      local exceptedKingdoms = {player.kingdom}
       for _, kingdom in ipairs(exceptedKingdoms) do
         table.removeOne(allKingdoms, kingdom)
       end
-      player.kingdom = room:askForChoice(player, allKingdoms, "AskForKingdom", "#ChooseInitialKingdom")
-      room:broadcastProperty(player, "kingdom")
+      local kingdom = room:askForChoice(player, allKingdoms, "AskForKingdom", "#ChooseInitialKingdom")
+      room:changeKingdom(player, kingdom, true)
     end
   end,
 }
@@ -3140,8 +3139,16 @@ local huiqi = fk.CreateTriggerSkill{
     return #targets == 3 and table.contains(targets, player.id)
   end,
   on_use = function(self, event, target, player, data)
-    player.room:handleAddLoseSkills(player, "xieju", nil, true, false)
-    player:gainAnExtraTurn(true)
+    local room = player.room
+    if player:isWounded() then
+      room:recover({
+        who = player,
+        num = 1,
+        recoverBy = player,
+        skillName = self.name
+      })
+    end
+    room:handleAddLoseSkills(player, "xieju", nil, true, false)
   end,
 }
 local xieju = fk.CreateActiveSkill{
@@ -3162,13 +3169,13 @@ local xieju = fk.CreateActiveSkill{
   on_use = function(self, room, effect)
     for _, id in ipairs(effect.tos) do
       local target = room:getPlayerById(id)
-      if not target.dead and target:canUse(Fk:cloneCard("slash")) then
-        local success, dat = room:askForUseViewAsSkill(target, "xieju_viewas", "#xieju-slash", false)
+      if not target.dead and not target:isNude() then
+        local success, dat = room:askForUseViewAsSkill(target, "xieju_viewas", "#xieju-slash", true, {bypass_times = true})
         if success then
           local card = Fk.skills["xieju_viewas"]:viewAs(dat.cards)
           room:useCard{
             from = target.id,
-            tos = table.map(dat.targets, function(id) return {id} end),
+            tos = table.map(dat.targets, function(p) return {p} end),
             card = card,
             extraUse = true,
           }
@@ -3196,24 +3203,19 @@ local xieju_record = fk.CreateTriggerSkill{
 local xieju_viewas = fk.CreateViewAsSkill{
   name = "xieju_viewas",
   pattern = "slash",
-  card_filter = function()
-    return false
+  card_filter = function(self, to_select, selected)
+    return #selected == 0 and Fk:getCardById(to_select).color == Card.Black
   end,
   view_as = function(self, cards)
+    if #cards ~= 1 then return end
     local card = Fk:cloneCard("slash")
+    card:addSubcard(cards[1])
     card.skillName = "xieju"
     return card
   end,
 }
-local xieju_targetmod = fk.CreateTargetModSkill{
-  name = "#xieju_targetmod",
-  bypass_times = function(self, player, skill, scope, card)
-    return card and table.contains(card.skillNames, "xieju")
-  end,
-}
 guangao:addRelatedSkill(guangao_trigger)
 xieju:addRelatedSkill(xieju_record)
-xieju:addRelatedSkill(xieju_targetmod)
 Fk:addSkill(xieju_viewas)
 wenqin:addSkill(guangao)
 wenqin:addSkill(huiqi)
@@ -3224,14 +3226,14 @@ Fk:loadTranslationTable{
   [":guangao"] = "你使用【杀】可以额外指定一个目标；其他角色使用【杀】可以额外指定你为目标（均有距离限制）。以此法使用的【杀】指定目标后，"..
   "若你的手牌数为偶数，你摸一张牌，令此【杀】对任意名角色无效。",
   ["huiqi"] = "彗企",
-  [":huiqi"] = "觉醒技，每个回合结束时，若本回合仅有包括你的三名角色成为过牌的目标，你获得〖偕举〗并执行一个额外回合。",
+  [":huiqi"] = "觉醒技，每个回合结束时，若本回合仅有包括你的三名角色成为过牌的目标，你回复1点体力并获得〖偕举〗。",
   ["xieju"] = "偕举",
-  [":xieju"] = "出牌阶段限一次，你可以令任意名本回合成为过牌的目标的角色各视为使用一张【杀】。",
+  [":xieju"] = "出牌阶段限一次，你可以选择令任意名本回合成为过牌的目标的角色，这些角色依次可以将一张黑色牌当【杀】使用。",
   ["#guangao-choose"] = "犷骜：你可以为此%arg额外指定一个目标",
   ["#guangao2-choose"] = "犷骜：此%arg可以额外指定有技能“犷骜”的角色为目标",
   ["#guangao-cancel"] = "犷骜：你可以令此%arg对任意名角色无效",
-  ["#xieju"] = "偕举：你可以令任意名角色各视为使用一张【杀】",
-  ["#xieju-slash"] = "偕举：请视为使用一张【杀】",
+  ["#xieju"] = "偕举：选择任意名角色，这些角色可以将一张黑色牌当【杀】使用",
+  ["#xieju-slash"] = "偕举：你可以将一张黑色牌当【杀】使用",
   ["xieju_viewas"] = "偕举",
 
   ["$guangao1"] = "策马觅封侯，长驱万里之数。",
@@ -3377,10 +3379,11 @@ local saogu_trigger = fk.CreateTriggerSkill{
     local to = room:getPlayerById(self.cost_data[1])
     if not to.dead then
       if self.cost_data[3] == "yang" then
-        if #to:getCardIds("he") < 2 then return end
+        if to:isNude() then return end
         local suits = table.map(player:getMark("saogu-phase"), function(str) return string.sub(str, 5, #str) end)
-        local cards = room:askForDiscard(to, 2, 2, true, "saogu", true, ".|.|^("..table.concat(suits, ",")..")", "#saogu-yang", true)
-        if #cards == 2 then
+        local cards = room:askForDiscard(to, math.min(#to:getCardIds("he"), 2), 2, true, "saogu", false,
+          ".|.|^("..table.concat(suits, ",")..")", "#saogu-yang", true)
+        if #cards > 0 then
           DoSaogu(to, cards)
         end
       else
@@ -3425,14 +3428,14 @@ Fk:loadTranslationTable{
   ["saogu"] = "扫谷",
   [":saogu"] = "转换技，出牌阶段，你可以：阳，弃置两张牌（不能包含你本阶段弃置过的花色），使用其中的【杀】；阴，摸一张牌。"..
   "结束阶段，你可以弃置一张牌，令一名其他角色执行当前项。",
-  ["#saogu-yang"] = "扫谷：你可以弃置两张牌，使用其中的【杀】",
+  ["#saogu-yang"] = "扫谷：弃置两张牌，你可以使用其中的【杀】",
   ["#saogu-yin"] = "扫谷：你可以摸一张牌",
   ["#saogu_trigger"] = "扫谷",
   ["@saogu-phase"] = "扫谷",
   ["#saogu-choose"] = "扫谷：你可以弃置一张牌，令一名其他角色执行“扫谷”当前项",
   ["saogu_viewas"] = "扫谷",
   ["#saogu-use"] = "扫谷：你可以使用其中的【杀】",
-  
+
   ["$saogu1"] = "大汉铁骑，必昭卫霍遗风于当年。",
   ["$saogu2"] = "笑驱百蛮，试问谁敢牧马于中原！",
   ["~duanjiong"] = "秋霜落，天下寒……",
