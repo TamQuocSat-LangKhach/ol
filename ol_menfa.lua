@@ -1959,7 +1959,7 @@ local baozu = fk.CreateTriggerSkill{
   frequency = Skill.Limited,
   events = {fk.EnterDying},
   can_trigger = function(self, event, target, player, data)
-    return player:hasSkill(self.name) and target.dying and
+    return player:hasSkill(self.name) and target.dying and not target.chained and
       table.find({"olz__zhong", "zhongyao", "zhongyu", "zhonghui", "zhongyan"}, function(name)
         return string.find(target.general, name) or string.find(target.deputyGeneral, name) end) and
       player:usedSkillTimes(self.name, Player.HistoryGame) == 0
@@ -2086,7 +2086,7 @@ local xieshu = fk.CreateTriggerSkill{
   on_cost = function(self, event, target, player, data)
     local n = #Fk:translate(data.card.trueName) / 3
     local cards = player.room:askForDiscard(player, n, n, true, self.name, true, ".",
-      "#xieshu-invoke:::"..tostring(n)[1]..":"..player:getLostHp(), true)
+      "#xieshu-invoke:::"..math.floor(n)..":"..player:getLostHp(), true)
     if #cards == n then
       self.cost_data = cards
       return true
@@ -2271,6 +2271,80 @@ Fk:loadTranslationTable{
   ["$zhongliu_olz__wanghun1"] = "国潮汹涌，当为中流之砥柱。",
   ["$zhongliu_olz__wanghun2"] = "执剑斩巨浪，息风波者出我辈。",
   ["~olz__wanghun"] = "灭国之功本属我，奈何枉作他人衣……",
+}
+
+local zhongyu = General(extension, "olz__zhongyu", "wei", 3)
+local jiejian = fk.CreateTriggerSkill{
+  name = "jiejian",
+  anim_type = "drawcard",
+  events = {fk.TargetSpecified},
+  can_trigger = function(self, event, target, player, data)
+    if target == player and player:hasSkill(self.name) and data.firstTarget then
+      local n = 0
+      player.room.logic:getEventsOfScope(GameEvent.UseCard, 1, function(e)
+        local use = e.data[1]
+        if use.from == player.id then
+          n = n + 1
+        end
+      end, Player.HistoryTurn)
+      return n == #Fk:translate(data.card.trueName) / 3
+    end
+  end,
+  on_cost = function(self, event, target, player, data)
+    local to = player.room:askForChoosePlayers(player, AimGroup:getAllTargets(data.tos), 1, 1,
+      "#jiejian-choose:::"..math.floor(#Fk:translate(data.card.trueName) / 3), self.name, true)
+    if #to > 0 then
+      self.cost_data = to[1]
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    player.room:getPlayerById(self.cost_data):drawCards(#Fk:translate(data.card.trueName) / 3, self.name)
+  end,
+
+  refresh_events = {fk.AfterCardUseDeclared},
+  can_refresh = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self.name, true)
+  end,
+  on_refresh = function(self, event, target, player, data)
+    player.room:addPlayerMark(player, "@jiejian-turn", 1)
+  end,
+}
+local huanghan = fk.CreateTriggerSkill{
+  name = "huanghan",
+  anim_type = "masochism",
+  events = {fk.Damaged},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self.name) and data.card
+  end,
+  on_cost = function(self, event, target, player, data)
+    return player.room:askForSkillInvoke(player, self.name, nil,
+      "#huanghan-invoke:::"..(math.floor(#Fk:translate(data.card.trueName) / 3))..":"..player:getLostHp())
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    player:drawCards(#Fk:translate(data.card.trueName) / 3, self.name)
+    if not player.dead and player:isWounded() and not player:isNude() then
+      local n = player:getLostHp()
+      room:askForDiscard(player, n, n, true, self.name, false)
+    end
+    if player:usedSkillTimes(self.name, Player.HistoryTurn) > 1 and player:usedSkillTimes("baozu", Player.HistoryGame) > 0 then
+      player:setSkillUseHistory("baozu", 0, Player.HistoryGame)
+    end
+  end,
+}
+zhongyu:addSkill(jiejian)
+zhongyu:addSkill(huanghan)
+zhongyu:addSkill("baozu")
+Fk:loadTranslationTable{
+  ["olz__zhongyu"] = "钟毓",
+  ["jiejian"] = "捷谏",
+  [":jiejian"] = "当你每回合使用第X张牌指定目标后，你可以令其中一个目标摸X张牌（X为此牌牌名字数）。",
+  ["huanghan"] = "惶汗",
+  [":huanghan"] = "当你受到牌造成的伤害后，你可以摸X张牌（X为此牌牌名字数）并弃置你已损失体力值张牌；若不为本回合首次发动，你视为未发动过〖保族〗。",
+  ["#jiejian-choose"] = "捷谏：你可以令其中一个目标摸%arg张牌",
+  ["@jiejian-turn"] = "捷谏",
+  ["#huanghan-invoke"] = "惶汗：你可以摸%arg张牌，弃%arg2张牌",
 }
 
 return extension
