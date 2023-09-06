@@ -236,6 +236,12 @@ Fk:loadTranslationTable{
   "该角色受到伤害后，或于弃牌阶段弃置至少两张与“箓”同类型的牌后，将“箓”置入弃牌堆。",
   ["zhangling_lu"] = "箓",
   ["#shoufu-cost"] = "授符：选择角色并将一张手牌置为其“箓”，其不能使用打出“箓”同类型的牌",
+
+  ["$huqi1"] = "骑虎云游，探求道法。",
+  ["$huqi2"] = "求仙长生，感悟万象。",
+  ["$shoufu1"] = "得授符法，驱鬼灭害。",
+  ["$shoufu2"] = "吾得法器，必斩万恶！",
+  ["~zhangling"] = "羽化登仙，遗世独立……",
 }
 --卧龙凤雏 2021.2.7
 
@@ -3946,6 +3952,12 @@ Fk:loadTranslationTable{
   ["#fenrui-choice"] = "奋锐：选择你要恢复的栏位",
   ["@@fenrui"] = "奋锐",
   ["#fenrui-choose"] = "奋锐：你可以对一名装备少于你的角色造成你与其装备数之差的伤害！（每局限一次）",
+  
+  ["$qiongshou1"] = "戍守孤城，其势不侵。",
+  ["$qiongshou2"] = "吾头可得，而城不可得。",
+  ["$fenrui1"] = "待其疲敝，则可一击破之。",
+  ["$fenrui2"] = "覆军斩将，便在旦夕之间。",
+  ["~ol__huojun"] = "主公，峻有负所托！",
 }
 
 local dengzhong = General(extension, "dengzhong", "wei", 4)

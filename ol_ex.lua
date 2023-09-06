@@ -1989,11 +1989,11 @@ ol_ex__jiuchi:addRelatedSkill(ol_ex__jiuchi_targetmod)
 ol_ex__jiuchi:addRelatedSkill(ol_ex__jiuchi_trigger)
 ol_ex__jiuchi:addRelatedSkill(ol_ex__jiuchi_invalidity)
 ol_ex__baonve:addRelatedSkill(ol_ex__baonve_delay)
-local donngzhuo = General(extension, "ol_ex__dongzhuo", "qun", 8)
-donngzhuo:addSkill(ol_ex__jiuchi)
-donngzhuo:addSkill("roulin")
-donngzhuo:addSkill("benghuai")
-donngzhuo:addSkill(ol_ex__baonve)
+local dongzhuo = General(extension, "ol_ex__dongzhuo", "qun", 8)
+dongzhuo:addSkill(ol_ex__jiuchi)
+dongzhuo:addSkill("roulin")
+dongzhuo:addSkill("benghuai")
+dongzhuo:addSkill(ol_ex__baonve)
 
 Fk:loadTranslationTable{
   ["ol_ex__dongzhuo"] = "界董卓",

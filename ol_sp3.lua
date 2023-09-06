@@ -2044,6 +2044,12 @@ Fk:loadTranslationTable{
   ["#shilu-choose"] = "失路：展示一名角色的一张手牌，此牌视为【杀】",
   ["@@shilu"] = "失路",
   ["#shilu_filter"] = "失路",
+
+  ["$miuyan1"] = "未时引火，必大败蜀军。",
+  ["$miuyan2"] = "我等诈降，必欺姜维于不意。",
+  ["$shilu1"] = "吾计不成，吾命何归？",
+  ["$shilu2"] = "烟尘四起，无处寻路。",
+  ["~wangguan"] = "我本魏将，将军救我！！",
 }
 
 local luoxian = General(extension, "luoxian", "shu", 4)
@@ -2340,6 +2346,12 @@ Fk:loadTranslationTable{
   ["#hongji2-invoke"] = "鸿济：你可以令 %dest 本回合出牌阶段后额外执行一个出牌阶段",
   ["#xinggu-invoke"] = "行贾：你可以将一张“行贾”坐骑置入一名其他角色的装备区，然后获得一张<font color='red'>♦</font>牌",
   ["xinggu_active"] = "行贾",
+
+  ["$hongji1"] = "玄德公当世人杰，奇货可居。",
+  ["$hongji2"] = "张某慕君高义，愿鼎力相助。",
+  ["$xinggu1"] = "乱世烽烟，贾者如火中取栗尔。	",
+  ["$xinggu2"] = "天下动荡，货行千里可易千金。",
+  ["~zhangshiping"] = "奇货犹在，其人老矣……",
 }
 
 local lushi = General(extension, "lushi", "qun", 3, 3, General.Female)
@@ -2838,11 +2850,15 @@ local zhenying = fk.CreateActiveSkill{
 haopu:addSkill(zhenying)
 Fk:loadTranslationTable{
   ["haopu"] = "郝普",
-  ["zhenying"] = "震荧",
+  ["zhenying"] = "镇荧",
   [":zhenying"] = "出牌阶段限两次，你可以与一名手牌数不大于你的其他角色同时摸或弃置手牌至至多两张，然后手牌数较少的角色视为对另一名角色使用【决斗】。",
-  ["#zhenying"] = "震荧：与一名角色同时选择将手牌调整至0~2",
-  ["#zhenying-choice"] = "震荧：选择你要调整至的手牌数",
-  ["#zhenying-discard"] = "震荧：请弃置%arg张手牌",
+  ["#zhenying"] = "镇荧：与一名角色同时选择将手牌调整至0~2",
+  ["#zhenying-choice"] = "镇荧：选择你要调整至的手牌数",
+  ["#zhenying-discard"] = "镇荧：请弃置%arg张手牌",
+  
+  ["$zhenying1"] = "吾闻世间有忠义，今欲为之。",
+  ["$zhenying2"] = "吴虽兵临三郡，普宁死不降。",
+  ["~haopu"] = "徒做奔臣，死无其所……",
 }
 
 local mengda = General(extension, "ol__mengda", "shu", 4)
