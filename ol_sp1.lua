@@ -2644,6 +2644,12 @@ Fk:loadTranslationTable{
   ["#qianya_active"] = "谦雅",
   ["#qianya-invoke"] = "谦雅：你可以将任意张手牌交给一名其他角色",
   ["#shuimeng-choose"] = "说盟：你可以拼点，若赢，视为你使用【无中生有】；若没赢，视为其对你使用【过河拆桥】",
+  
+  ["$qianya1"] = "哎！将军过誉了！",
+	["$qianya2"] = "君子不妄动，动必有道。",
+	["$shuimeng1"] = "你我唇齿相依，共御外敌，何如？	",
+	["$shuimeng2"] = "今兵薄势寡，可遣某为使往说之。",
+  ["~sunqian"] = "恨不能……得见皇叔早登大宝，咳咳咳……",
 }
 
 local shenpei = General(extension, "ol__shenpei", "qun", 3)
@@ -2849,6 +2855,12 @@ Fk:loadTranslationTable{
   [":moushi"] = "出牌阶段限一次，你可以将一张手牌交给一名其他角色。若如此做，当该角色于其下个出牌阶段对每名角色第一次造成伤害后，你摸一张牌。",
   ["#fenglve-choose"] = "锋略：你可以拼点，若赢，其交给你每个区域各一张牌；没赢，你交给其一张牌",
   ["#fenglve-give"] = "锋略：你可以将你的拼点牌交给%dest",
+
+  ["$fenglve1"] = "汝能比得上我家主公吗？",
+  ["$fenglve2"] = "将军有让贤之名而身安于泰山也，实乃上策。",
+  ["$moushi1"] = "官渡决战，袁公必胜而曹氏必败。",
+  ["$moushi2"] = "吾既辅佐袁公，定不会使其覆巢。",
+  ["~ol__xunchen"] = "吾欲赴死，断不做背主之事……",
 }
 
 --刘晔
@@ -2905,6 +2917,10 @@ Fk:loadTranslationTable{
   ["lianpian"] = "联翩",
   [":lianpian"] = "每回合限三次，当你于出牌阶段使用牌连续指定相同角色为目标后，你可以摸一张牌，若如此做，你可以将此牌交给该角色。",
   ["#lianpian-choose"] = "联翩：你可以将这张牌交给其中一名角色",
+
+  ["$lianpian1"] = "需持续投入，方有回报。",
+  ["$lianpian2"] = "心无旁骛，断而敢行！",
+  ["~ol__sufei"] = "恐不能再与兴霸兄……并肩奋战了……",
 }
 
 local huangquan = General(extension, "ol__huangquan", "shu", 3)
@@ -2982,6 +2998,12 @@ Fk:loadTranslationTable{
   ["@dianhu"] = "点虎",
   ["#dianhu-choose"] = "点虎：指定一名角色，本局当你对其造成伤害或其回复体力后，你摸一张牌",
   ["#jianji-invoke"] = "谏计：你可以使用这张牌",
+
+  ["$dianhu1"] = "预则立，不预则废！",
+  ["$dianhu2"] = "就用你，给我军祭旗！",
+  ["$jianji1"] = "锦上添花，不如雪中送炭。",
+  ["$jianji2"] = "密计交于将军，可解燃眉之困。",
+  ["~ol__huangquan"] = "魏王厚待于我，降魏又有何错？",
 }
 
 --卑弥呼 2018.6.8
@@ -3125,6 +3147,12 @@ Fk:loadTranslationTable{
   [":weijing"] = "每轮限一次，当你需要使用【杀】或【闪】时，你可以视为使用之。",
   ["#qingzhong-choose"] = "清忠：选择一名手牌数最少的其他角色，与其交换手牌",
   ["#weijing_record"] = "卫境",
+
+  ["$qingzhong1"] = "执政为民，当尽我所能。",
+  ["$qingzhong2"] = "吾自幼流离失所，更能体恤百姓之苦。",
+  ["$weijing1"] = "战事兴起，最苦的，仍是百姓。",
+  ["$weijing2"] = "国乃大家，保大家才有小家。",
+  ["~luzhiw"] = "年迈力微，是该告老还乡了……",
 }
 
 local baosanniang = General(extension, "ol__baosanniang", "shu", 4, 4, General.Female)
@@ -3478,6 +3506,12 @@ Fk:loadTranslationTable{
   [":shijian"] = "一名其他角色的出牌阶段，该角色在本阶段使用的第二张牌结算结束后，你可以弃置一张牌，令其获得〖誉虚〗直到回合结束。",
   ["#yuxu-invoke"] = "誉虚：你可以摸一张牌，然后你使用下一张牌后需弃置一张牌",
   ["#shijian-invoke"] = "实荐：你可以弃置一张牌，令%dest获得〖誉虚〗直到回合结束",
+
+  ["$yuxu1"] = "誉名浮虚，播流四海。",
+  ["$yuxu2"] = "誉虚之名，得保一时。",
+  ["$shijian1"] = "国家安危，在于足下。",
+  ["$shijian2"] = "行之得道，即社稷用宁。",
+  ["~ol__xujing"] = "漂薄风波，绝粮茹草……",
 }
 
 local yuantanyuanshang = General(extension, "yuantanyuanshang", "qun", 4)
@@ -3664,6 +3698,12 @@ Fk:loadTranslationTable{
   [":yidian"] = "若你使用的基本牌或普通锦囊在弃牌堆中没有同名牌，你可以为此牌指定一个额外目标（无视距离）。",
   ["#bizheng-choose"] = "弼政：你可以令一名其他角色摸两张牌，然后你与其中手牌数大于体力上限的角色弃置两张牌",
   ["#yidian-choose"] = "佚典：你可以为此%arg额外指定一个目标",
+
+  ["$bizheng1"] = "弼亮四世，正色率下。",
+  ["$bizheng2"] = "弼佐辅君，国事政法。",
+  ["$yidian1"] = "无传书卷记，功过自有评。",
+  ["$yidian2"] = "佚以典传，千秋谁记？",
+  ["~ol__sunshao"] = "此去一别，难见文举……",
 }
 
 local gaolan = General(extension, "ol__gaolan", "qun", 4)
@@ -3744,6 +3784,10 @@ Fk:loadTranslationTable{
   "若如此做，结束阶段，若你于本回合出牌阶段造成过伤害，你获得牌堆中一张【杀】或伤害锦囊牌。",
   ["#xiying-invoke"] = "袭营：你可以弃置一张非基本手牌，所有其他角色需弃置一张牌，否则其本回合不能使用或打出牌",
   ["#xiying-discard"] = "袭营：你需弃置一张牌，否则本回合不能使用或打出牌",
+  
+  ["$xiying1"] = "速袭曹营，以解乌巢之难！",
+  ["$xiying2"] = "此番若功不能成，我军恐难以再战。",
+  ["~ol__gaolan"] = "郭图小辈之计……误军呐！",
 }
 
 return extension
