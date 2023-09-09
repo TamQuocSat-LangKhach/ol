@@ -819,16 +819,94 @@ local ol_ex__guidao = fk.CreateTriggerSkill{
     end
   end,
 }
+
+local ol_ex__huangtian = fk.CreateTriggerSkill{
+  name = "ol_ex__huangtian$",
+  mute = true,
+
+  refresh_events = {fk.EventAcquireSkill, fk.EventLoseSkill, fk.BuryVictim},
+  can_refresh = function(self, event, target, player, data)
+    if event == fk.EventAcquireSkill or event == fk.EventLoseSkill then
+      return data == self
+    elseif event == fk.BuryVictim then
+      return target:hasSkill(self.name, true, true)
+    --[[
+    --@(=ﾟωﾟ)ﾉ：加时机没有加定义……
+    elseif event == fk.AfterPropertyChange then
+      return target == player
+    ]]
+    end
+  end,
+  on_refresh = function(self, event, target, player, data)
+    local room = player.room
+    local attached_huangtian = player.kingdom == "qun" and table.find(room.alive_players, function (p)
+      return p ~= player and p:hasSkill(self.name, true)
+    end)
+    if attached_huangtian and not player:hasSkill("ol_ex__huangtian_other&", true, true) then
+      room:handleAddLoseSkills(player, "ol_ex__huangtian_other&", nil, false, true)
+    elseif not attached_huangtian and player:hasSkill("ol_ex__huangtian_other&", true, true) then
+      room:handleAddLoseSkills(player, "-ol_ex__huangtian_other&", nil, false, true)
+    end
+  end,
+}
+local ol_ex__huangtian_other = fk.CreateActiveSkill{
+  name = "ol_ex__huangtian_other&",
+  anim_type = "support",
+  prompt = "#ol_ex__huangtian-active",
+  mute = true,
+  can_use = function(self, player)
+    if player.kingdom ~= "qun" then return false end
+    local targetRecorded = player:getMark("ol_ex__huangtian_sources-phase")
+    return table.find(Fk:currentRoom().alive_players, function(p)
+      return p ~= player and p:hasSkill(ol_ex__huangtian.name) and (type(targetRecorded) ~= "table" or not table.contains(targetRecorded, p.id))
+    end)
+  end,
+  card_num = 1,
+  card_filter = function(self, to_select, selected)
+    if #selected < 1 and Fk:currentRoom():getCardArea(to_select) ~= Card.PlayerEquip then
+      local card = Fk:getCardById(to_select)
+      return card.trueName == "jink" or card.suit == Card.Spade
+    end
+  end,
+  target_num = 1,
+  target_filter = function(self, to_select, selected)
+    if #selected == 0 and to_select ~= Self.id and Fk:currentRoom():getPlayerById(to_select):hasSkill(ol_ex__huangtian.name) then
+      local targetRecorded = Self:getMark("ol_ex__huangtian_sources-phase")
+      return type(targetRecorded) ~= "table" or not table.contains(targetRecorded, to_select)
+    end
+  end,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    local target = room:getPlayerById(effect.tos[1])
+    room:notifySkillInvoked(player, ol_ex__huangtian.name)
+    target:broadcastSkillInvoke(ol_ex__huangtian.name)
+    local targetRecorded = type(player:getMark("ol_ex__huangtian_sources-phase")) == "table" and player:getMark("ol_ex__huangtian_sources-phase") or {}
+    table.insertIfNeed(targetRecorded, target.id)
+    room:setPlayerMark(player, "ol_ex__huangtian_sources-phase", targetRecorded)
+    room:moveCardTo(effect.cards, Player.Hand, target, fk.ReasonGive, self.name, nil, true)
+  end,
+}
+
+Fk:addSkill(ol_ex__huangtian_other)
 zhangjiao:addSkill(ol_ex__leiji)
 zhangjiao:addSkill(ol_ex__guidao)
+zhangjiao:addSkill(ol_ex__huangtian)
+
 Fk:loadTranslationTable{
   ["ol_ex__zhangjiao"] = "界张角",
   ["ol_ex__leiji"] = "雷击",
   [":ol_ex__leiji"] = "①当你使用或打出【闪】或【闪电】时，你可判定。②当你的判定结果确定后，若结果为：黑桃，你可对一名其他角色造成2点雷电伤害；梅花，你回复1点体力，然后你可对一名其他角色造成1点雷电伤害。",
   ["ol_ex__guidao"] = "鬼道",
   [":ol_ex__guidao"] = "当一名角色的判定结果确定前，你可打出一张黑色牌代替之，你获得原判定牌，若你打出的牌是黑桃2~9，你摸一张牌。",
+  ["ol_ex__huangtian"] = "黄天",
+  [":ol_ex__huangtian"] = "主公技，其他群势力角色的出牌阶段限一次，该角色可以将一张【闪】或黑桃手牌交给你。",
+
+  ["ol_ex__huangtian_other&"] = "黄天",
+  [":ol_ex__huangtian_other&"] = "出牌阶段限一次，你可将一张【闪】或【闪电】（正面朝上移动）交给张角。",
+
   ["#ol_ex__leiji-choose"] = "雷击：你可以选择一名其他角色，对其造成%arg点雷电伤害",
   ["#guidao-ask"] = "鬼道：你可以打出一张黑色牌替换 %dest 的判定，若打出的牌是黑桃2~9，你摸一张牌。",
+  ["#ol_ex__huangtian-active"] = "发动黄天，选择一张【闪】或黑桃手牌交给一名拥有“黄天”的角色",
 
   ["$ol_ex__leiji1"] = "疾雷迅电，不可趋避！",
   ["$ol_ex__leiji2"] = "雷霆之诛，灭军毁城！",
@@ -1118,6 +1196,7 @@ local ol_ex__shuangxiong = fk.CreateViewAsSkill{
   name = "ol_ex__shuangxiong",
   anim_type = "offensive",
   pattern = "duel",
+  prompt = "#ol_ex__shuangxiong-viewas",
   card_filter = function(self, to_select, selected)
     if #selected == 1 or type(Self:getMark("@ol_ex__shuangxiong-turn")) ~= "table" then return false end
     local color = Fk:getCardById(to_select):getColorString()
@@ -1157,6 +1236,7 @@ Fk:loadTranslationTable{
 
   ["@ol_ex__shuangxiong-turn"] = "双雄",
   ["#ol_ex__shuangxiong-discard"] = "双雄：你可以弃置一张牌，本回合可以将不同颜色的牌当【决斗】使用",
+  ["#ol_ex__shuangxiong-viewas"] = "发动双雄，将一张牌转化为【决斗】使用",
 
   ["$ol_ex__shuangxiong1"] = "吾执矛，君执槊，此天下可有挡我者？",
   ["$ol_ex__shuangxiong2"] = "兄弟协力，定可于乱世纵横！",
@@ -1167,6 +1247,7 @@ local ol_ex__luanji = fk.CreateViewAsSkill{
   name = "ol_ex__luanji",
   anim_type = "offensive",
   pattern = "archery_attack",
+  prompt = "#ol_ex__luanji-viewas",
   card_filter = function(self, to_select, selected)
     if #selected == 1 then 
       return Fk:currentRoom():getCardArea(to_select) ~= Player.Equip and Fk:getCardById(to_select).suit == Fk:getCardById(selected[1]).suit
@@ -1265,6 +1346,7 @@ Fk:loadTranslationTable{
   ["ol_ex__xueyi"] = "血裔",
   [":ol_ex__xueyi"] = "主公技，①游戏开始时，你获得2X枚“裔”（X为群势力角色数）。②出牌阶段开始时，你可弃1枚“裔”，你摸一张牌。③你的手牌上限+X（X为“裔”数）",
 
+  ["#ol_ex__luanji-viewas"] = "发动乱击，选择两种花色相同的手牌转化为【万箭齐发】使用",
   ["#ol_ex__luanji-choose"] = "乱击：你可以为此【万箭齐发】减少一个目标",
   ["@ol_ex__xueyi_yi"] = "裔",
 
@@ -1368,6 +1450,7 @@ Fk:loadTranslationTable{
   ["#ol_ex__jiezi_delay"] = "截辎",
   [":ol_ex__jiezi"] = "其他角色的出牌阶段、弃牌阶段或结束阶段开始前，若其跳过过摸牌阶段且你于此回合内未发动过此技能，你可选择一名角色，若其手牌数为全场最少且没有“辎”，其获得1枚“辎”；否则其摸一张牌。当有“辎”的角色的摸牌阶段结束时，其弃所有“辎”，获得一个额外摸牌阶段。",
 
+  ["#ol_ex__duanliang-viewas"] = "发动断粮，将黑色基本牌或黑色装备牌转化为【兵粮寸断】使用",
   ["@@ol_ex__jiezi_zi"] = "辎",
   ["#ol_ex__jiezi-choose"] = "截辎：选择一名角色，令其获得“辎”标记或摸一张牌",
   ["$ol_ex__duanliang1"] = "兵行无常，计行断粮。",
@@ -1381,6 +1464,7 @@ local ol_ex__changbiao = fk.CreateViewAsSkill{
   name = "ol_ex__changbiao",
   anim_type = "offensive",
   pattern = "slash",
+  prompt = "#ol_ex__changbiao-active",
   card_filter = function(self, to_select, selected)
     return Fk:currentRoom():getCardArea(to_select) ~= Player.Equip
   end,
@@ -1443,6 +1527,7 @@ Fk:loadTranslationTable{
   ["#ol_ex__changbiao_trigger"] = "长标",
   [":ol_ex__changbiao"] = "出牌阶段限一次，你可将至少一张手牌转化为普【杀】使用（无距离关系的限制），此阶段结束时，若此【杀】造成过伤害，你摸x张牌（X为以此法转化的牌数）。",
 
+  ["#ol_ex__changbiao-active"] = "发动长标，将任意数量的手牌转化为【杀】使用（无距离限制）",
   ["@ol_ex__changbiao_draw-phase"] = "长标",
 
   ["$juxiang_ol_ex__zhurong1"] = "巨象冲锋，踏平敌阵！",
@@ -1787,6 +1872,7 @@ local function swapHandCards(room, from, tos, skillname)
 end
 local ol_ex__dimeng = fk.CreateActiveSkill{
   name = "ol_ex__dimeng",
+  prompt = "#ol_ex__dimeng-active",
   anim_type = "control",
   card_num = 0,
   target_num = 2,
@@ -1873,6 +1959,7 @@ Fk:loadTranslationTable{
 
   ["#ol_ex__haoshi-give"] = "好施：选择%arg张手牌，交给除你外手牌数最少的一名角色",
   ["#ol_ex__haoshi-regive"] = "好施：你可以选择一张手牌交给 %src",
+  ["#ol_ex__dimeng-active"] = "发动 缔盟，令两名其他角色交换手牌（牌数之差不能大于你的牌数）",
   ["#ol_ex__dimeng-discard"] = "缔盟：选择%arg张牌弃置",
 
   ["$ol_ex__haoshi1"] = "仗义疏财，深得人心。",
@@ -2003,6 +2090,7 @@ Fk:loadTranslationTable{
   ["ol_ex__baonve"] = "暴虐",
   [":ol_ex__baonve"] = "主公技，当其他群雄角色造成1点伤害后，你可判定，若结果为♠，回复1点体力，然后当判定牌生效后，你获得此牌。",
 
+  ["#ol_ex__jiuchi-viewas"] = "发动酒池，将一张♠手牌转化为【酒】使用",
   ["@@ol_ex__benghuai_invalidity-turn"] = "崩坏失效",
 
   ["$ol_ex__jiuchi1"] = "好酒，痛快！",
@@ -2055,6 +2143,7 @@ local ol_ex__wansha_invalidity = fk.CreateInvaliditySkill {
 local ol_ex__luanwu = fk.CreateActiveSkill{
   name = "ol_ex__luanwu",
   anim_type = "offensive",
+  prompt = "#ol_ex__luanwu-active",
   card_num = 0,
   target_num = 0,
   frequency = Skill.Limited,
@@ -2144,6 +2233,7 @@ Fk:loadTranslationTable{
   ["#ol_ex__weimu_trigger"] = "帷幕",
   [":ol_ex__weimu"] = "锁定技，①你不是黑色锦囊牌的合法目标。②当你于回合内受到伤害时，你防止此伤害，摸2X张牌（X为伤害值）。",
 
+  ["#ol_ex__luanwu-active"] = "发动 乱武，所有其他角色需要对距离最近的角色出杀，否则失去1点体力",
   ["#ol_ex__luanwu-use"] = "乱武：你需要对距离最近的一名角色使用一张【杀】，否则失去1点体力",
   ["#ol_ex__luanwu-choose"] = "乱武：你可以视为使用一张【杀】，选择此【杀】的目标",
 
@@ -2329,6 +2419,7 @@ local ol_ex__jixi = fk.CreateViewAsSkill{
   name = "ol_ex__jixi",
   anim_type = "control",
   pattern = "snatch",
+  prompt = "ol_ex__jixi-viewas",
   expand_pile = "ol_ex__dengai_field",
   card_filter = function(self, to_select, selected)
     return #selected == 0 and Self:getPileNameOfId(to_select) == "ol_ex__dengai_field"
@@ -2367,6 +2458,7 @@ Fk:loadTranslationTable{
   [":ol_ex__jixi"] = "你可以将一张“田”当【顺手牵羊】使用。",
 
   ["ol_ex__dengai_field"] = "田",
+  ["ol_ex__jixi-viewas"] = "发动急袭，将一张“田”转化为【顺手牵羊】使用",
 
   ["$ol_ex__tuntian1"] = "兵农一体，以屯养战。",
   ["$ol_ex__tuntian2"] = "垦田南山，志在西川。",
@@ -2380,6 +2472,7 @@ Fk:loadTranslationTable{
 local ol_ex__tiaoxin = fk.CreateActiveSkill{
   name = "ol_ex__tiaoxin",
   anim_type = "control",
+  prompt = "ol_ex__tiaoxin-active",
   card_num = 0,
   target_num = 1,
   can_use = function(self, player)
@@ -2392,7 +2485,7 @@ local ol_ex__tiaoxin = fk.CreateActiveSkill{
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
     local target = room:getPlayerById(effect.tos[1])
-    local use = room:askForUseCard(target, "slash", "slash", "#tiaoxin-use", true, {must_targets = {player.id}})
+    local use = room:askForUseCard(target, "slash", "slash", "#ol_ex__tiaoxin-use:" .. player.id, true, {must_targets = {player.id}})
     if use then
       room:useCard(use)
     end
@@ -2449,6 +2542,9 @@ Fk:loadTranslationTable{
   [":ol_ex__tiaoxin"] = "出牌阶段限一次，你可以选择一名攻击范围内含有你的角色，然后除非该角色对你使用一张【杀】且你因其执行此【杀】的效果而受到过伤害，否则你弃置其一张牌，然后本阶段本技能限两次。",
   ["ol_ex__zhiji"] = "志继",
   [":ol_ex__zhiji"] = "觉醒技，准备阶段或结束阶段，若你没有手牌，你回复1点体力或摸两张牌，然后减1点体力上限，获得“观星”。",
+
+  ["ol_ex__tiaoxin-active"] = "发动挑衅，令一名角色对你出【杀】，否则你弃置其一张牌",
+  ["#ol_ex__tiaoxin-use"] = "挑衅：对 %src 使用一张【杀】，否则其弃置你一张牌",
 
   ["$ol_ex__tiaoxin1"] = "会闻用师，观衅而动。",
   ["$ol_ex__tiaoxin2"] = "宜乘其衅会，以挑敌将。",
@@ -2686,10 +2782,140 @@ local ol_ex__hunzi_delay = fk.CreateTriggerSkill{
   end,
 }
 
+local ol_ex__zhiba = fk.CreateActiveSkill{
+  name = "ol_ex__zhiba$",
+  anim_type = "control",
+  prompt = "#ol_ex__zhiba-active",
+  can_use = function(self, player)
+    return player:usedSkillTimes(self.name, Player.HistoryPhase) < 1 and not player:isKongcheng()
+  end,
+  card_num = 0,
+  card_filter = function(self, to_select, selected)
+    return false
+  end,
+  target_num = 1,
+  target_filter = function(self, to_select, selected)
+    if #selected == 0 and to_select ~= Self.id then
+      local target = Fk:currentRoom():getPlayerById(to_select)
+      return target.kingdom == "wu" and not target:isKongcheng()
+    end
+  end,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    local target = room:getPlayerById(effect.tos[1])
+    player:pindian({target}, self.name)
+  end,
+}
+local ol_ex__zhiba_delay = fk.CreateTriggerSkill{
+  name = "#ol_ex__zhiba_delay",
+  events = {fk.PindianResultConfirmed},
+  mute = true,
+  can_trigger = function(self, event, target, player, data)
+    if player.dead then return false end
+    if (data.from == player and (not data.winner or data.winner == player) and data.reason == "ol_ex__zhiba") or
+      (data.to == player and (not data.winner or data.winner == player) and data.reason == "ol_ex__zhiba_other&") then
+      local room = player.room
+      return room:getCardArea(data.fromCard) == Card.Processing or room:getCardArea(data.toCard) == Card.Processing
+    end
+  end,
+  on_cost = function() return true end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local cards = {}
+    local id = data.fromCard:getEffectiveId()
+    if room:getCardArea(id) == Card.Processing then
+      table.insert(cards, id)
+    end
+    id = data.toCard:getEffectiveId()
+    if room:getCardArea(id) == Card.Processing then
+      table.insertIfNeed(cards, id)
+    end
+    if #cards > 1 and room:askForChoice(player, {"ol_ex__zhiba_obtain", "ol_ex__zhiba_cancel"}, ol_ex__zhiba.name,
+    "#ol_ex__zhiba-obtain") == "ol_ex__zhiba_obtain" then
+      room:moveCards({
+        ids = cards,
+        to = player.id,
+        toArea = Card.PlayerHand,
+        moveReason = fk.ReasonPrey,
+        skillName = ol_ex__zhiba.name,
+        proposer = player.id,
+      })
+    end
+  end,
+
+  refresh_events = {fk.EventAcquireSkill, fk.EventLoseSkill, fk.BuryVictim},
+  can_refresh = function(self, event, target, player, data)
+    if event == fk.EventAcquireSkill or event == fk.EventLoseSkill then
+      return data == self
+    elseif event == fk.BuryVictim then
+      return target:hasSkill(self.name, true, true)
+    --[[
+    --@(=ﾟωﾟ)ﾉ：加时机没有加定义……
+    elseif event == fk.AfterPropertyChange then
+      return target == player
+    ]]
+    end
+  end,
+  on_refresh = function(self, event, target, player, data)
+    local room = player.room
+    local attached_huangtian = player.kingdom == "wu" and table.find(room.alive_players, function (p)
+      return p ~= player and p:hasSkill(ol_ex__zhiba.name, true)
+    end)
+    if attached_huangtian and not player:hasSkill("ol_ex__zhiba_other&", true, true) then
+      room:handleAddLoseSkills(player, "ol_ex__zhiba_other&", nil, false, true)
+    elseif not attached_huangtian and player:hasSkill("ol_ex__zhiba_other&", true, true) then
+      room:handleAddLoseSkills(player, "-ol_ex__zhiba_other&", nil, false, true)
+    end
+  end,
+}
+local ol_ex__zhiba_other = fk.CreateActiveSkill{
+  name = "ol_ex__zhiba_other&",
+  anim_type = "support",
+  prompt = "#ol_ex__zhiba_other-active",
+  mute = true,
+  can_use = function(self, player)
+    if player.kingdom ~= "wu" or player:isKongcheng() then return false end
+    local targetRecorded = player:getMark("ol_ex__zhiba_sources-phase")
+    return table.find(Fk:currentRoom().alive_players, function(p)
+      return p ~= player and p:hasSkill(ol_ex__zhiba.name) and (type(targetRecorded) ~= "table" or not table.contains(targetRecorded, p.id))
+    end)
+  end,
+  card_num = 0,
+  card_filter = function(self, to_select, selected)
+    return false
+  end,
+  target_num = 1,
+  target_filter = function(self, to_select, selected)
+    if #selected == 0 and to_select ~= Self.id then
+      local target = Fk:currentRoom():getPlayerById(to_select)
+      if target:isKongcheng() or not target:hasSkill(ol_ex__zhiba.name) then return false end
+      local targetRecorded = Self:getMark("ol_ex__zhiba_sources-phase")
+      return type(targetRecorded) ~= "table" or not table.contains(targetRecorded, to_select)
+    end
+  end,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    local target = room:getPlayerById(effect.tos[1])
+    room:notifySkillInvoked(player, ol_ex__zhiba.name)
+    target:broadcastSkillInvoke(ol_ex__zhiba.name)
+    local targetRecorded = type(player:getMark("ol_ex__zhiba_sources-phase")) == "table" and player:getMark("ol_ex__zhiba_sources-phase") or {}
+    table.insertIfNeed(targetRecorded, target.id)
+    room:setPlayerMark(player, "ol_ex__zhiba_sources-phase", targetRecorded)
+
+    if room:askForChoice(target, {"ol_ex__zhiba_accept", "ol_ex__zhiba_refuse"}, ol_ex__zhiba.name,
+    "#ol_ex__zhiba-ask:" .. player.id) == "ol_ex__zhiba_accept" then
+      player:pindian({target}, self.name)
+    end
+  end,
+}
+
+Fk:addSkill(ol_ex__zhiba_other)
 ol_ex__hunzi:addRelatedSkill(ol_ex__hunzi_delay)
+ol_ex__zhiba:addRelatedSkill(ol_ex__zhiba_delay)
 local sunce = General(extension, "ol_ex__sunce", "wu", 4)
 sunce:addSkill(ol_ex__jiang)
 sunce:addSkill(ol_ex__hunzi)
+sunce:addSkill(ol_ex__zhiba)
 sunce:addRelatedSkill("ex__yingzi")
 sunce:addRelatedSkill("yinghun")
 
@@ -2703,9 +2929,21 @@ Fk:loadTranslationTable{
   ["ol_ex__zhiba"] = "制霸",
   [":ol_ex__zhiba"] = "主公技，其他吴势力角色的出牌阶段限一次，其可以对你发起拼点，你可以拒绝此拼点。出牌阶段限一次，你可以与一名其他吴势力角色拼点。以此法发起的拼点，若其没赢，你可以获得两张拼点牌。",
 
+  ["ol_ex__zhiba_other&"] = "制霸",
+  [":ol_ex__zhiba_other&"] = "出牌阶段限一次，你可与孙策拼点（其可拒绝此次拼点），若你没赢，其获得两张拼点牌。",
+
   ["#ol_ex__hunzi-choice"] = "魂姿：选择摸两张牌或者回复1点体力",
   ["ol_ex__hunzi_draw"] = "摸两张牌",
   ["ol_ex__hunzi_recover"] = "回复1点体力",
+  ["#ol_ex__zhiba-active"] = "发动制霸，与吴势力角色拼点！",
+  ["#ol_ex__zhiba_other-active"] = "发动制霸，与拥有“制霸”的角色拼点！",
+
+  ["#ol_ex__zhiba-ask"] = "制霸：%src 向你发起拼点！",
+  ["ol_ex__zhiba_accept"] = "接受拼点",
+  ["ol_ex__zhiba_refuse"] = "拒绝拼点",
+  ["#ol_ex__zhiba-obtain"] = "制霸：是否获得拼点的两张牌",
+  ["ol_ex__zhiba_obtain"] = "获得拼点牌",
+  ["ol_ex__zhiba_cancel"] = "取消",
 
   ["$ol_ex__jiang1"] = "策虽暗稚，窃有微志。",
   ["$ol_ex__jiang2"] = "收合流散，东据吴会。",

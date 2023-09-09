@@ -220,6 +220,7 @@ local shenqu = fk.CreateTriggerSkill{
 local jiwu = fk.CreateActiveSkill{
   name = "jiwu",
   anim_type = "offensive",
+  prompt = "#jiwu-active",
   mute = true,
   card_num = 1,
   target_num = 0,
@@ -284,6 +285,8 @@ Fk:loadTranslationTable{
 
   ["#shenqu-invoke"] = "是否使用神躯，摸两张牌",
   ["#shenqu-use"] = "神躯：你可以使用一张【桃】",
+  ["#jiwu-active"] = "发动 极武，弃置一张牌获得一项技能",
+
 	["$shenqu1"] = "别心怀侥幸了，你们不可能赢！",
 	["$shenqu2"] = "虎牢关，我一人镇守足矣。",
 	["$jiwu1"] = "我！是不可战胜的！",
