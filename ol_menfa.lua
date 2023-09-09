@@ -95,9 +95,12 @@ local daojie = fk.CreateTriggerSkill{
   events = {fk.CardUseFinished},
   can_trigger = function(self, event, target, player, data)
     if player ~= target or not player:hasSkill(self.name) then return false end
-    if data.card.type ~= Card.TypeTrick or data.card.is_damage_card then return false end
+    if not data.card:isCommonTrick() or data.card.is_damage_card then return false end
     local room = player.room
-    if data.card:isVirtual() and #data.card.subcards == 0 then return false end
+    local cardlist = data.card:isVirtual() and data.card.subcards or {data.card.id}
+    if #cardlist == 0 or not table.every(cardlist, function (id)
+      return room:getCardArea(id) == Card.Processing
+    end) then return false end
     local logic = room.logic
     local use_event = logic:getCurrentEvent()
     local mark_name = "daojie_record-turn"
@@ -105,7 +108,7 @@ local daojie = fk.CreateTriggerSkill{
     if mark == 0 then
       logic:getEventsOfScope(GameEvent.UseCard, 1, function (e)
         local last_use = e.data[1]
-        if last_use.from == player.id and last_use.card.type == Card.TypeTrick and not last_use.card.is_damage_card then
+        if last_use.from == player.id and last_use.card:isCommonTrick() and not last_use.card.is_damage_card then
           mark = e.id
           room:setPlayerMark(player, mark_name, mark)
           return true
@@ -130,7 +133,7 @@ local daojie = fk.CreateTriggerSkill{
     else
       room:handleAddLoseSkills(player, "-"..choice, nil, true, false)
     end
-    if table.every(Card:getIdList(data.card), function (id)
+    if not player.dead and table.every(Card:getIdList(data.card), function (id)
       return room:getCardArea(id) == Card.Processing
     end) then
       local targets = {}
@@ -159,7 +162,7 @@ Fk:loadTranslationTable{
   ["beishi"] = "卑势",
   [":beishi"] = "锁定技，当你首次发动〖三恇〗选择的角色失去最后的手牌后，你回复1点体力。",
   ["daojie"] = "蹈节",
-  [":daojie"] = "宗族技，锁定技，当你每回合首次使用非伤害锦囊牌后，你选择一项：1.失去1点体力；2.失去一个锁定技。然后令一名同族角色获得此牌。",
+  [":daojie"] = "宗族技，锁定技，当你每回合首次使用非伤害类普通锦囊牌后，你选择一项：1.失去1点体力；2.失去一个锁定技。然后令一名同族角色获得此牌。",
   ["#sankuang-choose"] = "三恇：令一名其他角色交给你至少X张牌并获得你使用的%arg",
   ["@sankuang"] = "三恇张数：",
   ["#sankuang-give"] = "三恇：你须交给 %src %arg张牌",
@@ -1750,6 +1753,14 @@ Fk:loadTranslationTable{
   ["#mingjiew-choose"] = "铭戒：你可以为此%arg额外指定“铭戒”角色为目标",
   ["mingjiew_viewas"] = "铭戒",
   ["#mingjiew-use"] = "铭戒：你可以使用其中的牌",
+
+  ["$jiexuan1"] = "允不才，愿以天下苍生为己任。",
+  ["$jiexuan2"] = "愿以此躯为膳，饲天下以太平。",
+  ["$mingjiew1"] = "大公至正，恪忠义于国。",
+  ["$mingjiew2"] = "此生柱国之志，铭恪于胸。",
+  ["$zhongliu_olz__wangyun1"] = "国朝汹汹如涌，当如柱石镇之。",
+  ["$zhongliu_olz__wangyun2"] = "砥中流之柱，其舍我复谁？",
+  ["~olz__wangyun"] = "获罪于君，当伏大辟以谢天下……",
 }
 
 local wangling = General(extension, "olz__wangling", "wei", 4)

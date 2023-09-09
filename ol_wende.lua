@@ -1733,7 +1733,7 @@ Fk:loadTranslationTable{
   ["#congjianx-invoke"] = "从鉴：你可以成为此%arg的额外目标，若此牌对你造成伤害，你摸两张牌",
 
   ["$canmou1"] = "兢兢业业，竭心筹划。",
-  ["$canmou2"] = "履行不端者，当有此罚。",
+  ["$canmou2"] = "欲设此法，计谋二人。",
   ["$congjianx1"] = "为人臣属，安可不随？",
   ["$congjianx2"] = "主公有难，吾当从之。",
   ["~xinchang"] = "宪英，救我！",

@@ -328,81 +328,6 @@ Fk:loadTranslationTable{
   ['~ol__sunluyu'] = '姐妹之间，何必至此？',
 }
 
---[[
-local wuyi = General(extension, 'ol__wuyi', 'shu', 4)
-local benxi = fk.CreateTriggerSkill{
-  name = "ol__benxi",
-  anim_type = "offensive",
-  frequency = Skill.Compulsory,
-  events = {fk.CardUsing},
-  can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name) and player.phase ~= Player.NotActive
-  end,
-  on_use = function(self, event, target, player, data)
-    player.room:addPlayerMark(player, "@ol__benxi-turn", 1)
-  end,
-}
-
-local benxi_choose = fk.CreateTriggerSkill{
-  name = '#ol__benxi_choose',
-  main_skill = benxi,
-  events = {fk.TargetSpecifying, fk.CardUseFinished},
-  can_trigger = function(self, event, target, player, data)
-    if target == player and player:hasSkill('ol__benxi') and player.phase ~= Player.NotActive then
-      for _, p in ipairs(player.room:getOtherPlayers(player)) do
-        if player:distanceTo(p) > 1 then return end
-      end
-      if event == fk.TargetSpecifying then
-        return data.firstTarget and data.card.trueName == "slash"
-      else
-        return true
-      end
-    end
-  end,
-  on_use = function(self, event, target, player, data)
-    local room = player.room
-    if event == fk.TargetSpecifying then
-      local targets = {}
-      for _, p in ipairs(room:getOtherPlayers(player)) do
-        room:addPlayerMark(p, fk.MarkArmorNullified)
-        if not table.contains(AimGroup:getAllTargets(data.tos), p.id) and not player:isProhibited(p, data.card) then
-          table.insertIfNeed(targets, p.id)
-        end
-      end
-      if #targets > 0 then
-        local tos = room:askForChoosePlayers(player, targets, 1, 1, "#benxi-choose", self.name, true)
-        if #tos > 0 then
-          TargetGroup:pushTargets(data.targetGroup, tos)
-        end
-      end
-    end
-  end,
-}
-local benxi_distance = fk.CreateDistanceSkill{
-  name = "#ol__benxi_distance",
-  correct_func = function(self, from, to)
-    return -from:getMark("@ol__benxi-turn")
-  end,
-}
-benxi:addRelatedSkill(benxi_distance)
-wuyi:addSkill(benxi)
-Fk:loadTranslationTable{
-  ['ol__wuyi'] = '吴懿',
-  ['ol__benxi'] = '奔袭',
-  ['@ol__benxi-turn'] = '奔袭',
-  [':ol__benxi'] = '锁定技，当你于回合内使用牌时，本回合你计算与其他角色的距离-1；你的回合内，若你与所有其他角色的距离均为1，则你使用仅指定一个目标的【杀】或普通锦囊牌时依次选择至多两项：1.此牌目标+1；2.此牌无视防具；3.此牌不能被抵消；4.此牌造成伤害后，摸一张牌。',
-
-  ['ol__benxi-mul'] = '此牌目标+1',
-  ['ol__benxi-qinggang'] = '此牌无视防具',
-  ['ol__benxi-unoff'] = '此牌不可被抵消',
-  ['ol__benxi-draw'] = '此牌造成伤害后摸一张牌',
-
-  ['$ol__benxi1'] = '克险从征，不辞辛劳！',
-  ['$ol__benxi2'] = '深入敌阵，击其腹背！',
-  ['~ol__wuyi'] = '远道疲敝，寡不敌众，唉…',
-}
---]]
-
 local ol__zhoufei = General(extension, "ol__zhoufei", "wu", 3, 3, General.Female)
 local ol__liangyin = fk.CreateTriggerSkill{
   name = "ol__liangyin",
@@ -410,52 +335,70 @@ local ol__liangyin = fk.CreateTriggerSkill{
   mute = true,
   can_trigger = function(self, event, target, player, data)
     if player:hasSkill(self.name) then
+      local x, y = player:getMark("ol__liangyin1_record-turn"), player:getMark("ol__liangyin2_record-turn")
+      local room = player.room
+      local move__event = room.logic:getCurrentEvent()
+      local turn_event = move__event:findParent(GameEvent.Turn)
+      if turn_event == nil then return false end
+      if not move__event or (x > 0 and x ~= move__event.id and y > 0 and y ~= move__event.id) then return false end
+      local liangyin1_search, liangyin2_search = false, false
       for _, move in ipairs(data) do
         if move.toArea == Card.PlayerSpecial then
-          if player:getMark("liangyin1used-turn") == 0 then
+          if x == 0 then
             for _, info in ipairs(move.moveInfo) do
               if info.fromArea ~= Card.PlayerSpecial then
-                return true
+                liangyin1_search = true
               end
             end
           end
-        elseif player:getMark("liangyin2used-turn") == 0 then
+        elseif y == 0 then
           for _, info in ipairs(move.moveInfo) do
             if info.fromArea == Card.PlayerSpecial then
-              return true
+              liangyin2_search = true
             end
           end
         end
       end
+      if liangyin1_search or liangyin2_search then
+        room.logic:getEventsOfScope(GameEvent.MoveCards, 1, function (e)
+          local moves = e.data
+          for _, move in ipairs(moves) do
+            if move.toArea == Card.PlayerSpecial then
+              if liangyin1_search then
+                for _, info in ipairs(move.moveInfo) do
+                  if info.fromArea ~= Card.PlayerSpecial then
+                    x = e.id
+                    room:setPlayerMark(player, "ol__liangyin1_record-turn", x)
+                    liangyin1_search = false
+                  end
+                end
+              end
+            elseif liangyin2_search then
+              for _, info in ipairs(move.moveInfo) do
+                if info.fromArea == Card.PlayerSpecial then
+                  y = e.id
+                  room:setPlayerMark(player, "ol__liangyin2_record-turn", y)
+                  liangyin2_search = false
+                end
+              end
+            end
+            if not (liangyin1_search or liangyin2_search) then return true end
+          end
+          return false
+        end, Player.HistoryTurn)
+      end
+      return x == move__event.id or y == move__event.id
     end
   end,
   on_trigger = function(self, event, target, player, data)
     local room = player.room
-    local drawcard, discard = false, false
-    for _, move in ipairs(data) do
-      if move.toArea == Card.PlayerSpecial then
-        if player:getMark("liangyin1used-turn") == 0 then
-          for _, info in ipairs(move.moveInfo) do
-            if info.fromArea ~= Card.PlayerSpecial then
-              room:setPlayerMark(player, "liangyin1used-turn", 1)
-              drawcard = true
-            end
-          end
-        end
-      elseif player:getMark("liangyin2used-turn") == 0 then
-        for _, info in ipairs(move.moveInfo) do
-          if info.fromArea == Card.PlayerSpecial then
-            room:setPlayerMark(player, "liangyin2used-turn", 1)
-            discard = true
-          end
-        end
-      end
-    end
-    if drawcard then
+    local x, y = player:getMark("ol__liangyin1_record-turn"), player:getMark("ol__liangyin2_record-turn")
+    local move__event = room.logic:getCurrentEvent()
+    if x == move__event.id then
       self.cost_data = "drawcard"
       self:doCost(event, target, player, data)
     end
-    if discard and player:hasSkill(self.name) and not player:isNude() then
+    if y == move__event.id and player:hasSkill(self.name) and not player:isNude() then
       self.cost_data = "discard"
       self:doCost(event, target, player, data)
     end
@@ -703,15 +646,10 @@ local ol__zhuiji = fk.CreateTriggerSkill{
 local ol__zhuiji_distance = fk.CreateDistanceSkill{
   name = "#ol__zhuiji_distance",
   frequency = Skill.Compulsory,
-  correct_func = function(self, from, to)
-    if from:hasSkill(ol__zhuiji.name) then
-      if from.hp >= to.hp then
-        from:setFixedDistance(to, 1)
-      else
-        from:removeFixedDistance(to)
-      end
+  fixed_func = function(self, from, to)
+    if from:hasSkill(self.name) and from.hp >= to.hp then
+      return 1
     end
-    return 0
   end,
 }
 local ol__shichou = fk.CreateTriggerSkill{
@@ -3255,7 +3193,7 @@ Fk:loadTranslationTable{
   ["$guangao1"] = "策马觅封侯，长驱万里之数。",
   ["$guangao2"] = "大丈夫行事，焉能畏首畏尾。",
   ["$huiqi1"] = "今大星西垂，此天降清君侧之证。",
-  ["$huiqi2"] = "彗星坠于西北，此罚天狼之兆。",
+  ["$huiqi2"] = "彗星竟于西北，此罚天狼之兆。",
   ["$xieju1"] = "今举大义，誓与仲恭共死。",
   ["$xieju2"] = "天降大任，当与志士同忾。",
   ["~ol__wenqin"] = "天不佑国魏！天不佑族文！",
