@@ -24,40 +24,52 @@ local sankuang = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     local targets = {}
-    for _, p in ipairs(room:getOtherPlayers(player)) do
-      local n = 0
-      if #p:getCardIds{Player.Equip, Player.Judge} > 0 then n = n + 1 end
-      if p:isWounded() then n = n + 1 end
-      if p.hp < #p.player_cards[Player.Hand] then n = n + 1 end
-      room:setPlayerMark(p, "@sankuang", n)  --FIXME: 用来显示三恇张数
-      if #p:getCardIds{Player.Hand, Player.Equip} >= n then
+    for _, p in ipairs(room.alive_players) do
+      if p ~= player then
         table.insert(targets, p.id)
+        local n = 0
+        if #p:getCardIds{Player.Equip, Player.Judge} > 0 then n = n + 1 end
+        if p:isWounded() then n = n + 1 end
+        if p.hp < #p.player_cards[Player.Hand] then n = n + 1 end
+        room:setPlayerMark(p, "@sankuang", {n})  --FIXME: 用来显示三恇张数
       end
     end
     if #targets == 0 then return end
-    local to = room:askForChoosePlayers(player, targets, 1, 1, "#sankuang-choose:::"..data.card:toLogString(), self.name, false)
-    if #to > 0 then
-      to = to[1]
-    else
-      to = table.random(targets)
-    end
-    to = room:getPlayerById(to)
+    targets = room:askForChoosePlayers(player, targets, 1, 1, "#sankuang-choose:::"..data.card:toLogString(), self.name, false)
+    local to = room:getPlayerById(targets[1])
     if player:getMark("beishi") == 0 then
-      room:setPlayerMark(player, "beishi", to.id)
+      room:setPlayerMark(player, "beishi", targets[1])
+      room:setPlayerMark(to, "@@beishi", 1)
     end
-    local n = to:getMark("@sankuang")
+    local n = to:getMark("@sankuang")[1]
     for _, p in ipairs(room.alive_players) do
       room:setPlayerMark(p, "@sankuang", 0)
     end
-    if n > 0 then
-      local cards = room:askForCard(to, n, #to:getCardIds{Player.Hand, Player.Equip}, true, self.name, false, ".",
-        "#sankuang-give:"..player.id.."::"..n)
-      local dummy = Fk:cloneCard("dilu")
-      dummy:addSubcards(cards)
-      room:obtainCard(player, dummy, false, fk.ReasonGive)
+    local all_cards = to:getCardIds{Player.Hand, Player.Equip}
+    if #all_cards == 0 then return false end
+    local cards = {}
+    if n == 0 then
+      cards = room:askForCard(to, 1, #all_cards, true, self.name, true, ".", "#sankuang-give0:"..player.id.."::"..data.card:toLogString())
+    elseif n >= #all_cards then
+      cards = all_cards
+    else
+      cards = room:askForCard(to, n, #all_cards, true, self.name, false, ".", "#sankuang-give:"..player.id.."::"..n)
     end
-    if room:getCardArea(data.card) == Card.PlayerEquip or room:getCardArea(data.card) == Card.Processing then
-      room:obtainCard(to.id, data.card, true, fk.ReasonPrey)
+    if #cards > 0 then
+      room:moveCardTo(cards, Player.Hand, player, fk.ReasonGive, self.name, nil, false, targets[1])
+      if to.dead then return false end
+      local card_ids = Card:getIdList(data.card)
+      if #card_ids == 0 then return false end
+      if data.card.type == Card.TypeEquip then
+        if not table.every(card_ids, function (id)
+          return room:getCardArea(id) == Card.PlayerEquip and room:getCardOwner(id) == player
+        end) then return false end
+      else
+        if not table.every(card_ids, function (id)
+          return room:getCardArea(id) == Card.Processing
+        end) then return false end
+      end
+      room:moveCardTo(card_ids, Player.Hand, to, fk.ReasonPrey, self.name, nil, false, targets[1])
     end
   end,
 }
@@ -67,9 +79,13 @@ local beishi = fk.CreateTriggerSkill{
   frequency = Skill.Compulsory,
   events = {fk.AfterCardsMove},
   can_trigger = function(self, event, target, player, data)
-    if player:hasSkill(self.name) and player:isWounded() and player:getMark("beishi") ~= 0 then
+    if player:hasSkill(self.name) and player:isWounded() then
+      local beishi_id = player:getMark("beishi")
+      if beishi_id == 0 then return false end
+      local beishi_target = player.room:getPlayerById(beishi_id)
+      if beishi_target == nil or beishi_target.dead or not beishi_target:isKongcheng() then return false end
       for _, move in ipairs(data) do
-        if move.from == player:getMark("beishi") and player.room:getPlayerById(move.from):isKongcheng() then
+        if move.from == beishi_id then
           for _, info in ipairs(move.moveInfo) do
             if info.fromArea == Card.PlayerHand then
               return true
@@ -165,7 +181,9 @@ Fk:loadTranslationTable{
   [":daojie"] = "宗族技，锁定技，当你每回合首次使用非伤害类普通锦囊牌后，你选择一项：1.失去1点体力；2.失去一个锁定技。然后令一名同族角色获得此牌。",
   ["#sankuang-choose"] = "三恇：令一名其他角色交给你至少X张牌并获得你使用的%arg",
   ["@sankuang"] = "三恇张数：",
-  ["#sankuang-give"] = "三恇：你须交给 %src %arg张牌",
+  ["#sankuang-give0"] = "三恇：可选择任意张牌交给 %src，然后获得其使用的 %arg",
+  ["#sankuang-give"] = "三恇：你须选择至少 %arg 张牌交给 %src",
+  ["@@beishi"] = "卑势",
   ["#daojie-choice"] = "蹈节：失去一个锁定技，或点“取消”失去1点体力",
   ["#daojie-choose"] = "蹈节：令一名同族角色获得此%arg",
   ["daojie_cancel"] = "取消",

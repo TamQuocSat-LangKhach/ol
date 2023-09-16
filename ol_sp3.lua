@@ -963,7 +963,7 @@ local ol__tongdu = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     local to = room:getPlayerById(self.cost_data)
-    local card = room:askForCard(to, 1, 1, true, self.name, false, ".", "#ol__tongdu-give:"..player.id)
+    local card = room:askForCard(to, 1, 1, false, self.name, false, ".", "#ol__tongdu-give:"..player.id)
     room:obtainCard(player.id, card[1], false, fk.ReasonGive)
     room:setPlayerMark(player, "ol__tongdu-turn", card[1])
   end,
@@ -2159,40 +2159,59 @@ local hongji = fk.CreateTriggerSkill{
   events = {fk.EventPhaseStart},
   anim_type = "support",
   can_trigger = function(self, event, target, player, data)
-    return player:hasSkill(self.name) and target.phase == Player.Start and player:usedSkillTimes(self.name, Player.HistoryRound) == 0
+    if player:hasSkill(self.name) and target.phase == Player.Start then
+      local room = player.room
+      if player:getMark("hongji1used-round") == 0 and table.every(room.alive_players, function (p)
+        return p:getHandcardNum() >= target:getHandcardNum()
+      end) then
+        return true
+      end
+      if player:getMark("hongji2used-round") == 0 and table.every(room.alive_players, function (p)
+        return p:getHandcardNum() <= target:getHandcardNum()
+      end) then
+        return true
+      end
+    end
   end,
   on_cost = function(self, event, target, player, data)
     local room = player.room
-    local prompt = ""
-    if table.every(room:getOtherPlayers(target), function(p) return p:getHandcardNum() >= target:getHandcardNum() end) then
-      prompt = "hongji1"
+    local choices = {"Cancel"}
+    if player:getMark("hongji1used-round") == 0 and table.every(room.alive_players, function (p)
+      return p:getHandcardNum() >= target:getHandcardNum()
+    end) then
+      table.insert(choices, "hongji1")
     end
-    if table.every(room:getOtherPlayers(target), function(p) return p:getHandcardNum() <= target:getHandcardNum() end) then
-      prompt = "hongji2"
+    if player:getMark("hongji2used-round") == 0 and table.every(room.alive_players, function (p)
+      return p:getHandcardNum() <= target:getHandcardNum()
+    end) then
+      table.insert(choices, "hongji2")
     end
-    if prompt == "" then return end
-    if room:askForSkillInvoke(player, self.name, nil, "#"..prompt.."-invoke::"..target.id) then
-      self.cost_data = prompt
+    local choice = room:askForChoice(player, choices, self.name, "#hongji-invoke::" .. target.id, false, {"hongji1", "hongji2", "Cancel"})
+    if choice ~= "Cancel" then
+      room:doIndicate(player.id, {target.id})
+      room:addPlayerMark(player, choice .. "used-round")
+      self.cost_data = choice
       return true
     end
   end,
   on_use = function(self, event, target, player, data)
-    player.room:doIndicate(player.id, {target.id})
     player.room:setPlayerMark(target, self.cost_data.."-turn", 1)
   end,
-
-  refresh_events = {fk.EventPhaseChanging},
-  can_refresh = function(self, event, target, player, data)
-    return target == player and ((player:getMark("hongji1-turn") > 0 and data.from == Player.Draw) or
-      (player:getMark("hongji2-turn") > 0 and data.from == Player.Play))
+}
+local hongji_delay = fk.CreateTriggerSkill{
+  name = "#hongji_delay",
+  events = {fk.EventPhaseEnd},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and ((player.phase == Player.Draw and player:getMark("hongji1-turn") > 0) or
+    (player.phase == Player.Play and player:getMark("hongji2-turn") > 0))
   end,
-  on_refresh = function(self, event, target, player, data)
-    local room = player.room
-    if data.from == Player.Draw then
-      room:setPlayerMark(player, "hongji1-turn", 0)
+  on_cost = Util.TrueFunc,
+  on_use = function(self, event, target, player, data)
+    if player.phase == Player.Draw then
+      player.room:setPlayerMark(player, "hongji1-turn", 0)
       player:gainAnExtraPhase(Player.Draw)
     else
-      room:setPlayerMark(player, "hongji2-turn", 0)
+      player.room:setPlayerMark(player, "hongji2-turn", 0)
       player:gainAnExtraPhase(Player.Play)
     end
   end,
@@ -2214,7 +2233,11 @@ local xinggu = fk.CreateTriggerSkill{
     if event == fk.GameStart then
       return true
     else
-      return player.room:askForUseActiveSkill(player, "xinggu_active", "#xinggu-invoke", true)
+      local _, ret = player.room:askForUseActiveSkill(player, "xinggu_active", "#xinggu-invoke", true)
+      if ret then
+        self.cost_data = ret
+        return true
+      end
     end
   end,
   on_use = function(self, event, target, player, data)
@@ -2230,6 +2253,16 @@ local xinggu = fk.CreateTriggerSkill{
       dummy:addSubcards(table.random(cards, 3))
       player:addToPile(self.name, dummy, true, self.name)
     else
+      local ret = self.cost_data
+      room:moveCards({
+        ids = ret.cards,
+        from = player.id,
+        to = ret.targets[1],
+        toArea = Card.PlayerEquip,
+        moveReason = fk.ReasonPut,
+        fromSpecialName = "xinggu",
+      })
+      if player.dead then return false end
       local card = room:getCardsFromPileByRule(".|.|diamond")
       if #card > 0 then
         room:moveCards({
@@ -2257,31 +2290,26 @@ local xinggu_active = fk.CreateActiveSkill{
     return #selected == 0 and #cards == 1 and to_select ~= Self.id and
       Fk:currentRoom():getPlayerById(to_select):getEquipment(Fk:getCardById(cards[1]).sub_type) == nil
   end,
-  on_use = function(self, room, effect)
-    local player = room:getPlayerById(effect.from)
-    local target = room:getPlayerById(effect.tos[1])
-    room:moveCards({
-      ids = effect.cards,
-      from = player.id,
-      to = target.id,
-      toArea = Card.PlayerEquip,
-      moveReason = fk.ReasonPut,
-      fromSpecialName = "xinggu",
-    })
-  end,
 }
 Fk:addSkill(xinggu_active)
+hongji:addRelatedSkill(hongji_delay)
 zhangshiping:addSkill(hongji)
 zhangshiping:addSkill(xinggu)
 Fk:loadTranslationTable{
   ["zhangshiping"] = "张世平",
   ["hongji"] = "鸿济",
   [":hongji"] = "每轮各限一次，每名角色的准备阶段，若其手牌数为全场最少/最多，你可以令其于本回合摸牌/出牌阶段后额外执行一个摸牌/出牌阶段。",
+  --两个条件均满足的话只能选择其中一个发动
+  --测不出来鸿济生效的时机（不会和开始时或者结束时自选），只知道跳过此阶段之后不能获得额外阶段
+  --暂定摸牌/出牌结束时，获得一个额外摸牌/出牌阶段
   ["xinggu"] = "行贾",
   [":xinggu"] = "游戏开始时，你将随机三张坐骑牌置于你的武将牌上。结束阶段，你可以将其中一张牌置于一名其他角色的装备区，"..
   "然后你获得牌堆中一张<font color='red'>♦</font>牌。",
-  ["#hongji1-invoke"] = "鸿济：你可以令 %dest 本回合摸牌阶段后额外执行一个摸牌阶段",
-  ["#hongji2-invoke"] = "鸿济：你可以令 %dest 本回合出牌阶段后额外执行一个出牌阶段",
+
+  ["#hongji-invoke"] = "你可以发动 鸿济，令 %dest 获得一个额外的阶段",
+  ["hongji1"] = "令其获得额外摸牌阶段",
+  ["hongji2"] = "令其获得额外出牌阶段",
+  ["#hongji_delay"] = "鸿济",
   ["#xinggu-invoke"] = "行贾：你可以将一张“行贾”坐骑置入一名其他角色的装备区，然后获得一张<font color='red'>♦</font>牌",
   ["xinggu_active"] = "行贾",
 

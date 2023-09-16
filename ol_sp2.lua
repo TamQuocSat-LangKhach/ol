@@ -1232,7 +1232,7 @@ local chuiti_viewas = fk.CreateViewAsSkill{
   end,
 }
 Fk:addSkill(chuiti_viewas)
-local chuitiCheak = function (player, move_from)
+local chuiticheck = function (player, move_from)
   if move_from == nil then return false end
   if player.id == move_from then return true end
   local target = player.room:getPlayerById(move_from)
@@ -1245,7 +1245,7 @@ local chuiti = fk.CreateTriggerSkill{
   can_trigger = function(self, event, target, player, data)
     if not player:hasSkill(self.name) or player:usedSkillTimes(self.name, Player.HistoryTurn) > 0 then return false end
     for _, move in ipairs(data) do
-      if move.toArea == Card.DiscardPile and move.moveReason == fk.ReasonDiscard and chuitiCheak(player, move.from) then
+      if move.toArea == Card.DiscardPile and move.moveReason == fk.ReasonDiscard and chuiticheck(player, move.from) then
         for _, info in ipairs(move.moveInfo) do
           if (info.fromArea == Card.PlayerHand or info.fromArea == Card.PlayerEquip) and
               player.room:getCardArea(info.cardId) == Card.DiscardPile then
@@ -1262,7 +1262,7 @@ local chuiti = fk.CreateTriggerSkill{
     local room = player.room
     local ids = {}
     for _, move in ipairs(data) do
-      if move.toArea == Card.DiscardPile and move.moveReason == fk.ReasonDiscard and chuitiCheak(player, move.from) then
+      if move.toArea == Card.DiscardPile and move.moveReason == fk.ReasonDiscard and chuiticheck(player, move.from) then
         for _, info in ipairs(move.moveInfo) do
           if (info.fromArea == Card.PlayerHand or info.fromArea == Card.PlayerEquip) and
               player.room:getCardArea(info.cardId) == Card.DiscardPile then
