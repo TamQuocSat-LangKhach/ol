@@ -3427,4 +3427,122 @@ Fk:loadTranslationTable{
   ["ol__pengyang"] = "彭羕",
 }
 
+local luyusheng = General(extension, "ol__luyusheng", "wu", 3, 3, General.Female)
+local cangxin = fk.CreateTriggerSkill{
+  name = "cangxin",
+  events = {fk.EventPhaseStart, fk.DamageInflicted},
+  frequency = Skill.Compulsory,
+  mute = true,
+  can_trigger = function(self, event, target, player, data)
+    return player:hasSkill(self.name) and target == player and (event == fk.DamageInflicted or player.phase == Player.Draw)
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    player:broadcastSkillInvoke(self.name)
+    room:notifySkillInvoked(player, self.name, event == fk.EventPhaseStart and "drawcard" or "defensive")
+    local card_ids = room:getNCards(3, "bottom")
+    room:moveCards({
+      ids = card_ids,
+      toArea = Card.Processing,
+      skillName = self.name,
+      moveReason = fk.ReasonJustMove,
+    })
+    local break_event = false
+    if event == fk.EventPhaseStart then
+      room:delay(1500)
+      local x = 0
+      for _, id in ipairs(card_ids) do
+        if Fk:getCardById(id).suit == Card.Heart then
+          x = x + 1
+        end
+      end
+      if x > 0 then
+        room:drawCards(player, x, self.name)
+      end
+    elseif event == fk.DamageInflicted then
+      local to_throw = room:askForCardsChosen(player, player, 0, 3, {
+        card_data = {
+          { "Bottom", card_ids }
+        }
+      }, self.name)
+      if #to_throw > 0 then
+        for _, id in ipairs(to_throw) do
+          if Fk:getCardById(id).suit == Card.Heart then
+            break_event = true
+          end
+          table.removeOne(card_ids, id)
+        end
+        room:moveCards({
+          ids = to_throw,
+          toArea = Card.DiscardPile,
+          moveReason = fk.ReasonPutIntoDiscardPile,
+          skillName = self.name,
+        })
+      end
+    end
+    if #card_ids > 0 then
+      room:moveCards({
+        ids = card_ids,
+        toArea = Card.DrawPile,
+        moveReason = fk.ReasonJustMove,
+        skillName = self.name,
+        drawPilePosition = -1,
+      })
+    end
+    return break_event
+  end,
+}
+local runwei = fk.CreateTriggerSkill{
+  name = "runwei",
+  anim_type = "control",
+  events = {fk.EventPhaseStart},
+  can_trigger = function(self, event, target, player, data)
+    return player:hasSkill(self.name) and not target.dead and target:isWounded() and target.phase == Player.Discard
+  end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    local choices = {"runwei1", "Cancel"}
+    if not player:isNude() then
+      table.insert(choices, "runwei2")
+    end
+    local choice = room:askForChoice(player, choices, self.name, "#runwei-choice::" .. target.id, false, {"runwei1", "runwei2", "Cancel"})
+    if choice ~= "Cancel" then
+      self.cost_data = choice
+      room:doIndicate(player.id, {target.id})
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    if self.cost_data == "runwei1" then
+      room:drawCards(target, 1, self.name)
+      room:addPlayerMark(target, MarkEnum.MinusMaxCardsInTurn, 1)
+    elseif self.cost_data == "runwei2" then
+      room:askForDiscard(target, 1, 1, true, self.name, false)
+      room:addPlayerMark(target, MarkEnum.AddMaxCardsInTurn, 1)
+    end
+  end,
+}
+luyusheng:addSkill(cangxin)
+luyusheng:addSkill(runwei)
+
+Fk:loadTranslationTable{
+  ["ol__luyusheng"] = "陆郁生",
+  ["cangxin"] = "藏心",
+  [":cangxin"] = "锁定技，摸牌阶段开始时，你展示牌堆底三张牌并摸与其中<font color='red'>♥</font>牌数等量张牌。"..
+  "当你受到伤害时，你展示牌堆底三张牌并弃置其中任意张牌，若弃置了<font color='red'>♥</font>牌，防止此伤害。",
+  ["runwei"] = "润微",
+  [":runwei"] = "已受伤角色的弃牌阶段开始时，你可令其弃置一张牌且其本回合手牌上限+1，或令其摸一张牌且其本回合手牌上限-1。",
+
+  ["#runwei-choice"] = "你可以发动 润微，令%dest执行一项",
+  ["runwei1"] = "令其摸一张牌且手牌上限-1",
+  ["runwei2"] = "令其弃置一张牌且手牌上限+1",
+
+  ["$cangxin1"] = "",
+  ["$cangxin2"] = "",
+  ["$runwei1"] = "",
+  ["$runwei2"] = "",
+  ["~ol__luyusheng"] = "",
+}
+
 return extension

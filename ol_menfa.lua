@@ -1523,7 +1523,7 @@ local jiexuan = fk.CreateViewAsSkill{
     return card
   end,
   enabled_at_play = function(self, player)
-    return player:usedSkillTimes(self.name, Player.HistoryGame) == 0 and not player:isNude()
+    return player:usedSkillTimes(self.name, Player.HistoryGame) == 0
   end,
 }
 local mingjiew = fk.CreateActiveSkill{
@@ -1551,135 +1551,127 @@ local mingjiew = fk.CreateActiveSkill{
     room:setPlayerMark(target, "@@mingjiew", mark)
   end,
 }
-local mingjiew_trigger = fk.CreateTriggerSkill{
-  name = "#mingjiew_trigger",
+local function getUseExtraTargets(room, data, bypass_distances)
+  if not (data.card.type == Card.TypeBasic or data.card:isCommonTrick()) then return {} end
+  if data.card.skill:getMinTargetNum() > 1 then return {} end --stupid collateral
+  local tos = {}
+  local current_targets = TargetGroup:getRealTargets(data.tos)
+  for _, p in ipairs(room.alive_players) do
+    if not table.contains(current_targets, p.id) and not room:getPlayerById(data.from):isProhibited(p, data.card) then
+      if data.card.skill:modTargetFilter(p.id, {}, data.from, data.card, bypass_distances) then
+        table.insert(tos, p.id)
+      end
+    end
+  end
+  return tos
+end
+local mingjiew_delay = fk.CreateTriggerSkill{
+  name = "#mingjiew_delay",
   mute = true,
-  events = {fk.TargetSpecifying},
+  events = {fk.AfterCardTargetDeclared, fk.TurnEnd},
   can_trigger = function(self, event, target, player, data)
-    if target == player and (data.card.type == Card.TypeBasic or data.card:isCommonTrick()) then
-      for _, p in ipairs(player.room.alive_players) do
-        if p:getMark("@@mingjiew") ~= 0 and table.contains(p:getMark("@@mingjiew"), player.id) and
-          not table.contains(AimGroup:getAllTargets(data.tos), p.id) and not player:isProhibited(p, data.card) then
-          if p == player then
-            return data.card.skill:targetFilter(player.id, {}, {}, data.card)
-          else
-            return true
-          end
-        end
-      end
-    end
-  end,
-  on_cost = function(self, event, target, player, data)
     local room = player.room
-    local targets = {}
-    for _, p in ipairs(player.room.alive_players) do
-      if p:getMark("@@mingjiew") ~= 0 and table.contains(p:getMark("@@mingjiew"), player.id) and
-        not table.contains(AimGroup:getAllTargets(data.tos), p.id) and not player:isProhibited(p, data.card) then
-        if p ~= player or data.card.skill:targetFilter(player.id, {}, {}, data.card) then
-          table.insert(targets, p.id)
+    if event == fk.AfterCardTargetDeclared then
+      if target == player and (data.card.type == Card.TypeBasic or data.card:isCommonTrick()) then
+        local mark
+        local targets = table.filter(getUseExtraTargets(player.room, data), function (id)
+          mark = room:getPlayerById(id):getMark("@@mingjiew")
+          return type(mark) == "table" and table.contains(mark, player.id)
+        end)
+        if #targets > 0 then
+          self.cost_data = targets
+          return true
         end
       end
-    end
-    local tos = room:askForChoosePlayers(player, targets, 1, #targets, "#mingjiew-choose:::"..data.card:toLogString(), "mingjiew", true)
-    if #tos > 0 then
-      self.cost_data = tos
-      return true
+    elseif event == fk.TurnEnd then
+      local mark = target:getMark("@@mingjiew")
+      if type(mark) ~= "table" or not table.contains(mark, player.id) then return false end
+      local events = room.logic.event_recorder[GameEvent.UseCard] or Util.DummyTable
+      local end_id = target:getMark("mingjiew_record-turn")
+      if end_id == 0 then
+        end_id = room.logic:getCurrentEvent().id
+      end
+      room:setPlayerMark(target, "mingjiew_record-turn", room.logic.current_event_id)
+      local ids = target:getMark("mingjiew_usecard-turn")
+      if type(ids) ~= "table" then
+        ids = {}
+      end
+      for i = #events, 1, -1 do
+        local e = events[i]
+        if e.id <= end_id then break end
+        local use = e.data[1]
+        if use.card.suit == Card.Spade or use.cardsResponded then
+          table.insertTableIfNeed(ids, use.card:isVirtual() and use.card.subcards or {use.card.id})
+        end
+      end
+      room:setPlayerMark(target, "mingjiew_usecard-turn", ids)
+      return table.find(ids, function (id)
+        local card = Fk:getCardById(id)
+        return room:getCardArea(id) == Card.DiscardPile and player:canUse(card) and not player:prohibitUse(card)
+      end)
     end
   end,
+  on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    player:broadcastSkillInvoke("mingjiew")
-    room:notifySkillInvoked(player, "mingjiew", "offensive")
-    for _, id in ipairs(self.cost_data) do
-      room:doIndicate(player.id, {id})
-      TargetGroup:pushTargets(data.targetGroup, id)
-    end
-  end,
-}
-local mingjiew_record = fk.CreateTriggerSkill{
-  name = "#mingjiew_record",
-  mute = true,
-  events = {fk.EventPhaseChanging},
-  can_trigger = function(self, event, target, player, data)
-    return target == player and player:getMark("@@mingjiew") ~= 0 and data.to == Player.NotActive
-  end,
-  on_cost = function(self, event, target, player, data)
-    return true
-  end,
-  on_use = function(self, event, target, player, data)
-    local room = player.room
-    local src = table.map(player:getMark("@@mingjiew"), function(id) return room:getPlayerById(id) end)
-    room:setPlayerMark(player, "@@mingjiew", 0)
-    local ids = {}
-    local events = room.logic:getEventsOfScope(GameEvent.UseCard, 999, function(e)
-      local use = e.data[1]
-      if use.card.suit == Card.Spade then
-        table.insertIfNeed(ids, use.card.id)
+    if event == fk.AfterCardTargetDeclared then
+      local tos = room:askForChoosePlayers(player, self.cost_data, 1, #self.cost_data,
+        "#mingjiew-choose:::"..data.card:toLogString(), "mingjiew", true)
+      if #tos > 0 then
+        table.forEach(tos, function (id)
+          table.insert(data.tos, {id})
+        end)
       end
-      if use.cardsResponded and not use.card:isVirtual() then
-        table.insertIfNeed(ids, use.card.id)
-      end
-      return false
-    end, Player.HistoryTurn)
-    if #ids == 0 then return end
-    for _, p in ipairs(src) do
-      if not p.dead then
-        for i = #ids, 1, -1 do
-          if room:getCardArea(ids[i]) ~= Card.DiscardPile then
-            table.removeOne(ids, ids[i])
-          end
-        end
-        if #ids == 0 then return end
-        p:broadcastSkillInvoke("mingjiew")
-        room:notifySkillInvoked(p, "mingjiew", "control")
+    elseif event == fk.TurnEnd then
+      local ids = target:getMark("mingjiew_usecard-turn")
+      local to_use = {}
+      while not player.dead do
+        to_use = table.filter(ids, function (id)
+          local card = Fk:getCardById(id)
+          return room:getCardArea(id) == Card.DiscardPile and player:canUse(card) and not player:prohibitUse(card)
+        end)
+        if #to_use == 0 then break end
         local fakemove = {
           toArea = Card.PlayerHand,
-          to = p.id,
-          moveInfo = table.map(ids, function(id) return {cardId = id, fromArea = Card.Void} end),
+          to = player.id,
+          moveInfo = table.map(to_use, function(id) return {cardId = id, fromArea = Card.Void} end),
           moveReason = fk.ReasonJustMove,
         }
-        room:notifyMoveCards({p}, {fakemove})
-        while not player.dead and #ids > 0 do
-          local availableCards = {}
-          for _, id in ipairs(ids) do
-            local card = Fk:getCardById(id)
-            if not p:prohibitUse(card) and p:canUse(card) then
-              table.insertIfNeed(availableCards, id)
-            end
-          end
-          room:setPlayerMark(p, "mingjiew_cards", availableCards)
-          local success, dat = room:askForUseActiveSkill(p, "mingjiew_viewas", "#mingjiew-use", true)
-          room:setPlayerMark(p, "mingjiew_cards", 0)
-          if success then
-            table.removeOne(ids, dat.cards[1])
-            fakemove = {
-              from = p.id,
-              toArea = Card.Processing,
-              moveInfo = table.map(dat.cards, function(id) return {cardId = id, fromArea = Card.PlayerHand} end),
-              moveReason = fk.ReasonUse,
-              skillName = self.name,
-            }
-            room:notifyMoveCards({p}, {fakemove})
-            local card = Fk.skills["mingjiew_viewas"]:viewAs(dat.cards)
-            room:useCard{
-              from = p.id,
-              tos = table.map(dat.targets, function(id) return {id} end),
-              card = card,
-              extraUse = true,
-            }
-          else
-            break
-          end
-        end
+        room:notifyMoveCards({player}, {fakemove})
+        room:setPlayerMark(player, "mingjiew_cards", to_use)
+        local success, dat = room:askForUseActiveSkill(player, "mingjiew_viewas", "#mingjiew-use", true)
+        room:setPlayerMark(player, "mingjiew_cards", 0)
+
         fakemove = {
-          from = p.id,
+          from = player.id,
           toArea = Card.Void,
-          moveInfo = table.map(ids, function(id) return {cardId = id, fromArea = Card.PlayerHand} end),
+          moveInfo = table.map(to_use, function(id) return {cardId = id, fromArea = Card.PlayerHand} end),
           moveReason = fk.ReasonJustMove,
         }
-        room:notifyMoveCards({p}, {fakemove})
+        room:notifyMoveCards({player}, {fakemove})
+
+        if success then
+          table.removeOne(ids, dat.cards[1])
+          local card = Fk.skills["mingjiew_viewas"]:viewAs(dat.cards)
+          room:useCard{
+            from = player.id,
+            tos = table.map(dat.targets, function(id) return {id} end),
+            card = card,
+            extraUse = true,
+          }
+        else
+          break
+        end
       end
     end
+  end,
+
+  refresh_events = {fk.AfterTurnEnd},
+  can_refresh = function(self, event, target, player, data)
+    return target == player and player:getMark("@@mingjiew") ~= 0
+  end,
+  on_refresh = function(self, event, target, player, data)
+    player.room:setPlayerMark(player, "@@mingjiew", 0)
   end,
 }
 local mingjiew_viewas = fk.CreateViewAsSkill{
@@ -1706,17 +1698,20 @@ local zhongliu = fk.CreateTriggerSkill{
       if event == fk.CardUsing then
         return target == player and data.card:isVirtual() and not data.card:getEffectiveId()
       else
-        if player.room.logic:getCurrentEvent().parent.event == GameEvent.UseCard then
-          local use = player.room.logic:getCurrentEvent().parent
+        local room = player.room
+        if room.logic:getCurrentEvent().parent.event == GameEvent.UseCard then
+          local use = room.logic:getCurrentEvent().parent
           if not use or use.data[1].from ~= player.id then return end
           for _, move in ipairs(data) do
-            if move.from and move.toArea == Card.Processing then
-              local p = player.room:getPlayerById(move.from)
-              if table.find({"olz__wang", "wangyun", "wangling", "wangchang", "wanghun"}, function(name)
-                return string.find(p.general, name) or string.find(p.deputyGeneral, name) end) then
-                for _, info in ipairs(move.moveInfo) do
-                  if info.fromArea == Card.PlayerHand then
-                    return false
+            if move.toArea == Card.Processing then
+              if move.from ~= nil then
+                local p = room:getPlayerById(move.from)
+                if table.find({"olz__wang", "wangyun", "wangling", "wangchang", "wanghun"}, function(name)
+                  return string.find(p.general, name) or string.find(p.deputyGeneral, name) end) then
+                  for _, info in ipairs(move.moveInfo) do
+                    if info.fromArea == Card.PlayerHand then
+                      return false
+                    end
                   end
                 end
               end
@@ -1750,8 +1745,7 @@ local zhongliu = fk.CreateTriggerSkill{
     end
   end,
 }
-mingjiew:addRelatedSkill(mingjiew_trigger)
-mingjiew:addRelatedSkill(mingjiew_record)
+mingjiew:addRelatedSkill(mingjiew_delay)
 Fk:addSkill(mingjiew_viewas)
 wangyun:addSkill(jiexuan)
 wangyun:addSkill(mingjiew)
@@ -1767,6 +1761,7 @@ Fk:loadTranslationTable{
   [":zhongliu"] = "宗族技，锁定技，当你使用牌时，若不为同族角色的手牌，你视为未发动此武将牌上的技能。",
   ["#jiexuan-yang"] = "解悬：你可以将一张红色牌当【顺手牵羊】使用",
   ["#jiexuan-yin"] = "解悬：你可以将一张黑色牌当【过河拆桥】使用",
+  ["#mingjiew_delay"] = "铭戒",
   ["@@mingjiew"] = "铭戒",
   ["#mingjiew-choose"] = "铭戒：你可以为此%arg额外指定“铭戒”角色为目标",
   ["mingjiew_viewas"] = "铭戒",
