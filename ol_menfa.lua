@@ -1688,58 +1688,106 @@ local mingjiew_viewas = fk.CreateViewAsSkill{
     end
   end,
 }
+
 local zhongliu = fk.CreateTriggerSkill{
   name = "zhongliu",
   anim_type = "special",
   frequency = Skill.Compulsory,
-  events = {fk.CardUsing, fk.BeforeCardsMove},
+  events = {fk.CardUsing},
   can_trigger = function(self, event, target, player, data)
-    if player:hasSkill(self.name) then
-      if event == fk.CardUsing then
-        return target == player and data.card:isVirtual() and not data.card:getEffectiveId()
-      else
-        local room = player.room
-        if room.logic:getCurrentEvent().parent.event == GameEvent.UseCard then
-          local use = room.logic:getCurrentEvent().parent
-          if not use or use.data[1].from ~= player.id then return end
-          for _, move in ipairs(data) do
-            if move.toArea == Card.Processing then
-              if move.from ~= nil then
-                local p = room:getPlayerById(move.from)
-                if table.find({"olz__wang", "wangyun", "wangling", "wangchang", "wanghun"}, function(name)
-                  return string.find(p.general, name) or string.find(p.deputyGeneral, name) end) then
-                  for _, info in ipairs(move.moveInfo) do
-                    if info.fromArea == Card.PlayerHand then
-                      return false
-                    end
-                  end
-                end
-              end
-              return true
+    if player:hasSkill(self.name) and player == target then
+      local no_skill = true
+      local all_skills = Fk.generals[player.general]:getSkillNameList()
+      if table.contains(all_skills, self.name) then
+        for _, skill_name in ipairs(all_skills) do
+          local skill = Fk.skills[skill_name]
+          local scope_type = skill.scope_type
+          if scope_type == nil and skill.frequency == Skill.Limited then
+            scope_type = Player.HistoryGame
+          end
+          if scope_type and player:usedSkillTimes(skill_name, scope_type) > 0 then
+            no_skill = false
+            break
+          end
+        end
+      end
+      if no_skill and player.deputyGeneral and player.deputyGeneral ~= "" then
+        all_skills = Fk.generals[player.deputyGeneral]:getSkillNameList()
+        if table.contains(all_skills, self.name) then
+          for _, skill_name in ipairs(all_skills) do
+            local skill = Fk.skills[skill_name]
+            local scope_type = skill.scope_type
+            if scope_type == nil and skill.frequency == Skill.Limited then
+              scope_type = Player.HistoryGame
+            end
+            if scope_type and player:usedSkillTimes(skill_name, scope_type) > 0 then
+              no_skill = false
+              break
             end
           end
         end
       end
+      if no_skill then return false end
+      local cardlist = data.card:isVirtual() and data.card.subcards or {data.card.id}
+      if #cardlist == 0 then return true end
+      local room = player.room
+      local use_event = room.logic:getCurrentEvent()
+      use_event:searchEvents(GameEvent.MoveCards, 1, function(e)
+        if e.parent and e.parent.id == use_event.id then
+          local subcheck = cardlist
+          for _, move in ipairs(e.data) do
+            if move.moveReason == fk.ReasonUse then
+              local wang_family = false
+              if move.from then
+                local p = room:getPlayerById(move.from)
+                if table.find({"olz__wang", "wangyun", "wangling", "wangchang", "wanghun"}, function(name)
+                  return string.find(p.general, name) or string.find(p.deputyGeneral, name) end) then
+                  wang_family = true
+                end
+              end
+              for _, info in ipairs(move.moveInfo) do
+                if table.removeOne(subcheck, info.cardId) and info.fromArea == Card.PlayerHand then
+                  if wang_family then
+                    no_skill = true
+                  end
+                end
+              end
+            end
+          end
+          if #subcheck == 0 then
+            return true
+          end
+        end
+      end)
+      return not no_skill
     end
   end,
   on_use = function(self, event, target, player, data)
-    if table.find({"olz__wang", "wangyun", "wangling", "wangchang", "wanghun"}, function(name)
-      return string.find(player.general, name) end) then
-      for _, s in ipairs(Fk.generals[player.general].skills) do
-        if s.frequency == Skill.Limited then
-          player:setSkillUseHistory(s.name, 0, Player.HistoryGame)
-        else
-          player:setSkillUseHistory(s.name, 0, Player.HistoryPhase)
+    local all_skills = Fk.generals[player.general]:getSkillNameList()
+    if table.contains(all_skills, self.name) then
+      for _, skill_name in ipairs(all_skills) do
+        local skill = Fk.skills[skill_name]
+        local scope_type = skill.scope_type
+        if scope_type == nil and skill.frequency == Skill.Limited then
+          scope_type = Player.HistoryGame
+        end
+        if scope_type and player:usedSkillTimes(skill_name, scope_type) > 0 then
+          player:setSkillUseHistory(skill_name, 0, scope_type)
         end
       end
     end
-    if player.deputyGeneral ~= "" and table.find({"olz__wang", "wangyun", "wangling", "wangchang", "wanghun"}, function(name)
-      return string.find(player.deputyGeneral, name) end) then
-      for _, s in ipairs(Fk.generals[player.deputyGeneral].skills) do
-        if s.frequency == Skill.Limited then
-          player:setSkillUseHistory(s.name, 0, Player.HistoryGame)
-        else
-          player:setSkillUseHistory(s.name, 0, Player.HistoryPhase)
+    if player.deputyGeneral and player.deputyGeneral ~= "" then
+      all_skills = Fk.generals[player.deputyGeneral]:getSkillNameList()
+      if table.contains(all_skills, self.name) then
+        for _, skill_name in ipairs(all_skills) do
+          local skill = Fk.skills[skill_name]
+          local scope_type = skill.scope_type
+          if scope_type == nil and skill.frequency == Skill.Limited then
+            scope_type = Player.HistoryGame
+          end
+          if scope_type and player:usedSkillTimes(skill_name, scope_type) > 0 then
+            player:setSkillUseHistory(skill_name, 0, scope_type)
+          end
         end
       end
     end
@@ -1814,6 +1862,7 @@ local bolong = fk.CreateActiveSkill{
   end,
 }
 wangling:addSkill(bolong)
+bolong.scope_type = Player.HistoryPhase
 wangling:addSkill("zhongliu")
 Fk:loadTranslationTable{
   ["olz__wangling"] = "王淩",
@@ -2271,6 +2320,7 @@ local chenya_active = fk.CreateActiveSkill{
 Fk:addSkill(fuxun_viewas)
 Fk:addSkill(chenya_active)
 fuxun:addRelatedSkill(fuxun_targetmod)
+fuxun.scope_type = Player.HistoryPhase
 wanghun:addSkill(fuxun)
 wanghun:addSkill(chenya)
 wanghun:addSkill("zhongliu")
