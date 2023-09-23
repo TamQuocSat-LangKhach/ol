@@ -2696,15 +2696,15 @@ local beizhan_delay = fk.CreateTriggerSkill{
   events = {fk.TurnStart},
   mute = true,
   can_trigger = function(self, event, target, player, data)
-    return target:getMark("beizhan") > 0
+    return player == target and player:getMark("beizhan") > 0
   end,
   on_cost = function(self, event, target, player, data)
     return true
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    room:setPlayerMark(target, self.name, 0)
-    if table.every(room:getOtherPlayers(player), function(p) return player:getHandcardNum() >= p:getHandcardNum() end) then
+    room:setPlayerMark(target, "beizhan", 0)
+    if table.every(room.alive_players, function(p) return player:getHandcardNum() >= p:getHandcardNum() end) then
       room:addPlayerMark(target, "@@beizhan-turn", 1)
     end
   end,

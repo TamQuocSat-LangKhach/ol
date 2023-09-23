@@ -3847,7 +3847,7 @@ local qiongshou = fk.CreateTriggerSkill{
   name = "qiongshou",
   anim_type = "drawcard",
   frequency = Skill.Compulsory,
-  events = {fk.GamePrepared},
+  events = {fk.GameStart},
   can_trigger = function(self, event, target, player, data)
     return player:hasSkill(self.name)
   end,
@@ -4622,15 +4622,22 @@ local yuheng_skills = {
   --wandian
   "wd__kangyin", "wd__kenjian",
 }
+
+--[[
+  "ex__zhiheng", "dimeng", "anxu", "ol__bingyi", "shenxing",
+  "xingxue", "anguo", "os__jiexun", "xiashu", "ol__hongyuan",
+  "lanjiang", "sp__youdi", "guanwei", "diaodu", "bizheng"
+]]
+
 local yuheng = fk.CreateTriggerSkill{
   name = "yuheng",
   anim_type = "special",
   frequency = Skill.Compulsory,
   events = {fk.TurnStart, fk.TurnEnd},
   can_trigger = function(self, event, target, player, data)
-    if target == player then
+    if target == player and player:hasSkill(self.name) then
       if event == fk.TurnStart then
-        return player:hasSkill(self.name) and not player:isNude()
+        return not player:isNude()
       else
         return player:getMark(self.name) ~= 0
       end
@@ -4639,10 +4646,32 @@ local yuheng = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     if event == fk.TurnStart then
-      room:askForUseActiveSkill(player, "yuheng_active", "#yuheng-invoke", false)
+      local default_discard = table.find(player:getCardIds{Player.Hand, Player.Equip}, function (id)
+        return not player:prohibitDiscard(Fk:getCardById(id))
+      end)
+      if default_discard == nil then return false end
+      local cards = {default_discard}
+      local _, ret = room:askForUseActiveSkill(player, "yuheng_active", "#yuheng-invoke", false)
+      if ret then
+        cards = ret.cards
+      end
+      room:throwCard(cards, self.name, player, player)
+      if player.dead then return end
+      local skills = table.random(table.filter(yuheng_skills, function (skill_name)
+        return not player:hasSkill(skill_name, true)
+      end), #cards)
+      if #skills == 0 then return false end
+      local mark = type(player:getMark("yuheng")) == "table" and player:getMark("yuheng") or {}
+      table.insertTableIfNeed(mark, skills)
+      room:setPlayerMark(player, "yuheng", mark)
+      room:handleAddLoseSkills(player, table.concat(skills, "|"), nil, true, false)
     else
       local skills = player:getMark(self.name)
       room:setPlayerMark(player, "yuheng", 0)
+      skills = table.filter(skills, function (skill_name)
+        return player:hasSkill(skill_name, true)
+      end)
+      if #skills == 0 then return false end
       room:handleAddLoseSkills(player, "-"..table.concat(skills, "|-"), nil, true, false)
       if not player.dead then
         player:drawCards(#skills, self.name)
@@ -4656,28 +4685,22 @@ local yuheng_active = fk.CreateActiveSkill{
   min_card_num = 1,
   target_num = 0,
   card_filter = function(self, to_select, selected)
+    if Self:prohibitDiscard(Fk:getCardById(to_select)) then return false end
     if #selected == 0 then
       return true
     else
       return table.every(selected, function(id) return Fk:getCardById(to_select).suit ~= Fk:getCardById(id).suit end)
     end
   end,
-  on_use = function(self, room, effect)
-    local player = room:getPlayerById(effect.from)
-    room:throwCard(effect.cards, self.name, player, player)
-    if player.dead then return end
-    local skills = table.random(yuheng_skills, #effect.cards)
-    room:setPlayerMark(player, "yuheng", skills)
-    room:handleAddLoseSkills(player, table.concat(skills, "|"), nil, true, false)
-  end,
 }
 local dili = fk.CreateTriggerSkill{
   name = "dili",
   anim_type = "special",
-  events = {fk.GameStart, fk.EventAcquireSkill},
+  events = {fk.EventAcquireSkill, fk.MaxHpChanged},
   frequency = Skill.Wake,
   can_trigger = function(self, event, target, player, data)
-    return player:hasSkill(self.name) and player:usedSkillTimes(self.name, Player.HistoryGame) == 0
+    return player:hasSkill(self.name) and player:usedSkillTimes(self.name, Player.HistoryGame) == 0 and
+      player.room.logic:getCurrentEvent() ~= nil
   end,
   can_wake = function(self, event, target, player, data)
     local n = 0
@@ -4691,23 +4714,19 @@ local dili = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     room:changeMaxHp(player, -1)
-    if player.dead then return end
-    local skills = {"Cancel"}
+    if player.dead then return false end
+    local skills = {}
     for _, s in ipairs(player.player_skills) do
       if not (s.attached_equip or s.name[#s.name] == "&" or s == self) then
         table.insertIfNeed(skills, s.name)
       end
     end
-    local choice = {}
-    while true do
-      local s = room:askForChoice(player, skills, self.name, "#dili-invoke", true)
-      if s == "Cancel" then
-        break
-      else
-        table.removeOne(skills, s)
-        table.insertIfNeed(choice, s)
-      end
-    end
+    local result = room:askForCustomDialog(player, self.name,
+    "packages/utility/qml/ChooseSkillBox.qml", {
+      skills, 0, 3, "#dili-invoke"
+    })
+    if result == "" then return false end
+    local choice = json.decode(result)
     if #choice > 0 then
       room:handleAddLoseSkills(player, "-"..table.concat(choice, "|-"), nil, true, false)
       skills = {"shengzhi", "quandao", "chigang"}
@@ -4726,8 +4745,8 @@ local shengzhi = fk.CreateTriggerSkill{
   frequency = Skill.Compulsory,
   events = {fk.AfterSkillEffect},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name) and player:hasSkill(data) and data.frequency ~= Skill.Compulsory and
-      not data.attached_equip and data.name[#data.name] ~= "&"
+    return target == player and player:hasSkill(self.name) and not data.cardSkill and data.frequency ~= Skill.Compulsory and
+      data.frequency ~= Skill.Wake and not data.attached_equip and data.name[#data.name] ~= "&"
   end,
   on_use = function(self, event, target, player, data)
     player.room:setPlayerMark(player, "@@shengzhi-turn", 1)
@@ -4843,7 +4862,7 @@ Fk:loadTranslationTable{
   [":chigang"] = "转换技，锁定技，阳：你的判定阶段改为摸牌阶段；阴：你的判定阶段改为出牌阶段。",
   ["yuheng_active"] = "驭衡",
   ["#yuheng-invoke"] = "驭衡：弃置任意张花色不同的牌，随机获得等量吴势力武将的技能",
-  ["#dili-invoke"] = "帝力：失去任意个技能，获得〖圣质〗〖权道〗〖持纲〗中的前等量个",
+  ["#dili-invoke"] = "帝力：选择失去至多三个技能",
   [":Cancel"] = "取消",
   ["@@shengzhi-turn"] = "圣质",
   ["qionglan"] = "穹览",
