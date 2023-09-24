@@ -3174,10 +3174,11 @@ local ol_ex__guzheng = fk.CreateTriggerSkill{
     local get_other = false
     if #cards > 1 then
       local result = room:askForCustomDialog(player, self.name,
-      "packages/ol/qml/GuZhengBox.qml", {
-        cards,
-        "#guzheng-choose",
-      })
+        "packages/utility/qml/ChooseCardsAndChoiceBox.qml", {
+          cards,
+          {"guzheng_yes", "guzheng_no"},
+          "#guzheng-choose",
+        })
       if result ~= "" then
         local reply = json.decode(result)
         to_return = reply.cards

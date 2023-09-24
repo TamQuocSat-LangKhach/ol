@@ -2806,13 +2806,13 @@ local yuanzi = fk.CreateTriggerSkill{
   anim_type = "support",
   events = {fk.EventPhaseStart, fk.Damage},
   can_trigger = function(self, event, target, player, data)
-    if target ~= player and player:hasSkill(self.name) then
-      if event == fk.EventPhaseStart then
-        return target.phase == Player.Start and not player:isKongcheng() and not target.dead and
-          player:usedSkillTimes(self.name, Player.HistoryRound) == 0
-      else
-        return player:usedSkillTimes(self.name, Player.HistoryTurn) > 0 and #target.player_cards[Player.Hand] >= #player.player_cards[Player.Hand]
-      end
+    if not player:hasSkill(self.name) then return false end
+    if event == fk.EventPhaseStart then
+      return target.phase == Player.Start and player ~= target and not player:isKongcheng() and not target.dead and
+        player:usedSkillTimes(self.name, Player.HistoryRound) == 0
+    else
+      return player:usedSkillTimes(self.name, Player.HistoryTurn) > 0 and target and target.phase ~= Player.NotActive and
+      target:getHandcardNum() >= player:getHandcardNum()
     end
   end,
   on_cost = function(self, event, target, player, data)
@@ -2825,12 +2825,14 @@ local yuanzi = fk.CreateTriggerSkill{
     return player.room:askForSkillInvoke(player, self.name, nil, prompt)
   end,
   on_use = function(self, event, target, player, data)
+    local room = player.room
     if event == fk.EventPhaseStart then
+      room:doIndicate(player.id, {target.id})
       local dummy = Fk:cloneCard("dilu")
       dummy:addSubcards(player.player_cards[Player.Hand])
-      player.room:obtainCard(target, dummy, false, fk.ReasonGive)
+      room:obtainCard(target, dummy, false, fk.ReasonGive)
     else
-      player:drawCards(2, self.name)
+      room:drawCards(player, 2, self.name)
     end
   end,
 }
@@ -2842,34 +2844,32 @@ local liejie = fk.CreateTriggerSkill{
     return target == player and player:hasSkill(self.name) and not player:isNude()
   end,
   on_cost = function(self, event, target, player, data)
-    local prompt
-    if data.from and not data.from.dead and not data.from:isNude() then
+    local prompt = "#liejie-invoke"
+    if data.from and not data.from.dead then
       prompt = "#liejie-cost::"..data.from.id
-    else
-      prompt = "#liejie-invoke"
     end
-    local cards = player.room:askForDiscard(player, 1, 3, true, self.name, true, ".", prompt)
+    local cards = player.room:askForDiscard(player, 1, 3, true, self.name, true, ".", prompt, true)
     if #cards > 0 then
       self.cost_data = cards
       return true
     end
   end,
   on_use = function(self, event, target, player, data)
+    local room = player.room
     local cards = self.cost_data
-    player:drawCards(#cards, self.name)
-    if data.from and not data.from.dead and not data.from:isNude() then
-      local n = 0
-      for _, id in ipairs(cards) do
-        if Fk:getCardById(id).color == Card.Red then
-          n = n + 1
-        end
+    local n = 0
+    for _, id in ipairs(cards) do
+      if Fk:getCardById(id).color == Card.Red then
+        n = n + 1
       end
-      if n == 0 then return end
-      local room = player.room
-      if room:askForSkillInvoke(player, self.name, data, "#liejie-discard::"..data.from.id..":"..n) then
-        local discard = room:askForCardsChosen(player, data.from, 1, n, "he", self.name)
-        room:throwCard(discard, self.name, data.from, player)
-      end
+    end
+    room:throwCard(cards, self.name, player, player)
+    if player.dead then return false end
+    room:drawCards(player, #cards, self.name)
+    if not player.dead and data.from and not data.from.dead and not data.from:isNude() and n > 0 and
+    room:askForSkillInvoke(player, self.name, data, "#liejie-discard::"..data.from.id..":"..n) then
+      local discard = room:askForCardsChosen(player, data.from, 1, n, "he", self.name)
+      room:throwCard(discard, self.name, data.from, player)
     end
   end,
 }
