@@ -1183,50 +1183,58 @@ local yanxi = fk.CreateActiveSkill{
     local player = room:getPlayerById(effect.from)
     local target = room:getPlayerById(effect.tos[1])
     local cards = room:getNCards(2)
+    for i = #cards, 1, -1 do
+      table.insert(room.draw_pile, 1, cards[i])
+    end
+    room:doBroadcastNotify("UpdateDrawPile", #room.draw_pile)
     local id = table.random(target.player_cards[Player.Hand])
-    room:moveCards({
-      ids = cards,
-      toArea = Card.Void,
-      moveReason = fk.ReasonJustMove,
-      moveVisible = false,
-    },
-    {
-      ids = {id},
-      from = target.id,
-      toArea = Card.Void,
-      moveReason = fk.ReasonJustMove,
-      moveVisible = false,
-    })
     table.insert(cards, id)
     table.shuffle(cards)
-    table.forEach(room.players, function(p) room:fillAG(p, cards) end)
-    local get = room:askForAG(player, cards, false, self.name)
-    room:takeAG(player, get, room.players)
-    room:delay(1000)
-    table.forEach(room.players, function(p) room:closeAG(p) end)
-    local dummy = Fk:cloneCard("dilu")
-    if get == id then
-      dummy:addSubcards(cards)
-    else
-      dummy:addSubcard(get)
-      table.removeOne(cards, get)
-      room:moveCards({
-        ids = cards,
-        toArea = Card.DiscardPile,
-        moveReason = fk.ReasonJustMove,
-        moveVisible = true,
-      })
+    local id2 = room:askForCardChosen(player, target, {
+      card_data = {
+        { "$Hand", cards }
+      }
+    }, self.name)
+    if id2 ~= id then
+      cards = {id2}
     end
-    room:obtainCard(player, dummy, true, fk.ReasonJustMove)
-    room:setPlayerMark(player, "yanxi-turn", dummy.subcards)
+    room:moveCardTo(cards, Player.Hand, player, fk.ReasonPrey, self.name, nil, false, player.id)
+  end,
+}
+local yanxi_refresh = fk.CreateTriggerSkill{
+  name = "#yanxi_refresh",
+
+  refresh_events = {fk.AfterCardsMove, fk.AfterTurnEnd},
+  can_refresh = function(self, event, target, player, data)
+    return true
+  end,
+  on_refresh = function(self, event, target, player, data)
+    local room = player.room
+    if event == fk.AfterCardsMove then
+      for _, move in ipairs(data) do
+        if move.to == player.id and move.toArea == Card.PlayerHand and move.skillName == yanxi.name then
+          for _, info in ipairs(move.moveInfo) do
+            local id = info.cardId
+            if room:getCardArea(id) == Card.PlayerHand and room:getCardOwner(id) == player then
+              room:setCardMark(Fk:getCardById(id), "@@yanxi-inhand", 1)
+            end
+          end
+        end
+      end
+    elseif event == fk.AfterTurnEnd then
+      for _, id in ipairs(player:getCardIds(Player.Hand)) do
+        room:setCardMark(Fk:getCardById(id), "@@yanxi-inhand", 0)
+      end
+    end
   end,
 }
 local yanxi_maxcards = fk.CreateMaxCardsSkill{
   name = "#yanxi_maxcards",
   exclude_from = function(self, player, card)
-    return player:getMark("yanxi-turn") ~= 0 and table.contains(player:getMark("yanxi-turn"), card.id)
+    return card:getMark("@@yanxi-inhand") > 0
   end,
 }
+yanxi:addRelatedSkill(yanxi_refresh)
 yanxi:addRelatedSkill(yanxi_maxcards)
 wangyuanji:addSkill(yanxi)
 Fk:loadTranslationTable{
@@ -1236,6 +1244,8 @@ Fk:loadTranslationTable{
   ["yanxi"] = "宴戏",
   [":yanxi"] = "出牌阶段限一次，你将一名其他角色的随机一张手牌与牌堆顶的两张牌混合后展示，你猜测哪张牌来自其手牌。若猜对，你获得三张牌；"..
   "若猜错，你获得选中的牌。你以此法获得的牌本回合不计入手牌上限。",
+
+  ["@@yanxi-inhand"] = "宴戏",
 
   ["$shiren1"] = "宠过必乱，不可大任。",
   ["$shiren2"] = "开卷有益，识人有法",

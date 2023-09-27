@@ -1,5 +1,6 @@
 local extension = Package("ol_menfa")
 extension.extensionName = "ol"
+local U = require "packages/utility/utility"
 
 Fk:loadTranslationTable{
   ["ol_menfa"] = "OL-门阀士族",
@@ -763,7 +764,7 @@ Fk:loadTranslationTable{
   ["#muyin-choose"] = "穆荫：你可以令一名同族角色手牌上限+1",
 
   ["$zhanding1"] = "汝颈硬，比之金铁何如？",
-  ["$zhanding2"] = "魍魉鼠辈，速速系劲伏首！",
+  ["$zhanding2"] = "魍魉鼠辈，速速系颈伏首！",
   ["$muyin_olz__wuban1"] = "世代佐忠义，子孙何绝焉？",
   ["$muyin_olz__wuban2"] = "祖训秉心，其荫何能薄也？",
   ["~olz__wuban"] = "无胆鼠辈，安敢暗箭伤人……",
@@ -1529,6 +1530,7 @@ local jiexuan = fk.CreateViewAsSkill{
 local mingjiew = fk.CreateActiveSkill{
   name = "mingjiew",
   anim_type = "control",
+  prompt = "#mingjiew-active",
   card_num = 0,
   target_num = 1,
   frequency = Skill.Limited,
@@ -1540,7 +1542,8 @@ local mingjiew = fk.CreateActiveSkill{
   end,
   target_filter = function(self, to_select, selected)
     local target = Fk:currentRoom():getPlayerById(to_select)
-    return #selected == 0 and (target:getMark("@@mingjiew") == 0 or not table.contains(target:getMark("@@mingjiew"), Self.id))
+    return #selected == 0 and (target:getMark("@@mingjiew") == 0 or not table.contains(target:getMark("@@mingjiew"), Self.id)
+    or (to_select == Self.id and Self:getMark("mingjiew_Self-turn") == 0))
   end,
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
@@ -1549,22 +1552,12 @@ local mingjiew = fk.CreateActiveSkill{
     if mark == 0 then mark = {} end
     table.insert(mark, player.id)
     room:setPlayerMark(target, "@@mingjiew", mark)
+    if player == target then
+      room:setPlayerMark(player, "mingjiew_Self-turn", 1)
+    end
   end,
 }
-local function getUseExtraTargets(room, data, bypass_distances)
-  if not (data.card.type == Card.TypeBasic or data.card:isCommonTrick()) then return {} end
-  if data.card.skill:getMinTargetNum() > 1 then return {} end --stupid collateral
-  local tos = {}
-  local current_targets = TargetGroup:getRealTargets(data.tos)
-  for _, p in ipairs(room.alive_players) do
-    if not table.contains(current_targets, p.id) and not room:getPlayerById(data.from):isProhibited(p, data.card) then
-      if data.card.skill:modTargetFilter(p.id, {}, data.from, data.card, bypass_distances) then
-        table.insert(tos, p.id)
-      end
-    end
-  end
-  return tos
-end
+
 local mingjiew_delay = fk.CreateTriggerSkill{
   name = "#mingjiew_delay",
   mute = true,
@@ -1574,7 +1567,7 @@ local mingjiew_delay = fk.CreateTriggerSkill{
     if event == fk.AfterCardTargetDeclared then
       if target == player and (data.card.type == Card.TypeBasic or data.card:isCommonTrick()) then
         local mark
-        local targets = table.filter(getUseExtraTargets(player.room, data), function (id)
+        local targets = table.filter(U.getUseExtraTargets(player.room, data), function (id)
           mark = room:getPlayerById(id):getMark("@@mingjiew")
           return type(mark) == "table" and table.contains(mark, player.id)
         end)
@@ -1584,6 +1577,7 @@ local mingjiew_delay = fk.CreateTriggerSkill{
         end
       end
     elseif event == fk.TurnEnd then
+      if player:getMark("mingjiew_Self-turn") > 0 then return false end
       local mark = target:getMark("@@mingjiew")
       if type(mark) ~= "table" or not table.contains(mark, player.id) then return false end
       local events = room.logic.event_recorder[GameEvent.UseCard] or Util.DummyTable
@@ -1671,7 +1665,11 @@ local mingjiew_delay = fk.CreateTriggerSkill{
     return target == player and player:getMark("@@mingjiew") ~= 0
   end,
   on_refresh = function(self, event, target, player, data)
-    player.room:setPlayerMark(player, "@@mingjiew", 0)
+    if player:getMark("mingjiew_Self-turn") == 0 then
+      player.room:setPlayerMark(player, "@@mingjiew", 0)
+    else
+      player.room:setPlayerMark(player, "@@mingjiew", {player.id})
+    end
   end,
 }
 local mingjiew_viewas = fk.CreateViewAsSkill{
@@ -1809,9 +1807,10 @@ Fk:loadTranslationTable{
   [":zhongliu"] = "宗族技，锁定技，当你使用牌时，若不为同族角色的手牌，你视为未发动此武将牌上的技能。",
   ["#jiexuan-yang"] = "解悬：你可以将一张红色牌当【顺手牵羊】使用",
   ["#jiexuan-yin"] = "解悬：你可以将一张黑色牌当【过河拆桥】使用",
+  ["#mingjiew-active"] = "发动 铭戒，选择一名角色作为目标",
   ["#mingjiew_delay"] = "铭戒",
   ["@@mingjiew"] = "铭戒",
-  ["#mingjiew-choose"] = "铭戒：你可以为此%arg额外指定“铭戒”角色为目标",
+  ["#mingjiew-choose"] = "铭戒：你可以为此%arg额外指定任意名“铭戒”角色为目标",
   ["mingjiew_viewas"] = "铭戒",
   ["#mingjiew-use"] = "铭戒：你可以使用其中的牌",
 
@@ -2419,6 +2418,14 @@ Fk:loadTranslationTable{
   ["#jiejian-choose"] = "捷谏：你可以令其中一个目标摸%arg张牌",
   ["@jiejian-turn"] = "捷谏",
   ["#huanghan-invoke"] = "惶汗：你可以摸%arg张牌，弃%arg2张牌",
+
+  ["$jiejian1"] = "庙胜之策，不临矢石。",
+  ["$jiejian2"] = "王者之兵，有征无战。",
+  ["$huanghan1"] = "居天子阶下，故诚惶诚恐。",
+  ["$huanghan2"] = "战战惶惶，汗出如浆。",
+  ["$baozu_olz__zhongyu1"] = "弟会腹有恶谋，不可不防。",
+  ["$baozu_olz__zhongyu2"] = "会期大祸将至，请晋公恕之。",
+  ["~olz__zhongyu"] = "百年钟氏，一朝为臣矣……",
 }
 
 return extension
