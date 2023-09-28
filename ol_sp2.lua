@@ -243,7 +243,123 @@ Fk:loadTranslationTable{
   ["$shoufu2"] = "吾得法器，必斩万恶！",
   ["~zhangling"] = "羽化登仙，遗世独立……",
 }
---卧龙凤雏 2021.2.7
+
+local longfeng = General(extension, "wolongfengchu", "shu", 4)
+local youlong = fk.CreateViewAsSkill{
+  name = "youlong",
+  switch_skill_name = "youlong",
+  anim_type = "switch",
+  pattern = ".",
+  interaction = function()
+    local names = {}
+    local mark = Self:getMark("@$youlong")
+    local isYang = Self:getSwitchSkillState("youlong") == fk.SwitchYang
+    for _, id in ipairs(Fk:getAllCardIds()) do
+      local card = Fk:getCardById(id)
+      if ((card.type == Card.TypeBasic and not isYang) or
+        (card:isCommonTrick() and isYang)) and
+        not card.is_derived and
+        ((Fk.currentResponsePattern == nil and Self:canUse(card)) or
+        (Fk.currentResponsePattern and Exppattern:Parse(Fk.currentResponsePattern):match(card))) then
+        if mark == 0 or (not table.contains(mark, card.trueName)) then
+          table.insertIfNeed(names, card.name)
+        end
+      end
+    end
+    if #names == 0 then return end
+    return UI.ComboBox {choices = names}
+  end,
+  card_filter = function(self, to_select, selected)
+    return false
+  end,
+  view_as = function(self, cards)
+    if not self.interaction.data then return end
+    local card = Fk:cloneCard(self.interaction.data)
+    card.skillName = self.name
+    return card
+  end,
+  before_use = function(self, player, use)
+    local room = player.room
+    local mark = player:getMark("@$youlong")
+    if mark == 0 then mark = {} end
+    table.insert(mark, use.card.trueName)
+    room:setPlayerMark(player, "@$youlong", mark)
+    local state = player:getSwitchSkillState(self.name, false, true)
+    room:setPlayerMark(player, "youlong_" .. state .. "-round", 1)
+
+    -- FIXME: 傻逼神典韦
+    local all_choices = {"WeaponSlot", "ArmorSlot", "DefensiveRideSlot", "OffensiveRideSlot", "TreasureSlot"}
+    local subtypes = {Card.SubtypeWeapon, Card.SubtypeArmor, Card.SubtypeDefensiveRide, Card.SubtypeOffensiveRide, Card.SubtypeTreasure}
+    local choices = {}
+    for i = 1, 5, 1 do
+      if #player:getAvailableEquipSlots(subtypes[i]) > 0 then
+        table.insert(choices, all_choices[i])
+      end
+    end
+    local choice = room:askForChoice(player, choices, self.name, "#youlong-choice", false, all_choices)
+    room:abortPlayerArea(player, {choice})
+  end,
+  enabled_at_play = function(self, player)
+    local state = player:getSwitchSkillState(self.name, false, true)
+    return player:getMark("youlong_" .. state .. "-round") == 0 and #player:getAvailableEquipSlots() > 0
+  end,
+  enabled_at_response = function(self, player, response)
+    local state = player:getSwitchSkillState(self.name, false, true)
+    return (not response) and player:getMark("youlong_" .. state .. "-round") == 0 and #player:getAvailableEquipSlots() > 0
+  end,
+}
+local luanfeng = fk.CreateTriggerSkill{
+  name = "luanfeng",
+  frequency = Skill.Limited,
+  events = {fk.EnterDying},
+  can_trigger = function(self, event, target, player, data)
+    return player:hasSkill(self.name) and target.maxHp >= player.maxHp and player:usedSkillTimes(self.name, Player.HistoryGame) == 0
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    room:recover {
+      who = target,
+      num = 3 - target.hp,
+      recoverBy = player,
+      skillName = self.name,
+    }
+
+    local slots = table.simpleClone(target.sealedSlots)
+    table.removeOne(slots, Player.JudgeSlot)
+    local x = #slots
+    if x > 0 then
+      room:resumePlayerArea(target, slots)
+    end
+    local n = target:getHandcardNum()
+    if n < 6 - x then
+      target:drawCards(6 - x - n, self.name)
+    end
+
+    if target == player then
+      room:setPlayerMark(player, "@$youlong", 0)
+    end
+  end,
+}
+longfeng:addSkill(youlong)
+longfeng:addSkill(luanfeng)
+Fk:loadTranslationTable{
+  ['wolongfengchu'] = '卧龙凤雏',
+  ['youlong'] = '游龙',
+  [':youlong'] = '转换技，每轮各限一次，你可以废除一个装备栏并视为使用一张未以此法使用过的' ..
+    '{阳：普通锦囊牌；阴：基本牌。}',
+  ['luanfeng' ] = '鸾凤',
+  [':luanfeng'] = '限定技，当一名角色处于濒死状态时，若其体力上限不小于你，' ..
+    '你可令其将体力回复至3点，恢复其被废除的装备栏，令其手牌补至6-X张' ..
+    '（X为以此法恢复的装备栏数量）。若该角色为你，重置你“游龙”使用过的牌名。',
+
+  ['@$youlong'] = '游龙',
+  ['#youlong-choice'] = '游龙: 请选择废除一个装备栏',
+  ['$youlong1'] = '赤壁献策，再谱春秋！',
+  ['$youlong2'] = '卧龙出山，谋定万古！',
+  ['$luanfeng1'] = '凤栖枯木，浴火涅槃！',
+  ['$luanfeng2'] = '青鸾归宇，雏凤还巢！',
+  ['~wolongfengchu'] = '铁链，东风，也难困这魏军……',
+}
 
 local panshu = General(extension, "ol__panshu", "wu", 3, 3, General.Female)
 local weiyi = fk.CreateTriggerSkill{
