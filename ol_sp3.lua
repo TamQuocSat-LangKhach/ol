@@ -212,7 +212,7 @@ local ol__meibu = fk.CreateTriggerSkill{
 ol__meibu:addRelatedSkill(ol__meibu_dis)
 ol__sunluyu:addSkill(ol__meibu)
 local ol__mumu_pro = fk.CreateProhibitSkill{
-  name = '#ol__mumu_pro',
+  name = '#ol__mumu_prohibit',
   prohibit_response = function(self, player, card)
     return card.trueName == 'slash' and player:getMark('@ol__mumu-turn') > 0
   end,
@@ -275,7 +275,7 @@ local ol__mumu = fk.CreateTriggerSkill{
 ol__mumu:addRelatedSkill(ol__mumu_pro)
 ol__sunluyu:addSkill(ol__mumu)
 local zhixip = fk.CreateProhibitSkill{
-  name = '#ol__zhixi_pro',
+  name = '#ol__zhixi_prohibit',
   prohibit_use = function(self, player)
     if not player:hasSkill('ol__zhixi') then
       return false
