@@ -1186,11 +1186,9 @@ local hanzhan = fk.CreateTriggerSkill{
   end,
 }
 
---[[
 local taishici = General(extension, "ol_ex__taishici", "wu", 4)
 taishici:addSkill("tianyi")
 taishici:addSkill(hanzhan)
-]]
 
 Fk:loadTranslationTable{
   ["ol_ex__taishici"] = "界太史慈",
