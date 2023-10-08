@@ -14,13 +14,25 @@ local sankuang = fk.CreateTriggerSkill{
   frequency = Skill.Compulsory,
   events = {fk.CardUseFinished},
   can_trigger = function(self, event, target, player, data)
-    if target == player and player:hasSkill(self.name) then
-      local mark = "sankuang_"..data.card:getTypeString().."-round"
-      if player:getMark(mark) == 0 then
-        player.room:addPlayerMark(player, mark, 1)
-        return true
-      end
+    if target ~= player or not player:hasSkill(self.name) then return false end
+    local card_type = data.card.type
+    local room = player.room
+    local logic = room.logic
+    local use_event = logic:getCurrentEvent()
+    local mark_name = "sankuang_" .. data.card:getTypeString() .. "-round"
+    local mark = player:getMark(mark_name)
+    if mark == 0 then
+      logic:getEventsOfScope(GameEvent.UseCard, 1, function (e)
+        local last_use = e.data[1]
+        if last_use.from == player.id and last_use.card.type == card_type then
+          mark = e.id
+          room:setPlayerMark(player, mark_name, mark)
+          return true
+        end
+        return false
+      end, Player.HistoryRound)
     end
+    return mark == use_event.id
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
@@ -204,17 +216,17 @@ local shenjun_viewas = fk.CreateViewAsSkill{
   name = "shenjun_viewas",
   interaction = function()
     local names = {}
-    for _, id in ipairs(Self:getMark("shenjun-phase")) do
+    for _, id in ipairs(Self:getMark("@$shenjun")) do
       table.insertIfNeed(names, Fk:getCardById(id, true).name)
     end
     if #names == 0 then return end
     return UI.ComboBox {choices = names}
   end,
   card_filter = function(self, to_select, selected)
-    return #selected < #Self:getMark("shenjun-phase")
+    return #selected < #Self:getMark("@$shenjun")
   end,
   view_as = function(self, cards)
-    if Self:getMark("shenjun-phase") ~= 0 and #cards ~= #Self:getMark("shenjun-phase") or not self.interaction.data then return end
+    if Self:getMark("@$shenjun") ~= 0 and #cards ~= #Self:getMark("@$shenjun") or not self.interaction.data then return end
     local card = Fk:cloneCard(self.interaction.data)
     card:addSubcards(cards)
     card.skillName = "shenjun"
@@ -231,18 +243,8 @@ local shenjun = fk.CreateTriggerSkill{
         return (data.card.trueName == "slash" or data.card:isCommonTrick()) and not player:isKongcheng() and
           table.find(player.player_cards[Player.Hand], function(id) return Fk:getCardById(id).trueName == data.card.trueName end)
       else
-        if player:usedSkillTimes(self.name, Player.HistoryPhase) > 0 and not player:isNude() then
-          local cards = {}
-          for _, id in ipairs(player.player_cards[Player.Hand]) do
-            if table.contains(player:getMark("shenjun-phase"), id) then
-              table.insertIfNeed(cards, id)
-            end
-          end
-          if #cards > 0 then
-            player.room:setPlayerMark(player, "shenjun-phase", cards)
-            return true
-          end
-        end
+        return player:usedSkillTimes(self.name, Player.HistoryPhase) > 0 and type(player:getMark("@$shenjun")) == "table"
+        and #player:getMark("@$shenjun") > 0
       end
     end
   end,
@@ -251,7 +253,7 @@ local shenjun = fk.CreateTriggerSkill{
       return true
     else
       local success, dat = player.room:askForUseActiveSkill(player, "shenjun_viewas",
-        "#shenjun-invoke:::"..#player:getMark("shenjun-phase"), true)
+        "#shenjun-invoke:::"..#player:getMark("@$shenjun"), true)
       if success then
         self.cost_data = dat
         return true
@@ -264,12 +266,15 @@ local shenjun = fk.CreateTriggerSkill{
       local cards = table.filter(player.player_cards[Player.Hand], function(id) return Fk:getCardById(id).trueName == data.card.trueName end)
       player:showCards(cards)
       if player.dead then return end
-      local mark = player:getMark("shenjun-phase")
+      local mark = player:getMark("@$shenjun")
       if mark == 0 then mark = {} end
       for _, id in ipairs(cards) do
-        table.insertIfNeed(mark, id)
+        if room:getCardArea(id) == Card.PlayerHand and room:getCardOwner(id) == player and not table.contains(mark, id) then
+          table.insert(mark, id)
+          room:setCardMark(Fk:getCardById(id), "@@shenjun-inhand", 1)
+        end
       end
-      room:setPlayerMark(player, "shenjun-phase", mark)
+      room:setPlayerMark(player, "@$shenjun", mark)
     else
       local card = Fk.skills["shenjun_viewas"]:viewAs(self.cost_data.cards)
       room:useCard{
@@ -279,6 +284,18 @@ local shenjun = fk.CreateTriggerSkill{
       }
     end
   end,
+
+  refresh_events = {fk.AfterCardsMove},
+  can_refresh = function(self, event, target, player, data)
+    return type(player:getMark("@$shenjun")) == "table"
+  end,
+  on_refresh = function(self, event, target, player, data)
+    local handcards = player:getCardIds(Player.Hand)
+    local cards = table.filter(player:getMark("@$shenjun"), function (id)
+      return table.contains(handcards, id)
+    end)
+    player.room:setPlayerMark(player, "@$shenjun", #cards > 0 and cards or 0)
+  end,
 }
 local balong = fk.CreateTriggerSkill{
   name = "balong",
@@ -286,18 +303,27 @@ local balong = fk.CreateTriggerSkill{
   frequency = Skill.Compulsory,
   events = {fk.HpChanged},
   can_trigger = function(self, event, target, player, data)
-    if target == player and player:hasSkill(self.name) then
-      if player:getMark("balong-turn") == 0 then
-        player.room:setPlayerMark(player, "balong-turn", 1)
-        if not player:isKongcheng() then
-          local types = {Card.TypeBasic, Card.TypeEquip, Card.TypeTrick}
-          local num = {0, 0, 0}
-          for i = 1, 3, 1 do
-            num[i] = #table.filter(player.player_cards[Player.Hand], function(id) return Fk:getCardById(id).type == types[i] end)
-          end
-          return num[3] > num[1] and num[3] > num[2]
-        end
+    if target == player and player:hasSkill(self.name) and not player:isKongcheng() then
+      local x = player:getMark("balong_record-turn")
+      local room = player.room
+      local hp_event = room.logic:getCurrentEvent()
+      if not hp_event or (x > 0 and x ~= hp_event.id) then return false end
+      local types = {Card.TypeBasic, Card.TypeEquip, Card.TypeTrick}
+      local num = {0, 0, 0}
+      for i = 1, 3, 1 do
+        num[i] = #table.filter(player.player_cards[Player.Hand], function(id) return Fk:getCardById(id).type == types[i] end)
       end
+      if num[3] <= num[1] or num[3] <= num[2] then return false end
+      if x == 0 then
+        room.logic:getEventsOfScope(GameEvent.ChangeHp, 1, function (e)
+          if e.data[1] == player then
+            x = e.id
+            room:setPlayerMark(player, "balong_record-turn", x)
+            return true
+          end
+        end, Player.HistoryTurn)
+      end
+      return hp_event.id == x
     end
   end,
   on_use = function(self, event, target, player, data)
@@ -318,6 +344,9 @@ Fk:loadTranslationTable{
   [":shenjun"] = "当一名角色使用【杀】或普通锦囊牌时，你展示所有同名手牌记为“神君”，本阶段结束时，你可以将X张牌当任意“神君”牌使用（X为“神君”牌数）。",
   ["balong"] = "八龙",
   [":balong"] = "锁定技，当你每回合体力值首次变化后，若你手牌中锦囊牌为唯一最多的类型，你展示手牌并摸至与存活角色数相同。",
+
+  ["@$shenjun"] = "神君",
+  ["@@shenjun-inhand"] = "神君",
   ["#shenjun-invoke"] = "神君：你可以将%arg张牌当一种“神君”牌使用",
 
   ["$shenjun1"] = "区区障眼之法，难遮神人之目。",
@@ -1919,12 +1948,24 @@ local guangu = fk.CreateActiveSkill{
     if status == "yang" then
       --local choice = tonumber(room:askForChoice(player, {"1", "2", "3", "4"}, self.name, "#guangu-choice"))
       --仪式选牌！
+      --[[
+      --fuckNotify
       ids = room:askForCardsChosen(player, player, 1, 4, {
         card_data = {
           { "Top", {-1,-1,-1,-1} }
         }
       }, self.name)
       ids = room:getNCards(#ids)
+      ]]
+      local command = "AskForCardsChosen"
+      room:notifyMoveFocus(player, command)
+      local data = {player.id, 1, 4, {
+        card_data = {
+          { "Top", {-1,-1,-1,-1} }
+        }
+      }, self.name}
+      local result = room:doRequest(player, command, json.encode(data))
+      ids = room:getNCards(result ~= "" and #json.decode(result) or 1)
     elseif status == "yin" then
       target = room:getPlayerById(effect.tos[1])
       ids = room:askForCardsChosen(player, target, 1, 4, "h", self.name)
