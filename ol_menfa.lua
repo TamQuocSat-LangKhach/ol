@@ -184,7 +184,7 @@ olz__xunchen:addSkill(sankuang)
 olz__xunchen:addSkill(beishi)
 olz__xunchen:addSkill(daojie)
 Fk:loadTranslationTable{
-  ["olz__xunchen"] = "荀谌",
+  ["olz__xunchen"] = "族荀谌",
   ["sankuang"] = "三恇",
   [":sankuang"] = "锁定技，当你每轮首次使用一种类别的牌后，你令一名其他角色交给你至少X张牌并获得你使用的牌（X为其满足的项数：1.场上有牌；2.已受伤；"..
   "3.体力值小于手牌数）。",
@@ -339,7 +339,7 @@ xunshu:addSkill(shenjun)
 xunshu:addSkill(balong)
 xunshu:addSkill("daojie")
 Fk:loadTranslationTable{
-  ["olz__xunshu"] = "荀淑",
+  ["olz__xunshu"] = "族荀淑",
   ["shenjun"] = "神君",
   [":shenjun"] = "当一名角色使用【杀】或普通锦囊牌时，你展示所有同名手牌记为“神君”，本阶段结束时，你可以将X张牌当任意“神君”牌使用（X为“神君”牌数）。",
   ["balong"] = "八龙",
@@ -453,7 +453,7 @@ xuncan:addSkill(shangshen)
 xuncan:addSkill(fenchai)
 xuncan:addSkill("daojie")
 Fk:loadTranslationTable{
-  ["olz__xuncan"] = "荀粲",
+  ["olz__xuncan"] = "族荀粲",
   ["yushen"] = "熨身",
   [":yushen"] = "出牌阶段限一次，你可以选择一名其他角色并令其回复1点体力，然后选择一项：1.视为其对你使用一张冰【杀】；2.视为你对其使用一张冰【杀】。",
   ["shangshen"] = "伤神",
@@ -662,7 +662,7 @@ xuncai:addSkill(dianzhan)
 xuncai:addSkill(huanyin)
 xuncai:addSkill("daojie")
 Fk:loadTranslationTable{
-  ["olz__xuncai"] = "荀采",
+  ["olz__xuncai"] = "族荀采",
   ["lieshi"] = "烈誓",
   [":lieshi"] = "出牌阶段，你可以选择一项：1.废除判定区并受到你的1点火焰伤害；2.弃置所有【闪】；3.弃置所有【杀】。然后令一名其他角色选择其他两项中的一项。",
   ["dianzhan"] = "点盏",
@@ -785,7 +785,7 @@ zhanding:addRelatedSkill(zhanding_record)
 olz__wuban:addSkill(zhanding)
 olz__wuban:addSkill(muyin)
 Fk:loadTranslationTable{
-  ["olz__wuban"] = "吴班",
+  ["olz__wuban"] = "族吴班",
   ["zhanding"] = "斩钉",
   [":zhanding"] = "你可以将任意张牌当【杀】使用并令你手牌上限-1，若此【杀】：造成伤害，你将手牌数调整至手牌上限；未造成伤害，此【杀】不计入次数。",
   ["muyin"] = "穆荫",
@@ -844,7 +844,7 @@ olz__wuxian:addSkill(yirong)
 olz__wuxian:addSkill(guixiang)
 olz__wuxian:addSkill("muyin")
 Fk:loadTranslationTable{
-  ["olz__wuxian"] = "吴苋",
+  ["olz__wuxian"] = "族吴苋",
   ["yirong"] = "移荣",
   [":yirong"] = "出牌阶段限两次，你可以将手牌摸/弃至手牌上限并令你手牌上限-1/+1。",
   ["guixiang"] = "贵相",
@@ -1039,7 +1039,7 @@ hanshao:addSkill(fangzhen)
 hanshao:addSkill(liuju)
 hanshao:addSkill(xumin)
 Fk:loadTranslationTable{
-  ["olz__hanshao"] = "韩韶",
+  ["olz__hanshao"] = "族韩韶",
   ["fangzhen"] = "放赈",
   [":fangzhen"] = "出牌阶段开始时，你可以横置一名角色并选择一项：1.摸两张牌并交给其两张牌；2.令其回复1点体力。第X轮开始时（X为其座次），你失去此技能。",
   ["liuju"] = "留驹",
@@ -1262,7 +1262,7 @@ hanrong:addSkill(lianhe)
 hanrong:addSkill(huanjia)
 hanrong:addSkill("xumin")
 Fk:loadTranslationTable{
-  ["olz__hanrong"] = "韩融",
+  ["olz__hanrong"] = "族韩融",
   ["lianhe"] = "连和",
   [":lianhe"] = "出牌阶段开始时，你可以横置两名角色，其下个出牌阶段的阶段结束时，若其此阶段未摸牌，其选择一项："..
   "1.令你摸X+1张牌；2.交给你X-1张牌（X为其此阶段获得牌数且至多为3）。",
@@ -1497,7 +1497,7 @@ lianzhuw:addRelatedSkill(lianzhuw_trigger)
 wukuang:addSkill(lianzhuw)
 wukuang:addSkill("muyin")
 Fk:loadTranslationTable{
-  ["olz__wukuang"] = "吴匡",
+  ["olz__wukuang"] = "族吴匡",
   ["lianzhuw"] = "联诛",
   [":lianzhuw"] = "转换技，每名角色出牌阶段限一次，阳：其可以与你各重铸一张牌，若颜色相同，你的手牌上限+1；"..
   "阴：你选择一名在你或其攻击范围内的角色，其可以与你各对目标使用一张【杀】，若颜色不同，你的手牌上限-1。",
@@ -1826,7 +1826,7 @@ wangyun:addSkill(jiexuan)
 wangyun:addSkill(mingjiew)
 wangyun:addSkill(zhongliu)
 Fk:loadTranslationTable{
-  ["olz__wangyun"] = "王允",
+  ["olz__wangyun"] = "族王允",
   ["jiexuan"] = "解悬",
   [":jiexuan"] = "转换技，限定技，阳：你可以将一张红色牌当【顺手牵羊】使用；阴：你可以将一张黑色牌当【过河拆桥】使用。",
   ["mingjiew"] = "铭戒",
@@ -1893,7 +1893,7 @@ wangling:addSkill(bolong)
 bolong.scope_type = Player.HistoryPhase
 wangling:addSkill("zhongliu")
 Fk:loadTranslationTable{
-  ["olz__wangling"] = "王淩",
+  ["olz__wangling"] = "族王淩",
   ["bolong"] = "驳龙",
   [":bolong"] = "出牌阶段限一次，你可以令一名其他角色选择一项：1.你交给其一张牌，视为对其使用一张雷【杀】；"..
   "2.交给你与你手牌数等量张牌，视为对你使用一张【酒】。",
@@ -2101,7 +2101,7 @@ zhongyan:addSkill(guangu)
 zhongyan:addSkill(xiaoyong)
 zhongyan:addSkill(baozu)
 Fk:loadTranslationTable{
-  ["olz__zhongyan"] = "钟琰",
+  ["olz__zhongyan"] = "族钟琰",
   ["guangu"] = "观骨",
   [":guangu"] = "转换技，出牌阶段限一次，阳：你可以观看牌堆顶至多四张牌；阴：你可以观看一名角色至多四张手牌。然后你可以使用其中一张牌。",
   ["xiaoyong"] = "啸咏",
@@ -2216,7 +2216,7 @@ zhonghui:addSkill(yuzhi)
 zhonghui:addSkill(xieshu)
 zhonghui:addSkill("baozu")
 Fk:loadTranslationTable{
-  ["olz__zhonghui"] = "钟会",
+  ["olz__zhonghui"] = "族钟会",
   ["yuzhi"] = "迂志",
   [":yuzhi"] = "锁定技，每轮开始时，你展示一张手牌，摸X张牌（X为此牌牌名字数）。每轮结束时，若你本轮使用牌数或上轮以此法摸牌数小于X，"..
   "你失去1点体力或失去〖保族〗。",
@@ -2365,7 +2365,7 @@ wanghun:addSkill(fuxun)
 wanghun:addSkill(chenya)
 wanghun:addSkill("zhongliu")
 Fk:loadTranslationTable{
-  ["olz__wanghun"] = "王浑",
+  ["olz__wanghun"] = "族王浑",
   ["fuxun"] = "抚循",
   [":fuxun"] = "出牌阶段限一次，你可以交给一名其他角色一张手牌或获得一名其他角色一张手牌，然后若其手牌数与你相同且本阶段未因此法以外的方式"..
   "变化过，你可以将一张牌当任意基本牌使用。",
@@ -2393,7 +2393,7 @@ local jiejian = fk.CreateTriggerSkill{
   anim_type = "drawcard",
   events = {fk.TargetSpecified},
   can_trigger = function(self, event, target, player, data)
-    if target == player and player:hasSkill(self.name) and data.firstTarget then
+    if target == player and player:hasSkill(self.name) and data.card.type ~= Card.TypeEquip and data.firstTarget then
       local n = 0
       player.room.logic:getEventsOfScope(GameEvent.UseCard, 1, function(e)
         local use = e.data[1]
@@ -2451,9 +2451,9 @@ zhongyu:addSkill(jiejian)
 zhongyu:addSkill(huanghan)
 zhongyu:addSkill("baozu")
 Fk:loadTranslationTable{
-  ["olz__zhongyu"] = "钟毓",
+  ["olz__zhongyu"] = "族钟毓",
   ["jiejian"] = "捷谏",
-  [":jiejian"] = "当你每回合使用第X张牌指定目标后，你可以令其中一个目标摸X张牌（X为此牌牌名字数）。",
+  [":jiejian"] = "当你每回合使用第X张牌指定目标后，若此牌不为装备牌，你可以令其中一个目标摸X张牌（X为此牌牌名字数）。",
   ["huanghan"] = "惶汗",
   [":huanghan"] = "当你受到牌造成的伤害后，你可以摸X张牌（X为此牌牌名字数）并弃置你已损失体力值张牌；若不为本回合首次发动，你视为未发动过〖保族〗。",
   ["#jiejian-choose"] = "捷谏：你可以令其中一个目标摸%arg张牌",
