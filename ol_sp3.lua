@@ -3423,6 +3423,99 @@ Fk:loadTranslationTable{
   ["~duanjiong"] = "秋霜落，天下寒……",
 }
 
+-- local hejin = General(extension, "ol__hejin", "qun", 4)
+
+Fk:loadTranslationTable{
+  ["ol__hejin"] = "何进",
+  ["ol__mouzhu"] = "谋诛",
+  [":ol__mouzhu"] = "出牌阶段限一次，你可以令一名其他角色交给你一张手牌，若其手牌数小于你，其视为使用一张【杀】或【决斗】。",
+  ["ol__yanhuo"] = "延祸",
+  [":ol__yanhuo"] = "当你死亡时，你可以弃置杀死你的角色至多X张牌（X为你的牌数）。",
+}
+
+-- local niujin = General(extension, "ol__niujin", "wei", 4)
+
+Fk:loadTranslationTable{
+  ["ol__niujin"] = "牛金",
+  ["ol__cuorui"] = "挫锐",
+  [":ol__cuorui"] = "锁定技，游戏开始时，你将手牌数摸至X张（X为场上角色数）。当你成为延时锦囊牌的目标后，你跳过下个判定阶段。",
+  ["ol__liewei"] = "裂围",
+  [":ol__liewei"] = "当你杀死一名角色时，你可以摸三张牌。",
+}
+
+local hansui = General(extension, "ol__hansui", "qun", 4)
+local niluan = fk.CreateTriggerSkill{
+  name = "ol__niluan",
+  anim_type = "offensive",
+  events = {fk.EventPhaseStart},
+  can_trigger = function(self, event, target, player, data)
+    return player:hasSkill(self.name) and target.phase == Player.Finish and target.hp > player.hp and target:usedCardTimes("slash") > 0 and not player:prohibitUse(Fk:cloneCard("slash")) and not player:isProhibited(target, Fk:cloneCard("slash"))
+  end,
+  on_cost = function(self, event, target, player, data)
+    local cids = player.room:askForCard(player, 1, 1, true, self.name, true, ".|.|club,spade", "#ol__niluan-slash:" .. target.id)
+    if #cids > 0 then
+      self.cost_data = cids
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    player.room:useVirtualCard("slash", self.cost_data, target, player, self.name)
+  end,
+}
+local xiaoxi = fk.CreateTriggerSkill{
+  name = "ol__xiaoxi",
+  anim_type = "offensive",
+  events = {fk.RoundStart},
+  can_trigger = function(self, event, target, player, data)
+    return player:hasSkill(self.name) and not player:prohibitUse(Fk:cloneCard("slash"))
+  end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    local slash = Fk:cloneCard("slash")
+    local max_num = slash.skill:getMaxTargetNum(player, slash)
+    local targets = {}
+    for _, p in ipairs(room:getOtherPlayers(player)) do
+      if not player:isProhibited(p, slash) then
+        table.insert(targets, p.id)
+      end
+    end
+    if #targets == 0 or max_num == 0 then return end
+    local tos = room:askForChoosePlayers(player, targets, 1, max_num, "#ol__xiaoxi-ask", self.name, true)
+    if #tos > 0 then
+      self.cost_data = tos
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local slash = Fk:cloneCard("slash")
+    slash.skillName = self.name
+    player.room:useCard{
+      from = target.id,
+      tos = table.map(self.cost_data, function(pid) return { pid } end),
+      card = slash,
+      extraUse = true,
+    }
+  end,
+}
+hansui:addSkill(niluan)
+hansui:addSkill(xiaoxi)
+Fk:loadTranslationTable{
+  ["ol__hansui"] = "韩遂",
+  ["ol__niluan"] = "逆乱",
+  [":ol__niluan"] = "体力值大于你的角色的结束阶段，若其此回合使用过【杀】，你可以将一张黑色牌当【杀】对其使用。",
+  ["ol__xiaoxi"] = "骁袭",
+  [":ol__xiaoxi"] = "每轮开始时，你可以视为使用一张无距离限制的【杀】。",
+
+  ["#ol__niluan-slash"] = "逆乱：你可以将一张黑色牌当【杀】对 %src 使用",
+  ["#ol__xiaoxi-ask"] = "骁袭：你可以视为使用一张无距离限制的【杀】",
+
+  ["$ol__niluan1"] = "如果不能功成名就，那就干脆为祸一方！",
+  ["$ol__niluan2"] = "哈哈哈哈哈，天下之事皆无常！",
+  ["$ol__xiaoxi1"] = "打你个措手不及！",
+  ["$ol__xiaoxi2"] = "两军交战，勇者为胜！",
+  ["~ol__hansui"] = "马侄儿为何……啊！",
+}
+
 Fk:loadTranslationTable{
   ["ol__pengyang"] = "彭羕",
 }
@@ -3543,6 +3636,109 @@ Fk:loadTranslationTable{
   ["$runwei1"] = "",
   ["$runwei2"] = "",
   ["~ol__luyusheng"] = "",
+}
+
+local dingfuren = General(extension, "ol__dingfuren", "wei", 3, 3, General.Female)
+local fudao = fk.CreateTriggerSkill{
+  name = "ol__fudao",
+  anim_type = "drawcard",
+  events = {fk.GameStart, fk.TurnEnd},
+  can_trigger = function(self, event, target, player, data)
+    if not player:hasSkill(self.name) then return end
+    return event == fk.GameStart or (player:getMark("_ol__fudao") == target:getHandcardNum() and player:getMark("@ol__fudao") ~= 0)
+  end,
+  on_cost = function(self, event, target, player, data)
+    if event == fk.GameStart then
+      local choices = {"draw1", "draw2", "draw3", "draw4"}
+      local num = 0
+      for _, id in ipairs(player:getCardIds{Player.Hand, Player.Equip}) do
+        local c = Fk:getCardById(id)
+        if not player:prohibitDiscard(c) then num = num + 1 end
+        if num == 4 then break end
+      end
+      for i = 1, num, 1 do
+        table.insert(choices, "discard" .. tostring(i))
+      end
+      local choice = player.room:askForChoice(player, choices, self.name)
+      self.cost_data = choice
+      return true
+    else
+      return player.room:askForSkillInvoke(player, self.name, data, "#ol__fudao-ask::" .. target.id)
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    if event == fk.GameStart then
+      local choice = self.cost_data
+      local room = player.room
+      local num = tonumber(choice:sub(-1))
+      if choice:startsWith("discard") then
+        room:askForDiscard(player, num, num, true, self.name, false, nil)
+      else
+        room:drawCards(player, num, self.name)
+      end
+      room:setPlayerMark(player, "@ol__fudao", tostring(player:getHandcardNum())) -- 0
+      room:setPlayerMark(player, "_ol__fudao", player:getHandcardNum())
+    else
+      target:drawCards(1, self.name)
+      if not player.dead then
+        player:drawCards(1, self.name)
+      end
+    end
+  end,
+}
+
+local fengyan = fk.CreateTriggerSkill{
+  name = "ol__fengyan",
+  events = {fk.Damaged, fk.CardRespondFinished, fk.CardUseFinished},
+  anim_type = "masochism",
+  frequency = Skill.Compulsory,
+  can_trigger = function(self, event, target, player, data)
+    if event == fk.Damaged then
+      return player:hasSkill(self.name) and target == player and data.from and data.from ~= player
+    else
+      return target == player and player:hasSkill(self.name) and not player.dead and data.responseToEvent and data.responseToEvent.from and data.responseToEvent.from ~= player.id and not player.room:getPlayerById(data.responseToEvent.from).dead
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    if event == fk.Damaged then
+      player:drawCards(1, self.name)
+      local target = data.from
+      if target and not target.dead and not player:isNude() then
+        local c = room:askForCard(player, 1, 1, true, self.name, false, nil, "#ol__fengyan-card::" .. target.id)[1]
+        room:moveCardTo(c, Player.Hand, target, fk.ReasonGive, self.name, nil, false, player.id)
+      end
+    else
+      local target = room:getPlayerById(data.responseToEvent.from)
+      room:doIndicate(player.id, {target.id})
+      target:drawCards(1, self.name)
+      if not target.dead then
+        room:askForDiscard(target, 2, 2, true, self.name, false, nil)
+      end
+    end
+  end,
+}
+
+dingfuren:addSkill(fudao)
+dingfuren:addSkill(fengyan)
+
+Fk:loadTranslationTable{
+  ["ol__dingfuren"] = "丁尚涴",
+  ["ol__fudao"] = "抚悼",
+  [":ol__fudao"] = "游戏开始时，你摸或弃置至多四张牌并记录你的手牌数。每回合结束时，若当前回合角色的手牌数为此数值，你可以与其各摸一张牌。",
+  ["ol__fengyan"] = "讽言",
+  [":ol__fengyan"] = "锁定技，当你受到其他角色造成的伤害后，你摸一张牌并交给其一张牌；当你响应其他角色使用的牌后，其摸一张牌并弃置两张牌。",
+
+  ["@ol__fudao"] = "抚悼",
+  ["#ol__fudao-ask"] = "抚悼：你可与 %dest 各摸一张牌",
+  ["#ol__fengyan-card"] = "讽言：请交给 %dest 一张牌",
+
+  ["draw3"] = "摸三张牌", -- abstract
+  ["draw4"] = "摸四张牌", 
+  ["discard1"] = "弃置一张牌",
+  ["discard2"] = "弃置两张牌",
+  ["discard3"] = "弃置三张牌",
+  ["discard4"] = "弃置四张牌",
 }
 
 return extension

@@ -1587,9 +1587,10 @@ local fuhan = fk.CreateTriggerSkill{
     local room = player.room
     local n = player:getMark("@meiying")
     room:setPlayerMark(player, "@meiying", 0)
-    local generals = table.map(Fk:getGeneralsRandomly(5, Fk:getAllGenerals(), table.map(room:getAllPlayers(), function(p)
-      return p.general end), (function(p) return (p.kingdom ~= "shu") end)), function(g) return g.name end)
-    local general = room:askForGeneral(player, generals, 1)
+    local generals = room:findGenerals(function(g)
+      return Fk.generals[g].kingdom == "shu"
+    end, 5)
+    local general = room:askForGeneral(player, generals, 1, true)
     if general == nil then
       general = table.random(generals)
     end
