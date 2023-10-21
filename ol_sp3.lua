@@ -1,5 +1,6 @@
 local extension = Package("ol_sp3")
 extension.extensionName = "ol"
+local U = require "packages/utility/utility"
 
 Fk:loadTranslationTable{
   ["ol_sp3"] = "OL专属3",
@@ -3739,6 +3740,152 @@ Fk:loadTranslationTable{
   ["discard2"] = "弃置两张牌",
   ["discard3"] = "弃置三张牌",
   ["discard4"] = "弃置四张牌",
+}
+
+local liwan = General(extension, "ol__liwan", "wei", 3, 3, General.Female)
+local lianju = fk.CreateTriggerSkill{
+  name = "lianju",
+  anim_type = "support",
+  events = {fk.EventPhaseStart},
+  can_trigger = function(self, event, target, player, data)
+    if not player:hasSkill(self.name) or player ~= target or player.phase ~= Player.Finish then return false end
+    local room = player.room
+    local turn_event = room.logic:getCurrentEvent():findParent(GameEvent.Turn, false)
+    if turn_event == nil then return false end
+    local end_id = turn_event.id
+    local card = nil
+    U.getEventsByRule(room, GameEvent.UseCard, 1, function (e)
+      local use = e.data[1]
+      if use.from == player.id then
+        card = use.card
+        return true
+      end
+      return false
+    end, end_id)
+    if card ~= nil and #room:getSubcardsByRule(card, { Card.DiscardPile }) > 0 then
+      self.cost_data = card
+      return true
+    end
+  end,
+  on_cost = function(self, event, target, player, data)
+    local card = self.cost_data
+    local to = player.room:askForChoosePlayers(player, table.map(player.room:getOtherPlayers(player, true), Util.IdMapper),
+    1, 1, "#lianju-choose:::" .. card:toLogString(), self.name, true)
+    if #to > 0 then
+      self.cost_data = {card, to[1]}
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local tar = room:getPlayerById(self.cost_data[2])
+    local card = self.cost_data[1]
+    local cards = room:getSubcardsByRule(card, { Card.DiscardPile })
+    if #cards > 0 then
+      room:moveCardTo(cards, Player.Hand, tar, fk.ReasonPrey, self.name, nil, true, player.id)
+    end
+    room:setPlayerMark(player, "@lianju", card.trueName)
+    local mark = U.getMark(tar, "@@lianju")
+    table.insert(mark, player.id)
+    room:setPlayerMark(tar, "@@lianju", mark)
+  end,
+
+  refresh_events = {fk.AfterTurnEnd},
+  can_refresh = function(self, event, target, player, data)
+    return target == player and player:getMark("@@lianju") ~= 0
+  end,
+  on_refresh = function(self, event, target, player, data)
+    player.room:setPlayerMark(player, "@@lianju", 0)
+  end,
+}
+local lianju_delay = fk.CreateTriggerSkill{
+  name = "#lianju_delay",
+  anim_type = "control",
+  events = {fk.EventPhaseStart},
+  can_trigger = function(self, event, target, player, data)
+    return target.phase == Player.Finish and not (target.dead or player.dead) and
+    table.contains(U.getMark(target, "@@lianju"), player.id)
+  end,
+  on_cost = Util.TrueFunc,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    room:doIndicate(player.id, {target.id})
+    local turn_event = room.logic:getCurrentEvent():findParent(GameEvent.Turn, false)
+    if turn_event == nil then return false end
+    local end_id = turn_event.id
+    local card = nil
+    U.getEventsByRule(room, GameEvent.UseCard, 1, function (e)
+      local use = e.data[1]
+      if use.from == target.id then
+        card = use.card
+        return true
+      end
+      return false
+    end, end_id)
+    if card == nil then return false end
+    local cards = room:getSubcardsByRule(card, { Card.DiscardPile })
+    if #cards == 0 or not room:askForSkillInvoke(target, "#lianju_delay", nil,
+    "#lianju-supply:" .. player.id .. "::" .. card:toLogString()) then return false end
+    room:moveCardTo(cards, Player.Hand, player, fk.ReasonPrey, self.name, nil, true, player.id)
+    if not player.dead and card.trueName == player:getMark("@lianju") then
+      room:loseHp(player, 1, "lianju")
+    end
+  end,
+}
+local silv = fk.CreateTriggerSkill{
+  name = "silv",
+  frequency = Skill.Compulsory,
+  events = {fk.AfterCardsMove},
+  anim_type = "drawcard",
+  can_trigger = function(self, event, target, player, data)
+    if player:hasSkill(self.name) and player:usedSkillTimes(self.name) == 0 then
+      local name = player:getMark("@lianju")
+      if type(name) ~= "string" then return false end
+      for _, move in ipairs(data) do
+        if move.from == player.id then
+          for _, info in ipairs(move.moveInfo) do
+            if info.fromArea == Card.PlayerHand and Fk:getCardById(info.cardId).trueName == name then
+              return true
+            end
+          end
+        end
+        if move.to == player.id and move.toArea == Player.Hand then
+          for _, info in ipairs(move.moveInfo) do
+            if Fk:getCardById(info.cardId).trueName == name then
+              return true
+            end
+          end
+        end
+      end
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    player:drawCards(1, self.name)
+  end,
+}
+lianju:addRelatedSkill(lianju_delay)
+liwan:addSkill(lianju)
+liwan:addSkill(silv)
+
+Fk:loadTranslationTable{
+  ["ol__liwan"] = "李婉",
+  ["lianju"] = "联句",
+  [":lianju"] = "结束阶段，你可以令一名其他角色获得弃牌堆中你本回合最后使用的牌并记录之，"..
+  "然后其下个结束阶段可以令你获得弃牌堆中其此回合最后使用的牌，若两者牌名相同，你失去1点体力。",
+  ["silv"] = "思闾",
+  [":silv"] = "锁定技，每回合限一次，当你获得或失去与〖联句〗最后记录牌同名的牌后，你摸一张牌。",
+
+  ["#lianju-choose"] = "你可以发动 联句，令一名其他角色获得你使用过的 %arg",
+  ["@lianju"] = "联句",
+  ["@@lianju"] = "联句",
+  ["#lianju_delay"] = "联句",
+  ["#lianju-supply"] = "联句：你可以令 %src 获得你使用过的 %arg",
+
+  ["$lianju1"] = "",
+  ["$lianju2"] = "",
+  ["$silv1"] = "",
+  ["$silv2"] = "",
+  ["~ol__liwan"] = "",
 }
 
 return extension
