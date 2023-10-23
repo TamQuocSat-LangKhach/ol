@@ -464,17 +464,16 @@ local chexuan_ts = fk.CreateTriggerSkill{
     return true
   end,
   on_refresh = function(self, event, target, player, data)
-    local hold_areas = {Card.PlayerEquip, Card.Processing, Card.Void}
     local cart_names = {"caltrop_cart", "grain_cart", "wheel_cart"}
     local mirror_moves = {}
     local ids = {}
     for _, move in ipairs(data) do
-      if not table.contains(hold_areas, move.toArea) then
+      if move.from == player.id and move.toArea ~= Card.Void then
         local move_info = {}
         local mirror_info = {}
         for _, info in ipairs(move.moveInfo) do
           local id = info.cardId
-          if table.contains(cart_names, Fk:getCardById(id).name) then
+          if table.contains(cart_names, Fk:getCardById(id).name) and info.fromArea == Card.PlayerEquip then
             table.insert(mirror_info, info)
             table.insert(ids, id)
           else
