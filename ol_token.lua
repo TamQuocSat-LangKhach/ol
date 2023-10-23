@@ -428,5 +428,120 @@ Fk:loadTranslationTable{
   ["qin_seal_viewas"] = "传国玉玺",
   ["#qin_seal-choice"] = "传国玉玺：你可以视为使用一种锦囊",
 }
-
+local grain_cart_skill = fk.CreateTriggerSkill{
+  name = "#grain_cart_skill",
+  attached_equip = "grain_cart",
+  mute = true,
+  events = {fk.TurnEnd},
+  can_trigger = function(self, event, target, player, data)
+    return player:hasSkill(self.name) and table.find(player:getEquipments(Card.SubtypeTreasure), function(cid) return Fk:getCardById(cid).name == "grain_cart" end) and target:getHandcardNum() < target.hp
+  end,
+  on_cost = function(self, event, target, player, data)
+    return player.room:askForSkillInvoke(player, self.name, nil, "#grain_cart-invoke")
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    player:drawCards(2, self.name)
+    local throw = table.filter(player:getEquipments(Card.SubtypeTreasure), function(cid) return Fk:getCardById(cid).name == "grain_cart" end)
+    if #throw > 0 then
+      room:throwCard(throw, self.name, player, player)
+    end
+  end,
+}
+Fk:addSkill(grain_cart_skill)
+local grain_cart = fk.CreateTreasure{
+  name = "&grain_cart",
+  suit = Card.Heart,
+  number = 5,
+  equip_skill = grain_cart_skill,
+}
+extension:addCard(grain_cart)
+Fk:loadTranslationTable{
+  ["grain_cart"] = "四乘粮舆",
+  ["#grain_cart_skill"] = "四乘粮舆",
+  [":grain_cart"] = "装备牌·宝物<br/><b>宝物技能</b>：一名角色的回合结束时，若你的手牌数小于体力值，你可以摸两张牌，然后弃置此牌。",
+  ["#grain_cart-invoke"] = "四乘粮舆：你可以摸两张牌，然后弃置此牌",
+}
+local caltrop_cart_skill = fk.CreateTriggerSkill{
+  name = "#caltrop_cart_skill",
+  attached_equip = "caltrop_cart",
+  mute = true,
+  events = {fk.TurnEnd},
+  can_trigger = function(self, event, target, player, data)
+    if player:hasSkill(self.name) and table.find(player:getEquipments(Card.SubtypeTreasure), function(cid) return Fk:getCardById(cid).name == "caltrop_cart" end) and not target:isNude() and target ~= player then
+      local damage_events = player.room.logic:getEventsOfScope(GameEvent.Damage, 1, function(e)
+        local damage = e.data[1]
+        return damage and damage.from and damage.from == target
+      end, Player.HistoryTurn)
+      return #damage_events == 0
+    end
+  end,
+  on_cost = function(self, event, target, player, data)
+    return player.room:askForSkillInvoke(player, self.name, nil, "#caltrop_cart-invoke:"..target.id)
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    room:askForDiscard(target, 2, 2, true, self.name, false)
+    local throw = table.filter(player:getEquipments(Card.SubtypeTreasure), function(cid) return Fk:getCardById(cid).name == "caltrop_cart" end)
+    if #throw > 0 then
+      room:throwCard(throw, self.name, player, player)
+    end
+  end,
+}
+Fk:addSkill(caltrop_cart_skill)
+local caltrop_cart = fk.CreateTreasure{
+  name = "&caltrop_cart",
+  suit = Card.Club,
+  number = 5,
+  equip_skill = caltrop_cart_skill,
+}
+extension:addCard(caltrop_cart)
+Fk:loadTranslationTable{
+  ["caltrop_cart"] = "铁蒺玄舆",
+  ["#caltrop_cart_skill"] = "铁蒺玄舆",
+  [":caltrop_cart"] = "装备牌·宝物<br/><b>宝物技能</b>：其他角色的回合结束时，若本回合未造成过伤害，你可以令其弃置两张牌，然后弃置此牌。",
+  ["#caltrop_cart-invoke"] = "铁蒺玄舆：你可以令%src弃置两张牌，然后弃置此牌",
+}
+local wheel_cart_skill = fk.CreateTriggerSkill{
+  name = "#wheel_cart_skill",
+  attached_equip = "wheel_cart",
+  mute = true,
+  events = {fk.TurnEnd},
+  can_trigger = function(self, event, target, player, data)
+    if player:hasSkill(self.name) and table.find(player:getEquipments(Card.SubtypeTreasure), function(cid) return Fk:getCardById(cid).name == "wheel_cart" end) and not target:isNude() and target ~= player then
+      local use_events = player.room.logic:getEventsOfScope(GameEvent.UseCard, 1, function(e)
+        local use = e.data[1]
+        return use and use.from == target.id and use.card.type ~= Card.TypeBasic
+      end, Player.HistoryTurn)
+      return #use_events > 0
+    end
+  end,
+  on_cost = function(self, event, target, player, data)
+    return player.room:askForSkillInvoke(player, self.name, nil, "#wheel_cart-invoke:"..target.id)
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local card = room:askForCard(target, 1, 1, true, self.name, false, ".", "#wheel_cart-give:"..player.id)
+    room:obtainCard(player, card[1], false, fk.ReasonGive)
+    local throw = table.filter(player:getEquipments(Card.SubtypeTreasure), function(cid) return Fk:getCardById(cid).name == "wheel_cart" end)
+    if #throw > 0 then
+      room:throwCard(throw, self.name, player, player)
+    end
+  end,
+}
+Fk:addSkill(wheel_cart_skill)
+local wheel_cart = fk.CreateTreasure{
+  name = "&wheel_cart",
+  suit = Card.Spade,
+  number = 5,
+  equip_skill = wheel_cart_skill,
+}
+extension:addCard(wheel_cart)
+Fk:loadTranslationTable{
+  ["wheel_cart"] = "飞轮战舆",
+  ["#wheel_cart_skill"] = "飞轮战舆",
+  [":wheel_cart"] = "装备牌·宝物<br/><b>宝物技能</b>：其他角色的回合结束时，若本回合使用过非基本牌，你可以令其交给你一张牌，然后弃置此牌。",
+  ["#wheel_cart-invoke"] = "飞轮战舆：你可以令%src交给你一张牌，然后弃置此牌",
+  ["#wheel_cart-give"] = "飞轮战舆：你须交给%src一张牌",
+}
 return extension
