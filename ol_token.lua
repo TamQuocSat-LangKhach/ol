@@ -428,13 +428,15 @@ Fk:loadTranslationTable{
   ["qin_seal_viewas"] = "传国玉玺",
   ["#qin_seal-choice"] = "传国玉玺：你可以视为使用一种锦囊",
 }
+-- 彻里吉专属
 local grain_cart_skill = fk.CreateTriggerSkill{
   name = "#grain_cart_skill",
   attached_equip = "grain_cart",
   mute = true,
   events = {fk.TurnEnd},
   can_trigger = function(self, event, target, player, data)
-    return player:hasSkill(self.name) and table.find(player:getEquipments(Card.SubtypeTreasure), function(cid) return Fk:getCardById(cid).name == "grain_cart" end) and target:getHandcardNum() < target.hp
+    if player:usedSkillTimes("#grain_cart_skill", Player.HistoryTurn) > 0 or player:usedSkillTimes("#caltrop_cart_skill", Player.HistoryTurn) > 0 or player:usedSkillTimes("#wheel_cart_skill", Player.HistoryTurn) > 0 then return false end
+    return player:hasSkill(self.name) and table.find(player:getEquipments(Card.SubtypeTreasure), function(cid) return Fk:getCardById(cid).name == "grain_cart" end) and player:getHandcardNum() < player.hp
   end,
   on_cost = function(self, event, target, player, data)
     return player.room:askForSkillInvoke(player, self.name, nil, "#grain_cart-invoke")
@@ -468,6 +470,7 @@ local caltrop_cart_skill = fk.CreateTriggerSkill{
   mute = true,
   events = {fk.TurnEnd},
   can_trigger = function(self, event, target, player, data)
+    if player:usedSkillTimes("#grain_cart_skill", Player.HistoryTurn) > 0 or player:usedSkillTimes("#caltrop_cart_skill", Player.HistoryTurn) > 0 or player:usedSkillTimes("#wheel_cart_skill", Player.HistoryTurn) > 0 then return false end
     if player:hasSkill(self.name) and table.find(player:getEquipments(Card.SubtypeTreasure), function(cid) return Fk:getCardById(cid).name == "caltrop_cart" end) and not target:isNude() and target ~= player then
       local damage_events = player.room.logic:getEventsOfScope(GameEvent.Damage, 1, function(e)
         local damage = e.data[1]
@@ -508,6 +511,7 @@ local wheel_cart_skill = fk.CreateTriggerSkill{
   mute = true,
   events = {fk.TurnEnd},
   can_trigger = function(self, event, target, player, data)
+    if player:usedSkillTimes("#grain_cart_skill", Player.HistoryTurn) > 0 or player:usedSkillTimes("#caltrop_cart_skill", Player.HistoryTurn) > 0 or player:usedSkillTimes("#wheel_cart_skill", Player.HistoryTurn) > 0 then return false end
     if player:hasSkill(self.name) and table.find(player:getEquipments(Card.SubtypeTreasure), function(cid) return Fk:getCardById(cid).name == "wheel_cart" end) and not target:isNude() and target ~= player then
       local use_events = player.room.logic:getEventsOfScope(GameEvent.UseCard, 1, function(e)
         local use = e.data[1]
