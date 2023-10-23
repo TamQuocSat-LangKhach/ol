@@ -382,13 +382,138 @@ Fk:loadTranslationTable{
   ["~simazhou"] = "恩赐重物，病身难消受……",
 }
 
+
+local cheliji = General(extension, "cheliji", "qun", 4)
+local chexuan = fk.CreateActiveSkill{
+  name = "chexuan",
+  card_num = 1,
+  card_filter = function(self, to_select, selected)
+    return #selected == 0 and Fk:getCardById(to_select).color == Card.Black
+  end,
+  target_num = 0,
+  can_use = function(self, player)
+    return not player:isNude() and #player:getEquipments(Card.SubtypeTreasure) == 0
+  end,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    room:throwCard(effect.cards, self.name, player, player)
+    local all_choices = {"wheel_cart","caltrop_cart","grain_cart"}
+    local names,ids = {},{}
+    for _, id in ipairs(Fk:getAllCardIds()) do
+      local c = Fk:getCardById(id)
+      if room:getCardArea(id) == Card.Void then
+        local name = c.name
+        if table.contains(all_choices, name) and not table.contains(names, name) then
+          table.insert(names, name)
+          table.insert(ids, id)
+        end
+      end
+    end
+    if #names > 0 then
+      local choice = room:askForChoice(player, names, self.name, "#chexuan-choice", true, all_choices)
+      for i, n in ipairs(names) do
+        if n == choice then
+          room:moveCardTo(Fk:getCardById(ids[i]), Card.PlayerEquip, player, fk.ReasonPut, self.name)
+        end
+      end
+    end
+  end,
+}
+local chexuan_ts = fk.CreateTriggerSkill{
+  name = "#chexuan_ts",
+  events = {fk.AfterCardsMove},
+  can_trigger = function(self, event, target, player, data)
+    if not player:hasSkill(self.name) then return end
+    for _, move in ipairs(data) do
+      if move.from == player.id and move.moveReason ~= fk.ReasonUse then
+        for _, info in ipairs(move.moveInfo) do
+          if info.fromArea == Card.PlayerEquip and Fk:getCardById(info.cardId).sub_type == Card.SubtypeTreasure then
+            return true
+          end
+        end
+      end
+    end
+  end,
+  on_cost = function(self, event, target, player, data)
+    return player.room:askForSkillInvoke(player, self.name, nil, "#chexuan-invoke")
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local judge = {  who = player, reason = self.name, pattern = ".|.|spade,club" }
+    room:judge(judge)
+    if judge.card.color == Card.Black then
+      local ids = {}
+      for _, id in ipairs(Fk:getAllCardIds()) do
+        local c = Fk:getCardById(id)
+        if room:getCardArea(id) == Card.Void then
+          if c.name == "wheel_cart" or c.name == "caltrop_cart" or c.name == "grain_cart" then
+            table.insert(ids, id)
+          end
+        end
+      end
+      if #ids > 0 then
+        local put = table.random(ids)
+        room:moveCardTo(Fk:getCardById(put), Card.PlayerEquip, player, fk.ReasonPut, self.name)
+      end
+    end
+  end,
+
+  refresh_events = {fk.BeforeCardsMove},
+  can_refresh = function(self, event, target, player, data)
+    return true
+  end,
+  on_refresh = function(self, event, target, player, data)
+    local id = 0
+    for i = #data, 1, -1 do
+      local move = data[i]
+      if move.toArea ~= Card.Void then
+        for j = #move.moveInfo, 1, -1 do
+          local info = move.moveInfo[j]
+          if info.fromArea == Card.PlayerEquip then
+            local name = Fk:getCardById(info.cardId, true).name
+            if name == "wheel_cart" or name == "caltrop_cart" or name == "grain_cart" then
+              id = info.cardId
+              table.removeOne(move.moveInfo, info)
+              break
+            end
+          end
+        end
+      end
+    end
+    if id ~= 0 then
+      local room = player.room
+      room:sendLog{
+        type = "#destructDerivedCard",
+        arg = Fk:getCardById(id, true):toLogString(),
+      }
+      room:moveCardTo(Fk:getCardById(id, true), Card.Void, nil, fk.ReasonJustMove, "", "", true)
+    end
+  end,
+}
+chexuan:addRelatedSkill(chexuan_ts)
+cheliji:addSkill(chexuan)
+local qiangshou = fk.CreateDistanceSkill{
+  name = "qiangshou",
+  frequency = Skill.Compulsory,
+  correct_func = function(self, from, to)
+    if from:hasSkill(self.name) and #from:getEquipments(Card.SubtypeTreasure) > 0 then
+      return -1
+    end
+  end,
+}
+cheliji:addSkill(qiangshou)
 Fk:loadTranslationTable{
   ["cheliji"] = "彻里吉",
   ["chexuan"] = "车悬",
-  [":chexuan"] = "出牌阶段，若你的装备区里没有宝物牌，你可以弃置一张黑色牌，选择一张“舆”置入你的装备区。当你不因使用装备牌失去装备区里的宝物牌后，"..
-  "你可以判定，若结果为黑色，将一张随机的“舆”置入你的装备区。",
+  [":chexuan"] = "出牌阶段，若你的装备区里没有宝物牌，你可以弃置一张黑色牌，选择一张“舆”置入你的装备区（此牌离开装备区时销毁）。当你不因使用装备牌失去装备区里的宝物牌后，你可以判定，若结果为黑色，将一张随机的“舆”置入你的装备区。",
+  ["#chexuan_ts"] = "车悬",
+  ["#chexuan-choice"] = "车悬：选择一种“舆”置入你的装备区",
+  ["#chexuan-invoke"] = "车悬：你可以判定，若结果为黑色，将一张随机的“舆”置入你的装备区",
   ["qiangshou"] = "羌首",
   [":qiangshou"] = "锁定技，若你的装备区里有宝物牌，你至其他角色的距离-1。",
+  ["$chexuan1"] = "兵车疾动，以悬敌首！",
+  ["$chexuan2"] = "层层布设，以多胜强！",
+  ["~cheliji"] = "元气已伤，不如归去。",
 }
 
 local huaxin = General(extension, "ol__huaxin", "wei", 3)
