@@ -989,7 +989,7 @@ local ol__tongdu_trigger = fk.CreateTriggerSkill{
     room:moveCards({
       ids = {id},
       from = player.id,
-      fromArea = Player.Hand,
+      fromArea = Card.PlayerHand,
       toArea = Card.DrawPile,
       moveReason = fk.ReasonJustMove,
       skillName = "ol__tongdu",
@@ -1077,7 +1077,7 @@ local ol__zhubi_trigger = fk.CreateTriggerSkill{
     local move1 = {
       ids = cards1,
       from = target.id,
-      fromArea = Player.Hand,
+      fromArea = Card.PlayerHand,
       toArea = Card.DrawPile,
       moveReason = fk.ReasonJustMove,
       skillName = "ol__zhubi",
@@ -1086,7 +1086,7 @@ local ol__zhubi_trigger = fk.CreateTriggerSkill{
     local move2 = {
       ids = cards2,
       to = target.id,
-      toArea = Player.Hand,
+      toArea = Card.PlayerHand,
       moveReason = fk.ReasonJustMove,
       skillName = "ol__zhubi",
     }
@@ -2516,7 +2516,7 @@ local tianhou = fk.CreateTriggerSkill{
       local move2 = {
         ids = cards2,
         to = player.id,
-        toArea = Player.Hand,
+        toArea = Card.PlayerHand,
         moveReason = fk.ReasonJustMove,
         skillName = self.name,
       }
@@ -3460,7 +3460,7 @@ local niluan = fk.CreateTriggerSkill{
     end
   end,
   on_use = function(self, event, target, player, data)
-    player.room:useVirtualCard("slash", self.cost_data, target, player, self.name)
+    player.room:useVirtualCard("slash", self.cost_data, player, target, self.name)
   end,
 }
 local xiaoxi = fk.CreateTriggerSkill{
