@@ -3887,5 +3887,150 @@ Fk:loadTranslationTable{
   ["$silv2"] = "",
   ["~ol__liwan"] = "",
 }
-
+local zhangyan = General(extension, "zhangyan", "qun", 4)
+local suji = fk.CreateTriggerSkill{
+  name = "suji",
+  events = {fk.EventPhaseStart},
+  anim_type = "offensive",
+  can_trigger = function(self, event, target, player, data)
+    return player:hasSkill(self.name) and target.phase == Player.Play and target:isWounded()
+  end,
+  on_cost = function (self, event, target, player, data)
+    local success, dat = player.room:askForUseViewAsSkill(player, "suji_viewas", "#suji:"..target.id, true)
+    if success then
+      self.cost_data = dat
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local dat = self.cost_data
+    local card = Fk.skills["suji_viewas"]:viewAs(dat.cards)
+    local use = {from = player.id, tos = table.map(dat.targets, function(p) return {p} end), card = card}
+    room:useCard(use)
+    if use.damageDealt and use.damageDealt[target.id] and not player.dead and not target:isNude() then
+      local id = room:askForCardChosen(player, target, "he", self.name)
+      room:obtainCard(player, id, false, fk.ReasonPrey)
+    end
+  end,
+}
+zhangyan:addSkill(suji)
+local suji_viewas = fk.CreateViewAsSkill{
+  name = "suji_viewas",
+  main_skill = suji,
+  card_num = 1,
+  card_filter = function(self, to_select, selected)
+    return #selected == 0 and Fk:getCardById(to_select).color == Card.Black
+  end,
+  view_as = function(self, cards)
+    if #cards ~= 1 then return end
+    local card = Fk:cloneCard("slash")
+    card:addSubcard(cards[1])
+    card.skillName = "suji"
+    return card
+  end,
+}
+Fk:addSkill(suji_viewas)
+local langdao = fk.CreateTriggerSkill{
+  name = "langdao",
+  anim_type = "offensive",
+  events = {fk.TargetSpecifying},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self.name) and data.card.trueName == "slash" and data.tos and #AimGroup:getAllTargets(data.tos) == 1 and not (type(player:getMark("langdao_removed")) == "table" and #player:getMark("langdao_removed") == 3)
+  end,
+  on_cost = function(self, event, target, player, data)
+    return player.room:askForSkillInvoke(player, self.name, nil, "#langdao-invoke:"..data.to)
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local choices = {}
+    local mark = type(player:getMark("langdao_removed")) == "table" and player:getMark("langdao_removed") or {}
+    for _, n in ipairs({"AddDamage1","AddTarget1","disresponsive"}) do
+      if not table.contains(mark, n) then
+        table.insert(choices, n)
+      end
+    end
+    if #choices == 0 then return end
+    local content = {}
+    for _, p in ipairs({player,room:getPlayerById(data.to)}) do
+      local choice = room:askForChoice(p, choices, self.name)
+      table.insert(content, choice)
+    end
+    data.extra_data = data.extra_data or {}
+    data.extra_data.langdao = content
+    local target_num,damage_num = 0,0
+    for _, c in ipairs(content) do
+      if c == "AddDamage1" then
+        damage_num = damage_num + 1
+      elseif c == "AddTarget1" then
+        target_num = target_num + 1
+      else
+        data.disresponsiveList = table.map(room.alive_players, Util.IdMapper)
+      end
+    end
+    if target_num > 0 then
+      local targets = {}
+      local current_targets = TargetGroup:getRealTargets(data.tos)
+      for _, p in ipairs(room.alive_players) do
+        if not table.contains(current_targets, p.id) and not player:isProhibited(p, data.card) then
+          if data.card.skill:modTargetFilter(p.id, {}, player.id, data.card, true) then
+            table.insert(targets, p.id)
+          end
+        end
+      end
+      if #targets > 0 then
+        local tos = room:askForChoosePlayers(player, targets, 1, target_num, "#langdao-AddTarget:::"..target_num, self.name, true)
+        if #tos > 0 then
+          TargetGroup:pushTargets(data.targetGroup, tos)
+          room:sendLog{ type = "#AddTarget", from = player.id, arg = self.name, arg2 = data.card:toLogString(), to = tos  }
+        end
+      end
+    end
+    data.additionalDamage = (data.additionalDamage or 0) + damage_num
+    local e = room.logic:getCurrentEvent():findParent(GameEvent.UseCard)
+    if e then
+      local _data = e.data[1]
+      _data.additionalDamage = (_data.additionalDamage or 0) + damage_num
+    end
+  end,
+  refresh_events = {fk.CardUseFinished},
+  can_refresh = function (self, event, target, player, data)
+    if player == target and data.extra_data and data.extra_data.langdao then
+      local _event = player.room.logic:getEventsOfScope(GameEvent.Death, 1, function (e)
+        local death = e.data[1]
+        return death and death.damage and death.damage.card == data.card
+      end, Player.HistoryPhase)
+      return #_event == 0
+    end
+  end,
+  on_refresh = function (self, event, target, player, data)
+    local room = player.room
+    local mark = type(player:getMark("langdao_removed")) == "table" and player:getMark("langdao_removed") or {}
+    for _, c in ipairs(data.extra_data.langdao) do
+      table.insertIfNeed(mark, c)
+    end
+    room:setPlayerMark(player, "langdao_removed", mark)
+  end,
+}
+zhangyan:addSkill(langdao)
+Fk:loadTranslationTable{
+  ["zhangyan"] = "张燕",
+  ["suji"] = "肃疾",
+  [":suji"] = "已受伤角色的出牌阶段开始时，你可以将一张黑色牌当【杀】使用，若其受到此【杀】伤害，你获得其一张牌。",
+  ["suji_viewas"] = "肃疾",
+  ["#suji"] = "肃疾:你可以将一张黑色牌当【杀】使用，若%src受到此【杀】伤害，你获得其一张牌",
+  ["langdao"] = "狼蹈",
+  [":langdao"] = "当你使用【杀】指定唯一目标时，你可以与其同时选择一项，令此【杀】：伤害值+1/目标数+1/不能被响应。若未杀死角色，你移除此次被选择的项。",
+  ["#langdao-invoke"] = "是否对%src发动“狼蹈”",
+  ["#langdao-AddTarget"] = "狼蹈：你可为此【杀】增加至多%arg个目标",
+  ["AddDamage1"] = "伤害值+1",
+  ["AddTarget1"] = "目标数+1",
+  ["disresponsive"] = "无法响应",
+  ["#AddTarget"] = "由于 %arg 的效果，%from 使用的 %arg2 增加了目标 %to",
+  ["$suji1"] = "飞燕如风，非快不得破。",
+  ["$suji2"] = "载疾风之势，摧万仞之城。",
+  ["$langdao1"] = "虎踞黑山，望天下百城。",
+  ["$langdao2"] = "狼顾四野，视幽冀为饵。",
+  ["~zhangyan"] = "草莽之辈，难登大雅之堂……",
+}
 return extension
