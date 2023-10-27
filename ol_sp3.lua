@@ -822,6 +822,10 @@ Fk:loadTranslationTable{
   ["huiyun3-round"] = "摸一张牌",
   ["#huiyun1-card"] = "晖云：你可以使用展示牌，然后重铸所有手牌",
   ["#huiyun2-card"] = "晖云：你可以使用一张手牌，然后重铸展示牌",
+
+  ["$huiyun1"] = "舍身饲离火，不负万古名。",
+  ["$huiyun2"] = "义士今犹在，青笺气干云。",
+  ["~ol__huban"] = "无耻鼠辈，吾耻与为伍！",
 }
 
 local furong = General(extension, "ol__furong", "shu", 4)

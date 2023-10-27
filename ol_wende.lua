@@ -9,7 +9,7 @@ Fk:loadTranslationTable{
 Fk:loadTranslationTable{
   ["ol__simayi"] = "司马懿",
   ["buchen"] = "不臣",
-  [":buchen"] = "隐匿技，你于其他角色的回合登场后，你可获得其一张牌。",
+  [":buchen"] = "<font color='red'>隐匿技（暂时无法生效）</font>，你于其他角色的回合登场后，你可获得其一张牌。",
   ["yingshi"] = "鹰视",
   [":yingshi"] = "锁定技，出牌阶段内，牌堆顶的X张牌对你可见（X为你的体力上限）。",
   ["xiongzhi"] = "雄志",
@@ -20,6 +20,10 @@ Fk:loadTranslationTable{
 }
 
 local zhangchunhua = General(extension, "ol__zhangchunhua", "jin", 3, 3, General.Female)
+local xuanmu = fk.CreateTriggerSkill{
+  name = "xuanmu",
+  can_trigger = Util.FalseFunc,
+}
 local ol__huishi = fk.CreateTriggerSkill{
   name = "ol__huishi",
   anim_type = "drawcard",
@@ -91,12 +95,13 @@ local qingleng = fk.CreateTriggerSkill{
     end
   end,
 }
+zhangchunhua:addSkill(xuanmu)
 zhangchunhua:addSkill(ol__huishi)
 zhangchunhua:addSkill(qingleng)
 Fk:loadTranslationTable{
   ["ol__zhangchunhua"] = "张春华",
   ["xuanmu"] = "宣穆",
-  [":xuanmu"] = "锁定技，隐匿技，你于其他角色的回合登场时，防止你受到的伤害直到回合结束。",
+  [":xuanmu"] = "锁定技，<font color='red'>隐匿技（暂时无法生效）</font>，你于其他角色的回合登场时，防止你受到的伤害直到回合结束。",
   ["ol__huishi"] = "慧识",
   [":ol__huishi"] = "摸牌阶段，你可以放弃摸牌，改为观看牌堆顶的X张牌，获得其中的一半（向下取整），然后将其余牌置入牌堆底。（X为牌堆数量的个位数）",
   ["qingleng"] = "清冷",
@@ -805,6 +810,10 @@ Fk:loadTranslationTable{
 }
 
 local xiahouhui = General(extension, "xiahouhui", "jin", 3, 3, General.Female)
+local baoqie = fk.CreateTriggerSkill{
+  name = "baoqie",
+  can_trigger = Util.FalseFunc,
+}
 local yishi = fk.CreateTriggerSkill{
   name = "yishi",
   anim_type = "support",
@@ -889,12 +898,13 @@ local shidu = fk.CreateActiveSkill{
     end
   end,
 }
+xiahouhui:addSkill(baoqie)
 xiahouhui:addSkill(yishi)
 xiahouhui:addSkill(shidu)
 Fk:loadTranslationTable{
   ["xiahouhui"] = "夏侯徽",
   ["baoqie"] = "宝箧",
-  [":baoqie"] = "隐匿技，锁定技，当你登场后，你从牌堆或弃牌堆获得一张宝物牌，然后你可以使用之。",
+  [":baoqie"] = "<font color='red'>隐匿技（暂时无法生效）</font>，锁定技，当你登场后，你从牌堆或弃牌堆获得一张宝物牌，然后你可以使用之。",
   ["yishi"] = "宜室",
   [":yishi"] = "每回合限一次，当一名其他角色于其出牌阶段弃置手牌后，你可以令其获得其中的一张牌，然后你获得其余的牌。",
   ["shidu"] = "识度",
@@ -912,6 +922,10 @@ Fk:loadTranslationTable{
 }
 
 local simashi = General(extension, "ol__simashi", "jin", 3, 4)
+local taoyin = fk.CreateTriggerSkill{
+  name = "taoyin",
+  can_trigger = Util.FalseFunc,
+}
 local yimie = fk.CreateTriggerSkill{
   name = "yimie",
   anim_type = "offensive",
@@ -1001,12 +1015,13 @@ local tairan = fk.CreateTriggerSkill{
     end
   end,
 }
+simashi:addSkill(taoyin)
 simashi:addSkill(yimie)
 simashi:addSkill(tairan)
 Fk:loadTranslationTable{
   ["ol__simashi"] = "司马师",
   ["taoyin"] = "韬隐",
-  [":taoyin"] = "隐匿技，你于其他角色的回合登场后，你可以令其本回合的手牌上限-2。",
+  [":taoyin"] = "<font color='red'>隐匿技（暂时无法生效）</font>，你于其他角色的回合登场后，你可以令其本回合的手牌上限-2。",
   ["yimie"] = "夷灭",
   [":yimie"] = "每回合限一次，当你对一名其他角色造成伤害时，你可失去1点体力，令此伤害值+X（X为其体力值减去伤害值）。伤害结算后，其回复X点体力。",
   ["tairan"] = "泰然",
@@ -1027,6 +1042,10 @@ Fk:loadTranslationTable{
 }
 
 local yanghuiyu = General(extension, "ol__yanghuiyu", "jin", 3, 3, General.Female)
+local huirong = fk.CreateTriggerSkill{
+  name = "huirong",
+  can_trigger = Util.FalseFunc,
+}
 local ciwei = fk.CreateTriggerSkill{
   name = "ciwei",
   anim_type = "control",
@@ -1083,12 +1102,13 @@ local caiyuan = fk.CreateTriggerSkill{
     player.room:setPlayerMark(player, self.name, 0)
   end,
 }
+yanghuiyu:addSkill(huirong)
 yanghuiyu:addSkill(ciwei)
 yanghuiyu:addSkill(caiyuan)
 Fk:loadTranslationTable{
   ["ol__yanghuiyu"] = "羊徽瑜",
   ["huirong"] = "慧容",
-  [":huirong"] = "隐匿技，锁定技，你登场时，令一名角色将手牌摸或弃至体力值（至多摸至五张）。",
+  [":huirong"] = "<font color='red'>隐匿技（暂时无法生效）</font>，锁定技，你登场时，令一名角色将手牌摸或弃至体力值（至多摸至五张）。",
   ["ciwei"] = "慈威",
   [":ciwei"] = "其他角色于其回合内使用第二张牌时，若此牌为基本牌或普通锦囊牌，你可弃置一张牌令此牌无效或取消所有目标。",
   ["caiyuan"] = "才媛",
@@ -1114,7 +1134,7 @@ Fk:loadTranslationTable{
 Fk:loadTranslationTable{
   ["ol__simazhao"] = "司马昭",
   ["tuishi"] = "推弑",
-  [":shiren"] = "隐匿技，若你于其他角色的回合登场，此回合结束时，你可令其对其攻击范围内你选择的一名角色使用【杀】，若其未使用【杀】，你对其造成1点伤害。",
+  [":shiren"] = "<font color='red'>隐匿技（暂时无法生效）</font>，若你于其他角色的回合登场，此回合结束时，你可令其对其攻击范围内你选择的一名角色使用【杀】，若其未使用【杀】，你对其造成1点伤害。",
   ["choufa"] = "筹伐",
   [":choufa"] = "出牌阶段限一次，你可展示一名其他角色的一张手牌，其手牌中与此牌不同类型的牌均视为【杀】直到其回合结束。",
   ["zhaoran"] = "昭然",
@@ -1125,6 +1145,10 @@ Fk:loadTranslationTable{
 }
 
 local xuangongzhu = General(extension, "xuangongzhu", "jin", 3, 3, General.Female)
+local gaoling = fk.CreateTriggerSkill{
+  name = "gaoling",
+  can_trigger = Util.FalseFunc,
+}
 local qimei = fk.CreateTriggerSkill{
   name = "qimei",
   anim_type = "support",
@@ -1270,12 +1294,13 @@ local zhuijix_trigger = fk.CreateTriggerSkill{
 }
 qimei:addRelatedSkill(qimei_trigger)
 zhuijix:addRelatedSkill(zhuijix_trigger)
+xuangongzhu:addSkill(gaoling)
 xuangongzhu:addSkill(qimei)
 xuangongzhu:addSkill(zhuijix)
 Fk:loadTranslationTable{
   ["xuangongzhu"] = "宣公主",
   ["gaoling"] = "高陵",
-  [":gaoling"] = "隐匿技，当你于其他角色的回合内登场时，你可以令一名角色回复1点体力。",
+  [":gaoling"] = "<font color='red'>隐匿技（暂时无法生效）</font>，当你于其他角色的回合内登场时，你可以令一名角色回复1点体力。",
   ["qimei"] = "齐眉",
   [":qimei"] = "准备阶段，你可以选择一名其他角色，直到你的下个回合开始（每回合每项限一次），当你或该角色的手牌数或体力值变化后，若双方的此数值相等，"..
   "另一方摸一张牌。",
@@ -1296,6 +1321,10 @@ Fk:loadTranslationTable{
 }
 
 local wangyuanji = General(extension, "ol__wangyuanji", "jin", 3, 3, General.Female)
+local shiren = fk.CreateTriggerSkill{
+  name = "shiren",
+  can_trigger = Util.FalseFunc,
+}
 local yanxi = fk.CreateActiveSkill{
   name = "yanxi",
   anim_type = "drawcard",
@@ -1367,11 +1396,12 @@ local yanxi_maxcards = fk.CreateMaxCardsSkill{
 }
 yanxi:addRelatedSkill(yanxi_refresh)
 yanxi:addRelatedSkill(yanxi_maxcards)
+wangyuanji:addSkill(shiren)
 wangyuanji:addSkill(yanxi)
 Fk:loadTranslationTable{
   ["ol__wangyuanji"] = "王元姬",
   ["shiren"] = "识人",
-  [":shiren"] = "隐匿技，你于其他角色的回合登场后，若当前回合角色有手牌，你可以对其发动〖宴戏〗。",
+  [":shiren"] = "<font color='red'>隐匿技（暂时无法生效）</font>，你于其他角色的回合登场后，若当前回合角色有手牌，你可以对其发动〖宴戏〗。",
   ["yanxi"] = "宴戏",
   [":yanxi"] = "出牌阶段限一次，你将一名其他角色的随机一张手牌与牌堆顶的两张牌混合后展示，你猜测哪张牌来自其手牌。若猜对，你获得三张牌；"..
   "若猜错，你获得选中的牌。你以此法获得的牌本回合不计入手牌上限。",
