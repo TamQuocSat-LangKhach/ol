@@ -627,10 +627,25 @@ local function doGuanxu(player, target, skill_name)
     { "$Hand", cids }
   }, nil, false)
   if #cids ~= 3 then
-    cids = ids
+    cids = table.slice(ids, 1, 4)
   end
   room:throwCard(cids, skill_name, target, player)
 end
+Fk:addPoxiMethod{
+  name = "guanxu_discard",
+  card_filter = function(to_select, selected, data)
+    if #selected > 2 then return false end
+    local suit = Fk:getCardById(to_select).suit
+    if suit == Card.NoSuit then return false end
+    return #selected == 0 or suit == Fk:getCardById(selected[1]).suit
+  end,
+  feasible = function(selected)
+    return #selected == 3
+  end,
+  prompt = function ()
+    return "观虚：选择三张花色相同的卡牌弃置"
+  end
+}
 local guanxu = fk.CreateActiveSkill{
   name = "guanxu",
   anim_type = "control",
@@ -647,21 +662,6 @@ local guanxu = fk.CreateActiveSkill{
   on_use = function(self, room, effect)
     doGuanxu(room:getPlayerById(effect.from), room:getPlayerById(effect.tos[1]), self.name)
   end,
-}
-Fk:addPoxiMethod{
-  name = "guanxu_discard",
-  card_filter = function(to_select, selected, data)
-    if #selected > 2 then return false end
-    local suit = Fk:getCardById(to_select).suit
-    if suit == Card.NoSuit then return false end
-    return #selected == 0 or suit == Fk:getCardById(selected[1]).suit
-  end,
-  feasible = function(selected)
-    return #selected == 3
-  end,
-  prompt = function ()
-    return "观虚：选择三张花色相同的卡牌弃置"
-  end
 }
 local yashi = fk.CreateTriggerSkill{
   name = "yashi",
