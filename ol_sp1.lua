@@ -1,11 +1,14 @@
 local extension = Package("ol_sp1")
 extension.extensionName = "ol"
 
+local U = require "packages/utility/utility"
+
 Fk:loadTranslationTable{
   ["ol_sp1"] = "OL专属1",
   ["ol"] = "OL",
 }
 
+--- DEPRECATED!! to be REMOVED
 ---@param player ServerPlayer @ 执行的玩家
 ---@param targets ServerPlayer[] @ 可选的目标范围
 ---@param num integer @ 可选的目标数
@@ -2873,51 +2876,64 @@ local lianpian = fk.CreateTriggerSkill{
   anim_type = "drawcard",
   events = {fk.TargetSpecified},
   can_trigger = function(self, event, target, player, data)
-    if target == player and player:hasSkill(self.name) and player.phase == Player.Play and data.firstTarget and
-      player:usedSkillTimes(self.name, Player.HistoryPhase) < 3 then
-      return self.cost_data and #self.cost_data > 0
+    if not player:hasSkill(self.name) or player ~= target or player.phase ~= Player.Play or player:usedSkillTimes(self.name) > 2 or not data.firstTarget or not data.tos then return false end
+    local room = player.room
+    local tos
+    local phase_event = room.logic:getCurrentEvent():findParent(GameEvent.Phase, false)
+    if phase_event == nil then return false end
+    local end_id = phase_event.id
+    if #U.getEventsByRule(room, GameEvent.UseCard, 2, function (e)
+      local use = e.data[1]
+      if use.from == player.id then
+        tos = use.tos
+        return true
+      end
+      return false
+    end, end_id) < 2 then return false end
+    if not tos then return false end
+    for _, v in ipairs(TargetGroup:getRealTargets(data.tos)) do
+      if table.contains(TargetGroup:getRealTargets(tos), v) then return true end
     end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local card = player:drawCards(1, self.name)
-    if (#self.cost_data > 1 or self.cost_data[1] ~= player.id) and 
-      room:getCardOwner(id) == player and room:getCardArea(id) == Card.PlayerHand then
-      local tos = room:askForChoosePlayers(player, self.cost_data, 1, 1, "#lianpian-choose", self.name, true)
-      if #tos > 0 and tos[1] ~= player.id then
-        room:obtainCard(tos[1], card[1], false, fk.ReasonGive)
-      end
-    end
-  end,
-
-  refresh_events = {fk.TargetSpecified},
-  can_refresh = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name) and player.phase == Player.Play and data.firstTarget
-  end,
-  on_refresh = function(self, event, target, player, data)
-    self.cost_data = {}
-    local mark = player:getMark("lianpian-phase")
-    if mark ~= 0 and #mark > 0 and #AimGroup:getAllTargets(data.tos) > 0 then
-      for _, id in ipairs(AimGroup:getAllTargets(data.tos)) do
-        if table.contains(mark, id) then
-          table.insert(self.cost_data, id)
+    local cids = player:drawCards(1, self.name)
+    cids = table.filter(cids, function(id) return room:getCardOwner(id) == player and room:getCardArea(id) == Card.PlayerHand end)
+    if #cids > 0 then
+      local last_targets
+      local phase_event = room.logic:getCurrentEvent():findParent(GameEvent.Phase, false)
+      if phase_event == nil then return false end
+      local end_id = phase_event.id
+      if #U.getEventsByRule(room, GameEvent.UseCard, 2, function (e)
+        local use = e.data[1]
+        if use.from == player.id then
+          last_targets = use.tos
+          return true
         end
+        return false
+      end, end_id) < 2 then return false end
+      if not last_targets then return false end
+      local targets = {}
+      for _, v in ipairs(TargetGroup:getRealTargets(data.tos)) do
+        if table.contains(TargetGroup:getRealTargets(last_targets), v) then table.insert(targets, v) end
+      end
+      table.removeOne(targets, player.id)
+      if #targets == 0 then return false end
+      local tos = room:askForChoosePlayers(player, targets, 1, 1, "#lianpian-choose", self.name, true)
+      if #tos > 0 then
+        local dummy = Fk:cloneCard("dilu")
+        dummy:addSubcards(cids)
+        room:obtainCard(tos[1], dummy, false, fk.ReasonGive)
       end
     end
-    if #AimGroup:getAllTargets(data.tos) > 0 then
-      mark = AimGroup:getAllTargets(data.tos)
-    else
-      mark = 0
-    end
-    player.room:setPlayerMark(player, "lianpian-phase", mark)
   end,
 }
 sufei:addSkill(lianpian)
 Fk:loadTranslationTable{
   ["ol__sufei"] = "苏飞",
   ["lianpian"] = "联翩",
-  [":lianpian"] = "每回合限三次，当你于出牌阶段使用牌连续指定相同角色为目标后，你可以摸一张牌，若如此做，你可以将此牌交给该角色。",
-  ["#lianpian-choose"] = "联翩：你可以将这张牌交给其中一名角色",
+  [":lianpian"] = "每回合限三次，当你于出牌阶段内使用牌指定目标后，若此牌与你此阶段内使用的上一张牌有共同的目标角色，你可以摸一张牌，然后你可以摸到的牌交给这些角色中的一名。",
+  ["#lianpian-choose"] = "联翩：你可以将摸到的牌交给其中一名角色",
 
   ["$lianpian1"] = "需持续投入，方有回报。",
   ["$lianpian2"] = "心无旁骛，断而敢行！",
