@@ -1,5 +1,6 @@
 local extension = Package("ol_sp2")
 extension.extensionName = "ol"
+local U = require "packages/utility/utility"
 
 Fk:loadTranslationTable{
   ["ol_sp2"] = "OL专属2",
@@ -534,6 +535,212 @@ Fk:loadTranslationTable{
   ["~ol__huangzu"] = "命也……势也……",
 }
 -- 黄承彦 2021.7.15
+
+local huangchengyan = General(extension, "ol__huangchengyan", "qun", 3)
+local function doGuanxu(player, target, skill_name)
+  local room = player.room
+  local cids = target:getCardIds(Player.Hand)
+  local cards = room:getNCards(5)
+  local to_ex = U.askForExchange(player, "Top", "$Hand", cards, cids, "#guanxu-exchange", 1)
+  if #to_ex == 0 then return end
+  local index = 0
+  local cardA = table.find(cards, function (id)
+    index = index + 1
+    return table.contains(to_ex, id)
+  end)
+  local cardB = table.find(to_ex, function (id)
+    return id ~= cardA
+  end)
+  room:moveCards({
+    ids = cards,
+    toArea = Card.Processing,
+    skillName = skill_name,
+    moveReason = fk.ReasonExchange,
+    proposer = player.id,
+    moveVisible = false
+  }, {
+    ids = {cardB},
+    from = target.id,
+    toArea = Card.Processing,
+    skillName = skill_name,
+    moveReason = fk.ReasonExchange,
+    proposer = player.id,
+    moveVisible = false
+  })
+  local moveInfos = {}
+  if room:getCardArea(cardA) == Card.Processing then
+    if target.dead then
+      table.insert(moveInfos, {
+        ids = {cardA},
+        fromArea = Card.Processing,
+        toArea = Card.DiscardPile,
+        moveReason = fk.ReasonExchange,
+        proposer = player.id,
+        skillName = skill_name
+      })
+    else
+      table.insert(moveInfos, {
+        ids = {cardA},
+        fromArea = Card.Processing,
+        to = target.id,
+        toArea = Card.PlayerHand,
+        moveReason = fk.ReasonExchange,
+        proposer = player.id,
+        skillName = skill_name,
+        moveVisible = false
+      })
+    end
+  end
+  table.remove(cards, index)
+  table.insert(cards, index, cardB)
+  cards = table.reverse(cards)
+  cards = table.filter(cards, function (id)
+    return room:getCardArea(id) == Card.Processing
+  end)
+  if #cards > 0 then
+    table.insert(moveInfos, {
+      ids = cards,
+      toArea = Card.DrawPile,
+      moveReason = fk.ReasonExchange,
+      proposer = player.id,
+      skillName = skill_name,
+      moveVisible = false
+    })
+  end
+  if #moveInfos > 0 then
+    room:moveCards(table.unpack(moveInfos))
+  end
+  if player.dead or target.dead then return end
+  cids = target:getCardIds(Player.Hand)
+  local cheak = {{}, {}, {}, {}}
+  for _, id in ipairs(cids) do
+    local suit = Fk:getCardById(id).suit
+    if suit < 5 then
+      table.insert(cheak[suit], id)
+    end
+  end
+  local ids = table.find(cheak, function (cids)
+    return #cids > 2
+  end)
+  if ids == nil then return false end
+  cids = room:askForPoxi(player, "guanxu_discard", {
+    { "$Hand", cids }
+  }, nil, false)
+  if #cids ~= 3 then
+    cids = ids
+  end
+  room:throwCard(cids, skill_name, target, player)
+end
+local guanxu = fk.CreateActiveSkill{
+  name = "guanxu",
+  anim_type = "control",
+  prompt = "#guanxu-active",
+  can_use = function(self, player)
+    return player:usedSkillTimes(self.name, Player.HistoryPhase) < 1
+  end,
+  card_num = 0,
+  card_filter = Util.FalseFunc,
+  target_filter = function(self, to_select, selected)
+    return #selected == 0 and to_select ~= Self.id and not Fk:currentRoom():getPlayerById(to_select):isKongcheng()
+  end,
+  target_num = 1,
+  on_use = function(self, room, effect)
+    doGuanxu(room:getPlayerById(effect.from), room:getPlayerById(effect.tos[1]), self.name)
+  end,
+}
+Fk:addPoxiMethod{
+  name = "guanxu_discard",
+  card_filter = function(to_select, selected, data)
+    if #selected > 2 then return false end
+    local suit = Fk:getCardById(to_select).suit
+    if suit == Card.NoSuit then return false end
+    return #selected == 0 or suit == Fk:getCardById(selected[1]).suit
+  end,
+  feasible = function(selected)
+    return #selected == 3
+  end,
+  prompt = function ()
+    return "观虚：选择三张花色相同的卡牌弃置"
+  end
+}
+local yashi = fk.CreateTriggerSkill{
+  name = "yashi",
+  anim_type = "masochism",
+  events = {fk.Damaged},
+  on_cost = function(self, event, target, player, data)
+    local choices = {"yashi_guanxu", "Cancel"}
+    if data.from and not data.from.dead then
+      table.insert(choices, 1, "yashi_invalidity::" .. data.from.id)
+    end
+    local room = player.room
+    local choice = room:askForChoice(player, choices, self.name)
+    if choice == "yashi_guanxu" then
+      local targets = table.map(table.filter(room.alive_players, function (p)
+        return p ~= player and not p:isKongcheng()
+      end), Util.IdMapper)
+      targets = room:askForChoosePlayers(player, targets, 1, 1, "#guanxu-active", self.name, true)
+      if #targets > 0 then
+        self.cost_data = {choice, targets[1]}
+        return true
+      end
+    elseif choice ~= "Cancel" then
+      room:doIndicate(player.id, {data.from.id})
+      self.cost_data = {choice}
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    if self.cost_data[1] == "yashi_guanxu" then
+      doGuanxu(player, room:getPlayerById(self.cost_data[2]), self.name)
+    else
+      room:setPlayerMark(data.from, "@@yashi", 1)
+    end
+  end,
+
+  refresh_events = {fk.TurnStart},
+  can_refresh = function(self, event, target, player, data)
+    return target == player and player:getMark("@@yashi") > 0
+  end,
+  on_refresh = function(self, event, target, player, data)
+    player.room:setPlayerMark(player, "@@yashi", 0)
+  end,
+}
+local yashi_invalidity = fk.CreateInvaliditySkill {
+  name = "#yashi_invalidity",
+  invalidity_func = function(self, from, skill)
+    return from:getMark("@@yashi") > 0 and
+      (skill.frequency ~= Skill.Compulsory and skill.frequency ~= Skill.Wake) and
+      not (skill:isEquipmentSkill() or skill.name:endsWith("&"))
+  end
+}
+yashi:addRelatedSkill(yashi_invalidity)
+huangchengyan:addSkill(guanxu)
+huangchengyan:addSkill(yashi)
+
+Fk:loadTranslationTable{
+  ["ol__huangchengyan"] = "黄承彦",
+  ["guanxu"] = "观虚",
+  [":guanxu"] = "出牌阶段限一次，你可以观看一名其他角色的手牌，然后你可以用其中一张牌交换牌堆顶的五张牌中的一张。"..
+  "若如此做，你弃置其手牌中三张相同花色的牌。",
+  ["yashi"] = "雅士",
+  [":yashi"] = "当你受到伤害后，你可以选择一项：1.令伤害来源的非锁定技无效直到其下个回合开始；2.对一名其他角色发动一次〖观虚〗。",
+
+  ["#guanxu-active"] = "发动 观虚，观看一名其他角色的手牌",
+  ["#guanxu-exchange"] = "观虚：选择要交换的至多1张卡牌",
+  ["guanxu_discard"] = "观虚",
+
+  ["yashi_guanxu"] = "对一名其他角色发动一次〖观虚〗",
+  ["yashi_invalidity"] = "令%dest的非锁定技失效直到其下个回合开始",
+
+  ["@@yashi"] = "雅士",
+
+  ["$guanxu1"] = "不识此阵者，必为所迷。",
+  ["$guanxu2"] = "虚实相生，变化无穷。",
+  ["$yashi1"] = "鸿儒雅士，闻见多矣。",
+  ["$yashi2"] = "德行贞绝者，谓其雅士。",
+  ["~ol__huangchengyan"] = "皆为虚妄……",
+}
 
 local gaogan = General(extension, "gaogan", "qun", 4)
 local juguan = fk.CreateViewAsSkill{
