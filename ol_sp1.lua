@@ -2944,36 +2944,55 @@ local huangquan = General(extension, "ol__huangquan", "shu", 3)
 huangquan.subkingdom = "wei"
 local dianhu = fk.CreateTriggerSkill{
   name = "dianhu",
-  events = {fk.GameStart, fk.Damage, fk.HpRecover},
+  events = {fk.GameStart},
+  frequency = Skill.Compulsory,
+  mute = true,
+  can_trigger = function(self, event, target, player, data)
+    return player:hasSkill(self.name)
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    room:notifySkillInvoked(player, self.name)
+    player:broadcastSkillInvoke(self.name, 1)
+    local targets = table.map(room:getOtherPlayers(player), function(p) return p.id end)
+    local tos = room:askForChoosePlayers(player, targets, 1, 1, "#dianhu-choose", self.name, false)
+    if #tos == 0 then
+      tos = table.random(targets, 1)
+    end
+    local to = room:getPlayerById(tos[1])
+    local mark =  U.getMark(to, "@@dianhu")
+    table.insert(mark, player.id)
+    room:setPlayerMark(to, "@@dianhu", mark)
+  end,
+
+  refresh_events = {fk.BuryVictim},
+  can_refresh = function(self, event, target, player, data)
+    return not player.dead and type(player:getMark("@@dianhu")) == "table"
+  end,
+  on_refresh = function(self, event, target, player, data)
+    local mark = player:getMark("@@dianhu")
+    table.removeOne(mark, target.id)
+    player.room:setPlayerMark(player, "@@dianhu", #mark > 0 and mark or 0)
+  end,
+}
+local dianhu_delay = fk.CreateTriggerSkill{
+  name = "#dianhu_delay",
+  events = {fk.Damaged, fk.HpRecover},
   frequency = Skill.Compulsory,
   can_trigger = function(self, event, target, player, data)
-    if player:hasSkill(self.name) then
-      if event == fk.GameStart then
+    if target and not (player.dead or target.dead) then
+      local mark =  U.getMark(target, "@@dianhu")
+      if table.contains(mark, player.id) then
+        if event == fk.Damaged then
+          return data.from == player
+        end
         return true
-      elseif event == fk.Damage then
-        return target == player and player.tag[self.name][1] == data.to.id
-      else
-        return player.tag[self.name][1] == target.id
       end
     end
   end,
   on_use = function(self, event, target, player, data)
-    local room = player.room
-    if event == fk.GameStart then
-      local targets = table.map(room:getOtherPlayers(player), function(p) return p.id end)
-      local tos = room:askForChoosePlayers(player, targets, 1, 1, "#dianhu-choose", self.name, false)
-      local to
-      if #tos > 0 then
-        to = tos[1]
-      else
-        to = table.random(targets)
-      end
-      room:doIndicate(player.id, {to})
-      room:setPlayerMark(room:getPlayerById(to), "@dianhu", 1)
-      player.tag[self.name] = {to}
-    else
-      player:drawCards(1, self.name)
-    end
+    player:broadcastSkillInvoke(dianhu.name, 2)
+    player:drawCards(1, dianhu.name)
   end,
 }
 local jianji = fk.CreateActiveSkill{
@@ -3004,6 +3023,7 @@ local jianji = fk.CreateActiveSkill{
     end
   end,
 }
+dianhu:addRelatedSkill(dianhu_delay)
 huangquan:addSkill(dianhu)
 huangquan:addSkill(jianji)
 Fk:loadTranslationTable{
@@ -3012,7 +3032,8 @@ Fk:loadTranslationTable{
   [":dianhu"] = "锁定技，游戏开始时，你指定一名其他角色；当你对该角色造成伤害后或该角色回复体力后，你摸一张牌。",
   ["jianji"] = "谏计",
   [":jianji"] = "出牌阶段限一次，你可以令一名其他角色摸一张牌，然后其可以使用该牌。",
-  ["@dianhu"] = "点虎",
+  ["#dianhu_delay"] = "点虎",
+  ["@@dianhu"] = "点虎",
   ["#dianhu-choose"] = "点虎：指定一名角色，本局当你对其造成伤害或其回复体力后，你摸一张牌",
   ["#jianji-invoke"] = "谏计：你可以使用这张牌",
 

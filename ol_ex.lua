@@ -2245,6 +2245,7 @@ local ol_ex__luanwu = fk.CreateActiveSkill{
         end)
         local use = room:askForUseCard(target, "slash", "slash", "#ol_ex__luanwu-use", true, { exclusive_targets = luanwu_targets})
         if use then
+          use.extraUse = true
           room:useCard(use)
         else
           room:loseHp(target, 1, self.name)
