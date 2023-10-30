@@ -4037,4 +4037,197 @@ Fk:loadTranslationTable{
   ["$langdao2"] = "狼顾四野，视幽冀为饵。",
   ["~zhangyan"] = "草莽之辈，难登大雅之堂……",
 }
+
+local ol__sunliang = General(extension, "ol__sunliang", "wu", 3)
+local ol__kuizhu_active = fk.CreateActiveSkill{
+  name = "ol__kuizhu_active",
+  anim_type = "control",
+  mute = true,
+  interaction = function()
+    return UI.ComboBox {choices = {"ol__kuizhu_choice1", "ol__kuizhu_choice2"}}
+  end,
+  card_num = 0,
+  card_filter = Util.FalseFunc,
+  target_filter = function(self, to_select, selected)
+    if self.interaction.data == "ol__kuizhu_choice1" then
+      return #selected < Self:getMark("ol__kuizhu")
+    elseif self.interaction.data == "ol__kuizhu_choice2" then
+      local n = Fk:currentRoom():getPlayerById(to_select).hp
+      for _, p in ipairs(selected) do
+        n = n + Fk:currentRoom():getPlayerById(p).hp
+      end
+      return n <= Self:getMark("ol__kuizhu")
+    end
+    return false
+  end,
+  feasible = function(self, selected, selected_cards)
+    if #selected_cards ~= 0 or #selected == 0 then return false end
+    if self.interaction.data == "ol__kuizhu_choice1" then
+      return #selected <= Self:getMark("ol__kuizhu")
+    elseif self.interaction.data == "ol__kuizhu_choice2" then
+      local n = 0
+      for _, p in ipairs(selected) do
+        n = n + Fk:currentRoom():getPlayerById(p).hp
+      end
+      return n == Self:getMark("ol__kuizhu")
+    end
+    return false
+  end,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    room:setPlayerMark(player, "ol__kuizhu", 0)
+    player:broadcastSkillInvoke("ol__kuizhu")
+    local tos = table.map(effect.tos, Util.Id2PlayerMapper)
+    if self.interaction.data == "ol__kuizhu_choice1" then
+      room:notifySkillInvoked(player, "ol__kuizhu", "support")
+      for _, p in ipairs(tos) do
+        if not p.dead then
+          p:drawCards(1, self.name)
+        end
+      end
+    else
+      room:notifySkillInvoked(player, "ol__kuizhu", "offensive")
+      for _, p in ipairs(tos) do
+        if not p.dead then
+          room:damage { from = player, to = p, damage = 1, skillName = self.name }
+        end
+      end
+    end
+  end,
+}
+Fk:addSkill(ol__kuizhu_active)
+local ol__kuizhu = fk.CreateTriggerSkill{
+  name = "ol__kuizhu",
+  events = {fk.EventPhaseEnd},
+  frequency = Skill.Compulsory,
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self.name) and player.phase == Player.Discard and #player.room.logic:getEventsOfScope(GameEvent.MoveCards, 1, function(e)
+      for _, move in ipairs(e.data) do
+        if move.toArea == Card.DiscardPile and move.from == player.id and move.moveReason == fk.ReasonDiscard then
+          return true
+        end
+      end
+      return false
+    end, Player.HistoryPhase) > 0
+  end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    local n = 0
+    room.logic:getEventsOfScope(GameEvent.MoveCards, 1, function(e)
+      for _, move in ipairs(e.data) do
+        if move.toArea == Card.DiscardPile and move.from == player.id and move.moveReason == fk.ReasonDiscard then
+          n = n + #move.moveInfo
+        end
+      end
+      return false
+    end, Player.HistoryPhase)
+    if n == 0 then return false end
+    room:setPlayerMark(player, self.name, n)
+    room:askForUseActiveSkill(player, "ol__kuizhu_active", "#ol__kuizhu-use:::"..n, true)
+    room:setPlayerMark(player, self.name, 0)
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+  end,
+}
+ol__sunliang:addSkill(ol__kuizhu)
+local ol__chezheng = fk.CreateTriggerSkill{
+  name = "ol__chezheng",
+  anim_type = "control",
+  frequency = Skill.Compulsory,
+  events = {fk.EventPhaseEnd, fk.DamageCaused},
+  can_trigger = function(self, event, target, player, data)
+    if target == player and player:hasSkill(self.name) and player.phase == Player.Play then
+      if event == fk.EventPhaseEnd then
+        local targets = table.filter(player.room:getOtherPlayers(player), function(p) return not p:inMyAttackRange(player) end)
+        local events = player.room.logic:getEventsOfScope(GameEvent.UseCard, 999, function (e)
+          local use = e.data[1]
+          return use and use.from == target.id
+        end, Player.HistoryPhase)
+        return #events < #targets
+      else
+        return not data.to:inMyAttackRange(player)
+      end
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    if event == fk.EventPhaseEnd then
+      local targets = table.filter(room:getOtherPlayers(player), function(p) return not p:inMyAttackRange(player) and not p:isNude() end)
+      if #targets > 0 then
+        local tos = room:askForChoosePlayers(player, table.map(targets, Util.IdMapper), 1, 1, "#ol__chezheng-throw", self.name, false)
+        if #tos > 0 then
+          local to = room:getPlayerById(tos[1])
+          local cid = room:askForCardChosen(player, to, "he", self.name)
+          room:throwCard({cid}, self.name, to, player)
+        end
+      end
+    else
+      return true
+    end
+  end,
+}
+ol__sunliang:addSkill(ol__chezheng)
+local ol__lijun = fk.CreateTriggerSkill{
+  name = "ol__lijun$",
+  events = { fk.CardUseFinished },
+  can_trigger = function(self, event, target, player, data)
+    if player:hasSkill(self.name) and target ~= player and target.kingdom == "wu" and data.card.trueName == "slash" and target.phase == Player.Play and player:usedSkillTimes(self.name, Player.HistoryPhase) == 0 then
+      local cardList = data.card:isVirtual() and data.card.subcards or {data.card.id}
+      return table.find(cardList, function(id) return not player.room:getCardOwner(id) end)
+    end
+  end,
+  on_cost = function (self, event, target, player, data)
+    return player.room:askForSkillInvoke(target, self.name, data, "#ol__lijun-invoke:"..player.id)
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local cardList = data.card:isVirtual() and data.card.subcards or {data.card.id}
+    local cards = table.filter(cardList, function(id) return not room:getCardOwner(id) end)
+    if #cards == 0 then return end
+    local dummy = Fk:cloneCard("slash")
+    dummy:addSubcards(cards)
+    room:obtainCard(player, dummy, true, fk.ReasonJustMove)
+    if not player.dead and not target.dead and room:askForSkillInvoke(player, self.name, data, "#ol__lijun-draw:"..target.id) then
+      target:drawCards(1, self.name)
+      room:addPlayerMark(target, "ol__lijun_slash-phase")
+    end
+  end,
+}
+local ol__lijun_targetmod = fk.CreateTargetModSkill{
+  name = "#ol__lijun_targetmod",
+  residue_func = function(self, player, skill, scope)
+    if player:getMark("ol__lijun_slash-phase") > 0 and skill and skill.trueName == "slash_skill" and scope == Player.HistoryPhase then
+      return player:getMark("ol__lijun_slash-phase")
+    end
+  end,
+}
+ol__lijun:addRelatedSkill(ol__lijun_targetmod)
+ol__sunliang:addSkill(ol__lijun)
+Fk:loadTranslationTable{
+  ["ol__sunliang"] = "孙亮",
+  ["ol__kuizhu"] = "溃诛",
+  [":ol__kuizhu"] = "弃牌阶段结束时，你可以选择一项：1. 令至多X名角色各摸一张牌；2. 对任意名体力值之和为X的角色造成1点伤害（X为你此阶段弃置的牌数）。",
+  ["ol__kuizhu_active"] = "溃诛",
+  ["#ol__kuizhu-use"] = "你可发动“溃诛”，X为%arg",
+  ["ol__kuizhu_choice1"] = "令至多X名角色各摸一张牌",
+  ["ol__kuizhu_choice2"] = "对任意名体力值之和为X的角色造成1点伤害",
+  ["ol__chezheng"] = "掣政",
+  [":ol__chezheng"] = "锁定技，你于你出牌阶段内对攻击范围内不包含你的其他角色造成伤害时，防止之。出牌阶段结束时，若你本阶段使用的牌数小于这些角色数，你弃置其中一名角色一张牌。",
+  ["#ol__chezheng-throw"] = "掣政：选择攻击范围内不包含你的一名角色，弃置其一张牌",
+  ["#ol__chezheng_prohibit"] = "掣政",
+  ["ol__lijun"] = "立军",
+  [":ol__lijun"] = "主公技，其他吴势力角色于其出牌阶段使用【杀】结算结束后（每阶段限一次），其可以将此【杀】交给你，然后你可以令其摸一张牌且其本回合使用【杀】次数上限+1。",
+  ["#ol__lijun-invoke"] = "立军：你可以将此【杀】交给 %src，然后 %src 可令你摸一张牌且本回合使用【杀】次数上限+1",
+  ["#ol__lijun-draw"] = "立军：你可以令 %src 摸一张牌且其本回合使用【杀】次数上限+1",
+
+  ["$ol__kuizhu1"] = "东吴之主，岂是贪生怕死之辈？",
+  ["$ol__kuizhu2"] = "欺朕年幼？有胆，便一决雌雄！",
+  ["$ol__chezheng1"] = "朕倒要看看，这大吴是谁的江山！",
+  ["$ol__chezheng2"] = "只要朕还在，老贼休想稳坐一天！",
+  ["$ol__lijun1"] = "能征善战，乃我东吴长久之风。",
+  ["$ol__lijun2"] = "重赏之下，必有勇夫。",
+  ["~ol__sunliang"] = "君不君，臣不臣，此国之悲。",
+}
+
 return extension
