@@ -4042,12 +4042,12 @@ local ol__sunliang = General(extension, "ol__sunliang", "wu", 3)
 local ol__kuizhu_active = fk.CreateActiveSkill{
   name = "ol__kuizhu_active",
   anim_type = "control",
-  mute = true,
   interaction = function()
     return UI.ComboBox {choices = {"ol__kuizhu_choice1", "ol__kuizhu_choice2"}}
   end,
   card_num = 0,
   card_filter = Util.FalseFunc,
+  min_target_num = 1,
   target_filter = function(self, to_select, selected)
     if self.interaction.data == "ol__kuizhu_choice1" then
       return #selected < Self:getMark("ol__kuizhu")
@@ -4075,23 +4075,10 @@ local ol__kuizhu_active = fk.CreateActiveSkill{
   end,
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
-    room:setPlayerMark(player, "ol__kuizhu", 0)
-    player:broadcastSkillInvoke("ol__kuizhu")
-    local tos = table.map(effect.tos, Util.Id2PlayerMapper)
     if self.interaction.data == "ol__kuizhu_choice1" then
-      room:notifySkillInvoked(player, "ol__kuizhu", "support")
-      for _, p in ipairs(tos) do
-        if not p.dead then
-          p:drawCards(1, self.name)
-        end
-      end
+      room:setPlayerMark(player, "ol__kuizhu_choice", 1)
     else
-      room:notifySkillInvoked(player, "ol__kuizhu", "offensive")
-      for _, p in ipairs(tos) do
-        if not p.dead then
-          room:damage { from = player, to = p, damage = 1, skillName = self.name }
-        end
-      end
+      room:setPlayerMark(player, "ol__kuizhu_choice", 2)
     end
   end,
 }
@@ -4100,6 +4087,7 @@ local ol__kuizhu = fk.CreateTriggerSkill{
   name = "ol__kuizhu",
   events = {fk.EventPhaseEnd},
   frequency = Skill.Compulsory,
+  mute = true,
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(self.name) and player.phase == Player.Discard and #player.room.logic:getEventsOfScope(GameEvent.MoveCards, 1, function(e)
       for _, move in ipairs(e.data) do
@@ -4123,11 +4111,33 @@ local ol__kuizhu = fk.CreateTriggerSkill{
     end, Player.HistoryPhase)
     if n == 0 then return false end
     room:setPlayerMark(player, self.name, n)
-    room:askForUseActiveSkill(player, "ol__kuizhu_active", "#ol__kuizhu-use:::"..n, true)
-    room:setPlayerMark(player, self.name, 0)
+    local success, dat = room:askForUseActiveSkill(player, "ol__kuizhu_active", "#ol__kuizhu-use:::"..n, true)
+    local choice = player:getMark("ol__kuizhu_choice")
+    if success then
+      self.cost_data = {dat.targets, choice}
+      return true
+    end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
+    player:broadcastSkillInvoke(self.name)
+    local tos = table.map(self.cost_data[1], Util.Id2PlayerMapper)
+    local choice = self.cost_data[2]
+    if choice == 1 then
+      room:notifySkillInvoked(player, self.name, "support")
+      for _, p in ipairs(tos) do
+        if not p.dead then
+          p:drawCards(1, self.name)
+        end
+      end
+    else
+      room:notifySkillInvoked(player, self.name, "offensive")
+      for _, p in ipairs(tos) do
+        if not p.dead then
+          room:damage { from = player, to = p, damage = 1, skillName = self.name }
+        end
+      end
+    end
   end,
 }
 ol__sunliang:addSkill(ol__kuizhu)
@@ -4229,5 +4239,276 @@ Fk:loadTranslationTable{
   ["$ol__lijun2"] = "重赏之下，必有勇夫。",
   ["~ol__sunliang"] = "君不君，臣不臣，此国之悲。",
 }
+
+local ol__caozhang = General(extension, "ol__caozhang", "wei", 4)
+local ol__jiangchi_select = fk.CreateActiveSkill{
+  name = "ol__jiangchi_select",
+  can_use = function() return false end,
+  target_num = 0,
+  max_card_num = 1,
+  min_card_num = 0,
+  card_filter = function(self, to_select, selected)
+    return #selected == 0 and not Self:prohibitDiscard(Fk:getCardById(to_select))
+  end,
+}
+local ol__jiangchi = fk.CreateTriggerSkill{
+  name = "ol__jiangchi",
+  events = {fk.EventPhaseEnd},
+  mute = true,
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self.name) and player.phase == Player.Draw
+  end,
+  on_cost = function(self, event, target, player, data)
+    local _, ret = player.room:askForUseActiveSkill(player, "#ol__jiangchi_select", "#ol__jiangchi-invoke", true)
+    if ret then
+      self.cost_data = ret.cards
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    if #self.cost_data > 0 then
+      room:notifySkillInvoked(player, self.name, "offensive")
+      player:broadcastSkillInvoke(self.name, 2)
+      room:throwCard(self.cost_data, self.name, player)
+      room:addPlayerMark(player, "@@ol__jiangchi_targetmod-turn")
+    else
+      room:notifySkillInvoked(player, self.name, "drawcard")
+      player:broadcastSkillInvoke(self.name, 1)
+      player:drawCards(1, self.name)
+      room:addPlayerMark(player, "@@ol__jiangchi_prohibit-turn")
+    end
+  end,
+}
+local ol__jiangchi_targetmod = fk.CreateTargetModSkill{
+  name = "#ol__jiangchi_targetmod",
+  residue_func = function(self, player, skill, scope)
+    if skill.trueName == "slash_skill" and player:getMark("@@ol__jiangchi_targetmod-turn") > 0 and scope == Player.HistoryPhase then
+      return 1
+    end
+  end,
+  bypass_distances =  function(self, player, skill, card, to)
+    return skill.trueName == "slash_skill" and player:getMark("@@ol__jiangchi_targetmod-turn") > 0
+  end,
+}
+local ol__jiangchi_prohibit = fk.CreateProhibitSkill{
+  name = "#ol__jiangchi_prohibit",
+  prohibit_use = function(self, player, card)
+    return player:getMark("@@ol__jiangchi_prohibit-turn") > 0 and card and card.trueName == "slash"
+  end,
+  prohibit_response = function(self, player, card)
+    return player:getMark("@@ol__jiangchi_prohibit-turn") > 0 and card and card.trueName == "slash"
+  end,
+}
+local ol__jiangchi_maxcards = fk.CreateMaxCardsSkill{
+  name = "#ol__jiangchi_maxcards",
+  exclude_from = function(self, player, card)
+    return card and card.trueName == "slash" and player:getMark("@@ol__jiangchi_prohibit-turn") > 0
+  end,
+}
+Fk:addSkill(ol__jiangchi_select)
+ol__jiangchi:addRelatedSkill(ol__jiangchi_targetmod)
+ol__jiangchi:addRelatedSkill(ol__jiangchi_prohibit)
+ol__jiangchi:addRelatedSkill(ol__jiangchi_maxcards)
+ol__caozhang:addSkill(ol__jiangchi)
+
+Fk:loadTranslationTable{
+  ["ol__caozhang"] = "曹彰",
+  ["ol__jiangchi"] = "将驰",
+  [":ol__jiangchi"] = "摸牌阶段结束时，你可以选择一项：1.摸一张牌，本回合不能使用或打出【杀】，且【杀】不计入手牌上限；2.弃置一张牌，本回合使用【杀】无距离限制且可以多使用一张【杀】。",
+  ["#ol__jiangchi-invoke"] = "将驰：1.摸一张牌，本回合不能使用或打出【杀】，【杀】不计入手牌上限；<br>2.弃置一张牌，本回合使用【杀】无距离限制且可多使用一张【杀】。点“取消”：不发动",
+  ["@@ol__jiangchi_targetmod-turn"] = "将驰 多出杀",
+  ["@@ol__jiangchi_prohibit-turn"] = "将驰 不出杀",
+  ["#ol__jiangchi_prohibit"] = "将驰",
+  ["ol__jiangchi_select"] = "将驰",
+  ["$ol__jiangchi1"] = "丈夫当将十万骑驰沙漠，立功建号耳。",
+  ["$ol__jiangchi2"] = "披坚执锐，临危不难，身先士卒。",
+  ["~ol__caozhang"] = "黄须儿，愧对父亲……",
+}
+
+
+local ol__zhugedan = General(extension, "ol__zhugedan", "wei", 4)
+local ol__juyi = fk.CreateTriggerSkill{
+  name = "ol__juyi",
+  frequency = Skill.Wake,
+  events = {fk.EventPhaseStart},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self.name) and player.phase == Player.Start and player:usedSkillTimes(self.name, Player.HistoryGame) == 0
+  end,
+  can_wake = function(self, event, target, player, data)
+    return player.maxHp > #player.room.alive_players
+  end,
+  on_use = function(self, event, target, player, data)
+    player:drawCards(player.maxHp, self.name)
+    player.room:handleAddLoseSkills(player, "benghuai|ol__weizhong", nil)
+  end,
+}
+local ol__weizhong = fk.CreateTriggerSkill{
+  name = "ol__weizhong",
+  frequency = Skill.Compulsory,
+  events = {fk.MaxHpChanged},
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local min_num = 999
+    for _, p in ipairs(room.alive_players) do
+      min_num = math.min(min_num, p:getHandcardNum())
+    end
+    if player:getHandcardNum() ~= min_num then
+      player:drawCards(1, self.name)
+    else
+      player:drawCards(2, self.name)
+    end
+  end,
+}
+ol__zhugedan:addSkill("gongao")
+ol__zhugedan:addSkill(ol__juyi)
+ol__zhugedan:addRelatedSkill("benghuai")
+ol__zhugedan:addRelatedSkill(ol__weizhong)
+Fk:loadTranslationTable{
+  ["ol__zhugedan"] = "诸葛诞",
+  ["ol__juyi"] = "举义",
+  [":ol__juyi"] = "觉醒技，准备阶段，若你体力上限大于存活角色数，你摸X张牌（X为你的体力上限），然后获得技能“崩坏”和“威重”。",
+  ["ol__weizhong"] = "威重",
+  [":ol__weizhong"] = "锁定技，每当你的体力上限变化时，若你手牌数：不为全场最少，你摸一张牌；为全场最少，你摸两张牌。",
+
+  ["$gongao_ol__zhugedan1"] = "大魏獒犬，恪忠于国。",
+  ["$gongao_ol__zhugedan2"] = "斯人已逝，余者奋威。",
+  ["$ol__juyi1"] = "司马氏，定不攻自败也。",
+  ["$ol__juyi2"] = "义照淮流，身报国恩！",
+  ["$ol__weizhong"] = "本将军，誓与寿春，共存亡。",
+  ["$benghuai_ol__zhugedan"] = "诞，能得诸位死力，无憾矣。",
+  ["~ol__zhugedan"] = "成功！成仁！",
+}
+
+-- 璀璨星河-女史 关银屏
+local ol__guanyinping = General(extension, "ol__guanyinping", "shu", 3, 3, General.Female)
+local ol__xuehen = fk.CreateActiveSkill{
+  name = "ol__xuehen",
+  anim_type = "offensive",
+  card_num = 1,
+  min_target_num = 1,
+  max_target_num = function ()
+    return math.max(1,Self:getLostHp())
+  end,
+  can_use = function(self, player)
+    return player:usedSkillTimes(self.name, Player.HistoryTurn) == 0
+  end,
+  card_filter = function(self, to_select, selected, targets)
+    return #selected == 0 and Fk:getCardById(to_select).color == Card.Red
+  end,
+  target_filter = function(self, to_select, selected, cards)
+    return #selected < math.max(1,Self:getLostHp())
+  end,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    room:throwCard(effect.cards, self.name, player, player)
+    local tos = table.map(effect.tos, Util.Id2PlayerMapper)
+    for _, p in ipairs(tos) do
+      if not p.dead and not p.chained then
+        p:setChainState(true)
+      end
+    end
+    tos = table.filter(tos, function(p) return not p.dead end)
+    if #tos == 0 then return end
+    local to = #tos == 1 and tos[1] or 
+    room:getPlayerById(room:askForChoosePlayers(player, effect.tos, 1, 1, "#ol__xuehen-choose", self.name, false)[1])
+    room:damage{ from = player, to = to, damage = 1, skillName = self.name, damageType = fk.FireDamage}
+  end,
+}
+local ol__huxiao = fk.CreateTriggerSkill{
+  name = "ol__huxiao",
+  anim_type = "offensive",
+  events = {fk.Damage},
+  frequency = Skill.Compulsory,
+  can_trigger = function(self, event, target, player, data)
+    return player:hasSkill(self.name) and player == target and data.damageType == fk.FireDamage and not data.to.dead
+  end,
+  on_use = function(self, event, target, player, data)
+    data.to:drawCards(1, self.name)
+    player.room:setPlayerMark(data.to, "@@ol__huxiao-turn", 1)
+  end,
+}
+local ol__huxiao_targetmod = fk.CreateTargetModSkill{
+  name = "#ol__huxiao_targetmod",
+  bypass_times = function(self, player, skill, scope, card, to)
+    return player:hasSkill("ol__huxiao") and to:getMark("@@ol__huxiao-turn") > 0
+  end,
+}
+ol__huxiao:addRelatedSkill(ol__huxiao_targetmod)
+local ol__wuji = fk.CreateTriggerSkill{
+  name = "ol__wuji",
+  anim_type = "special",
+  events = {fk.EventPhaseStart},
+  frequency = Skill.Wake,
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self.name) and player.phase == Player.Finish and player:usedSkillTimes(self.name, Player.HistoryGame) == 0
+  end,
+  can_wake = function(self, event, target, player, data)
+    local n = 0 --TODO:伤害被防止也计数
+    player.room.logic:getEventsOfScope(GameEvent.Damage, 1, function(e)
+      local damage = e.data[1]
+      if damage and player == damage.from then
+        n = n + damage.damage
+      end
+    end, Player.HistoryTurn)
+    return n > 2
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    room:changeMaxHp(player, 1)
+    if player:isWounded() and not player.dead then
+      room:recover({ who = player, num = 1, recoverBy = player, skillName = self.name })
+    end
+    room:handleAddLoseSkills(player, "-ol__huxiao", nil)
+    for _, id in ipairs(Fk:getAllCardIds()) do
+      if Fk:getCardById(id).name == "blade" then
+        if room:getCardArea(id) == Card.DiscardPile or room:getCardArea(id) == Card.DiscardPile or room:getCardArea(id) == Card.PlayerEquip then
+          room:obtainCard(player, id, true, fk.ReasonPrey)
+          break
+        end
+      end
+    end
+  end,
+}
+ol__guanyinping:addSkill(ol__xuehen)
+ol__guanyinping:addSkill(ol__huxiao)
+ol__guanyinping:addSkill(ol__wuji)
+Fk:loadTranslationTable{
+  ["ol__guanyinping"] = "关银屏",
+  ["ol__xuehen"] = "雪恨",
+  [":ol__xuehen"] = "出牌阶段限一次，你可以弃置一张红色牌并选择至多X名角色（X为你已损失的体力值且至少为1），然后你横置这些角色，并对其中一名角色造成1点火焰伤害。",
+  ["#ol__xuehen-choose"] = "雪恨：对其中一名角色造成1点火焰伤害",
+  ["ol__huxiao"] = "虎啸",
+  [":ol__huxiao"] = "锁定技，当你对一名角色造成火焰伤害后，该角色摸一张牌，然后本回合你对其使用牌无次数限制。",
+  ["@@ol__huxiao-turn"] = "虎啸",
+  ["ol__wuji"] = "武继",
+  [":ol__wuji"] = "觉醒技，结束阶段，若你本回合造成过至少3点伤害，你加1点体力上限并回复1点体力，失去技能“虎啸”，然后从牌堆、弃牌堆或场上获得【青龙偃月刀】。",
+
+  ["$ol__xuehen1"] = "就用你的性命，一雪前耻。",
+  ["$ol__xuehen2"] = "雪耻旧恨，今日清算。",
+  ["$ol__huxiao1"] = "看我连招发动。",
+  ["$ol__huxiao2"] = "想躲过我的攻击，不可能。",
+  ["$ol__wuji1"] = "父亲的武艺，我已掌握大半。",
+  ["$ol__wuji2"] = "有青龙偃月刀在，小女必胜。",
+  ["~ol__guanyinping"] = "红已花残，此仇未能报……",
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 return extension

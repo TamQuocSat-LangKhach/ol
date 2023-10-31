@@ -1112,12 +1112,89 @@ Fk:loadTranslationTable{
   ["~ol__lvkuanglvxiang"] = "此处可是新野……",
 }
 
+local ol__dengzhi = General(extension, "ol__dengzhi", "shu", 3)
+local xiuhao = fk.CreateTriggerSkill{
+  name = "xiuhao",
+  anim_type = "control",
+  events = {fk.DamageCaused},
+  can_trigger = function(self, event, target, player, data)
+    if player:usedSkillTimes(self.name, Player.HistoryTurn) == 0 and player:hasSkill(self.name) then
+      return (target == player and data.to ~= player) or (target ~= player and data.to == player)
+    end
+  end,
+  on_cost = function (self, event, target, player, data)
+    local victim = (target == player) and data.to or player
+    local from = (target == player) and player or target
+    return player.room:askForSkillInvoke(player, self.name, nil, "#xiuhao-invoke:"..victim.id..":"..from.id)
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local from = (target == player) and player or target
+    from:drawCards(2, self.name)
+    return true
+  end,
+}
+ol__dengzhi:addSkill(xiuhao)
+local sujian = fk.CreateTriggerSkill{
+  name = "sujian",
+  anim_type = "control",
+  frequency = Skill.Compulsory,
+  events = {fk.EventPhaseStart},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self.name) and player.phase == Player.Discard
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local ids = table.simpleClone(player:getCardIds("h"))
+    room.logic:getEventsOfScope(GameEvent.MoveCards, 1, function(e)
+      local move = e.data[1]
+      if move and player.id == move.to and move.toArea == Card.PlayerHand then
+        for _, info in ipairs(move.moveInfo) do
+          table.removeOne(ids, info.cardId)
+        end
+      end return false
+    end, Player.HistoryTurn)
+    if #ids > 0 then
+      for _, id in ipairs(ids) do room:setCardMark(Fk:getCardById(id), "@@sujian", 1) end
+      local choice = room:askForChoice(player, {"sujian_give","sujian_throw"}, self.name)
+      local tos = room:askForChoosePlayers(player, table.map(room:getOtherPlayers(player), Util.IdMapper), 1, 1, "#sujian-choose", self.name, false) -- TODO:改为分配
+      for _, id in ipairs(ids) do room:setCardMark(Fk:getCardById(id), "@@sujian", 0) end
+      local to = room:getPlayerById(tos[1])
+      if choice == "sujian_give" then
+        local dummy = Fk:cloneCard("slash")
+        dummy:addSubcards(ids)
+        room:obtainCard(to, dummy, false, fk.ReasonGive)
+      else
+        room:throwCard(ids, self.name, player, player)
+        if not to:isNude() then
+          local throw = room:askForCardsChosen(player, to, 0, #ids, "he", self.name)
+          if #throw > 0 then
+            room:throwCard(throw, self.name, to, player)
+          end
+        end
+      end
+    end
+    return true
+  end,
+}
+ol__dengzhi:addSkill(sujian)
 Fk:loadTranslationTable{
   ["ol__dengzhi"] = "邓芝",
   ["xiuhao"] = "修好",
   [":xiuhao"] = "每名角色的回合限一次，你对其他角色造成伤害，或其他角色对你造成伤害时，你可防止此伤害，令伤害来源摸两张牌。",
+  ["#xiuhao-invoke"] = "修好：你可防止 %src 受到的伤害，令 %dest 摸两张牌",
   ["sujian"] = "素俭",
-  [":sujian"] = "锁定技，弃牌阶段，你改为：将所有非本回合获得的手牌分配给其他角色，或弃置非本回合获得的手牌，并弃置一名其他角色至多等量的牌。",
+  [":sujian"] = "锁定技，弃牌阶段，你改为：将所有非本回合获得的手牌交给一名其他角色，或弃置非本回合获得的手牌，并弃置一名其他角色至多等量的牌。",
+  ["sujian_give"] = "将所有非本回合获得的手牌交给一名其他角色",
+  ["sujian_throw"] = "弃置非本回合获得的手牌，并弃置一名其他角色至多等量的牌",
+  ["#sujian-choose"] = "素俭：选择一名其他角色",
+  ["@@sujian"] = "素俭",
+
+  ["$xiuhao1"] = "吴蜀合同，可御魏敌。",
+  ["$xiuhao2"] = "与吴修好，共为唇齿。",
+  ["$sujian1"] = "不苟素俭，不置私产。",
+  ["$sujian2"] = "高风亮节，摆袖却金。",
+  ["~ol__dengzhi"] = "修好未成，蜀汉恐危。",
 }
 
 local bianfuren = General(extension, "ol__bianfuren", "wei", 3, 3, General.Female)
