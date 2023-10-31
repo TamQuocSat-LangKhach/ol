@@ -4494,7 +4494,130 @@ Fk:loadTranslationTable{
 }
 
 
-
+-- 璀璨星河-天极 刘宏
+local ol__liuhong = General(extension, "ol__liuhong", "qun", 4)
+local yujue = fk.CreateActiveSkill{
+  name = "yujue",
+  anim_type = "support",
+  interaction = function()
+    local slots = {}
+    for _, slot in ipairs({"WeaponSlot","ArmorSlot","OffensiveRideSlot","DefensiveRideSlot","TreasureSlot"}) do
+      local subtype = Util.convertSubtypeAndEquipSlot(slot)
+      if #Self:getAvailableEquipSlots(subtype) > 0 then
+        table.insert(slots, slot)
+      end
+    end
+    if #slots == 0 then return end
+    return UI.ComboBox {choices = slots}
+  end,
+  can_use = function(self, player)
+    return player:usedSkillTimes(self.name, Player.HistoryPhase) < 1 and #player:getAvailableEquipSlots() > 0
+  end,
+  card_num = 0,
+  card_filter = function() return false end,
+  target_num = 1,
+  target_filter = function(self, to_select, selected)
+    return #selected == 0 and to_select ~= Self.id and not Fk:currentRoom():getPlayerById(to_select):isKongcheng()
+  end,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    local to = room:getPlayerById(effect.tos[1])
+    room:abortPlayerArea(player, self.interaction.data)
+    if not player.dead and not to:isKongcheng() then
+      local card = room:askForCard(to, 1, 1, false, self.name, false, ".", "yujue-give:"..player.id)
+      if #card > 0 then
+        room:obtainCard(player, card[1], false, fk.ReasonGive)
+      end
+    end
+    if not to:hasSkill("zhihu",true) then
+      local mark = type(player:getMark("yujue_skill")) == "table" and player:getMark("yujue_skill") or {}
+      table.insertIfNeed(mark, to.id)
+      room:setPlayerMark(player, "yujue_skill", mark)
+      room:handleAddLoseSkills(to, "zhihu", nil)
+    end
+  end,
+}
+local yujue_trigger = fk.CreateTriggerSkill{
+  name = "#yujue_trigger",
+  refresh_events = {fk.TurnStart},
+  can_refresh = function (self, event, target, player, data)
+    return player == target and type(player:getMark("yujue_skill")) == "table"
+  end,
+  on_refresh = function (self, event, target, player, data)
+    local room = player.room
+    local mark = player:getMark("yujue_skill")
+    room:setPlayerMark(player, "yujue_skill", 0)
+    for _, pid in ipairs(mark) do
+      local p = room:getPlayerById(pid)
+      room:handleAddLoseSkills(p, "-zhihu", nil, false)
+    end
+  end,
+}
+yujue:addRelatedSkill(yujue_trigger)
+ol__liuhong:addSkill(yujue)
+local tuxing = fk.CreateTriggerSkill{
+  name = "tuxing",
+  events = {fk.AreaAborted, fk.DamageCaused},
+  mute = true,
+  frequency = Skill.Compulsory,
+  can_trigger = function(self, event, target, player, data)
+    if event == fk.AreaAborted then
+      return target == player and player:hasSkill(self.name)
+    else
+      return target == player and player:hasSkill(self.name,true) and player:getMark("@@tuxing_damage") > 0
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    player:broadcastSkillInvoke(self.name)
+    if event == fk.AreaAborted then
+      room:notifySkillInvoked(player, self.name, "defensive")
+      room:changeMaxHp(player, 1)
+      if player:isWounded() and not player.dead then
+        room:recover({ who = player, num = 1, recoverBy = player, skillName = self.name })
+      end
+      if #player:getAvailableEquipSlots() == 0 and player:getMark("@@tuxing_damage") == 0 and player:hasSkill(self.name) then
+        room:notifySkillInvoked(player, self.name, "big")
+        room:addPlayerMark(player, "@@tuxing_damage")
+        room:changeMaxHp(player, -4)
+      end
+    else
+      room:notifySkillInvoked(player, self.name, "offensive")
+      data.damage = data.damage + 1
+    end
+  end,
+}
+ol__liuhong:addSkill(tuxing)
+local zhihu = fk.CreateTriggerSkill{
+  name = "zhihu",
+  frequency = Skill.Compulsory,
+  events = {fk.Damage},
+  anim_type = "drawcard",
+  can_trigger = function(self, event, target, player, data)
+    return player == target and player:hasSkill(self.name) and player:usedSkillTimes(self.name, Player.HistoryTurn) < 2 and player ~= data.to
+  end,
+  on_use = function(self, event, target, player, data)
+    player:drawCards(2, self.name)
+  end,
+}
+ol__liuhong:addRelatedSkill(zhihu)
+Fk:loadTranslationTable{
+  ["ol__liuhong"] = "刘宏",
+  ["yujue"] = "鬻爵",
+  [":yujue"] = "出牌阶段限一次，你可以废除你的一个装备栏，并选择一名有手牌的其他角色，令其交给你一张手牌，然后其获得技能“执笏”直到你的下个回合开始。",
+  ["yujue-give:"] = "鬻爵：请交给 %src 一张手牌",
+  ["tuxing"] = "图兴",
+  [":tuxing"] = "锁定技，①当你废除一个装备栏时，你加1点体力上限并回复1点体力。②当你首次废除所有装备栏后，你减4点体力上限，然后你本局游戏接下来造成的伤害+1。",
+  ["@@tuxing_damage"] = "图兴加伤",
+  ["zhihu"] = "执笏",
+  [":zhihu"] = "锁定技，每回合限两次，当你对其他角色造成伤害后，你摸两张牌。",
+  
+  ["$yujue1"] = "国库空虚，鬻爵可解。",
+  ["$yujue2"] = "卖官鬻爵，酣歌畅饮。",
+  ["$tuxing1"] = "国之兴亡，休戚相关。",
+  ["$tuxing2"] = "兴业安民，宏图可绘。",
+  ["~ol__liuhong"] = "权利的滋味，让人沉沦。",
+}
 
 
 
