@@ -2847,7 +2847,7 @@ local goude = fk.CreateTriggerSkill{
             for _, move in ipairs(e.data) do
               if move.to == p.id and move.toArea == Player.Hand and move.moveReason == fk.ReasonDraw and #move.moveInfo == 1 then
                 return true
-              elseif move.moveReason == fk.ReasonDiscard and (move.proposer == p or move.proposer == p.id) and #move.moveInfo == 1 then
+              elseif move.moveReason == fk.ReasonDiscard and move.proposer == p.id and #move.moveInfo == 1 then
                 for _, info in ipairs(move.moveInfo) do
                   if info.fromArea == Card.PlayerHand then
                     return true
@@ -2898,7 +2898,7 @@ local goude = fk.CreateTriggerSkill{
               if move.to == p.id and move.toArea == Player.Hand and move.moveReason == fk.ReasonDraw and #move.moveInfo == 1 then
                 return true
               end
-              if move.moveReason == fk.ReasonDiscard and (move.proposer == p or move.proposer == p.id) and #move.moveInfo == 1 then
+              if move.moveReason == fk.ReasonDiscard and move.proposer == p.id and #move.moveInfo == 1 then
                 for _, info in ipairs(move.moveInfo) do
                   if info.fromArea == Card.PlayerHand then
                     return true

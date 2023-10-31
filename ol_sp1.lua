@@ -1121,9 +1121,9 @@ local jici = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     if player == data.from then
-      data.fromCard.number = data.fromCard.number + player:getMark("@raoshe")
+      data.fromCard.number = math.min(13, data.fromCard.number + player:getMark("@raoshe"))
     elseif data.results[player.id] then
-      data.results[player.id].toCard.number = data.results[player.id].toCard.number + player:getMark("@raoshe")
+      data.results[player.id].toCard.number = math.min(13, data.results[player.id].toCard.number + player:getMark("@raoshe"))
     end
     if player.phase == Player.Play then
       player:setSkillUseHistory("gushe", 0, Player.HistoryPhase)
@@ -2748,17 +2748,16 @@ local fenglve = fk.CreateTriggerSkill{
   anim_type = "control",
   events = {fk.EventPhaseStart, fk.PindianResultConfirmed},
   can_trigger = function(self, event, target, player, data)
-    if player:hasSkill(self.name) then
-      if event == fk.EventPhaseStart then
-        return target == player and player.phase == Player.Play and not player:isKongcheng()
-      else
-        self.fenglve_data = {}
-        if data.from == player then
-          self.fenglve_data = {data.to, data.fromCard.id}
-        elseif data.to == player then
-          self.fenglve_data = {data.from, data.toCard.id}
-        end
-        return self.fenglve_data and player.room:getCardArea(self.fenglve_data[2]) == Card.Processing
+    if not player:hasSkill(self.name) then return end
+    local room = player.room
+    if event == fk.EventPhaseStart then
+      return target == player and player.phase == Player.Play and not player:isKongcheng() and table.find(room:getOtherPlayers(player), function(p)
+        return not p:isKongcheng() end)
+    else
+      if data.from == player then
+        return #room:getSubcardsByRule(data.fromCard, { Card.Processing }) > 0
+      elseif data.to == player then
+        return #room:getSubcardsByRule(data.toCard, { Card.Processing }) > 0
       end
     end
   end,
@@ -2766,14 +2765,17 @@ local fenglve = fk.CreateTriggerSkill{
     local room = player.room
     if event == fk.EventPhaseStart then
       local to = room:askForChoosePlayers(player, table.map(table.filter(room:getOtherPlayers(player), function(p)
-        return not p:isKongcheng() end), function(p) return p.id end),
+        return not p:isKongcheng() end), Util.IdMapper),
         1, 1, "#fenglve-choose", self.name, true)
       if #to > 0 then
         self.cost_data = to[1]
         return true
       end
     else
-      return room:askForSkillInvoke(player, self.name, data, "#fenglve-give::"..self.fenglve_data[1].id)
+      self.cost_data = data.from == player
+        and {data.to, room:getSubcardsByRule(data.fromCard, { Card.Processing })}
+        or {data.from, room:getSubcardsByRule(data.toCard, { Card.Processing })}
+      return room:askForSkillInvoke(player, self.name, data, "#fenglve-give::"..self.cost_data[1].id)
     end
   end,
   on_use = function(self, event, target, player, data)
@@ -2799,7 +2801,9 @@ local fenglve = fk.CreateTriggerSkill{
         room:obtainCard(to, id, false, fk.ReasonGive)
       end
     else
-      room:obtainCard(self.fenglve_data[1], self.fenglve_data[2], true, fk.ReasonGive)
+      local dummy = Fk:cloneCard("dilu")
+      dummy:addSubcards(self.cost_data[2])
+      room:obtainCard(self.cost_data[1], dummy, true, fk.ReasonGive)
     end
   end,
 }

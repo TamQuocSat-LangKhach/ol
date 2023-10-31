@@ -1210,8 +1210,7 @@ local ol__wanwei = fk.CreateTriggerSkill{
     for _, move in ipairs(data) do
       if move.from == player.id then
         for _, info in ipairs(move.moveInfo) do
-          if (move.moveReason == fk.ReasonPrey or move.moveReason == fk.ReasonDiscard) and
-            (move.proposer ~= player and move.proposer ~= player.id) then
+          if (move.moveReason == fk.ReasonPrey or move.moveReason == fk.ReasonDiscard) and move.proposer ~= player.id then
             table.insertIfNeed(names, Fk:getCardById(info.cardId).name)
           end
         end
