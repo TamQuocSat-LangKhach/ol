@@ -4620,7 +4620,144 @@ Fk:loadTranslationTable{
 }
 
 
+--璀璨星河-少微 诸葛果
+local ol__zhugeguo =  General(extension, "ol__zhugeguo", "shu", 3, 3, General.Female)
+local ol__qirang = fk.CreateTriggerSkill{
+  name = "ol__qirang",
+  anim_type = "control",
+  events = {fk.CardUseFinished ,fk.TargetSpecifying},
+  can_trigger = function(self, event, target, player, data)
+    if event == fk.CardUseFinished then
+      return player:hasSkill(self.name) and target == player and data.card.type == Card.TypeEquip
+    else
+      return player:hasSkill(self.name) and target == player and data.card:getMark("@@ol__qirang") > 0 and data.firstTarget and data.tos and #AimGroup:getAllTargets(data.tos) == 1
+    end
+  end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    if event == fk.CardUseFinished then
+      return room:askForSkillInvoke(player, self.name)
+    else
+      local targets = {}
+      local current_targets = AimGroup:getAllTargets(data.tos) -- TargetGroup:getRealTargets(data.tos)
+      for _, p in ipairs(room.alive_players) do
+        if not table.contains(current_targets, p.id) and not player:isProhibited(p, data.card) 
+        and data.card.skill:modTargetFilter(p.id, {}, data.from, data.card, true) then
+          if not (data.card.name == "collateral" and not table.find(room:getOtherPlayers(p), function(v) return p:inMyAttackRange(v) end)) then
+            table.insert(targets, p.id)
+          end
+        end
+      end
+      if #targets == 0 then return false end
+      local tos = room:askForChoosePlayers(player, targets, 1, 1, "#ol__qirang-choose:::"..data.card:toLogString(), self.name, true)
+      if #tos > 0 then
+        self.cost_data = tos[1]
+        return true
+      end
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    if event == fk.CardUseFinished then
+      local cards = room:getCardsFromPileByRule(".|.|.|.|.|trick")
+      if #cards > 0 then
+        local get = cards[1]
+        local card = Fk:getCardById(get)
+        room:obtainCard(player, get, false, fk.ReasonDraw)
+        if card.sub_type == Card.SubtypeDelayedTrick then
+          room:addPlayerMark(player, "ol__yuhua_next")
+        elseif room:getCardArea(get) == Card.PlayerHand and room:getCardOwner(get) == player then
+          room:setCardMark(card, "@@ol__qirang", 1)
+        end
+      else
+        room:sendLog{type = "#DrawByRuleFailed", from = player.id, arg = self.name}
+      end
+    else
+      local id = self.cost_data
+      local to = room:getPlayerById(id)
+      if data.card.name == "collateral" then
+        local victim = room:askForChoosePlayers(player, table.map(table.filter(room:getOtherPlayers(to), function(v)
+        return to:inMyAttackRange(v) end), Util.IdMapper), 1, 1,
+        "#collateral-choose::"..to.id..":"..data.card:toLogString(), "collateral_skill", false)
+        TargetGroup:pushTargets(data.targetGroup, {id, victim[1]})
+      else
+        TargetGroup:pushTargets(data.targetGroup, id)
+      end
+    end
+  end,
 
+  refresh_events = {fk.TurnEnd, fk.AfterCardsMove},
+  can_refresh = function (self, event, target, player, data)
+    if event == fk.TurnEnd then
+      return target == player and (player:getMark("ol__yuhua_next") > 0 or player:getMark("ol__yuhua_current") > 0)
+    else
+      for _, move in ipairs(data) do
+        if move.toArea ~= Card.Processing then
+          for _, info in ipairs(move.moveInfo) do
+            if Fk:getCardById(info.cardId):getMark("@@ol__qirang") > 0 then
+              return true
+            end
+          end
+        end
+      end
+    end
+  end,
+  on_refresh = function (self, event, target, player, data)
+    local room = player.room
+    if event == fk.TurnEnd then
+      room:setPlayerMark(player, "ol__yuhua_current", player:getMark("ol__yuhua_next"))
+      room:setPlayerMark(player, "ol__yuhua_next", 0)
+    else
+      for _, move in ipairs(data) do
+        if move.toArea ~= Card.Processing then
+          for _, info in ipairs(move.moveInfo) do
+            if Fk:getCardById(info.cardId):getMark("@@ol__qirang") > 0 then
+              room:setCardMark(Fk:getCardById(info.cardId), "@@ol__qirang", 0)
+            end
+          end
+        end
+      end
+    end
+  end
+}
+ol__zhugeguo:addSkill(ol__qirang)
+local ol__yuhua = fk.CreateTriggerSkill{
+  name = "ol__yuhua",
+  anim_type = "control",
+  frequency = Skill.Compulsory,
+  events = {fk.EventPhaseStart},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self.name) and (player.phase == Player.Start or player.phase == Player.Finish)
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    room:askForGuanxing(player, room:getNCards(math.min(5, 1+player:getMark("ol__yuhua_current"))))
+  end,
+}
+local ol__yuhua_maxcards = fk.CreateMaxCardsSkill{
+  name = "#ol__yuhua_maxcards",
+  exclude_from = function(self, player, card)
+    return player:hasSkill(self.name) and card and card.type ~= Card.TypeBasic
+  end,
+}
+ol__yuhua:addRelatedSkill(ol__yuhua_maxcards)
+ol__zhugeguo:addSkill(ol__yuhua)
+Fk:loadTranslationTable{
+  ["ol__zhugeguo"] = "诸葛果",
+  ["ol__qirang"] = "祈禳",
+  [":ol__qirang"] = "当你使用装备牌结算结束后，你可以获得牌堆中的一张锦囊牌，若此牌：为普通锦囊牌，你使用此牌仅指定一个目标时，可以额外指定一个目标；不为普通锦囊牌，你的下个回合发动“羽化”时观看的牌数的值+1（至多加至5）。",
+  ["@@ol__qirang"] = "祈禳",
+  ["#DrawByRuleFailed"] = "由于没有符合条件的牌，%from 发动的 %arg 定向检索失败",
+  ["#ol__qirang-choose"] = "祈禳：你可以为%arg额外指定一个目标",
+  ["ol__yuhua"] = "羽化",
+  [":ol__yuhua"] = "锁定技，①你的非基本牌不计入手牌上限；②准备阶段或结束阶段，你观看牌堆顶的一张牌，并将其中任意张牌以任意顺序置于牌堆顶，将剩余的牌以任意顺序置于牌堆底。",
+
+  ["$ol__qirang1"] = "求福禳灾，家和万兴。",
+  ["$ol__qirang2"] = "禳解百祸，祈运千秋。",
+  ["$ol__yuhua1"] = "虹衣羽裳，出尘入仙。",
+  ["$ol__yuhua2"] = "羽化成蝶，翩仙舞愿。",
+  ["~ol__zhugeguo"] = "化羽难成，仙境已逝。",
+}
 
 
 
