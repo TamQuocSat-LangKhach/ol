@@ -2332,7 +2332,7 @@ local chenya = fk.CreateTriggerSkill{
   can_trigger = function(self, event, target, player, data)
     return player:hasSkill(self.name) and target and not target.dead and not target:isKongcheng() and
       ((data:isInstanceOf(ActiveSkill) or data:isInstanceOf(ViewAsSkill)) and
-      table.find({"出牌阶段限一次", "阶段技", "每阶段限一次"}, function(str) return string.find(Fk:translate(":"..data.name), str) end)) and
+      table.find({"出牌阶段限一次", "阶段技", "每阶段限一次"}, function(str) return Fk:translate(":"..data.name):startsWith(str) end)) and
       not data.attached_equip and data.name[#data.name] ~= "&"
   end,
   on_cost = function(self, event, target, player, data)
@@ -2467,6 +2467,266 @@ Fk:loadTranslationTable{
   ["$baozu_olz__zhongyu1"] = "弟会腹有恶谋，不可不防。",
   ["$baozu_olz__zhongyu2"] = "会期大祸将至，请晋公恕之。",
   ["~olz__zhongyu"] = "百年钟氏，一朝为臣矣……",
+}
+
+local wanglun = General(extension, "olz__wanglun", "wei", 3)
+local qiuxin = fk.CreateActiveSkill{
+  name = "qiuxin",
+  anim_type = "control",
+  card_num = 0,
+  target_num = 1,
+  can_use = function(self, player)
+    return player:usedSkillTimes(self.name, Player.HistoryPhase) == 0
+  end,
+  card_filter = Util.FalseFunc,
+  target_filter = function(self, to_select, selected, selected_cards)
+    return #selected == 0 and to_select ~= Self.id
+  end,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    local target = room:getPlayerById(effect.tos[1])
+    local choice = room:askForChoice(target, {"slash", "trick"}, self.name, "#qiuxin-choice:"..player.id)
+    room:setPlayerMark(target, "@qiuxin", choice)
+    room:setPlayerMark(target, self.name, player.id)
+  end,
+}
+local qiuxin_trigger = fk.CreateTriggerSkill{
+  name = "#qiuxin_trigger",
+  mute = true,
+  main_skill = qiuxin,
+  events = {fk.CardUseFinished},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and data.extra_data and data.extra_data.qiuxin
+  end,
+  on_cost = Util.TrueFunc,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    for _, p in ipairs(room:getOtherPlayers(player)) do
+      if data.extra_data.qiuxin[p.id] then
+        room:setPlayerMark(p, "@qiuxin", 0)
+        room:setPlayerMark(p, "qiuxin", 0)
+        if data.extra_data.qiuxin[p.id] and not player.dead and not p.dead then
+          if data.extra_data.qiuxin[p.id] == "slash" then
+            room:setPlayerMark(player, "qiuxin-tmp", p.id)
+            local command = "AskForUseActiveSkill"
+            room:notifyMoveFocus(player, "qiuxin_viewas")
+            local dat = {"qiuxin_viewas", "#qiuxin-trick::"..p.id, true, json.encode({})}
+            local result = room:doRequest(player, command, json.encode(dat))
+            room:setPlayerMark(player, "qiuxin-tmp", 0)
+            if result ~= "" then
+              dat = json.decode(result)
+              room:useVirtualCard(dat.interaction_data, nil, player, p, self.name)
+            end
+          elseif data.extra_data.qiuxin[p.id] == "trick" then
+            if not player:isProhibited(p, Fk:cloneCard("slash")) then
+              if room:askForSkillInvoke(player, "qiuxin", nil, "#qiuxin-slash::"..p.id) then
+                player:broadcastSkillInvoke("qiuxin")
+                player.room:notifySkillInvoked(player, "qiuxin", "offensive")
+                room:useVirtualCard("slash", nil, player, p, "qiuxin", true)
+              end
+            end
+          end
+        end
+      end
+    end
+  end,
+
+  refresh_events = {fk.TargetSpecified},
+  can_refresh = function(self, event, target, player, data)
+    if target == player then
+      for _, id in ipairs(TargetGroup:getRealTargets(data.tos)) do
+        local p = player.room:getPlayerById(id)
+        if p:getMark("qiuxin") == player.id and
+          (p:getMark("@qiuxin") == data.card.trueName or p:getMark("@qiuxin") == data.card:getTypeString()) then
+          return true
+        end
+      end
+    end
+  end,
+  on_refresh = function(self, event, target, player, data)
+    for _, id in ipairs(TargetGroup:getRealTargets(data.tos)) do
+      local p = player.room:getPlayerById(id)
+      if p:getMark("qiuxin") == player.id and
+        (p:getMark("@qiuxin") == data.card.trueName or p:getMark("@qiuxin") == data.card:getTypeString()) then
+        data.extra_data = data.extra_data or {}
+        data.extra_data.qiuxin = data.extra_data.qiuxin or {}
+        data.extra_data.qiuxin[p.id] = p:getMark("@qiuxin")
+      end
+    end
+  end,
+}
+local qiuxin_viewas = fk.CreateActiveSkill{
+  name = "qiuxin_viewas",
+  interaction = function()
+    local names = {}
+    local mark = Self:getMark("qiuxin-tmp")
+    for _, id in ipairs(Fk:getAllCardIds()) do
+      local card = Fk:getCardById(id)
+      if card:isCommonTrick() and not card.is_derived and
+        card.skill:targetFilter(mark, {}, {}, card) and
+        not Self:isProhibited(Fk:currentRoom():getPlayerById(mark), card) then
+        table.insertIfNeed(names, card.name)
+      end
+    end
+    if #names == 0 then return end
+    return UI.ComboBox {choices = names}
+  end,
+  card_filter = function(self, to_select, selected)
+    return false
+  end,
+}
+local jianyuan = fk.CreateTriggerSkill{
+  name = "jianyuan",
+  anim_type = "support",
+  events = {fk.AfterSkillEffect},
+  can_trigger = function(self, event, target, player, data)
+    return player:hasSkill(self.name) and target and not target.dead and not target:isNude() and
+      ((data:isInstanceOf(ActiveSkill) or data:isInstanceOf(ViewAsSkill)) and
+      table.find({"出牌阶段限一次", "阶段技", "每阶段限一次"}, function(str) return Fk:translate(":"..data.name):startsWith(str) end)) and
+      not data.attached_equip and data.name[#data.name] ~= "&"
+  end,
+  on_cost = function(self, event, target, player, data)
+    return player.room:askForSkillInvoke(player, self.name, nil, "#jianyuan-invoke::"..target.id)
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    room:doIndicate(player.id, {target.id})
+    local n = 0
+    room.logic:getEventsOfScope(GameEvent.UseCard, 999, function(e)
+      local use = e.data[1]
+      if use and use.from == target.id then
+        n = n + 1
+      end
+    end, Player.HistoryPhase)
+    if n == 0 then return end
+    room:setPlayerMark(target, "jianyuan-tmp", n)
+    local success, dat = room:askForUseActiveSkill(target, "jianyuan_active", "#jianyuan-card:::"..n, true)
+    room:setPlayerMark(target, "jianyuan-tmp", 0)
+    if success then
+      room:recastCard(dat.cards, target, self.name)
+    end
+  end,
+}
+local jianyuan_active = fk.CreateActiveSkill{
+  name = "jianyuan_active",
+  mute = true,
+  min_card_num = 1,
+  target_num = 0,
+  card_filter = function(self, to_select, selected)
+   local card = Fk:getCardById(to_select)
+   return Self:getMark("jianyuan-tmp") == #Fk:translate(card.trueName) / 3
+  end,
+}
+qiuxin:addRelatedSkill(qiuxin_trigger)
+Fk:addSkill(qiuxin_viewas)
+Fk:addSkill(jianyuan_active)
+qiuxin.scope_type = Player.HistoryPhase
+wanglun:addSkill(qiuxin)
+wanglun:addSkill(jianyuan)
+wanglun:addSkill("zhongliu")
+Fk:loadTranslationTable{
+  ["olz__wanglun"] = "族王沦",
+  ["qiuxin"] = "求心",
+  [":qiuxin"] = "出牌阶段限一次，你可以令一名其他角色声明一项：1.你对其使用一张【杀】；2.你对其使用一张普通锦囊牌。你下次执行此项后，"..
+  "可以视为执行另一项的效果。",
+  ["jianyuan"] = "简远",
+  [":jianyuan"] = "当一名角色发动“出牌阶段限一次”的技能后，你可以令其重铸任意张牌名字数为X的牌（X为其本阶段使用牌数）。",
+  ["@qiuxin"] = "求心",
+  ["#qiuxin-choice"] = "求心：%src 对你发动“求心”，请声明一项",
+  ["#qiuxin-slash"] = "求心：是否视为对 %dest 使用【杀】？",
+  ["#qiuxin-trick"] = "求心：选择视为对 %dest 使用的锦囊？",
+  ["qiuxin_viewas"] = "求心",
+  ["#jianyuan-invoke"] = "简远：你可以令 %dest 重铸牌",
+  ["jianyuan_active"] = "简远",
+  ["#jianyuan-card"] = "简远：你可以重铸任意张牌名字数为%arg的牌",
+}
+
+local xunyou = General(extension, "olz__xunyou", "wei", 3)
+local baichu = fk.CreateTriggerSkill{
+  name = "baichu",
+  anim_type = "special",
+  frequency = Skill.Compulsory,
+  events = {fk.CardUseFinished},
+  can_trigger = function(self, event, target, player, data)
+    if player == target and player:hasSkill(self.name) then
+      if player:getMark("@$baichu") ~= 0 and table.contains(player:getMark("@$baichu"), data.card.trueName) then
+        return true
+      end
+      if data.card.suit ~= Card.NoSuit then
+        return not player.tag[self.name] or not player.tag[self.name][data.card.suit] or
+          not table.contains(player.tag[self.name][data.card.suit], data.card.type) or
+          not player:hasSkill("qice", true)
+      end
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    if player:getMark("@$baichu") ~= 0 and table.contains(player:getMark("@$baichu"), data.card.trueName) then
+      if not player:isWounded() then
+        player:drawCards(1, self.name)
+      else
+        local choice = room:askForChoice(player, {"draw1", "recover"}, self.name)
+        if choice == "draw1" then
+          player:drawCards(1, self.name)
+        else
+          room:recover({
+            who = player,
+            num = 1,
+            recoverBy = player,
+            skillName = self.name
+          })
+        end
+      end
+    end
+    if data.card.suit ~= Card.NoSuit then
+      if player.tag[self.name] and player.tag[self.name][data.card.suit] and
+        table.contains(player.tag[self.name][data.card.suit], data.card.type) then
+        room:setPlayerMark(player, self.name, 1)
+        room:handleAddLoseSkills(player, "qice", nil, true, false)
+      else
+        player.tag[self.name] = player.tag[self.name] or {}
+        player.tag[self.name][data.card.suit] = player.tag[self.name][data.card.suit] or {}
+        table.insert(player.tag[self.name][data.card.suit], data.card.type)
+        local names, all_names = {}, {}
+        for _, id in ipairs(Fk:getAllCardIds()) do
+          local card = Fk:getCardById(id)
+          if card:isCommonTrick() then
+            table.insertIfNeed(all_names, card.trueName)
+            if player:getMark("@$baichu") == 0 or not table.contains(player:getMark("@$baichu"), card.trueName) then
+              table.insertIfNeed(names, card.trueName)
+            end
+          end
+        end
+        if #names == 0 then return end
+        local choice = room:askForChoice(player, names, self.name, "#baichu-choice", false, all_names)
+        local mark = player:getMark("@$baichu")
+        if mark == 0 then mark = {} end
+        table.insert(mark, choice)
+        room:setPlayerMark(player, "@$baichu", mark)
+      end
+    end
+  end,
+
+  refresh_events = {fk.RoundStart},
+  can_refresh = function(self, event, target, player, data)
+    return player:getMark(self.name) > 0
+  end,
+  on_refresh = function(self, event, target, player, data)
+    local room = player.room
+    room:setPlayerMark(player, self.name, 0)
+    room:handleAddLoseSkills(player, "-qice", nil, true, false)
+  end,
+}
+xunyou:addSkill(baichu)
+xunyou:addSkill("daojie")
+xunyou:addRelatedSkill("qice")
+Fk:loadTranslationTable{
+  ["olz__xunyou"] = "族荀攸",
+  ["baichu"] = "百出",
+  [":baichu"] = "锁定技，当你使用牌后，若此牌：花色-类型组合为你首次使用，你记录一张普通锦囊牌，否则你本轮获得〖奇策〗；"..
+  "以此法记录过，你摸一张牌或回复1点体力。",
+  ["@$baichu"] = "百出",
+  ["#baichu-choice"] = "百出：记录一张普通锦囊牌",
 }
 
 return extension
