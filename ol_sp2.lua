@@ -1452,6 +1452,20 @@ Fk:loadTranslationTable{
 }
 
 local fengfangnv = General(extension, "ol__fengfangnv", "qun", 3, 3, General.Female)
+local zhuangshu_select = fk.CreateActiveSkill{
+  name = "zhuangshu_select",
+  expand_pile = "zhuangshu",
+  can_use = function() return false end,
+  target_num = 0,
+  card_num = 1,
+  card_filter = function(self, to_select, selected)
+    if #selected == 0 then
+      local ids = Self:getMark("zhuangshu_cards")
+      return type(ids) == "table" and table.contains(ids, to_select)
+    end
+  end,
+}
+Fk:addSkill(zhuangshu_select)
 local zhuangshu = fk.CreateTriggerSkill{
   name = "zhuangshu",
   events = {fk.GameStart, fk.TurnStart},
@@ -1478,29 +1492,24 @@ local zhuangshu = fk.CreateTriggerSkill{
         return card_name == "jade_comb" or card_name == "rhino_comb" or card_name == "golden_comb"
       end)
       if #combs == 0 then return false end
-      local move_to_notify = {}   ---@type CardsMoveStruct
-      move_to_notify.toArea = Card.PlayerHand
-      move_to_notify.to = player.id
-      move_to_notify.moveInfo = {}
-      move_to_notify.moveReason = fk.ReasonJustMove
-      for _, id in ipairs(combs) do
-        table.insert(move_to_notify.moveInfo,
-        { cardId = id, fromArea = Card.Void })
-      end
-      room:notifyMoveCards({player}, {move_to_notify})
-      local card = room:askForCard(player, 1, 1, false, self.name, true, tostring(Exppattern{ id = combs }), "#zhuangshu-choose")
-      move_to_notify = {}   ---@type CardsMoveStruct
-      move_to_notify.from = player.id
-      move_to_notify.toArea = Card.Void
-      move_to_notify.moveInfo = {}
-      move_to_notify.moveReason = fk.ReasonJustMove
-      for _, id in ipairs(combs) do
-        table.insert(move_to_notify.moveInfo,
-        { cardId = id, fromArea = Card.PlayerHand})
-      end
-      room:notifyMoveCards({player}, {move_to_notify})
-      if #card > 0 then
-        self.cost_data = card
+      player.special_cards["zhuangshu"] = table.simpleClone(combs)
+      player:doNotify("ChangeSelf", json.encode {
+        id = player.id,
+        handcards = player:getCardIds("h"),
+        special_cards = player.special_cards,
+      })
+      room:setPlayerMark(player, "zhuangshu_cards", combs)
+      local success, dat = room:askForUseActiveSkill(player, "zhuangshu_select", "#zhuangshu-choose", true, Util.DummyTable, true)
+      room:setPlayerMark(player, "zhuangshu_cards", 0)
+      player.special_cards["zhuangshu"] = {}
+      player:doNotify("ChangeSelf", json.encode {
+        id = player.id,
+        handcards = player:getCardIds("h"),
+        special_cards = player.special_cards,
+      })
+
+      if success then
+        self.cost_data = dat.cards
         return true
       end
     elseif event == fk.TurnStart then
@@ -1618,6 +1627,7 @@ local zhuangshu = fk.CreateTriggerSkill{
 }
 local chuiti_viewas = fk.CreateViewAsSkill{
   name = "chuiti_viewas",
+  expand_pile = "chuiti",
   card_filter = function(self, to_select, selected)
     if #selected == 0 then
       local ids = Self:getMark("chuiti_cards")
@@ -1674,29 +1684,21 @@ local chuiti = fk.CreateTriggerSkill{
       end
     end
     if #ids == 0 then return false end
-    local move_to_notify = {}   ---@type CardsMoveStruct
-    move_to_notify.toArea = Card.PlayerHand
-    move_to_notify.to = player.id
-    move_to_notify.moveInfo = {}
-    move_to_notify.moveReason = fk.ReasonJustMove
-    for _, id in ipairs(ids) do
-      table.insert(move_to_notify.moveInfo,
-      { cardId = id, fromArea = Card.Void })
-    end
-    room:notifyMoveCards({player}, {move_to_notify})
+    player.special_cards["chuiti"] = table.simpleClone(ids)
+    player:doNotify("ChangeSelf", json.encode {
+      id = player.id,
+      handcards = player:getCardIds("h"),
+      special_cards = player.special_cards,
+    })
     room:setPlayerMark(player, "chuiti_cards", ids)
     local success, dat = room:askForUseActiveSkill(player, "chuiti_viewas", "#chuiti-invoke", true, Util.DummyTable, true)
     room:setPlayerMark(player, "chuiti_cards", 0)
-    move_to_notify = {}   ---@type CardsMoveStruct
-    move_to_notify.from = player.id
-    move_to_notify.toArea = Card.Void
-    move_to_notify.moveInfo = {}
-    move_to_notify.moveReason = fk.ReasonJustMove
-    for _, id in ipairs(ids) do
-      table.insert(move_to_notify.moveInfo,
-      { cardId = id, fromArea = Card.PlayerHand})
-    end
-    room:notifyMoveCards({player}, {move_to_notify})
+    player.special_cards["chuiti"] = {}
+    player:doNotify("ChangeSelf", json.encode {
+      id = player.id,
+      handcards = player:getCardIds("h"),
+      special_cards = player.special_cards,
+    })
     if success then
       self.cost_data = dat
       return true
@@ -1720,15 +1722,16 @@ Fk:loadTranslationTable{
   "（牌的类别决定“宝梳”种类：基本牌-【琼梳】、锦囊牌-【犀梳】、装备牌-【金梳】，若场上已有则改为移至其装备区）。"..
   "当“宝梳”进入非装备区时，销毁之。",
   ["chuiti"] = "垂涕",
-  ["chuiti_viewas"] = "垂涕",
   [":chuiti"] = "每回合限一次，当你或装备区有“宝梳”的角色的一张牌因弃置而置入弃牌堆后，若你能使用此牌，你可以使用之（有次数限制）。",
 
   ["#destructDerivedCards"] = "%card 被销毁了",
 
-  ["#zhuangshu-choose"] = "是否使用妆梳，选择一张“宝梳”置入你的装备区",
+  ["#zhuangshu-choose"] = "是否使用 妆梳，选择一张“宝梳”置入你的装备区",
+  ["zhuangshu_select"] = "妆梳",
   ["#zhuangshu-cost"] = "是否使用妆梳，弃置一张牌，将对应种类的“宝梳”置入%dest的装备区<br>"..
     "基本牌-【琼梳】、锦囊牌-【犀梳】、装备牌-【金梳】",
-  ["#chuiti-invoke"] = "是否使用垂涕，使用其中被弃置的牌",
+  ["#chuiti-invoke"] = "是否使用 垂涕，使用其中被弃置的牌",
+  ["chuiti_viewas"] = "垂涕",
 
   ["$zhuangshu1"] = "殿前妆梳，风姿绝世。",
   ["$zhuangshu2"] = "顾影徘徊，丰容靓饰。",

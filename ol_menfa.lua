@@ -1973,13 +1973,12 @@ local guangu = fk.CreateActiveSkill{
     room:setPlayerMark(player, "@guangu-phase", #ids)
 
     if target == nil or target ~= player then
-      local fakemove = {
-        toArea = Card.PlayerHand,
-        to = player.id,
-        moveInfo = table.map(ids, function(id) return {cardId = id, fromArea = Card.Void} end),
-        moveReason = fk.ReasonJustMove,
-      }
-      room:notifyMoveCards({player}, {fakemove})
+      player.special_cards["guangu"] = table.simpleClone(ids)
+      player:doNotify("ChangeSelf", json.encode {
+        id = player.id,
+        handcards = player:getCardIds("h"),
+        special_cards = player.special_cards,
+      })
     end
 
     local availableCards = {}
@@ -1994,13 +1993,12 @@ local guangu = fk.CreateActiveSkill{
     room:setPlayerMark(player, "guangu_cards", 0)
 
     if target == nil or target ~= player then
-      local fakemove = {
-        from = player.id,
-        toArea = Card.Void,
-        moveInfo = table.map(ids, function(id) return {cardId = id, fromArea = Card.PlayerHand} end),
-        moveReason = fk.ReasonJustMove,
-      }
-      room:notifyMoveCards({player}, {fakemove})
+      player.special_cards["guangu"] = {}
+      player:doNotify("ChangeSelf", json.encode {
+        id = player.id,
+        handcards = player:getCardIds("h"),
+        special_cards = player.special_cards,
+      })
     end
     if status == "yang" then
       if success then
@@ -2023,6 +2021,7 @@ local guangu = fk.CreateActiveSkill{
 }
 local guangu_viewas = fk.CreateViewAsSkill{
   name = "guangu_viewas",
+  expand_pile = "guangu",
   card_filter = function(self, to_select, selected)
     if #selected == 0 then
       local ids = Self:getMark("guangu_cards")
@@ -2639,7 +2638,44 @@ Fk:loadTranslationTable{
   ["#jianyuan-invoke"] = "简远：你可以令 %dest 重铸牌",
   ["jianyuan_active"] = "简远",
   ["#jianyuan-card"] = "简远：你可以重铸任意张牌名字数为%arg的牌",
+
+  ["$qiuxin1"] = "此生所求者，顺心意尔。",
+  ["$qiuxin2"] = "羡孔丘知天命之岁，叹吾生之不达。",
+  ["$jianyuan1"] = "我视天地为三，其为众妙之门。",
+  ["$jianyuan2"] = "昔年孔明有言，宁静方能致远。",
+  ["$zhongliu_olz__wanglun1"] = "上善若水，中流而引全局。",
+  ["$zhongliu_olz__wanglun2"] = "泽物无声，此真名士风流。",
+  ["~olz__wanglun"] = "人间多锦绣，奈何我云不喜……",
 }
+
+local function updateBaichuHandMark(player)
+  local room = player.room
+  local cards = player:getCardIds(Player.Hand)
+  local mark = U.getMark(player, "baichu")
+  local mark2 = U.getMark(player, "@$baichu")
+  if player:hasSkill("baichu", true) then
+    for _, id in ipairs(cards) do
+      local card = Fk:getCardById(id)
+      local baichu_str = card:getSuitString() .. "+" .. card:getTypeString()
+      if table.contains(mark, baichu_str) then
+        room:setCardMark(card, "@@baichu-inhand", 0)
+      else
+        room:setCardMark(card, "@@baichu-inhand", 1)
+      end
+      if table.contains(mark2, card.trueName) then
+        room:setCardMark(card, "@@baichu_record-inhand", 1)
+      else
+        room:setCardMark(card, "@@baichu_record-inhand", 0)
+      end
+    end
+  else
+    for _, id in ipairs(cards) do
+      local card = Fk:getCardById(id)
+      room:setCardMark(card, "@@baichu-inhand", 0)
+      room:setCardMark(card, "@@baichu_record-inhand", 0)
+    end
+  end
+end
 
 local xunyou = General(extension, "olz__xunyou", "wei", 3)
 local baichu = fk.CreateTriggerSkill{
@@ -2649,19 +2685,50 @@ local baichu = fk.CreateTriggerSkill{
   events = {fk.CardUseFinished},
   can_trigger = function(self, event, target, player, data)
     if player == target and player:hasSkill(self.name) then
-      if player:getMark("@$baichu") ~= 0 and table.contains(player:getMark("@$baichu"), data.card.trueName) then
-        return true
-      end
-      if data.card.suit ~= Card.NoSuit then
-        return not player.tag[self.name] or not player.tag[self.name][data.card.suit] or
-          not table.contains(player.tag[self.name][data.card.suit], data.card.type) or
-          not player:hasSkill("qice", true)
-      end
+      local mark = U.getMark(player, "@$baichu")
+      if table.contains(mark, data.card.trueName) then return true end
+      if data.card.suit == Card.NoSuit then return false end
+      local baichu_str = data.card:getSuitString() .. "+" .. data.card:getTypeString()
+      local mark2 = U.getMark(player, "baichu")
+      return not table.contains(mark2, baichu_str) or not player:hasSkill("qice", true)
     end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    if player:getMark("@$baichu") ~= 0 and table.contains(player:getMark("@$baichu"), data.card.trueName) then
+    local mark = U.getMark(player, "@$baichu")
+    if data.card.suit ~= Card.NoSuit then
+      local mark2 = U.getMark(player, "baichu")
+      local baichu_str = data.card:getSuitString() .. "+" .. data.card:getTypeString()
+      if table.contains(mark2, baichu_str) then
+        local round_event = room.logic:getCurrentEvent():findParent(GameEvent.Round)
+        if round_event ~= nil and not player:hasSkill("qice", true) then
+          room:handleAddLoseSkills(player, "qice", nil, true, false)
+          round_event:addCleaner(function()
+            room:handleAddLoseSkills(player, "-qice", nil, true, false)
+          end)
+        end
+      else
+        table.insert(mark2, baichu_str)
+        room:setPlayerMark(player, "baichu", mark2)
+        updateBaichuHandMark(player)
+        local names, all_names = {}, {}
+        for _, id in ipairs(Fk:getAllCardIds()) do
+          local card = Fk:getCardById(id)
+          if card:isCommonTrick() and not card.is_derived and not table.contains(all_names, card.trueName) then
+            table.insert(all_names, card.trueName)
+            if not table.contains(mark, card.trueName) then
+              table.insert(names, card.trueName)
+            end
+          end
+        end
+        if #names == 0 then return end
+        local choice = room:askForChoice(player, names, self.name, "#baichu-choice", false, all_names)
+        table.insert(mark, choice)
+        room:setPlayerMark(player, "@$baichu", mark)
+        updateBaichuHandMark(player)
+      end
+    end
+    if table.contains(mark, data.card.trueName) then
       if not player:isWounded() then
         player:drawCards(1, self.name)
       else
@@ -2678,43 +2745,20 @@ local baichu = fk.CreateTriggerSkill{
         end
       end
     end
-    if data.card.suit ~= Card.NoSuit then
-      if player.tag[self.name] and player.tag[self.name][data.card.suit] and
-        table.contains(player.tag[self.name][data.card.suit], data.card.type) then
-        room:setPlayerMark(player, self.name, 1)
-        room:handleAddLoseSkills(player, "qice", nil, true, false)
-      else
-        player.tag[self.name] = player.tag[self.name] or {}
-        player.tag[self.name][data.card.suit] = player.tag[self.name][data.card.suit] or {}
-        table.insert(player.tag[self.name][data.card.suit], data.card.type)
-        local names, all_names = {}, {}
-        for _, id in ipairs(Fk:getAllCardIds()) do
-          local card = Fk:getCardById(id)
-          if card:isCommonTrick() then
-            table.insertIfNeed(all_names, card.trueName)
-            if player:getMark("@$baichu") == 0 or not table.contains(player:getMark("@$baichu"), card.trueName) then
-              table.insertIfNeed(names, card.trueName)
-            end
-          end
-        end
-        if #names == 0 then return end
-        local choice = room:askForChoice(player, names, self.name, "#baichu-choice", false, all_names)
-        local mark = player:getMark("@$baichu")
-        if mark == 0 then mark = {} end
-        table.insert(mark, choice)
-        room:setPlayerMark(player, "@$baichu", mark)
-      end
-    end
   end,
 
-  refresh_events = {fk.RoundStart},
+  refresh_events = {fk.AfterCardsMove, fk.GameStart, fk.EventAcquireSkill, fk.EventLoseSkill},
   can_refresh = function(self, event, target, player, data)
-    return player:getMark(self.name) > 0
+    if event == fk.AfterCardsMove then
+      return true
+    elseif event == fk.EventAcquireSkill or event == fk.EventLoseSkill then
+      return data == self and player == target
+    else
+      return player:hasSkill(self.name, true)
+    end
   end,
   on_refresh = function(self, event, target, player, data)
-    local room = player.room
-    room:setPlayerMark(player, self.name, 0)
-    room:handleAddLoseSkills(player, "-qice", nil, true, false)
+    updateBaichuHandMark(player)
   end,
 }
 xunyou:addSkill(baichu)
@@ -2727,6 +2771,9 @@ Fk:loadTranslationTable{
   "以此法记录过，你摸一张牌或回复1点体力。",
   ["@$baichu"] = "百出",
   ["#baichu-choice"] = "百出：记录一张普通锦囊牌",
+
+  ["@@baichu-inhand"] = "<font color='yellow'>未出</font>",
+  ["@@baichu_record-inhand"] = "百出",
 }
 
 return extension
