@@ -10,7 +10,7 @@ local sevenStarsSwordSkill = fk.CreateTriggerSkill{
   frequency = Skill.Compulsory,
   events = {fk.TargetSpecified},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name) and data.card and data.card.trueName == "slash"
+    return target == player and player:hasSkill(self) and data.card and data.card.trueName == "slash"
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
@@ -150,7 +150,7 @@ local jadeCombSkill = fk.CreateTriggerSkill{
   attached_equip = "jade_comb",
   events = {fk.DamageInflicted},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name)
+    return target == player and player:hasSkill(self)
   end,
   on_cost = function(self, event, target, player, data)
     local room = player.room
@@ -195,7 +195,7 @@ local rhinoCombSkill = fk.CreateTriggerSkill{
   attached_equip = "rhino_comb",
   events = {fk.EventPhaseChanging},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name) and data.to == Player.Judge
+    return target == player and player:hasSkill(self) and data.to == Player.Judge
   end,
   on_cost = function(self, event, target, player, data)
     local room = player.room
@@ -240,7 +240,7 @@ local goldenCombSkill = fk.CreateTriggerSkill{
   events = {fk.EventPhaseEnd},
   frequency = Skill.Compulsory,
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name) and player.phase == Player.Play
+    return target == player and player:hasSkill(self) and player.phase == Player.Play
     and player:getHandcardNum() < math.min(player:getMaxCards(), 5)
   end,
   on_use = function(self, event, target, player, data)
@@ -351,7 +351,7 @@ local qinDragonSwordSkill = fk.CreateTriggerSkill{
   events = {fk.AfterCardUseDeclared},
   frequency = Skill.Compulsory,
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name) and data.card:isCommonTrick() and
+    return target == player and player:hasSkill(self) and data.card:isCommonTrick() and
       player:usedSkillTimes(self.name, Player.HistoryTurn) == 0
   end,
   on_use = function(self, event, target, player, data)
@@ -379,7 +379,7 @@ local qinSealSkill = fk.CreateTriggerSkill{
   mute = true,
   events = {fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name) and player.phase == Player.Play
+    return target == player and player:hasSkill(self) and player.phase == Player.Play
   end,
   on_cost = function(self, event, target, player, data)
     local success, dat = player.room:askForUseActiveSkill(player, "qin_seal_viewas", "#qin_seal-choice", true)
@@ -436,7 +436,7 @@ local grain_cart_skill = fk.CreateTriggerSkill{
   events = {fk.TurnEnd},
   can_trigger = function(self, event, target, player, data)
     if player:usedSkillTimes("#grain_cart_skill", Player.HistoryTurn) > 0 or player:usedSkillTimes("#caltrop_cart_skill", Player.HistoryTurn) > 0 or player:usedSkillTimes("#wheel_cart_skill", Player.HistoryTurn) > 0 then return false end
-    return player:hasSkill(self.name) and table.find(player:getEquipments(Card.SubtypeTreasure), function(cid) return Fk:getCardById(cid).name == "grain_cart" end) and player:getHandcardNum() < player.hp
+    return player:hasSkill(self) and table.find(player:getEquipments(Card.SubtypeTreasure), function(cid) return Fk:getCardById(cid).name == "grain_cart" end) and player:getHandcardNum() < player.hp
   end,
   on_cost = function(self, event, target, player, data)
     return player.room:askForSkillInvoke(player, self.name, nil, "#grain_cart-invoke")
@@ -471,7 +471,7 @@ local caltrop_cart_skill = fk.CreateTriggerSkill{
   events = {fk.TurnEnd},
   can_trigger = function(self, event, target, player, data)
     if player:usedSkillTimes("#grain_cart_skill", Player.HistoryTurn) > 0 or player:usedSkillTimes("#caltrop_cart_skill", Player.HistoryTurn) > 0 or player:usedSkillTimes("#wheel_cart_skill", Player.HistoryTurn) > 0 then return false end
-    if player:hasSkill(self.name) and table.find(player:getEquipments(Card.SubtypeTreasure), function(cid) return Fk:getCardById(cid).name == "caltrop_cart" end) and not target:isNude() and target ~= player then
+    if player:hasSkill(self) and table.find(player:getEquipments(Card.SubtypeTreasure), function(cid) return Fk:getCardById(cid).name == "caltrop_cart" end) and not target:isNude() and target ~= player then
       local damage_events = player.room.logic:getEventsOfScope(GameEvent.Damage, 1, function(e)
         local damage = e.data[1]
         return damage and damage.from and damage.from == target
@@ -512,7 +512,7 @@ local wheel_cart_skill = fk.CreateTriggerSkill{
   events = {fk.TurnEnd},
   can_trigger = function(self, event, target, player, data)
     if player:usedSkillTimes("#grain_cart_skill", Player.HistoryTurn) > 0 or player:usedSkillTimes("#caltrop_cart_skill", Player.HistoryTurn) > 0 or player:usedSkillTimes("#wheel_cart_skill", Player.HistoryTurn) > 0 then return false end
-    if player:hasSkill(self.name) and table.find(player:getEquipments(Card.SubtypeTreasure), function(cid) return Fk:getCardById(cid).name == "wheel_cart" end) and not target:isNude() and target ~= player then
+    if player:hasSkill(self) and table.find(player:getEquipments(Card.SubtypeTreasure), function(cid) return Fk:getCardById(cid).name == "wheel_cart" end) and not target:isNude() and target ~= player then
       local use_events = player.room.logic:getEventsOfScope(GameEvent.UseCard, 1, function(e)
         local use = e.data[1]
         return use and use.from == target.id and use.card.type ~= Card.TypeBasic
