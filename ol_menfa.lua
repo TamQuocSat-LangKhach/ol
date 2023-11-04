@@ -1566,24 +1566,26 @@ local mingjiew = fk.CreateActiveSkill{
   can_use = function(self, player)
     return player:usedSkillTimes(self.name, Player.HistoryGame) == 0
   end,
-  card_filter = function(self, to_select, selected)
-    return false
-  end,
+  card_filter = Util.FalseFunc,
   target_filter = function(self, to_select, selected)
     local target = Fk:currentRoom():getPlayerById(to_select)
-    return #selected == 0 and (target:getMark("@@mingjiew") == 0 or not table.contains(target:getMark("@@mingjiew"), Self.id)
+    return #selected == 0 and (not table.contains(U.getMark(target, "@@mingjiew"), Self.id)
     or (to_select == Self.id and Self:getMark("mingjiew_Self-turn") == 0))
   end,
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
     local target = room:getPlayerById(effect.tos[1])
-    local mark = target:getMark("@@mingjiew")
-    if mark == 0 then mark = {} end
-    table.insert(mark, player.id)
-    room:setPlayerMark(target, "@@mingjiew", mark)
+    local mark = U.getMark(target, "@@mingjiew")
     if player == target then
       room:setPlayerMark(player, "mingjiew_Self-turn", 1)
+      if table.contains(mark, player.id) then
+        return
+      else
+        room:setPlayerMark(player, "mingjiew_disabled-turn", 1)
+      end
     end
+    table.insert(mark, player.id)
+    room:setPlayerMark(target, "@@mingjiew", mark)
   end,
 }
 
@@ -1606,19 +1608,16 @@ local mingjiew_delay = fk.CreateTriggerSkill{
         end
       end
     elseif event == fk.TurnEnd then
-      if player:getMark("mingjiew_Self-turn") > 0 then return false end
-      local mark = target:getMark("@@mingjiew")
-      if type(mark) ~= "table" or not table.contains(mark, player.id) then return false end
+      if player:getMark("mingjiew_disabled-turn") > 0 or not table.contains(U.getMark(target, "@@mingjiew"), player.id) then
+        return false
+      end
       local events = room.logic.event_recorder[GameEvent.UseCard] or Util.DummyTable
       local end_id = target:getMark("mingjiew_record-turn")
       if end_id == 0 then
         end_id = room.logic:getCurrentEvent().id
       end
       room:setPlayerMark(target, "mingjiew_record-turn", room.logic.current_event_id)
-      local ids = target:getMark("mingjiew_usecard-turn")
-      if type(ids) ~= "table" then
-        ids = {}
-      end
+      local ids = U.getMark(target, "mingjiew_usecard-turn")
       for i = #events, 1, -1 do
         local e = events[i]
         if e.id <= end_id then break end
@@ -1654,25 +1653,21 @@ local mingjiew_delay = fk.CreateTriggerSkill{
           return room:getCardArea(id) == Card.DiscardPile and player:canUse(card) and not player:prohibitUse(card)
         end)
         if #to_use == 0 then break end
-        local fakemove = {
-          toArea = Card.PlayerHand,
-          to = player.id,
-          moveInfo = table.map(to_use, function(id) return {cardId = id, fromArea = Card.Void} end),
-          moveReason = fk.ReasonJustMove,
-        }
-        room:notifyMoveCards({player}, {fakemove})
+        player.special_cards["mingjiew"] = table.simpleClone(to_use)
+        player:doNotify("ChangeSelf", json.encode {
+          id = player.id,
+          handcards = player:getCardIds("h"),
+          special_cards = player.special_cards,
+        })
         room:setPlayerMark(player, "mingjiew_cards", to_use)
         local success, dat = room:askForUseActiveSkill(player, "mingjiew_viewas", "#mingjiew-use", true)
         room:setPlayerMark(player, "mingjiew_cards", 0)
-
-        fakemove = {
-          from = player.id,
-          toArea = Card.Void,
-          moveInfo = table.map(to_use, function(id) return {cardId = id, fromArea = Card.PlayerHand} end),
-          moveReason = fk.ReasonJustMove,
-        }
-        room:notifyMoveCards({player}, {fakemove})
-
+        player.special_cards["mingjiew"] = {}
+        player:doNotify("ChangeSelf", json.encode {
+          id = player.id,
+          handcards = player:getCardIds("h"),
+          special_cards = player.special_cards,
+        })
         if success then
           table.removeOne(ids, dat.cards[1])
           local card = Fk.skills["mingjiew_viewas"]:viewAs(dat.cards)
@@ -1703,6 +1698,7 @@ local mingjiew_delay = fk.CreateTriggerSkill{
 }
 local mingjiew_viewas = fk.CreateViewAsSkill{
   name = "mingjiew_viewas",
+  expand_pile = "mingjiew",
   card_filter = function(self, to_select, selected)
     if #selected == 0 then
       local ids = Self:getMark("mingjiew_cards")
@@ -1715,7 +1711,6 @@ local mingjiew_viewas = fk.CreateViewAsSkill{
     end
   end,
 }
-
 local zhongliu = fk.CreateTriggerSkill{
   name = "zhongliu",
   anim_type = "special",
@@ -1761,7 +1756,7 @@ local zhongliu = fk.CreateTriggerSkill{
       local use_event = room.logic:getCurrentEvent()
       use_event:searchEvents(GameEvent.MoveCards, 1, function(e)
         if e.parent and e.parent.id == use_event.id then
-          local subcheck = cardlist
+          local subcheck = table.simpleClone(cardlist)
           for _, move in ipairs(e.data) do
             if move.moveReason == fk.ReasonUse then
               local wang_family = false
