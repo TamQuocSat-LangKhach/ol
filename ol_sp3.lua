@@ -4760,7 +4760,215 @@ Fk:loadTranslationTable{
 }
 
 
+local ol__jikang = General(extension, "ol__jikang", "wei", 3)
+local doOl__qingxian = function (room, to, from, choice, skillName)
+  if to.dead then return nil end
+  local returnCard
+  if choice == "ol__qingxian_losehp" then
+    room:loseHp(to, 1, skillName)
+    if to.dead then return end
+    local cards = {}
+    for _, cid in ipairs(room.draw_pile) do
+      local card = Fk:getCardById(cid)
+      if card.type == Card.TypeEquip and to:canUse(card) then
+        table.insert(cards, card)
+      end
+    end
+    if #cards > 0 then
+      returnCard = table.random(cards)
+      room:useCard({ from = to.id, tos = {{to.id}}, card = returnCard })
+    end
+  else
+    if to:isWounded() then
+      room:recover({ who = to, num = 1, recoverBy = from, skillName = skillName })
+    end
+    if not to.dead and not to:isNude() then
+      local throw = room:askForDiscard(to, 1, 1, true, skillName, false, ".|.|.|.|.|equip")
+      if #throw > 0 then
+        returnCard = Fk:getCardById(throw[1])
+      end
+    end
+  end
+  return returnCard
+end
+local ol__qingxian = fk.CreateTriggerSkill{
+  name = "ol__qingxian",
+  events = { fk.Damaged , fk.HpRecover },
+  can_trigger = function(self, event, target, player, data)
+    if player:hasSkill(self) and target == player and not table.find(player.room.alive_players, function(p) return p.dying end) then
+      if event == fk.Damaged then
+        return data.from and not data.from.dead
+      else
+        return true
+      end
+    end
+  end,
+  on_cost = function (self, event, target, player, data)
+    local room = player.room
+    if event == fk.Damaged then
+      return room:askForSkillInvoke(player, self.name, data, "#skilltosb::"..data.from.id..":"..self.name)
+    else
+      local tos = room:askForChoosePlayers(player, table.map(room:getOtherPlayers(player), Util.IdMapper), 1, 1, "#skillchooseother:::"..self.name, self.name, true)
+      if #tos > 0 then
+        self.cost_data = tos[1]
+        return true
+      end
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local to = (event == fk.Damaged) and data.from or room:getPlayerById(self.cost_data)
+    local choice = room:askForChoice(player, {"ol__qingxian_losehp","ol__qingxian_recover"}, self.name)
+    local card = doOl__qingxian(room, to, player, choice, self.name)
+    if card and card.suit == Card.Club and not player.dead then
+      player:drawCards(1, self.name)
+    end
+  end,
+}
+ol__jikang:addSkill(ol__qingxian)
+local ol__juexiang = fk.CreateTriggerSkill{
+  name = "ol__juexiang",
+  anim_type = "support",
+  events = {fk.Death},
+  can_trigger = function(self, event, target, player, data)
+    return player:hasSkill(self.name,false,true) and target == player
+  end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    local tos = room:askForChoosePlayers(player, table.map(room:getOtherPlayers(player), Util.IdMapper), 1, 1, "#skillchooseother:::"..self.name, self.name, true)
+    if #tos > 0 then
+      self.cost_data = tos[1]
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local to = room:getPlayerById(self.cost_data)
+    local skills = table.filter({"ol__jixian","ol__liexian","ol__rouxian","ol__hexian"}, function (s) return not to:hasSkill(s,true) end)
+    if #skills > 0 then
+      room:handleAddLoseSkills(to, table.random(skills), nil)
+    end
+    room:setPlayerMark(to, "@@ol__juexiang", 1)
+  end,
+  refresh_events = {fk.TurnStart},
+  can_refresh = function (self, event, target, player, data)
+    return target == player and player:getMark("@@ol__juexiang") > 0
+  end,
+  on_refresh = function (self, event, target, player, data)
+    player.room:setPlayerMark(player, "@@ol__juexiang", 0)
+  end,
+}
+local ol__juexiang_prohibit = fk.CreateProhibitSkill{
+  name = "#ol__juexiang_prohibit",
+  is_prohibited = function(self, from, to, card)
+    if card and card.suit == Card.Club then
+      return to:getMark("@@ol__juexiang") > 0 and from ~= to
+    end
+  end,
+}
+ol__juexiang:addRelatedSkill(ol__juexiang_prohibit)
+ol__jikang:addSkill(ol__juexiang)
+local ol__jixian = fk.CreateTriggerSkill{
+  name = "ol__jixian",
+  events = {fk.Damaged},
+  can_trigger = function(self, event, target, player, data)
+    return player:hasSkill(self) and target == player and data.from and not data.from.dead and not table.find(player.room.alive_players, function(p) return p.dying end)
+  end,
+  on_cost = function (self, event, target, player, data)
+    return player.room:askForSkillInvoke(player, self.name, data, "#skilltosb::"..data.from.id..":"..self.name)
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    doOl__qingxian(room, data.from, player, "ol__qingxian_losehp", self.name)
+  end,
+}
+ol__jikang:addRelatedSkill(ol__jixian)
+local ol__liexian = fk.CreateTriggerSkill{
+  name = "ol__liexian",
+  events = {fk.HpRecover},
+  can_trigger = function(self, event, target, player, data)
+    return player:hasSkill(self) and target == player and not table.find(player.room.alive_players, function(p) return p.dying end)
+  end,
+  on_cost = function (self, event, target, player, data)
+    local room = player.room
+    local tos = room:askForChoosePlayers(player, table.map(room:getOtherPlayers(player), Util.IdMapper), 1, 1, "#skillchooseother:::"..self.name, self.name, true)
+    if #tos > 0 then
+      self.cost_data = tos[1]
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    doOl__qingxian(room, room:getPlayerById(self.cost_data), player, "ol__qingxian_losehp", self.name)
+  end,
+}
+ol__jikang:addRelatedSkill(ol__liexian)
+local ol__rouxian = fk.CreateTriggerSkill{
+  name = "ol__rouxian",
+  events = {fk.Damaged},
+  can_trigger = function(self, event, target, player, data)
+    return player:hasSkill(self) and target == player and data.from and not data.from.dead and not table.find(player.room.alive_players, function(p) return p.dying end)
+  end,
+  on_cost = function (self, event, target, player, data)
+    return player.room:askForSkillInvoke(player, self.name, data, "#skilltosb::"..data.from.id..":"..self.name)
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    doOl__qingxian(room, data.from, player, "ol__qingxian_recover", self.name)
+  end,
+}
+ol__jikang:addRelatedSkill(ol__rouxian)
+local ol__hexian = fk.CreateTriggerSkill{
+  name = "ol__hexian",
+  events = {fk.HpRecover},
+  can_trigger = function(self, event, target, player, data)
+    return player:hasSkill(self) and target == player and not table.find(player.room.alive_players, function(p) return p.dying end)
+  end,
+  on_cost = function (self, event, target, player, data)
+    local room = player.room
+    local tos = room:askForChoosePlayers(player, table.map(room:getOtherPlayers(player), Util.IdMapper), 1, 1, "#skillchooseother:::"..self.name, self.name, true)
+    if #tos > 0 then
+      self.cost_data = tos[1]
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    doOl__qingxian(room, room:getPlayerById(self.cost_data), player, "ol__qingxian_recover", self.name)
+  end,
+}
+ol__jikang:addRelatedSkill(ol__hexian)
+Fk:loadTranslationTable{
+  ["ol__jikang"] = "嵇康",
+  ["ol__qingxian"] = "清弦",
+  [":ol__qingxian"] = "当你〔受到伤害/回复体力〕后，若没有角色处于濒死状态，你可以选一项令〔伤害来源/一名其他角色〕执行：1.失去1点体力并随机使用牌堆一张装备牌；2.回复1点体力并弃置一张装备牌。若其使用或弃置的牌的花色为♣️，你摸一张牌。",
+  ["ol__qingxian_losehp"] = "失去1点体力并随机使用牌堆一张装备牌",
+  ["ol__qingxian_recover"] = "回复1点体力并弃置一张装备牌",
+  ["ol__juexiang"] = "绝响",
+  [":ol__juexiang"] = "当你死亡时，你可以令一名其他角色随机获得“激弦”、“烈弦”、“柔弦”、“和弦”中的一个技能，然后直到其下回合开始前，该角色不能成为除其以外的角色使用♣️牌的目标。",
+  ["@@ol__juexiang"] = "绝响",
+  ["#ol__juexiang_prohibit"] = "绝响",
+  ["ol__jixian"] = "激弦",
+  [":ol__jixian"] = "当你受到伤害后，若没有角色处于濒死状态，你可以令伤害来源失去1点体力并随机使用牌堆一张装备牌。",
+  ["ol__liexian"] = "烈弦",
+  [":ol__liexian"] = "当你回复体力后，若没有角色处于濒死状态，你可以令一名其他角色失去1点体力并随机使用牌堆一张装备牌。",
+  ["ol__rouxian"] = "柔弦",
+  [":ol__rouxian"] = "当你受到伤害后，若没有角色处于濒死状态，你可以令伤害来源回复1点体力并弃置一张装备牌。",
+  ["ol__hexian"] = "和弦",
+  [":ol__hexian"] = "当你回复体力后，若没有角色处于濒死状态，你可以令一名其他角色回复1点体力并弃置一张装备牌。",
+  ["#skilltosb"] = "你可以对 %dest 发动“%arg”",
+  ["#skillchooseother"] = "你可以对一名其他角色发动“%arg”",
 
+  ["$ol__qingxian1"] = "弦音之妙，尽在无心。",
+  ["$ol__qingxian2"] = "流水清音听，高山弦拨心。",
+  ["$ol__juexiang1"] = "曲终人散皆是梦，繁华落尽一场空。",
+  ["$ol__juexiang2"] = "广陵一失，千古绝响。",
+  ["$ol__jixian"] = "曲至高亢，荡气回肠。",
+  ["$ol__liexian"] = "烈火灼心，弦音刺耳。",
+  ["$ol__rouxian"] = "稍安勿躁，请先听我一曲。",
+  ["$ol__hexian"] = "和声悦悦，琴音悠悠。",
+  ["~ol__jikang"] = "曲终人散，空留余音。",
+}
 
 
 
