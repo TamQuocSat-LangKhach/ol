@@ -1118,7 +1118,7 @@ local xiuhao = fk.CreateTriggerSkill{
   anim_type = "control",
   events = {fk.DamageCaused},
   can_trigger = function(self, event, target, player, data)
-    if player:usedSkillTimes(self.name, Player.HistoryTurn) == 0 and player:hasSkill(self) then
+    if player:usedSkillTimes(self.name, Player.HistoryTurn) == 0 and player:hasSkill(self) and data.to then
       return (target == player and data.to ~= player) or (target ~= player and data.to == player)
     end
   end,
@@ -1128,7 +1128,6 @@ local xiuhao = fk.CreateTriggerSkill{
     return player.room:askForSkillInvoke(player, self.name, nil, "#xiuhao-invoke:"..victim.id..":"..from.id)
   end,
   on_use = function(self, event, target, player, data)
-    local room = player.room
     local from = (target == player) and player or target
     from:drawCards(2, self.name)
     return true
