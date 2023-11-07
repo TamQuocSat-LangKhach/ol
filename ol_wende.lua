@@ -1678,7 +1678,7 @@ local zhongyan = General(extension, "zhongyan", "jin", 3, 3, General.Female)
 local bolan_skills = {
   --ol official skills
   "quhu", "qiangxi", "qice", "daoshu", "ol_ex__tiaoxin", "qiangwu", "tianyi", "ex__zhiheng", "ex__jieyin", "ex__guose",
-  "lijian", "qingnang", "lihun", "mingce", "mizhao", "sanchen", "gongxin", "chuli",
+  "lijian", "qingnang", "lihun", "mingce", "mizhao", "sanchen", "gongxin", "ex__chuli",
   --sp
   "quji", "dahe", "tanhu",
   --yjcm
