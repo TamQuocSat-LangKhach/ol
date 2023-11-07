@@ -2739,7 +2739,7 @@ local function SetGangshu(player, choice)
 end
 local gangshu = fk.CreateTriggerSkill{
   name = "gangshu",
-  anim_type = "drawcard",
+  anim_type = "special",
   events = {fk.CardUseFinished},
   can_trigger = function (self, event, target, player, data)
     if target == player and player:hasSkill(self) and data.card.type ~= Card.TypeBasic then
@@ -2865,13 +2865,142 @@ Fk:loadTranslationTable{
   ["#jianxuan-choose"] = "谏旋：你可以令一名角色摸一张牌",
 }
 
+local pengyang = General(extension, "ol__pengyang", "shu", 3)
+local qifan = fk.CreateTriggerSkill{
+  name = "qifan",
+  anim_type = "special",
+  events = {fk.PreCardUse},
+  can_trigger = function (self, event, target, player, data)
+    if target == player and player:hasSkill(self.name, true) then
+      local cards = data.card:isVirtual() and data.card.subcards or {data.card.id}
+      if #cards == 0 then return end
+      local yes = false
+      local use = player.room.logic:getCurrentEvent()
+      use:searchEvents(GameEvent.MoveCards, 1, function(e)
+        if e.parent and e.parent.id == use.id then
+          for _, move in ipairs(e.data) do
+            if move.moveReason == fk.ReasonUse then
+              for _, info in ipairs(move.moveInfo) do
+                if info.fromArea == Card.DrawPile then
+                  yes = true
+                end
+              end
+            end
+          end
+        end
+      end)
+      return yes
+    end
+  end,
+  on_cost = Util.TrueFunc,
+  on_use = function (self, event, target, player, data)
+    local room = player.room
+    local mark = player:getMark(self.name)
+    if mark == 0 then mark = {} end
+    table.insertIfNeed(mark, data.card.type)
+    room:setPlayerMark(player, self.name, mark)
+    local areas = {"j", "e", "h"}
+    for i = 1, #mark, 1 do
+      if player.dead then return end
+      player:throwAllCards(areas[i])
+    end
+  end,
+
+  refresh_events = {fk.AfterCardsMove},
+  can_refresh = function(self, event, target, player, data)
+    if player:hasSkill(self.name, true) then
+      for _, move in ipairs(data) do
+        if move.toArea == Card.DrawPile then
+          return true
+        end
+        for _, info in ipairs(move.moveInfo) do
+          if info.fromArea == Card.DrawPile then
+            return true
+          end
+        end
+      end
+    end
+  end,
+  on_refresh = function(self, event, target, player, data)
+    local n = 0
+    if player:getMark(self.name) ~= 0 then
+      n = n + #player:getMark(self.name)
+    end
+    local ids = {}
+    local length = #player.room.draw_pile
+    if length <= n then
+      ids = table.simpleClone(player.room.draw_pile)
+    else
+      for i = length, length - n, -1 do
+        table.insert(ids, player.room.draw_pile[i])
+      end
+    end
+    player.special_cards["qifan&"] = table.simpleClone(ids)  --FIXME: 似乎不应该是这种手感……
+    player:doNotify("ChangeSelf", json.encode {
+      id = player.id,
+      handcards = player:getCardIds("h"),
+      special_cards = player.special_cards,
+    })
+  end,
+}
+local qifan_prohibit = fk.CreateProhibitSkill{
+  name = "#qifan_prohibit",
+  prohibit_response = function(self, player, card)
+    return #player:getPile("qifan&") > 0 and table.contains(player:getPile("qifan&"), card:getEffectiveId())
+  end,
+}
+local tuoshi = fk.CreateTriggerSkill{
+  name = "tuoshi",
+  anim_type = "drawcard",
+  frequency = Skill.Compulsory,
+  events = {fk.CardUseFinished},
+  can_trigger = function (self, event, target, player, data)
+    return target == player and player:hasSkill(self) and (data.card.number == 1 or data.card.number > 10)
+  end,
+  on_use = function (self, event, target, player, data)
+    player:drawCards(2, self.name)
+    player.room:setPlayerMark(player, "@@tuoshi", 1)
+  end,
+
+  refresh_events = {fk.AfterCardUseDeclared},
+  can_refresh = function (self, event, target, player, data)
+    return target == player and player:getMark("@@tuoshi") > 0
+  end,
+  on_refresh = function (self, event, target, player, data)
+    player.room:setPlayerMark(player, "@@tuoshi", 0)
+  end,
+}
+local tuoshi_prohibit = fk.CreateProhibitSkill{
+  name = "#tuoshi_prohibit",
+  frequency = Skill.Compulsory,
+  prohibit_use = function(self, player, card)
+    return player:hasSkill("tuoshi") and card and card.trueName == "nullification"
+  end,
+}
+local tuoshi_targetmod = fk.CreateTargetModSkill{
+  name = "#tuoshi_targetmod",
+  bypass_times = function(self, player, skill, scope, card, to)
+    return player:getMark("@@tuoshi") > 0
+  end,
+  bypass_distances =  function(self, player, skill, card, to)
+    return player:getMark("@@tuoshi") > 0
+  end,
+}
+qifan:addRelatedSkill(qifan_prohibit)
+tuoshi:addRelatedSkill(tuoshi_prohibit)
+tuoshi:addRelatedSkill(tuoshi_targetmod)
+pengyang:addSkill(qifan)
+pengyang:addSkill(tuoshi)
+pengyang:addSkill("cunmu")
 Fk:loadTranslationTable{
   ["ol__pengyang"] = "彭羕",
   ["qifan"] = "器翻",
-  [":qifan"] = "当你需要使用牌时，你可以观看牌堆底X+1张牌，使用其中你需要的牌，然后依次弃置你以下前X个区域内所有牌（X为你以此法使用过的类别数）"..
-  "：判定区、装备区、手牌区。",
+  [":qifan"] = "当你需要使用牌时，你可以观看牌堆底X+1张牌，使用其中你需要的牌，然后依次弃置你以下前X个区域内所有牌（X为你以此法使用过的类别数）："..
+  "判定区、装备区、手牌区。",
   ["tuoshi"] = "侻失",
   [":tuoshi"] = "锁定技，你不能使用【无懈可击】；当你使用点数为字母的牌后，你摸两张牌且使用下一张牌无距离次数限制。",
+  ["qifan&"] = "器翻",
+  ["@@tuoshi"] = "侻失",
 }
 
 Fk:loadTranslationTable{
