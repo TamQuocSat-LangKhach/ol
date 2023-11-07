@@ -97,6 +97,67 @@ Fk:loadTranslationTable{
   ["~ol_ex__lvmeng"] = "以后……就交给年轻人了……",
 }
 
+local ol_ex__yaowu = fk.CreateTriggerSkill{
+  name = "ol_ex__yaowu",
+  mute = true,
+  anim_type = "negative",
+  frequency = Skill.Compulsory,
+  events = {fk.DamageInflicted},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self) and data.card ~= nil
+  end,
+  on_use = function(self, event, target, player, data)
+    if data.card.color ~= Card.Red or not data.card.color then
+      player.room:notifySkillInvoked(player, self.name, "masochism")
+      player:broadcastSkillInvoke(self.name, 1)
+      player:drawCards(1, self.name)
+    else 
+      if data.from ~= nil then
+        player.room:notifySkillInvoked(player, self.name, "negative")
+        player:broadcastSkillInvoke(self.name, 2)
+        data.from:drawCards(1, self.name)
+      end
+    end
+  end,
+}
+local ol_ex__shizhan = fk.CreateActiveSkill{
+  name = "ol_ex__shizhan",
+  anim_type = "support",
+  can_use = function(self, player)
+    return player:usedSkillTimes(self.name, Player.HistoryPhase) < 2
+  end,
+  card_filter = function() return false end,
+  target_filter = function(self, to_select, selected, cards)
+    return #selected == 0 
+  end,
+  target_num = 1,
+  on_use = function(self, room, use)
+    local duel = Fk:cloneCard("duel")
+    duel.skillName = self.name
+    local new_use = {} ---@type CardUseStruct
+    new_use.from = use.tos[1]
+    new_use.tos = { { use.from } }
+    new_use.card = duel
+    room:useCard(new_use)
+  end,
+}
+local huaxiong = General(extension, "ol_ex__huaxiong", "qun", 6)
+huaxiong:addSkill(ol_ex__yaowu)
+huaxiong:addSkill(ol_ex__shizhan)
+Fk:loadTranslationTable{
+  ["ol_ex__huaxiong"] = "界华雄",
+  ["ol_ex__yaowu"] = "耀武",
+  [":ol_ex__yaowu"] = "锁定技，当你受到伤害时，若造成伤害的牌：为红色，伤害来源摸一张牌；不为红色，你摸一张牌。",
+  ["ol_ex__shizhan"] = "势斩",
+  [":ol_ex__shizhan"] = "出牌阶段限两次，你可以令一名其他角色视为对你使用一张【决斗】。",
+
+  ["$ol_ex__yaowu1"] = "有吾在此，解太师烦忧。",
+  ["$ol_ex__yaowu2"] = "这些杂兵，我有何惧！",
+  ["$ol_ex__shizhan1"] = "看你能坚持几个回合！",
+  ["$ol_ex__shizhan2"] = "兀那汉子，且报上名来！",
+  ["~ol_ex__huaxiong"] = "我掉以轻心了……",
+}
+
 local xiahouyuan = General(extension, "ol_ex__xiahouyuan", "wei", 4)
 local ol_ex__shensu = fk.CreateTriggerSkill{
   name = "ol_ex__shensu",
@@ -3308,67 +3369,6 @@ Fk:loadTranslationTable{
   ["$ol_ex__guzheng1"] = "兴国为任，可驱百里之行。",
   ["$ol_ex__guzheng2"] = "固政之责，在君亦在臣。",
   ["~ol_ex__zhangzhaozhanghong"] = "老臣年迈，无力为继……",
-}
-
-local ol_ex__yaowu = fk.CreateTriggerSkill{
-  name = "ol_ex__yaowu",
-  mute = true,
-  anim_type = "negative",
-  frequency = Skill.Compulsory,
-  events = {fk.DamageInflicted},
-  can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self) and data.card ~= nil
-  end,
-  on_use = function(self, event, target, player, data)
-    if data.card.color ~= Card.Red or not data.card.color then
-      player.room:notifySkillInvoked(player, self.name, "masochism")
-      player:broadcastSkillInvoke(self.name, 1)
-      player:drawCards(1, self.name)
-    else 
-      if data.from ~= nil then
-        player.room:notifySkillInvoked(player, self.name, "negative")
-        player:broadcastSkillInvoke(self.name, 2)
-        data.from:drawCards(1, self.name)
-      end
-    end
-  end,
-}
-local ol_ex__shizhan = fk.CreateActiveSkill{
-  name = "ol_ex__shizhan",
-  anim_type = "support",
-  can_use = function(self, player)
-    return player:usedSkillTimes(self.name, Player.HistoryPhase) < 2
-  end,
-  card_filter = function() return false end,
-  target_filter = function(self, to_select, selected, cards)
-    return #selected == 0 
-  end,
-  target_num = 1,
-  on_use = function(self, room, use)
-    local duel = Fk:cloneCard("duel")
-    duel.skillName = self.name
-    local new_use = {} ---@type CardUseStruct
-    new_use.from = use.tos[1]
-    new_use.tos = { { use.from } }
-    new_use.card = duel
-    room:useCard(new_use)
-  end,
-}
-local huaxiong = General(extension, "ol_ex__huaxiong", "qun", 6)
-huaxiong:addSkill(ol_ex__yaowu)
-huaxiong:addSkill(ol_ex__shizhan)
-Fk:loadTranslationTable{
-  ["ol_ex__huaxiong"] = "界华雄",
-  ["ol_ex__yaowu"] = "耀武",
-  [":ol_ex__yaowu"] = "锁定技，当你受到伤害时，若造成伤害的牌：为红色，伤害来源摸一张牌；不为红色，你摸一张牌。",
-  ["ol_ex__shizhan"] = "势斩",
-  [":ol_ex__shizhan"] = "出牌阶段限两次，你可以令一名其他角色视为对你使用一张【决斗】。",
-
-  ["$ol_ex__yaowu1"] = "有吾在此，解太师烦忧。",
-  ["$ol_ex__yaowu2"] = "这些杂兵，我有何惧！",
-  ["$ol_ex__shizhan1"] = "看你能坚持几个回合！",
-  ["$ol_ex__shizhan2"] = "兀那汉子，且报上名来！",
-  ["~ol_ex__huaxiong"] = "我掉以轻心了……",
 }
 
 return extension

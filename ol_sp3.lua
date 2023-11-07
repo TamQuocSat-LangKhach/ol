@@ -2863,6 +2863,12 @@ Fk:loadTranslationTable{
   ["#gangshu-choice"] = "刚述：选择你要增加的一项",
   ["@gangshu"] = "刚述",
   ["#jianxuan-choose"] = "谏旋：你可以令一名角色摸一张牌",
+
+  ["$gangshu1"] = "羲而立之年，当为立身之事。",
+  ["$gangshu2"] = "总六军之要，秉选举之机。",
+  ["$jianxuan1"] = "司马氏卧虎藏龙，大兄安能小觑。",
+  ["$jianxuan2"] = "兄长以兽为猎，殊不知己亦为猎乎？",
+  ["~caoxi"] = "曹氏亡矣，大魏亡矣！",
 }
 
 local pengyang = General(extension, "ol__pengyang", "shu", 3)
