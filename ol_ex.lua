@@ -222,6 +222,7 @@ local ol_ex__shensu = fk.CreateTriggerSkill{
       from = target.id,
       tos = table.map(self.cost_data[1], function(pid) return { pid } end),
       card = slash,
+      extraUse = true,
     })
     return true
   end,
