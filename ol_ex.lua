@@ -1785,8 +1785,7 @@ local ol_ex__wulie = fk.CreateTriggerSkill{
       player:usedSkillTimes(self.name, Player.HistoryGame) < 1 and player.hp > 0
   end,
   on_cost = function(self, event, target, player, data)
-    local tos = player.room:askForChoosePlayers(player, table.map(player.room.alive_players, function (p)
-      return p.id end), 1, player.hp, "#ol_ex__wulie-choose", self.name, true)
+    local tos = player.room:askForChoosePlayers(player, table.map(player.room:getOtherPlayers(player), Util.IdMapper), 1, player.hp, "#ol_ex__wulie-choose", self.name, true)
     if #tos > 0 then
       self.cost_data = tos
       return true
@@ -1827,10 +1826,10 @@ Fk:loadTranslationTable{
   ["ol_ex__sunjian"] = "界孙坚",
   ["ol_ex__wulie"] = "武烈",
   ["#ol_ex__wulie_delay"] = "武烈",
-  [":ol_ex__wulie"] = "限定技，结束阶段，你可失去任意点体力并选择等量的角色，这些角色各获得1枚“烈”。当有“烈”的角色受到伤害时，其弃所有“烈”，防止此伤害。",
+  [":ol_ex__wulie"] = "限定技，结束阶段，你可以失去任意点体力，令等量的其他角色各获得1枚“烈”标记。当有“烈”的角色受到伤害时，其弃所有“烈”，防止此伤害。",
 
   ["@@ol_ex__wulie_lie"] = "烈",
-  ["#ol_ex__wulie-choose"] = "武烈：选择任意名角色并失去等量的体力，防止这些角色受到的下次伤害",
+  ["#ol_ex__wulie-choose"] = "武烈：选择任意名其他角色并失去等量的体力，防止这些角色受到的下次伤害",
 
   ["$yinghun_ol_ex__sunjian1"] = "提刀奔走，灭敌不休。",
   ["$yinghun_ol_ex__sunjian2"] = "贼寇草莽，我且出战。",

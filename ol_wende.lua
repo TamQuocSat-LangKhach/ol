@@ -2192,8 +2192,8 @@ local wanyi = fk.CreateTriggerSkill{
     if target == player and player:hasSkill(self) then
       if event == fk.TargetSpecified then
         return (data.card.trueName == "slash" or data.card:isCommonTrick()) and data.tos and
-          #TargetGroup:getRealTargets(data.tos) == 1 and TargetGroup:getRealTargets(data.tos)[1] ~= player.id and
-          not player.room:getPlayerById(TargetGroup:getRealTargets(data.tos)[1]):isNude()
+          #AimGroup:getAllTargets(data.tos) == 1 and AimGroup:getAllTargets(data.tos)[1] ~= player.id and
+          not player.room:getPlayerById(AimGroup:getAllTargets(data.tos)[1]):isNude()
       elseif #player:getPile("wanyi") > 0 then
         if event == fk.EventPhaseStart then
           return player.phase == Player.Finish

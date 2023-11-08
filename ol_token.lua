@@ -548,4 +548,727 @@ Fk:loadTranslationTable{
   ["#wheel_cart-invoke"] = "飞轮战舆：你可以令%src交给你一张牌，然后弃置此牌",
   ["#wheel_cart-give"] = "飞轮战舆：你须交给%src一张牌",
 }
+
+local py_halberd_skill = fk.CreateTriggerSkill{
+  name = "#py_halberd_skill",
+  attached_equip = "py_halberd",
+  frequency = Skill.Compulsory,
+  events = {fk.Damage},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self) and data.card and data.card.trueName == "slash" and not data.chained
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local choices = {"draw1"}
+    if not data.to:isNude() then table.insert(choices, "py_halberd_throw") end
+    if room:askForChoice(player, choices, self.name) == "draw1" then
+      player:drawCards(1, self.name)
+    else
+      local cid = room:askForCardChosen(player, data.to, "he", self.name)
+      room:throwCard({cid}, self.name, data.to, player)
+    end
+  end,
+}
+Fk:addSkill(py_halberd_skill)
+local py_halberd = fk.CreateWeapon{
+  name = "&py_halberd",
+  suit = Card.Diamond,
+  number = 12,
+  attack_range = 4,
+  equip_skill = py_halberd_skill,
+}
+extension:addCard(py_halberd)
+Fk:loadTranslationTable{
+  ["py_halberd"] = "无双方天戟",
+  ["#py_halberd_skill"] = "无双方天戟",
+  [":py_halberd"] = "装备牌·武器<br/><b>攻击范围</b>：4<br/><b>武器技能</b>：你使用【杀】对目标角色造成伤害后，你可以摸一张牌或弃置该角色一张牌。",
+  ["py_halberd_throw"] = "弃置其一张牌",
+}
+
+local py_blade_skill = fk.CreateTriggerSkill{
+  name = "#py_blade_skill",
+  attached_equip = "py_blade",
+  frequency = Skill.Compulsory,
+  events = {fk.TargetSpecified},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self) and data.card.trueName == "slash" and data.firstTarget and data.card.color == Card.Red
+  end,
+  on_use = function(self, event, target, player, data)
+    data.disresponsiveList = table.map(player.room.alive_players, Util.IdMapper)
+  end,
+}
+Fk:addSkill(py_blade_skill)
+local py_blade = fk.CreateWeapon{
+  name = "&py_blade",
+  suit = Card.Spade,
+  number = 5,
+  attack_range = 3,
+  equip_skill = py_blade_skill,
+}
+extension:addCard(py_blade)
+Fk:loadTranslationTable{
+  ["py_blade"] = "鬼龙斩月刀",
+  ["#py_blade_skill"] = "鬼龙斩月刀",
+  [":py_blade"] = "装备牌·武器<br/><b>攻击范围</b>：3<br/><b>武器技能</b>：锁定技，你使用红色【杀】不能被【闪】响应。",
+}
+
+local py_sword_skill = fk.CreateTriggerSkill{
+  name = "#py_sword_skill",
+  attached_equip = "py_sword",
+  frequency = Skill.Compulsory,
+  events = { fk.TargetSpecified },
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self) and
+      data.card and data.card.trueName == "slash"
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    room:addPlayerMark(room:getPlayerById(data.to), fk.MarkArmorNullified)
+    room:addPlayerMark(room:getPlayerById(data.to), "py_swordMark")
+    data.extra_data = data.extra_data or {}
+    data.extra_data.py_swordNullified = data.extra_data.py_swordNullified or {}
+    data.extra_data.py_swordNullified[tostring(data.to)] = (data.extra_data.py_swordNullified[tostring(data.to)] or 0) + 1
+  end,
+
+  refresh_events = {fk.CardUseFinished},
+  can_refresh = function(self, event, target, player, data)
+    return data.extra_data and data.extra_data.py_swordNullified
+  end,
+  on_refresh = function(self, event, target, player, data)
+    local room = player.room
+    for key, num in pairs(data.extra_data.py_swordNullified) do
+      local p = room:getPlayerById(tonumber(key))
+      if p:getMark(fk.MarkArmorNullified) > 0 then
+        room:removePlayerMark(p, fk.MarkArmorNullified, num)
+      end
+      if p:getMark("py_swordMark") > 0 then
+        room:removePlayerMark(p, "py_swordMark", num)
+      end
+    end
+    data.py_swordNullified = nil
+  end,
+}
+local py_sword_prohibit = fk.CreateProhibitSkill{
+  name = "#py_sword_prohibit",
+  prohibit_use = function(self, player, card)
+    if player:getMark("py_swordMark") > 0 then
+      local subcards = card:isVirtual() and card.subcards or {card.id}
+      return #subcards > 0 and table.every(subcards, function(id) return table.contains(player:getCardIds(Player.Hand), id) end)
+    end
+  end,
+  prohibit_response = function(self, player, card)
+    if player:getMark("py_swordMark") > 0 then
+      local subcards = card:isVirtual() and card.subcards or {card.id}
+      return #subcards > 0 and table.every(subcards, function(id) return table.contains(player:getCardIds(Player.Hand), id) end)
+    end
+  end,
+}
+py_sword_skill:addRelatedSkill(py_sword_prohibit)
+Fk:addSkill(py_sword_skill)
+local py_sword = fk.CreateWeapon{
+  name = "&py_sword",
+  suit = Card.Spade,
+  number = 6,
+  attack_range = 2,
+  equip_skill = py_sword_skill,
+}
+extension:addCard(py_sword)
+Fk:loadTranslationTable{
+  ["py_sword"] = "赤血青锋",
+  ["#py_sword_skill"] = "赤血青锋",
+  [":py_sword"] = "装备牌·武器<br /><b>攻击范围</b>：２<br /><b>武器技能</b>：锁定技，你使用【杀】指定目标后，此【杀】无视目标角色的防具且目标不能使用或打出手牌，直至此【杀】结算完毕。",
+}
+
+local py_double_halberd_skill = fk.CreateTriggerSkill{
+  name = "#py_double_halberd_skill",
+  attached_equip = "py_double_halberd",
+  events = {fk.CardEffectCancelledOut},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self) and data.card.trueName == "slash" and player.hp > 0
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    room:loseHp(player, 1, self.name)
+    if player.dead then return end
+    local cards = room:getSubcardsByRule(data.card, { Card.Processing })
+    if #cards > 0 then
+      room:moveCards({
+        ids = cards,
+        to = player.id,
+        toArea = Card.PlayerHand,
+        moveReason = fk.ReasonJustMove,
+      })
+    end
+    if player.dead then return end 
+    player:drawCards(1, self.name)
+    room:addPlayerMark(player, "py_double_halberd-turn")
+  end,
+}
+local py_double_halberd_targetmod = fk.CreateTargetModSkill{
+  name = "#py_double_halberd_targetmod",
+  residue_func = function(self, player, skill, scope, card)
+    if skill.trueName == "slash_skill" and scope == Player.HistoryPhase then
+      return player:getMark("py_double_halberd-turn")
+    end
+  end,
+}
+py_double_halberd_skill:addRelatedSkill(py_double_halberd_targetmod)
+Fk:addSkill(py_double_halberd_skill)
+local py_double_halberd = fk.CreateWeapon{
+  name = "&py_double_halberd",
+  suit = Card.Diamond,
+  number = 13,
+  attack_range = 3,
+  equip_skill = py_double_halberd_skill,
+}
+extension:addCard(py_double_halberd)
+Fk:loadTranslationTable{
+  ["py_double_halberd"] = "镔铁双戟",
+  ["#py_double_halberd_skill"] = "镔铁双戟",
+  [":py_double_halberd"] = "装备牌·武器<br/><b>攻击范围</b>：3<br/><b>武器技能</b>：你使用的【杀】被抵消后，你可以失去1点体力，然后获得此【杀】，摸一张牌，本回合使用【杀】的次数+1。",
+}
+
+local py_chain_skill = fk.CreateTriggerSkill{
+  name = "#py_chain_skill",
+  attached_equip = "py_chain",
+  frequency = Skill.Compulsory,
+  events = {fk.TargetSpecified},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self) and data.card.trueName == "slash" and
+      not player.room:getPlayerById(data.to).chained
+  end,
+  on_use = function(self, event, target, player, data)
+    player.room:getPlayerById(data.to):setChainState(true)
+  end,
+}
+Fk:addSkill(py_chain_skill)
+local blackChain = fk.CreateWeapon{
+  name = "&py_chain",
+  suit = Card.Spade,
+  number = 13,
+  attack_range = 3,
+  equip_skill = py_chain_skill,
+}
+extension:addCard(blackChain)
+Fk:loadTranslationTable{
+  ["py_chain"] = "乌铁锁链",
+  ["#py_chain_skill"] = "乌铁锁链",
+  [":py_chain"] = "装备牌·武器<br/><b>攻击范围</b>：3<br/><b>武器技能</b>：锁定技，你使用【杀】指定目标后，若其未横置，则横置之。",
+}
+
+local py_fan_skill = fk.CreateViewAsSkill{
+  name = "py_fan_skill",
+  attached_equip = "py_fan",
+  interaction = function(self)
+    local choices = {}
+    for _, id in ipairs(Fk:getAllCardIds()) do
+      local card = Fk:getCardById(id)
+      if card.trueName == "slash" and card.name ~= "slash" then
+        table.insertIfNeed(choices, card.name)
+      end
+    end
+    return UI.ComboBox{choices = choices}
+  end,
+  card_filter = function(self, to_select, selected)
+    return #selected == 0 and Fk:getCardById(to_select).trueName == "slash" and Fk:getCardById(to_select).name ~= "slash" and
+      Fk:getCardById(to_select).name ~= self.interaction.data
+  end,
+  view_as = function(self, cards)
+    if #cards ~= 1 then return end
+    local card = Fk:cloneCard(self.interaction.data)
+    card:addSubcard(cards[1])
+    card.skillName = "py_fan"
+    return card
+  end,
+}
+Fk:addSkill(py_fan_skill)
+local py_fan = fk.CreateWeapon{
+  name = "&py_fan",
+  suit = Card.Diamond,
+  number = 1,
+  attack_range = 4,
+  equip_skill = py_fan_skill,
+}
+extension:addCard(py_fan)
+Fk:loadTranslationTable{
+  ["py_fan"] = "五行鹤翎扇",
+  ["py_fan_skill"] = "五行扇",
+  [":py_fan_skill"] = "你可以将属性【杀】当任意其他属性【杀】使用。",
+  [":py_fan"] = "装备牌·武器<br/><b>攻击范围</b>：4<br/><b>武器技能</b>：你可以将属性【杀】当任意其他属性【杀】使用。",
+}
+
+local py_belt_skill = fk.CreateTriggerSkill{
+  name = "#py_belt_skill",
+  attached_equip = "py_belt",
+  events = {fk.TargetConfirmed},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self) and data.from ~= player.id and #AimGroup:getAllTargets(data.tos) == 1
+  end,
+  on_use = function (self, event, target, player, data)
+    local room = player.room
+    local judge = {
+      who = player,
+      reason = self.name,
+      pattern = ".|.|heart",
+    }
+    room:judge(judge)
+    if judge.card.suit == Card.Heart then
+      table.insertIfNeed(data.nullifiedTargets, player.id)
+    end
+  end,
+}
+Fk:addSkill(py_belt_skill)
+local py_belt = fk.CreateArmor{
+  name = "&py_belt",
+  suit = Card.Spade,
+  number = 2,
+  equip_skill = py_belt_skill,
+}
+extension:addCard(py_belt)
+Fk:loadTranslationTable{
+  ["py_belt"] = "玲珑狮蛮带",
+  [":py_belt"] = "装备牌·防具<br /><b>防具技能</b>：当其他角色使用牌指定你为唯一目标后，你可以进行一次判定，若判定结果为红桃，则此牌对你无效。",
+  ["#py_belt_skill"] = "玲珑狮蛮带",
+}
+
+local py_robe_skill = fk.CreateTriggerSkill{
+  name = "#py_robe_skill",
+  attached_equip = "py_robe",
+  frequency = Skill.Compulsory,
+  events = {fk.DamageInflicted},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self) and data.damageType ~= fk.NormalDamage
+  end,
+  on_use = Util.TrueFunc,
+}
+Fk:addSkill(py_robe_skill)
+local py_robe = fk.CreateArmor{
+  name = "&py_robe",
+  suit = Card.Club,
+  number = 1,
+  equip_skill = py_robe_skill,
+}
+extension:addCard(py_robe)
+Fk:loadTranslationTable{
+  ["py_robe"] = "红棉百花袍",
+  [":py_robe"] = "装备牌·防具<br /><b>防具技能</b>：锁定技，防止你受到的属性伤害。",
+  ["#py_robe_skill"] = "红棉百花袍",
+}
+
+local py_cloak_skill = fk.CreateProhibitSkill{
+  name = "#py_cloak_skill",
+  attached_equip = "py_cloak",
+  is_prohibited = function(self, from, to, card)
+    return from ~= to and to:hasSkill(self) and card:isCommonTrick()
+  end,
+}
+Fk:addSkill(py_cloak_skill)
+local py_cloak = fk.CreateArmor{
+  name = "&py_cloak",
+  suit = Card.Spade,
+  number = 9,
+  equip_skill = py_cloak_skill,
+}
+extension:addCard(py_cloak)
+Fk:loadTranslationTable{
+  ["py_cloak"] = "国风玉袍",
+  [":py_cloak"] = "装备牌·防具<br /><b>防具技能</b>：锁定技，你不能成为其他角色使用普通锦囊牌的目标。",
+  ["#py_cloak_skill"] = "国风玉袍",
+}
+
+local py_diagram_skill = fk.CreateTriggerSkill{
+  name = "#py_diagram_skill",
+  attached_equip = "py_diagram",
+  frequency = Skill.Compulsory,
+  events = {fk.PreCardEffect},
+  can_trigger = function(self, event, target, player, data)
+    return player.id == data.to and player:hasSkill(self) and data.card.trueName == "slash"
+  end,
+  on_use = Util.TrueFunc,
+}
+Fk:addSkill(py_diagram_skill)
+local py_diagram = fk.CreateArmor{
+  name = "&py_diagram",
+  suit = Card.Spade,
+  number = 2,
+  equip_skill = py_diagram_skill,
+}
+extension:addCard(py_diagram)
+Fk:loadTranslationTable{
+  ["py_diagram"] = "奇门八卦",
+  [":py_diagram"] = "装备牌·防具<br /><b>防具技能</b>：锁定技，【杀】对你无效。",
+  ["#py_diagram_skill"] = "奇门八卦",
+}
+
+local py_plate_skill = fk.CreateTriggerSkill{
+  name = "#py_plate_skill",
+  attached_equip = "py_plate",
+  events = {fk.DamageInflicted},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self) and (data.damage > 1 or data.damage >= player.hp)
+    and table.find(player:getEquipments(Card.SubtypeArmor), function(id) return Fk:getCardById(id).name == "py_plate" end)
+  end,
+  on_use = function(self, event, target, player, data)
+    local ids = table.filter(player:getEquipments(Card.SubtypeArmor), function(id) return Fk:getCardById(id).name == "py_plate" end)
+    player.room:moveCards({
+      ids = ids,
+      from = player.id,
+      toArea = Card.DiscardPile,
+      moveReason = fk.ReasonPutIntoDiscardPile,
+    })
+    return true
+  end,
+}
+Fk:addSkill(py_plate_skill)
+local py_putEquip = fk.CreateActiveSkill{
+  name = "py_putEquip",
+  card_num = 1,
+  target_num = 1,
+  card_filter = function(self, to_select, selected)
+    return #selected == 0 and Fk:getCardById(to_select).type == Card.TypeEquip and not Fk:currentRoom():getCardArea(to_select) == Player.Equip
+  end,
+  target_filter = function(self, to_select, selected, cards)
+    return #selected == 0 and #cards == 1 and to_select ~= Self.id and
+      Fk:currentRoom():getPlayerById(to_select):hasEmptyEquipSlot(Fk:getCardById(cards[1]).sub_type)
+  end,
+  on_use = function(self, room, effect)
+    room:broadcastPlaySound("./audio/card/common/armor")
+    room:moveCards({
+      ids = effect.cards,
+      from = effect.from,
+      to = effect.tos[1],
+      toArea = Card.PlayerEquip,
+      moveReason = fk.ReasonPut,
+    })
+  end
+}
+Fk:addSkill(py_putEquip)
+local py_plate = fk.CreateArmor{
+  name = "&py_plate",
+  suit = Card.Club,
+  number = 1,
+  equip_skill = py_plate_skill,
+  special_skills = {"putEquip"},
+}
+extension:addCard(py_plate)
+Fk:loadTranslationTable{
+  ["py_plate"] = "护心镜",
+  ["#py_plate_skill"] = "护心镜",
+  [":py_plate"] = "装备牌·防具<br/><b>防具技能</b>：当你受到大于1点的伤害或致命伤害时，你可将装备区里的【护心镜】置入弃牌堆，若如此做，防止此伤害。出牌阶段，你可将手牌中的【护心镜】置入其他角色的装备区。",
+  ["py_putEquip"] = "置入",
+  [":py_putEquip"] = "你可以将此牌置入其他角色的装备区",
+}
+
+local py_armor_skill = fk.CreateTriggerSkill{
+  name = "#py_armor_skill",
+  attached_equip = "py_armor",
+  frequency = Skill.Compulsory,
+  events = {fk.TargetConfirmed},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self) and #AimGroup:getAllTargets(data.tos) > 1 and (data.card.trueName == "slash" or
+      (data.card.type == Card.TypeTrick and (data.card.is_damage_card or data.card.color == Card.Black)) )
+  end,
+  on_use = function(self, event, target, player, data)
+    table.insertIfNeed(data.nullifiedTargets, player.id)
+  end,
+}
+Fk:addSkill(py_armor_skill)
+local py_armor = fk.CreateArmor{
+  name = "&py_armor",
+  suit = Card.Club,
+  number = 2,
+  equip_skill = py_armor_skill,
+}
+extension:addCard(py_armor)
+Fk:loadTranslationTable{
+  ["py_armor"] = "黑光铠",
+  ["#py_armor_skill"] = "黑光铠",
+  [":py_armor"] = "装备牌·防具<br/><b>防具技能</b>：锁定技，当你成为【杀】、伤害锦囊或黑色锦囊牌的目标后，若你不是唯一目标，此牌对你无效。",
+}
+
+local py_hat_skill = fk.CreateTriggerSkill{
+  name = "#py_hat_skill",
+  attached_equip = "py_hat",
+  events = {fk.EventPhaseStart},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self) and player.phase == Player.Start
+  end,
+  on_cost = function(self, event, target, player, data)
+    local tos = player.room:askForChoosePlayers(player, table.map(player.room:getOtherPlayers(player), Util.IdMapper), 1, 1, "#py_hat-choose", self.name, true)
+    if #tos > 0 then
+      self.cost_data = tos[1]
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    player.room:damage { from = player, to = player.room:getPlayerById(self.cost_data), damage = 1, skillName = self.name }
+  end,
+}
+Fk:addSkill(py_hat_skill)
+local py_hat = fk.CreateTreasure{
+  name = "&py_hat",
+  suit = Card.Diamond,
+  number = 1,
+  equip_skill = py_hat_skill,
+}
+extension:addCard(py_hat)
+Fk:loadTranslationTable{
+  ["py_hat"] = "束发紫金冠",
+  ["#py_hat_skill"] = "束发紫金冠",
+  [":py_hat"] = "装备牌·宝具<br/><b>宝具技能</b>：准备阶段，你可以对一名其他角色造成1点伤害。",
+  ["#py_hat-choose"] = "束发紫金冠：你可以对一名其他角色造成1点伤害",
+}
+
+local py_coronet_skill = fk.CreateTriggerSkill{
+  name = "#py_coronet_skill",
+  attached_equip = "py_coronet",
+  frequency = Skill.Compulsory,
+  events = {fk.DrawNCards},
+  on_use = function(self, event, target, player, data)
+    data.n = data.n + 2
+  end,
+}
+local py_coronet_maxcards = fk.CreateMaxCardsSkill{
+  name = "#py_coronet_maxcards",
+  correct_func = function(self, player)
+    if player:hasSkill(self) then
+      return -1
+    end
+  end,
+}
+py_coronet_skill:addRelatedSkill(py_coronet_maxcards)
+Fk:addSkill(py_coronet_skill)
+local py_coronet = fk.CreateTreasure{
+  name = "&py_coronet",
+  suit = Card.Club,
+  number = 4,
+  equip_skill = py_coronet_skill,
+  on_install = function(self, room, player)
+    Treasure.onInstall(self, room, player)
+    room:broadcastProperty(player, "MaxCards")
+  end,
+  on_uninstall = function(self, room, player)
+    Treasure.onUninstall(self, room, player)
+    room:broadcastProperty(player, "MaxCards")
+  end,
+}
+extension:addCard(py_coronet)
+Fk:loadTranslationTable{
+  ["py_coronet"] = "虚妄之冕",
+  ["#py_coronet_skill"] = "虚妄之冕",
+  [":py_coronet"] = "装备牌·宝具<br/><b>宝具技能</b>：锁定技，摸牌阶段，你额外摸两张牌；你的手牌上限-1。",
+}
+
+local py_threebook_skill = fk.CreateAttackRangeSkill{
+  name = "#py_threebook_skill",
+  frequency = Skill.Compulsory,
+  correct_func = function (self, from)
+    if from:hasSkill(self) then
+      return 1
+    end
+  end,
+}
+local py_threebook_maxcards = fk.CreateMaxCardsSkill{
+  name = "#py_threebook_maxcards",
+  correct_func = function(self, player)
+    if player:hasSkill(self) then
+      return 1
+    end
+  end,
+}
+local py_threebook_targetmod = fk.CreateTargetModSkill{
+  name = "#py_threebook_targetmod",
+  residue_func = function(self, player, skill, scope, card)
+    if player:hasSkill(self) and skill.trueName == "slash_skill" and scope == Player.HistoryPhase then
+      return 1
+    end
+  end,
+}
+py_threebook_skill:addRelatedSkill(py_threebook_maxcards)
+py_threebook_skill:addRelatedSkill(py_threebook_targetmod)
+Fk:addSkill(py_threebook_skill)
+local py_threebook = fk.CreateTreasure{
+  name = "&py_threebook",
+  suit = Card.Spade,
+  number = 5,
+  equip_skill = py_threebook_skill,
+  on_install = function(self, room, player)
+    Treasure.onInstall(self, room, player)
+    room:broadcastProperty(player, "MaxCards")
+  end,
+  on_uninstall = function(self, room, player)
+    Treasure.onUninstall(self, room, player)
+    room:broadcastProperty(player, "MaxCards")
+  end,
+}
+extension:addCard(py_threebook)
+Fk:loadTranslationTable{
+  ["py_threebook"] = "三略",
+  [":py_threebook"] = "装备牌·宝具<br/><b>宝具技能</b>：锁定技，你的攻击范围+1；你的手牌上限+1；你出牌阶段使用【杀】的次数+1。",
+}
+
+local py_mirror_skill = fk.CreateTriggerSkill{
+  name = "#py_mirror_skill",
+  attached_equip = "py_mirror",
+  events = {fk.EventPhaseEnd},
+  can_trigger = function (self, event, target, player, data)
+    return target == player and player:hasSkill(self) and player.phase == Player.Play and not player:isKongcheng()
+  end,
+  on_cost = function (self, event, target, player, data)
+    local ids = table.filter(player:getCardIds("h"), function (cid) 
+      return Fk:getCardById(cid).type == Card.TypeBasic or Fk:getCardById(cid):isCommonTrick()
+    end)
+    if #ids == 0 then return false end
+    local cards = player.room:askForCard(player, 1, 1, false, self.name, true, ".|.|.|hand|.|.|"..table.concat(ids,","), "#py_mirror-show")
+    if #cards > 0 then
+      self.cost_data = cards[1]
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local show = self.cost_data
+    player:showCards({show})
+    local card = Fk:cloneCard(Fk:getCardById(show).name)
+    card.skillName = self.name
+    local canUse = false
+    room:setPlayerMark(player, "py_mirror_temp",1)
+    if player:canUse(card) then canUse = true end
+    if not canUse or player:prohibitUse(card) then return end
+    room:setPlayerMark(player, "py_mirror_name",card.name)
+    local success, dat = player.room:askForUseViewAsSkill(player, "py_mirror_viewas", "#py_mirror-use:::"..card.name, true)
+    room:setPlayerMark(player, "py_mirror_temp",0)
+    if success then
+      room:useCard{
+        from = player.id,
+        tos = table.map(dat.targets, function(p) return {p} end),
+        card = card,
+      }
+    end
+  end,
+}
+local py_mirror_viewas = fk.CreateViewAsSkill{
+  name = "py_mirror_viewas",
+  card_filter = Util.FalseFunc,
+  view_as = function(self, cards)
+    local card = Fk:cloneCard(Self:getMark("py_mirror_name"))
+    card.skillName = "#py_mirror_skill"
+    return card
+  end,
+}
+local py_mirror_targetmod = fk.CreateTargetModSkill{
+  name = "#py_mirror_targetmod",
+  bypass_times = function(self, player)
+    return player:getMark("py_mirror_temp") > 0
+  end,
+}
+py_mirror_skill:addRelatedSkill(py_mirror_targetmod)
+Fk:addSkill(py_mirror_viewas)
+Fk:addSkill(py_mirror_skill)
+local py_mirror = fk.CreateTreasure{
+  name = "&py_mirror",
+  suit = Card.Diamond,
+  number = 1,
+  equip_skill = py_mirror_skill,
+}
+extension:addCard(py_mirror)
+Fk:loadTranslationTable{
+  ["py_mirror"] = "照骨镜",
+  ["#py_mirror_skill"] = "照骨镜",
+  [":py_mirror"] = "装备牌·宝具<br/><b>宝具技能</b>：出牌阶段结束时，你可展示一张基本牌或普通锦囊牌，视为你使用之。",
+  ["py_mirror_viewas"] = "照骨镜",
+  ["#py_mirror-show"] = "照骨镜：你可展示一张基本牌或普通锦囊牌",
+  ["#py_mirror-use"] = "照骨镜：视为使用%arg",
+}
+
+local py_map_skill = fk.CreateTriggerSkill{
+  name = "#py_map_skill",
+  attached_equip = "py_map",
+}
+Fk:addSkill(py_map_skill)
+local wonderMap = fk.CreateTreasure{
+  name = "&py_map",
+  suit = Card.Club,
+  number = 12,
+  equip_skill = py_map_skill,
+  on_install = function(self, room, player)
+    if player:isAlive() and self.equip_skill:isEffectable(player) then
+      room:askForDiscard(player, 1, 1, true, self.name, false, "^py_map", "#py_map-discard")
+    end
+  end,
+  on_uninstall = function(self, room, player)
+    if player:isAlive() and self.equip_skill:isEffectable(player) then
+      local n = 5 - #player.player_cards[Player.Hand]
+      if n > 0 then
+        player:drawCards(n, self.name)
+      end
+    end
+  end,
+}
+extension:addCard(wonderMap)
+Fk:loadTranslationTable{
+  ["py_map"] = "天机图",
+  [":py_map"] = "装备牌·宝物<br/><b>宝物技能</b>：锁定技，此牌进入你的装备区时，弃置一张其他牌；此牌离开你的装备区时，你将手牌摸至五张。",
+  ["#py_map-discard"] = "天机图：你须弃置一张【天机图】以外的牌",
+}
+
+local py_tactics_skill = fk.CreateTriggerSkill{
+  name = "#py_tactics_skill",
+  events = {fk.EventPhaseStart, fk.EventPhaseEnd},
+  can_trigger = function(self, event, target, player, data)
+    if target == player and player:hasSkill(self) and player.phase == Player.Play then
+      if event == fk.EventPhaseStart then
+        return true
+      else
+        return not player:isKongcheng()
+      end
+    end
+  end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    if event == fk.EventPhaseStart then
+      local to = room:askForChoosePlayers(player, table.map(room:getAlivePlayers(), function (p)
+        return p.id end), 1, 1, "#py_tactics-choose", self.name, true)
+      if #to > 0 then
+        self.cost_data = to[1]
+        return true
+      end
+    else
+      local card = room:askForCard(player, 1, 1, false, self.name, true, ".", "#py_tactics-invoke")
+      if #card > 0 then
+        self.cost_data = card
+        return true
+      end
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    if event == fk.EventPhaseStart then
+      local to = room:getPlayerById(self.cost_data)
+      if to.chained then
+        to:setChainState(false)
+      else
+        to:setChainState(true)
+      end
+    else
+      room:recastCard(self.cost_data, player, self.name)
+    end
+  end,
+}
+Fk:addSkill(py_tactics_skill)
+local taigongTactics = fk.CreateTreasure{
+  name = "&py_tactics",
+  suit = Card.Spade,
+  number = 2,
+  equip_skill = py_tactics_skill,
+}
+extension:addCard(taigongTactics)
+Fk:loadTranslationTable{
+  ["py_tactics"] = "太公阴符",
+  ["#py_tactics_skill"] = "太公阴符",
+  [":py_tactics"] = "装备牌·宝物<br/><b>宝物技能</b>：出牌阶段开始时，你可以横置或重置一名角色；出牌阶段结束时，你可以重铸一张手牌。",
+  ["#py_tactics-choose"] = "太公阴符：你可以横置或重置一名角色",
+  ["#py_tactics-invoke"] = "太公阴符：你可以重铸一张手牌",
+}
+
 return extension

@@ -3531,6 +3531,222 @@ Fk:loadTranslationTable{
   ["~zhangyan"] = "草莽之辈，难登大雅之堂……",
 }
 
+local ol__puyuan = General(extension, "ol__puyuan", "shu", 4)
+local ol__puyuan_weapons = {"py_halberd", "py_blade", "py_sword", "py_double_halberd", "py_chain", "py_fan"}
+local ol__puyuan_armors = {"py_belt", "py_robe", "py_cloak", "py_diagram", "py_plate", "py_armor"}
+local ol__puyuan_treasures = {"py_hat", "py_coronet", "py_threebook", "py_mirror", "py_map", "py_tactics"}
+local shengong = fk.CreateActiveSkill{
+  name = "shengong",
+  anim_type = "support",
+  can_use = function(self, player)
+    return player:getMark("shengong_weapon-phase") == 0 or player:getMark("shengong_armor-phase") == 0 or player:getMark("shengong_treasure-phase") == 0
+  end,
+  card_num = 1,
+  card_filter = function(self, to_select, selected)
+    local card = Fk:getCardById(to_select)
+    if #selected == 0 and not Self:prohibitDiscard(card) then
+      return (card.sub_type == Card.SubtypeWeapon and Self:getMark("shengong_weapon-phase") == 0)
+      or (card.sub_type == Card.SubtypeArmor and Self:getMark("shengong_armor-phase") == 0)
+      or ((card.sub_type == Card.SubtypeTreasure or card.sub_type == Card.SubtypeDefensiveRide or card.sub_type == Card.SubtypeOffensiveRide) and Self:getMark("shengong_treasure-phase") == 0)
+    end
+  end,
+  target_num = 0,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    room:throwCard(effect.cards, self.name, player, player)
+    local throw = Fk:getCardById(effect.cards[1])
+    local list,cards = {},{}
+    if throw.sub_type == Card.SubtypeWeapon then
+      room:addPlayerMark(player, "shengong_weapon-phase")
+      list = ol__puyuan_weapons
+    elseif throw.sub_type == Card.SubtypeArmor then
+      room:addPlayerMark(player, "shengong_armor-phase")
+      list = ol__puyuan_armors
+    else
+      room:addPlayerMark(player, "shengong_treasure-phase")
+      list = ol__puyuan_treasures
+    end
+    for _, id in ipairs(room.void) do
+      local name = Fk:getCardById(id).name
+      if table.contains(list, name) then
+        table.insert(cards, id)
+      end
+    end
+    if player.dead or #cards == 0 then return end
+    local throw = {}
+    local good,bad = 0,0
+    for _, p in ipairs(room:getAlivePlayers()) do
+      local help = false
+      if p == player or room:askForChoice(p, {"shengong_good","shengong_bad"},self.name,"#shengong-help:"..player.id) == "shengong_good" then
+        help = true
+      end
+      local show = room:getNCards(1)
+      table.insertIfNeed(throw, show[1])
+      room:moveCards({ ids = show, toArea = Card.Processing, moveReason = fk.ReasonPut })
+      local num = Fk:getCardById(show[1]).number
+      if help then
+        good = good + num
+      else
+        bad = bad + num
+      end
+    end
+    room:moveCards({
+      ids = throw,
+      toArea = Card.DiscardPile,
+      moveReason = fk.ReasonPutIntoDiscardPile,
+    })
+    local choose_num = 1
+    local result = "shengongFail"
+    if bad == 0 then
+      choose_num = 3
+      result = "shengongPerfect"
+    elseif good >= bad then
+      choose_num = 2
+      result = "shengongSuccess"
+    end
+    room:sendLog{ type = "#shengongResult", from = player.id, arg = good, arg2 = bad, arg3 = result }
+    local get = room:askForCardChosen(player, player, {card_data = {{self.name, table.random(cards, choose_num) }}}, self.name)
+    local targets = table.filter(room.alive_players, function(p) return U.canMoveCardIntoEquip(p, get) end)
+    if #targets > 0 then
+      local tos = room:askForChoosePlayers(player, table.map(targets, Util.IdMapper), 1, 1, "#shengong-put:::"..Fk:getCardById(get).name, self.name, false)
+      local to = room:getPlayerById(tos[1])
+      U.moveCardIntoEquip(room, to, get, self.name)
+    end
+  end,
+}
+local shengong_trigger = fk.CreateTriggerSkill{
+  name = "#shengong_trigger",
+  anim_type = "drawcard",
+  events = {fk.EventPhaseStart},
+  can_trigger = function(self, event, target, player, data)
+    return player:hasSkill(self.name) and target.phase == Player.Finish and player:getMark("shengong-turn") > 0
+  end,
+  on_cost = Util.TrueFunc,
+  on_use = function(self, event, target, player, data)
+    player:drawCards(player:getMark("shengong-turn"), self.name)
+  end,
+  refresh_events = {fk.BeforeCardsMove},
+  can_refresh = function(self, _, _, player, _)
+    return player:hasSkill(self,true,true)
+  end,
+  on_refresh = function(self, event, target, player, data)
+    local mirror_moves = {}
+    local ids = {}
+    for _, move in ipairs(data) do
+      if move.toArea == Card.DiscardPile then
+        local move_info = {}
+        local mirror_info = {}
+        for _, info in ipairs(move.moveInfo) do
+          local name = Fk:getCardById(info.cardId).name
+          if table.contains(ol__puyuan_weapons, name) or table.contains(ol__puyuan_armors, name) or table.contains(ol__puyuan_treasures, name) then
+            table.insert(mirror_info, info)
+            table.insert(ids, info.cardId)
+          else
+            table.insert(move_info, info)
+          end
+        end
+        if #mirror_info > 0 then
+          move.moveInfo = move_info
+          local mirror_move = table.clone(move)
+          mirror_move.to = nil
+          mirror_move.toArea = Card.Void
+          mirror_move.moveInfo = mirror_info
+          table.insert(mirror_moves, mirror_move)
+        end
+      end
+    end
+    if #ids > 0 then
+      player.room:sendLog{type = "#destructDerivedCards", card = ids}
+      player.room:addPlayerMark(player, "shengong-turn", #ids)
+    end
+    table.insertTable(data, mirror_moves)
+  end,
+}
+shengong:addRelatedSkill(shengong_trigger)
+ol__puyuan:addSkill(shengong)
+
+local qisi = fk.CreateTriggerSkill{
+  name = "qisi",
+  events = {fk.GameStart, fk.DrawNCards},
+  can_trigger = function(self, event, target, player, data)
+    if event == fk.GameStart then
+      return player:hasSkill(self.name)
+    else
+      return player:hasSkill(self.name) and target == player and data.n > 0
+    end
+  end,
+  on_cost = function (self, event, target, player, data)
+    return event == fk.GameStart or player.room:askForSkillInvoke(player, self.name)
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    if event == fk.GameStart then
+      local cards,put = {},{}
+      for _, id in ipairs(room.draw_pile) do
+        if Fk:getCardById(id).type == Card.TypeEquip and player:hasEmptyEquipSlot(Fk:getCardById(id).sub_type) then
+          table.insert(cards, id)
+        end
+      end
+      if #cards == 0 then return end
+      local first = table.random(cards)
+      table.insert(put, first)
+      local other = table.filter(cards, function(id) return Fk:getCardById(id).sub_type ~= Fk:getCardById(first).sub_type end)
+      if #other > 0 then
+        table.insert(put, table.random(other))
+      end
+      room:moveCards({
+        fromArea = Card.DrawPile,
+        ids = put,
+        to = player.id,
+        toArea = Card.PlayerEquip,
+        moveReason = fk.ReasonPut,
+        proposer = player.id,
+        skillName = self.name,
+      })
+    else
+      data.n = data.n - 1
+      local choices = {"weapon", "armor", "equip_horse", "treasure"}
+      local StrToSubtypeList = {["weapon"]={Card.SubtypeWeapon},["armor"]={Card.SubtypeArmor},["treasure"]={Card.SubtypeTreasure},["equip_horse"]={Card.SubtypeOffensiveRide,Card.SubtypeDefensiveRide}}
+      local choice = room:askForChoice(player, choices, self.name)
+      local list = StrToSubtypeList[choice]
+      local piles = table.simpleClone(room.draw_pile)
+      table.insertTable(piles, room.discard_pile)
+      local cards = {}
+      for _, id in ipairs(piles) do
+        if table.contains(list, Fk:getCardById(id).sub_type) then
+          table.insert(cards, id)
+        end
+      end
+      if #cards == 0 then return end
+      room:obtainCard(player, table.random(cards), false, fk.ReasonPrey)
+    end
+  end,
+}
+ol__puyuan:addSkill(qisi)
+Fk:loadTranslationTable{
+  ["ol__puyuan"] = "蒲元",
+  ["shengong"] = "神工",
+  [":shengong"] = "①出牌阶段各限一次，你可以弃置一张武器/防具/〔坐骑或宝物牌〕，进行一次“锻造”，选择一张武器/防具/宝物牌置于一名角色的装备区（替换原装备）。②当以此法获得的装备牌进入弃牌堆时，销毁之，然后此回合结束阶段，你摸一张牌。",
+  ["#shengong-help"] = "神工：选择助力或妨害 %src 的锻造",
+  ["shengong_good"] = "助力锻造",
+  ["shengong_bad"] = "妨害锻造",
+  ["#shengong-put"] = "将 %arg 置于一名角色装备区（替换原装备）",
+  ["#shengong_trigger"] = "神工",
+  ["#shengongResult"] = "%from 发动了“神工”，助力锻造点数：%arg，妨害锻造点数：%arg2，结果：%arg3",
+  ["shengongPerfect"] = "完美锻造",
+  ["shengongSuccess"] = "锻造成功",
+  ["shengongFail"] = "锻造失败",
+  ["qisi"] = "奇思",
+  [":qisi"] = "①游戏开始时，将两张不同副类别的装备牌并置入你的装备区。②摸牌阶段，你可以少摸一张牌，声明一种武器、防具、坐骑或宝物牌并从牌堆或弃牌堆中获得之。",
+
+  ["$shengong1"] = "技艺若神，大巧不工。",
+  ["$shengong2"] = "千锤百炼，始得神兵。",
+  ["$qisi1"] = "匠作之道，当佐奇思。",
+  ["$qisi2"] = "世无同刃，不循凡矩。",
+  ["~ol__puyuan"] = "锻兵万千，不及造屋二三……",
+}
+
+
 
 
 return extension
