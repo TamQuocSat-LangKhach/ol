@@ -297,9 +297,7 @@ local shangyangReformTrigger = fk.CreateTriggerSkill{
     return target == player and data.damage and data.damage.card and data.damage.card.name == "shangyang_reform" and
       data.damage.from and not data.damage.from.dead
   end,
-  on_cost = function(self, event, target, player, data)
-    return true
-  end,
+  on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     local room = player.room
     local judge = {
@@ -402,9 +400,7 @@ local qinSealViewAs = fk.CreateViewAsSkill{
   interaction = function()
     return UI.ComboBox {choices = {"savage_assault", "archery_attack", "god_salvation", "amazing_grace"}}
   end,
-  card_filter = function(self, to_select, selected)
-    return false
-  end,
+  card_filter = Util.FalseFunc,
   view_as = function(self, cards)
     if not self.interaction.data then return end
     local card = Fk:cloneCard(self.interaction.data)
@@ -1227,8 +1223,7 @@ local py_tactics_skill = fk.CreateTriggerSkill{
   on_cost = function(self, event, target, player, data)
     local room = player.room
     if event == fk.EventPhaseStart then
-      local to = room:askForChoosePlayers(player, table.map(room:getAlivePlayers(), function (p)
-        return p.id end), 1, 1, "#py_tactics-choose", self.name, true)
+      local to = room:askForChoosePlayers(player, table.map(room:getAlivePlayers(), Util.IdMapper), 1, 1, "#py_tactics-choose", self.name, true)
       if #to > 0 then
         self.cost_data = to[1]
         return true

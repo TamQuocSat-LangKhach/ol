@@ -290,8 +290,7 @@ local ol__liangyin = fk.CreateTriggerSkill{
     local targets = table.filter(player.room.alive_players, function (p)
       return p ~= player and (choice == "drawcard" or not p:isNude())
     end)
-    local to = player.room:askForChoosePlayers(player, table.map(targets, function (p)
-      return p.id end), 1, 1, "#ol__liangyin-" .. choice, self.name, true)
+    local to = player.room:askForChoosePlayers(player, table.map(targets, Util.IdMapper), 1, 1, "#ol__liangyin-" .. choice, self.name, true)
     if #to > 0 then
       self.cost_data = {to[1], choice}
       return true
@@ -380,8 +379,7 @@ local ol__kongsheng = fk.CreateTriggerSkill{
         end)
       end)
       if #targets == 0 then return false end
-      local tos = room:askForChoosePlayers(player, table.map(targets, function (p)
-        return p.id end), 1, 1, "#ol__kongsheng-choose", self.name, false)
+      local tos = room:askForChoosePlayers(player, table.map(targets, Util.IdMapper), 1, 1, "#ol__kongsheng-choose", self.name, false)
       if #tos == 0 then return false end
       local to = room:getPlayerById(tos[1])
       while true do
@@ -651,9 +649,7 @@ local ol__hongyuan = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local targets = table.map(room:getOtherPlayers(player, false), function(p)
-      return p.id
-    end)
+    local targets = table.map(room:getOtherPlayers(player, false), Util.IdMapper)
     for _ = 1, 2, 1 do
       if player.dead or player:isNude() then break end
       local tos, cardId = room:askForChooseCardAndPlayers(
@@ -1255,7 +1251,7 @@ Fk:loadTranslationTable{
 local ol__caozhang = General(extension, "ol__caozhang", "wei", 4)
 local ol__jiangchi_select = fk.CreateActiveSkill{
   name = "ol__jiangchi_select",
-  can_use = function() return false end,
+  can_use = Util.FalseFunc,
   target_num = 0,
   max_card_num = 1,
   min_card_num = 0,
@@ -1370,8 +1366,7 @@ local ol__bingyi = fk.CreateTriggerSkill{
         end
       end
     end
-    local tos = room:askForChoosePlayers(player, table.map(room:getOtherPlayers(player, false), function(p)
-      return p.id end), 1, #cards, "#ol__bingyi-choose:::"..#cards, self.name, true)
+    local tos = room:askForChoosePlayers(player, table.map(room:getOtherPlayers(player, false), Util.IdMapper), 1, #cards, "#ol__bingyi-choose:::"..#cards, self.name, true)
     table.insert(tos, player.id)
     room:sortPlayersByAction(tos)
     for _, pid in ipairs(tos) do

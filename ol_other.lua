@@ -18,8 +18,7 @@ local shenfu = fk.CreateTriggerSkill{
     local room = player.room
     if #player.player_cards[Player.Hand] % 2 == 1 then
       while true do
-        local tos = room:askForChoosePlayers(player, table.map(room:getOtherPlayers(player), function(p)
-          return p.id end), 1, 1, "#shenfu-damage", self.name, true)
+        local tos = room:askForChoosePlayers(player, table.map(room:getOtherPlayers(player), Util.IdMapper), 1, 1, "#shenfu-damage", self.name, true)
         if #tos > 0 then
           local to = room:getPlayerById(tos[1])
           room:damage{
@@ -37,7 +36,7 @@ local shenfu = fk.CreateTriggerSkill{
     else
       while true do
         local tos = room:askForChoosePlayers(player, table.map(table.filter(room:getAlivePlayers(), function(p)
-          return p:getMark("shenfu-turn") == 0 end), function(p) return p.id end),
+          return p:getMark("shenfu-turn") == 0 end), Util.IdMapper),
           1, 1, "#shenfu-hand", self.name, true)
         if #tos > 0 then
           local to = room:getPlayerById(tos[1])
@@ -321,8 +320,7 @@ local fentian = fk.CreateTriggerSkill{
       return player:inMyAttackRange(p) and not p:isNude()
     end)
     if #targets == 0 then return false end
-    local tos = room:askForChoosePlayers(player, table.map(targets, function (p)
-      return p.id end), 1, 1, "#fentian-choose", self.name, false)
+    local tos = room:askForChoosePlayers(player, table.map(targets, Util.IdMapper), 1, 1, "#fentian-choose", self.name, false)
     if #tos > 0 then
       local id = room:askForCardChosen(player, room:getPlayerById(tos[1]), "he", self.name)
       player:addToPile("fentian_burn", id, true, self.name)
@@ -451,7 +449,7 @@ local qin__bianfa_trigger = fk.CreateTriggerSkill{
       local room = player.room
       local targets = table.map(table.filter(room:getOtherPlayers(player), function(p)
         return not table.contains(AimGroup:getAllTargets(data.tos), p.id) and
-        not player:isProhibited(p, data.card) end), function(p) return p.id end)
+        not player:isProhibited(p, data.card) end), Util.IdMapper)
       if #targets == 0 then return end
       local to = room:askForChoosePlayers(player, targets, 1, 1, "#qin__bianfa:::"..data.card:toLogString(), "qin__bianfa", true)
       if #to > 0 then
@@ -697,9 +695,7 @@ local qin__qihuo = fk.CreateActiveSkill{
   can_use = function(self, player)
     return player:usedSkillTimes(self.name, Player.HistoryPhase) == 0 and not player:isNude()
   end,
-  card_filter = function(self, to_select, selected)
-    return false
-  end,
+  card_filter = Util.FalseFunc,
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
     local cards = {}
@@ -795,9 +791,7 @@ local qin__zhongfu_trigger = fk.CreateTriggerSkill {
   can_trigger = function(self, event, target, player, data)
     return target == player and data.from == Player.RoundStart and player:getMark("qin__zhongfu") ~= 0
   end,
-  on_cost = function(self, event, target, player, data)
-    return true
-  end,
+  on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     local room = player.room
     local skill = player:getMark("qin__zhongfu")
@@ -949,7 +943,7 @@ local qin__huoluan = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    room:doIndicate(player.id, table.map(room:getOtherPlayers(player), function(p) return p.id end))
+    room:doIndicate(player.id, table.map(room:getOtherPlayers(player), Util.IdMapper))
     for _, p in ipairs(room:getOtherPlayers(player)) do
       if not p.dead then
         room:damage{
@@ -999,7 +993,7 @@ local qin__zhangzheng = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    room:doIndicate(player.id, table.map(room:getOtherPlayers(player), function(p) return p.id end))
+    room:doIndicate(player.id, table.map(room:getOtherPlayers(player), Util.IdMapper))
     for _, p in ipairs(room:getOtherPlayers(player)) do
       if not p.dead then
         if p:isKongcheng() then
