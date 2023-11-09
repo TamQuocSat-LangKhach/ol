@@ -4002,6 +4002,12 @@ Fk:loadTranslationTable{
   ["#fushi3-choose"] = "缚豕：选择一个目标，此【杀】对其伤害+1",
   ["#dongdao_yang-invoke"] = "东道：你可以令 %dest 执行一个额外回合",
   ["#dongdao_yin-invoke"] = "东道：你可以发动 %src 的“东道”，执行一个额外回合",
+
+  ["$fushi1"] = "缚豕待宰，要让阿瞒吃个肚儿溜圆。",
+  ["$fushi2"] = "今儿个呀，咱们吃油汪汪的猪肉！",
+  ["$dongdao1"] = "阿瞒远道而来，老夫当尽地主之谊！",
+  ["$dongdao2"] = "我乃嵩兄故交，孟德来此可无忧虑。",
+  ["~lvboshe"] = "阿瞒，我沽酒回来……呃！",
 }
 
 return extension
