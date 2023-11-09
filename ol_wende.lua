@@ -2157,6 +2157,20 @@ Fk:loadTranslationTable{
 }
 
 local yangzhi = General(extension, "yangzhi", "jin", 3, 3, General.Female)
+
+local wanyi_select = fk.CreateActiveSkill{
+  name = "wanyi_select",
+  card_num = 1,
+  target_num = 1,
+  expand_pile = "wanyi",
+  target_filter = function(self, to_select, selected)
+    return #selected == 0
+  end,
+  card_filter = function(self, to_select, selected)
+    return #selected == 0 and Self:getPileNameOfId(to_select) == "wanyi"
+  end,
+}
+Fk:addSkill(wanyi_select)
 local wanyi = fk.CreateTriggerSkill{
   name = "wanyi",
   anim_type = "control",
@@ -2164,9 +2178,9 @@ local wanyi = fk.CreateTriggerSkill{
   can_trigger = function(self, event, target, player, data)
     if target == player and player:hasSkill(self) then
       if event == fk.TargetSpecified then
-        return (data.card.trueName == "slash" or data.card:isCommonTrick()) and data.tos and
-          #AimGroup:getAllTargets(data.tos) == 1 and AimGroup:getAllTargets(data.tos)[1] ~= player.id and
-          not player.room:getPlayerById(AimGroup:getAllTargets(data.tos)[1]):isNude()
+        if (data.card.trueName ~= "slash" and not data.card:isCommonTrick()) or data.to == player.id then return false end
+        local to = player.room:getPlayerById(data.to)
+        return U.isOnlyTarget(to, data, event) and not to:isNude()
       elseif #player:getPile("wanyi") > 0 then
         if event == fk.EventPhaseStart then
           return player.phase == Player.Finish
@@ -2178,7 +2192,11 @@ local wanyi = fk.CreateTriggerSkill{
   end,
   on_cost = function(self, event, target, player, data)
     if event == fk.TargetSpecified then
-      return player.room:askForSkillInvoke(player, self.name, nil, "#wanyi-invoke::"..TargetGroup:getRealTargets(data.tos)[1])
+      local room = player.room
+      if room:askForSkillInvoke(player, self.name, nil, "#wanyi-invoke::"..data.to) then
+        room:doIndicate(player.id, {data.to})
+        return true
+      end
     else
       return true
     end
@@ -2186,43 +2204,34 @@ local wanyi = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     if event == fk.TargetSpecified then
-      room:doIndicate(player.id, {TargetGroup:getRealTargets(data.tos)[1]})
-      local id = room:askForCardChosen(player, room:getPlayerById(TargetGroup:getRealTargets(data.tos)[1]), "he", self.name)
+      local id = room:askForCardChosen(player, room:getPlayerById(data.to), "he", self.name)
       player:addToPile(self.name, id, false, self.name)
     else
-      local targets = table.map(room.alive_players, Util.IdMapper)
-      local to = room:askForChoosePlayers(player, targets, 1, 1, "#wanyi-card", self.name, false)
-      if #to > 0 then
-        to = to[1]
+      local _, dat = room:askForUseActiveSkill(player, "wanyi_select", "#wanyi-card", false, Util.DummyTable, true)
+      if dat then
+        room:moveCardTo(dat.cards, Card.PlayerHand, room:getPlayerById(dat.targets[1]), fk.ReasonGive, self.name, nil, true, player.id)
       else
-        to = player.id
-      end
-      if #player:getPile("wanyi") == 1 then
-        room:obtainCard(to, player:getPile("wanyi")[1], false, fk.ReasonJustMove)
-      else
-        to = room:getPlayerById(to)
-        room:fillAG(to, player:getPile("wanyi"))
-        local id = room:askForAG(to, player:getPile("wanyi"), false, self.name)
-        room:closeAG(to)
-        room:obtainCard(to.id, id, false, fk.ReasonJustMove)
+        room:moveCardTo(player:getPile("wanyi")[1], Card.PlayerHand, player, fk.ReasonGive, self.name, nil, true, player.id)
       end
     end
   end,
 }
+
+--FIXME：本来这个效果是不会被无效的，但是因为失去技能不清牌，故暂时采用hasskill来判定
 local wanyi_prohibit = fk.CreateProhibitSkill{
   name = "#wanyi_prohibit",
   prohibit_use = function(self, player, card)
-    if player:hasSkill("wanyi") and #player:getPile("wanyi") > 0 then
+    if player:hasSkill(wanyi, true) and #player:getPile("wanyi") > 0 then
       return table.find(player:getPile("wanyi"), function(id) return Fk:getCardById(id).suit == card.suit end)
     end
   end,
   prohibit_response = function(self, player, card)
-    if player:hasSkill("wanyi") and #player:getPile("wanyi") > 0 then
+    if player:hasSkill(wanyi, true) and #player:getPile("wanyi") > 0 then
       return table.find(player:getPile("wanyi"), function(id) return Fk:getCardById(id).suit == card.suit end)
     end
   end,
   prohibit_discard = function(self, player, card)
-    if player:hasSkill("wanyi") and #player:getPile("wanyi") > 0 then
+    if player:hasSkill(wanyi, true) and #player:getPile("wanyi") > 0 then
       return table.find(player:getPile("wanyi"), function(id) return Fk:getCardById(id).suit == card.suit end)
     end
   end,
@@ -2230,77 +2239,79 @@ local wanyi_prohibit = fk.CreateProhibitSkill{
 local maihuo = fk.CreateTriggerSkill{
   name = "maihuo",
   anim_type = "defensive",
-  events = {fk.TargetConfirmed},
+  events = {fk.TargetConfirmed, fk.Damage},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self) and data.card.trueName == "slash" and #TargetGroup:getRealTargets(data.tos) == 1
-      and not data.card:isVirtual() and data.from and #player.room:getPlayerById(data.from):getPile("yangzhi_huo") == 0 and
-      not (data.extra_data and data.extra_data.maihuo)
+    if player ~= target or not player:hasSkill(self) then return false end
+    if event == fk.TargetConfirmed then
+      if data.card.trueName == "slash" and U.isOnlyTarget(player, data, event) and U.isPureCard(data.card) and data.from then
+        if (data.extra_data and data.extra_data.maihuo) then return false end
+        local from = player.room:getPlayerById(data.from)
+        return from ~= nil and not from.dead and #from:getPile("yangzhi_huo") == 0
+      end
+    elseif event == fk.Damage then
+      --FIXME：不清楚埋祸牌是不是绑定角色，先按简单的做
+      return data.to and not data.to.dead and #data.to:getPile("yangzhi_huo") > 0
+    end
   end,
   on_cost = function(self, event, target, player, data)
-    return player.room:askForSkillInvoke(player, self.name, nil, "#maihuo-invoke::"..data.from..":"..data.card:toLogString())
+    local room = player.room
+    if event == fk.TargetConfirmed then
+      if room:askForSkillInvoke(player, self.name, nil, "#maihuo-invoke::"..data.from..":"..data.card:toLogString()) then
+        room:doIndicate(player.id, {data.from})
+        return true
+      end
+    elseif event == fk.Damage then
+      room:doIndicate(player.id, {data.to.id})
+      return true
+    end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    table.insertIfNeed(data.nullifiedTargets, player.id)
-    if room:getCardArea(data.card) == Card.Processing then
-      room:doIndicate(player.id, {data.from})
-      local to = room:getPlayerById(data.from)
-      to:addToPile("yangzhi_huo", data.card, true, self.name)
-      room:setPlayerMark(to, self.name, {player.id, data.card.id})
+    if event == fk.TargetConfirmed then
+      table.insertIfNeed(data.nullifiedTargets, player.id)
+      if room:getCardArea(data.card) == Card.Processing then
+        room:doIndicate(player.id, {data.from})
+        local to = room:getPlayerById(data.from)
+        to:addToPile("yangzhi_huo", data.card, true, self.name)
+        room:setPlayerMark(to, self.name, {player.id, data.card.id})
+      end
+    elseif event == fk.Damage then
+      room:setPlayerMark(data.to, self.name, 0)
+      room:moveCards({
+        from = data.to.id,
+        ids = data.to:getPile("yangzhi_huo"),
+        toArea = Card.DiscardPile,
+        moveReason = fk.ReasonPutIntoDiscardPile,
+        skillName = self.name,
+      })
     end
   end,
 }
-local maihuo_trigger = fk.CreateTriggerSkill{
-  name = "#maihuo_trigger",
+local maihuo_delay = fk.CreateTriggerSkill{
+  name = "#maihuo_delay",
   mute = true,
-  events = {fk.EventPhaseStart, fk.Damage},
+  events = {fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
-    if target == player then
-      if event == fk.EventPhaseStart then
-        return player.phase == Player.Play and #player:getPile("yangzhi_huo") > 0 and not player.dead
-      else
-        return player:hasSkill("maihuo") and not data.to.dead and #data.to:getPile("yangzhi_huo") > 0
-      end
-    end
+    return player == target and player.phase == Player.Play and #player:getPile("yangzhi_huo") > 0 and not player.dead
   end,
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    if event == fk.EventPhaseStart then
-      local to = room:getPlayerById(player:getMark("maihuo")[1])
-      local card = Fk:getCardById(player:getPile("yangzhi_huo")[1])
-      room:setPlayerMark(player, "maihuo", 0)
-      Self = player
-      if to.dead or player:isProhibited(to, card) or not player:canUse(card) or
-        not card.skill:targetFilter(to.id, {}, {}, card) then
-        to:broadcastSkillInvoke("maihuo")
-        room:notifySkillInvoked(to, "maihuo", "special")
-        room:moveCards({
-          from = player.id,
-          ids = player:getPile("yangzhi_huo"),
-          toArea = Card.DiscardPile,
-          moveReason = fk.ReasonPutIntoDiscardPile,
-          skillName = "maihuo",
-        })
-      else
-        to:broadcastSkillInvoke("maihuo")
-        room:notifySkillInvoked(to, "maihuo", "negative")
-        local extra_data = {}
-        extra_data.maihuo = true
-        local use = {
-          from = player.id,
-          tos = {{to.id}},
-          card = card,
-          extra_data = extra_data,
-        }
-        room:useCard(use)
-      end
+    local to = room:getPlayerById(player:getMark("maihuo")[1])
+    local card = Fk:getCardById(player:getPile("yangzhi_huo")[1])
+    room:setPlayerMark(player, "maihuo", 0)
+    if U.canUseCardTo(room, player, to, card, true, true) then
+      room:useCard({
+        from = player.id,
+        tos = {{to.id}},
+        card = card,
+        extraUse = false,
+        extra_data = {maihuo = true},
+      })
     else
-      room:notifySkillInvoked(player, "maihuo", "special")
-      room:setPlayerMark(data.to, "maihuo", 0)
       room:moveCards({
-        from = data.to.id,
-        ids = data.to:getPile("yangzhi_huo"),
+        from = player.id,
+        ids = player:getPile("yangzhi_huo"),
         toArea = Card.DiscardPile,
         moveReason = fk.ReasonPutIntoDiscardPile,
         skillName = "maihuo",
@@ -2309,7 +2320,7 @@ local maihuo_trigger = fk.CreateTriggerSkill{
   end,
 }
 wanyi:addRelatedSkill(wanyi_prohibit)
-maihuo:addRelatedSkill(maihuo_trigger)
+maihuo:addRelatedSkill(maihuo_delay)
 yangzhi:addSkill(wanyi)
 yangzhi:addSkill(maihuo)
 Fk:loadTranslationTable{
@@ -2321,9 +2332,11 @@ Fk:loadTranslationTable{
   [":maihuo"] = "其他角色非因本技能使用的非转化的【杀】指定你为唯一目标后，若其没有“祸”，你可以令此【杀】对你无效并将之置于其武将牌上，称为“祸”，"..
   "其下个出牌阶段开始时对你使用此【杀】（须合法且有次数限制，不合法则移去之）。当你对其他角色造成伤害后，你移去其武将牌上的“祸”。",
   ["#wanyi-invoke"] = "婉嫕：你可以将 %dest 的一张牌置于你的武将牌上",
+  ["wanyi_select"] = "婉嫕",
   ["#wanyi-card"] = "婉嫕：令一名角色获得一张“婉嫕”牌",
   ["yangzhi_huo"] = "祸",
   ["#maihuo-invoke"] = "埋祸：你可以令 %dest 对你使用的%arg无效并将之置为其“祸”，延迟到其下个出牌阶段对你使用",
+  ["#maihuo_delay"] = "埋祸",
 
   ["$wanyi1"] = "天性婉嫕，易以道御。",
   ["$wanyi2"] = "婉嫕利珍，为后攸行。",
