@@ -628,6 +628,100 @@ Fk:loadTranslationTable{
   ["~ol__guanyinping"] = "红已花残，此仇未能报……",
 }
 
+local ol__lingju = General(extension, "ol__lingju", "qun", 3, 3, General.Female)
+local ol__jieyuan = fk.CreateTriggerSkill{
+  name = "ol__jieyuan",
+  mute = true,
+  events = {fk.DamageCaused, fk.DamageInflicted},
+  can_trigger = function(self, event, target, player, data)
+    if target == player and player:hasSkill(self) and data.from and data.from ~= data.to and not player:isNude() then
+      local mark = type(player:getMark("@ol__fenxin")) == "table" and player:getMark("@ol__fenxin") or {}
+      if event == fk.DamageCaused then
+        return data.to.hp >= player.hp or table.contains(mark,"abbr_rebel")
+      else
+        return data.from.hp >= player.hp or table.contains(mark,"abbr_loyalist")
+      end
+    end
+  end,
+  on_cost = function(self, event, target, player, data)
+    local pattern, prompt
+    local mark = type(player:getMark("@ol__fenxin")) == "table" and player:getMark("@ol__fenxin") or {}
+    if event == fk.DamageCaused then
+      if not table.contains(mark,"abbr_renegade") then
+        pattern = ".|.|spade,club|hand"
+        prompt = "#ol__jieyuan1-invoke::"..data.to.id
+      else
+        pattern = "."
+        prompt = "#ol__jieyuan1_updata-invoke::"..data.to.id
+      end
+    else
+      if not table.contains(mark,"abbr_renegade") then
+        pattern = ".|.|heart,diamond|hand"
+        prompt = "#ol__jieyuan2-invoke"
+      else
+        pattern = "."
+        prompt = "#ol__jieyuan2_updata-invoke"
+      end
+    end
+    local card = player.room:askForDiscard(player, 1, 1, true, self.name, true, pattern, prompt, true)
+    if #card > 0 then
+      self.cost_data = card
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    room:throwCard(self.cost_data, self.name, player, player)
+    if event == fk.DamageCaused then
+      player:broadcastSkillInvoke(self.name, 1)
+      room:notifySkillInvoked(player, self.name, "offensive")
+      data.damage = data.damage + 1
+    else
+      player:broadcastSkillInvoke(self.name, 2)
+      room:notifySkillInvoked(player, self.name, "defensive")
+      data.damage = data.damage - 1
+    end
+  end,
+}
+local ol__fenxin = fk.CreateTriggerSkill{
+  name = "ol__fenxin",
+  anim_type = "control",
+  frequency = Skill.Compulsory,
+  events = {fk.Deathed},
+  can_trigger = function(self, event, target, player, data)
+    return player:hasSkill(self) and table.contains({"loyalist", "rebel", "renegade"}, target.role)
+  end,
+  on_use = function(self, event, target, player, data)
+    local mark = type(player:getMark("@ol__fenxin")) == "table" and player:getMark("@ol__fenxin") or {}
+    table.insertIfNeed(mark, "abbr_"..target.role)
+    player.room:setPlayerMark(player, "@ol__fenxin", mark)
+  end,
+}
+ol__lingju:addSkill(ol__jieyuan)
+ol__lingju:addSkill(ol__fenxin)
+Fk:loadTranslationTable{
+  ["ol__lingju"] = "灵雎",
+  ["ol__jieyuan"] = "竭缘",
+  [":ol__jieyuan"] = "当你对一名其他角色造成伤害时，若其体力值大于或等于你的体力值，你可弃置一张黑色手牌令此伤害+1；"..
+  "当你受到一名其他角色造成的伤害时，若其体力值大于或等于你的体力值，你可弃置一张红色手牌令此伤害-1。",
+  ["ol__fenxin"] = "焚心",
+  [":ol__fenxin"] = "锁定技，当一名其他角色死亡后，根据其身份修改“竭缘”：忠臣，你减少伤害无体力值限制；反贼，你增加伤害无体力值限制；内奸，弃置牌时无颜色限制且可以弃置装备牌。",
+  ["#ol__jieyuan1-invoke"] = "竭缘：你可以弃置一张黑色手牌令对 %dest 造成的伤害+1",
+  ["#ol__jieyuan2-invoke"] = "竭缘：你可以弃置一张红色手牌令你受到的伤害-1",
+  ["#ol__jieyuan1_updata-invoke"] = "竭缘：你可以弃置一张牌令对 %dest 造成的伤害+1",
+  ["#ol__jieyuan2_updata-invoke"] = "竭缘：你可以弃置一张牌令你受到的伤害-1",
+  ["abbr_loyalist"] = "忠",
+  ["abbr_rebel"] = "反",
+  ["abbr_renegade"] = "内",
+  ["@ol__fenxin"] = "焚心",
+
+  ["$ol__jieyuan1"] = "心竭而出，缘竭而究。",
+  ["$ol__jieyuan2"] = "缘浅行浓，竭力而衰。",
+  ["$ol__fenxin1"] = "你的身份，我已为你抹去。",
+  ["$ol__fenxin2"] = "伤我心神，焚汝身骨。",
+  ["~ol__lingju"] = "情随梦境散，花随时节落。",
+}
+
 local ol__zhugejin = General(extension, "ol__zhugejin", "wu", 3)
 local ol__hongyuan = fk.CreateTriggerSkill{
   name = "ol__hongyuan",
