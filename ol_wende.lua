@@ -2332,6 +2332,184 @@ Fk:loadTranslationTable{
   ["~yangzhi"] = "贾氏……构陷……",
 }
 
+local chengjichengcui = General(extension, "chengjichengcui", "wei", 6)
+chengjichengcui.subkingdom = "jin"
+local tousui = fk.CreateViewAsSkill{
+  name = "tousui",
+  pattern = "slash",
+  prompt = "#tousui-invoke",
+  card_filter = function()
+    return false
+  end,
+  view_as = function(self, cards)
+    local card = Fk:cloneCard("slash")
+    card.skillName = self.name
+    return card
+  end,
+  enabled_at_play = function(self, player)
+    return not player:isNude()
+  end,
+  enabled_at_response = function(self, player, response)
+    return not response and not player:isNude()
+  end,
+}
+local tousui_trigger = fk.CreateTriggerSkill{
+  name = "#tousui_trigger",
+  events = {fk.PreCardUse, fk.TargetSpecified},
+  mute = true,
+  priority = 10,
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self, true) and table.contains(data.card.skillNames, "tousui")
+  end,
+  on_cost = function(self, event, target, player, data)
+    if event == fk.PreCardUse then
+      player.room:doIndicate(player.id, TargetGroup:getRealTargets(data.tos))
+    end
+    return true
+  end,
+  on_use = function(self, event, target, player, data)
+    if event == fk.PreCardUse then
+      local room = player.room
+      local cards = room:askForCard(player, 1, 999, true, "tousui", false, ".", "#tousui-card")
+      if #cards > 0 then
+        room:moveCards({
+          ids = cards,
+          from = player.id,
+          toArea = Card.DrawPile,
+          moveReason = fk.ReasonJustMove,
+          skillName = "tousui",
+          drawPilePosition = -1,
+        })
+        data.extra_data = data.extra_data or {}
+        data.extra_data.tousui = #cards
+        return false
+      else
+        return true
+      end
+    else
+      data.fixedResponseTimes = data.fixedResponseTimes or {}
+      data.fixedResponseTimes["jink"] = data.extra_data.tousui
+    end
+  end,
+}
+local chuming = fk.CreateTriggerSkill{
+  name = "chuming",
+  mute = true,
+  frequency = Skill.Compulsory,
+  events = {fk.DamageCaused, fk.DamageInflicted, fk.TurnEnd},
+  can_trigger = function(self, event, target, player, data)
+    if event ~= fk.TurnEnd then
+      if target == player and player:hasSkill(self) then
+        if event == fk.DamageCaused then
+          return data.to ~= player
+        else
+          return data.from and data.from ~= player
+        end
+      end
+    else
+      return player:getMark("chuming-turn") ~= 0
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    if event ~= fk.TurnEnd then
+      if not data.card or #Card:getIdList(data.card) == 0 then
+        if event == fk.DamageCaused then
+          player:broadcastSkillInvoke(self.name, 2)
+          room:notifySkillInvoked(player, self.name, "offensive")
+        else
+          player:broadcastSkillInvoke(self.name, 1)
+          room:notifySkillInvoked(player, self.name, "negative")
+        end
+        data.damage = data.damage + 1
+      else
+        player:broadcastSkillInvoke(self.name)
+        room:notifySkillInvoked(player, self.name, "negative")
+        local p
+        if event == fk.DamageCaused then
+          p = data.to.id
+        else
+          p = data.from.id
+        end
+        local mark = player:getMark("chuming-turn")
+        if mark == 0 then mark = {} end
+        table.insert(mark, {p, Card:getIdList(data.card)})
+        room:setPlayerMark(player, "chuming-turn", mark)
+      end
+    else
+      local infos = table.simpleClone(player:getMark("chuming-turn"))
+      for _, info in ipairs(infos) do
+        if player.dead then return end
+        local p = room:getPlayerById(info[1])
+        if not p.dead and table.every(info[2], function(id) return room:getCardArea(id) == Card.DiscardPile end) then
+          room:setPlayerMark(p, "chuming-tmp", {player.id, info[2]})
+          local command = "AskForUseActiveSkill"
+          room:notifyMoveFocus(p, "chuming_viewas")
+          local dat = {"chuming_viewas", "#chuming-invoke::"..player.id, false, json.encode({})}
+          local result = room:doRequest(p, command, json.encode(dat))
+          if result ~= "" then
+            dat = json.decode(result)
+            if dat.interaction_data == "collateral" then
+              local card = Fk:cloneCard("collateral")
+              card:addSubcards(info[2])
+              card.skillName = self.name
+              local use = {
+                from = p.id,
+                tos = {{player.id}, {dat.targets[1]}},
+                card = card,
+              }
+              room:useCard(use)
+            else
+              room:useVirtualCard(dat.interaction_data, info[2], p, player, self.name)
+            end
+          end
+        end
+      end
+    end
+  end,
+}
+local chuming_viewas = fk.CreateActiveSkill{
+  name = "chuming_viewas",
+  card_num = 0,
+  min_target_num = 0,
+  max_target_num = 1,
+  interaction = function()
+    local names = {}
+    local mark = Self:getMark("chuming-tmp")
+    for _, name in ipairs({"collateral", "dismantlement"}) do
+      local card = Fk:cloneCard(name)
+      if card.skill:targetFilter(mark[1], {}, {}, card) and not Self:isProhibited(Fk:currentRoom():getPlayerById(mark[1]), card) then
+        table.insert(names, name)
+      end
+    end
+    if #names == 0 then return end
+    return UI.ComboBox {choices = names}
+  end,
+  card_filter = function(self, to_select, selected)
+    return false
+  end,
+  target_filter = function(self, to_select, selected)
+    if self.interaction.data == "collateral" then
+      if #selected == 0 then
+        local room = Fk:currentRoom()
+        return room:getPlayerById(Self:getMark("chuming-tmp")[1]):inMyAttackRange(room:getPlayerById(to_select))
+      end
+    else
+      return false
+    end
+  end,
+  feasible = function (self, selected, selected_cards)
+    if self.interaction.data == "collateral" then
+      return #selected == 1
+    else
+      return #selected == 0
+    end
+  end,
+}
+tousui:addRelatedSkill(tousui_trigger)
+Fk:addSkill(chuming_viewas)
+chengjichengcui:addSkill(tousui)
+chengjichengcui:addSkill(chuming)
 Fk:loadTranslationTable{
   ["chengjichengcui"] = "成济成倅",
   ["tousui"] = "透髓",
@@ -2339,6 +2517,10 @@ Fk:loadTranslationTable{
   ["chuming"] = "畜鸣",
   [":chuming"] = "锁定技，当你对其他角色造成伤害或受到其他角色造成的伤害时，若此伤害：没有对应的实体牌，此伤害+1；有对应的实体牌，"..
   "其本回合结束时将造成伤害的牌当【借刀杀人】或【过河拆桥】对你使用。",
+  ["#tousui-invoke"] = "透髓：选择【杀】的目标，然后将任意张牌置于牌堆底",
+  ["#tousui-card"] = "透髓：将任意张牌置于牌堆底，按选牌的顺序放置",
+  ["chuming_viewas"] = "畜鸣",
+  ["#chuming-invoke"] = "畜鸣：选择对 %dest 使用的牌（若使用【借刀杀人】则再选择被杀的角色）",
 
   ["$tousui1"] = "区区黄口孺帝，能有何作为？",
   ["$tousui2"] = "昔年沙场茹血，今欲饮帝血！",

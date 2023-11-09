@@ -2984,6 +2984,111 @@ Fk:loadTranslationTable{
   ["@@tuoshi"] = "侻失",
 }
 
+local qianzhao = General(extension, "ol__qianzhao", "wei", 4)
+local weifu = fk.CreateActiveSkill{
+  name = "weifu",
+  anim_type = "offensive",
+  card_num = 1,
+  target_num = 0,
+  prompt = "#weifu",
+  can_use = function(self, player)
+    return not player:isNude()
+  end,
+  card_filter = function(self, to_select, selected)
+    return #selected == 0 and not Self:prohibitDiscard(to_select)
+  end,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    room:throwCard(effect.cards, self.name, player, player)
+    local judge = {
+      who = player,
+      reason = self.name,
+      pattern = ".",
+    }
+    room:judge(judge)
+    if player.dead then return end
+    room:setPlayerMark(player, "@weifu-turn", judge.card:getTypeString())
+    if judge.card.type == Fk:getCardById(effect.cards[1]).type then
+      player:drawCards(1, self.name)
+    end
+  end,
+}
+local weifu_trigger = fk.CreateTriggerSkill{
+  name = "#weifu_trigger",
+  events = {fk.AfterCardTargetDeclared},
+  mute = true,
+  can_trigger = function(self, event, target, player, data)
+    return player == target and not player.dead and player:getMark("@weifu-turn") == data.card:getTypeString()
+  end,
+  on_cost = Util.TrueFunc,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    room:setPlayerMark(player, "@weifu-turn", 0)
+    if data.tos and (data.card:isCommonTrick() or data.card.type == Card.TypeBasic) then
+      local tos = room:askForChoosePlayers(player, U.getUseExtraTargets(room, data, true), 1, 1,
+        "#weifu-invoke:::"..data.card:toLogString(), "weifu", true)
+      if #tos == 1 then
+        table.insert(data.tos, tos)
+      end
+    end
+  end,
+}
+local weifu_targetmod = fk.CreateTargetModSkill{
+  name = "#weifu_targetmod",
+  bypass_distances =  function(self, player, skill, card, to)
+    return player:getMark("@weifu-turn") ~= 0 and card and player:getMark("@weifu-turn") == card:getTypeString()
+  end,
+}
+local kuansai = fk.CreateTriggerSkill{
+  name = "kuansai",
+  anim_type = "control",
+  events = {fk.TargetSpecified},
+  can_trigger = function(self, event, target, player, data)
+    return player:hasSkill(self) and data.firstTarget and #AimGroup:getAllTargets(data.tos) > player.hp and
+      player:usedSkillTimes(self.name, Player.HistoryTurn) == 0
+  end,
+  on_cost = function(self, event, target, player, data)
+    local to = player.room:askForChoosePlayers(player, AimGroup:getAllTargets(data.tos), 1, 1, "#kuansai-choose", self.name, true)
+    if #to > 0 then
+      self.cost_data = to[1]
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local to = room:getPlayerById(self.cost_data)
+    if to:isNude() then
+      if player:isWounded() then
+        room:recover{
+          who = player,
+          num = 1,
+          recoverBy = player,
+          skillName = self.name,
+        }
+      end
+    else
+      local cancelable = true
+      if not player:isWounded() then
+        cancelable = false
+      end
+      local card = room:askForCard(to, 1, 1, true, self.name, cancelable, ".", "#kuansai-give:"..player.id)
+      if #card > 0 then
+        room:obtainCard(player, card[1], true, fk.ReasonGive)
+      else
+        room:recover{
+          who = player,
+          num = 1,
+          recoverBy = player,
+          skillName = self.name,
+        }
+      end
+    end
+  end,
+}
+weifu:addRelatedSkill(weifu_trigger)
+weifu:addRelatedSkill(weifu_targetmod)
+qianzhao:addSkill(weifu)
+qianzhao:addSkill(kuansai)
 Fk:loadTranslationTable{
   ["ol__qianzhao"] = "牵招",
   ["weifu"] = "威抚",
@@ -2991,6 +3096,11 @@ Fk:loadTranslationTable{
   "你摸一张牌。",
   ["kuansai"] = "款塞",
   [":kuansai"] = "每回合限一次，当一张牌指定目标后，若目标数大于你的体力值，你可以令其中一个目标选择一项：1.交给你一张牌；2.你回复1点体力。",
+  ["#weifu"] = "威抚：你可以弃置一张牌并判定，你使用下一张判定结果类别的牌无距离限制且目标+1",
+  ["@weifu-turn"] = "威抚",
+  ["#weifu-invoke"] = "威抚：你可以为%arg额外指定一个目标",
+  ["#kuansai-choose"] = "款塞：你可以令其中一个目标选择交给你一张牌或令你回复体力",
+  ["#kuansai-give"] = "款塞：交给 %src 一张牌，否则其回复1点体力",
 }
 
 local luyusheng = General(extension, "ol__luyusheng", "wu", 3, 3, General.Female)
@@ -3506,7 +3616,7 @@ Fk:loadTranslationTable{
   ["~zhangyan"] = "草莽之辈，难登大雅之堂……",
 }
 
-local ol__puyuan = General(extension, "ol__puyuan", "shu", 4)
+local ol__puyuan = General(extension, "ol__puyuan", "shu", 4)  --TODO: 需要大改，慢慢来叭
 local ol__puyuan_weapons = {"py_halberd", "py_blade", "py_sword", "py_double_halberd", "py_chain", "py_fan"}
 local ol__puyuan_armors = {"py_belt", "py_robe", "py_cloak", "py_diagram", "py_plate", "py_armor"}
 local ol__puyuan_treasures = {"py_hat", "py_coronet", "py_threebook", "py_mirror", "py_map", "py_tactics"}
@@ -3721,5 +3831,177 @@ Fk:loadTranslationTable{
   ["~ol__puyuan"] = "锻兵万千，不及造屋二三……",
 }
 
+local lvboshe = General(extension, "lvboshe", "qun", 4)
+local fushi = fk.CreateViewAsSkill{
+  name = "fushi",
+  anim_type = "offensive",
+  pattern = "slash",
+  prompt = "#fushi",
+  expand_pile = "fushi",
+  card_filter = function(self, to_select, selected)
+    return Self:getPileNameOfId(to_select) == self.name
+  end,
+  view_as = function(self, cards)
+    if #cards == 0 then return end
+    local card = Fk:cloneCard("slash")
+    card.skillName = self.name
+    card:addSubcards(cards)  --FIXME: 为增强体验用的坏方法
+    return card
+  end,
+  before_use = function(self, player, use)
+    local room = player.room
+    local cards = table.simpleClone(use.card.subcards)
+    local n = math.min(#cards, 3)
+    use.card:clearSubcards()
+    room:recastCard(cards, player, self.name)
+    if not player.dead then
+      local all_choices = {"fushi1", "fushi2", "fushi3", "Cancel"}
+      local choices = table.simpleClone(all_choices)
+      local chosen = {}
+      while #chosen < n do
+        if #U.getUseExtraTargets(room, use, false) == 0 then
+          table.removeOne(choices, "fushi1")
+        end
+        local choice = room:askForChoice(player, choices, self.name, "#fushi-choice:::"..n, false, all_choices)
+        if choice == "Cancel" then
+          break
+        else
+          table.insert(chosen, choice)
+          table.removeOne(choices, choice)
+          if choice == "fushi1" then
+            local to = room:askForChoosePlayers(player, U.getUseExtraTargets(room, use, false), 1, 1, "#fushi1-choose", self.name, false)
+            if #to > 0 then
+              to = to[1]
+            else
+              to = table.random(U.getUseExtraTargets(room, use, false))
+            end
+            TargetGroup:pushTargets(use.tos, to)
+          elseif choice == "fushi2" then
+            local to = room:askForChoosePlayers(player, TargetGroup:getRealTargets(use.tos), 1, 1, "#fushi2-choose", self.name, false)
+            if #to > 0 then
+              to = to[1]
+            else
+              to = table.random(TargetGroup:getRealTargets(use.tos))
+            end
+            use.extra_data = use.extra_data or {}
+            use.extra_data.fushi2 = to
+          elseif choice == "fushi3" then
+            local to = room:askForChoosePlayers(player, TargetGroup:getRealTargets(use.tos), 1, 1, "#fushi3-choose", self.name, false)
+            if #to > 0 then
+              to = to[1]
+            else
+              to = table.random(TargetGroup:getRealTargets(use.tos))
+            end
+            use.extra_data = use.extra_data or {}
+            use.extra_data.fushi3 = to
+          end
+        end
+        if #chosen > 1 and table.contains(chosen, "fushi2") and #TargetGroup:getRealTargets(use.tos) > 1 then
+          room:sortPlayersByAction(TargetGroup:getRealTargets(use.tos))
+          local tos = table.simpleClone(TargetGroup:getRealTargets(use.tos))
+          local yes = true
+          for i = 1, #tos - 1, 1 do
+            if room:getPlayerById(tos[i]):getNextAlive() ~= room:getPlayerById(tos[i+1]) then
+              yes = false
+            end
+          end
+          if yes then
+            use.extraUse = true
+          end
+        end
+      end
+    end
+  end,
+  enabled_at_response = function(self, player, response)
+    return not response and #player:getPile(self.name) > 0
+  end,
+}
+local fushi_trigger = fk.CreateTriggerSkill{
+  name = "#fushi_trigger",
+  mute = true,
+  events = {fk.CardUseFinished},
+  can_trigger = function(self, event, target, player, data)
+    if player:hasSkill(self) and data.card.trueName == "slash" and player:distanceTo(target) <= 1 then
+      local room = player.room
+      local subcards = data.card:isVirtual() and data.card.subcards or {data.card.id}
+      return #subcards > 0 and table.every(subcards, function(id) return room:getCardArea(id) == Card.Processing end)
+    end
+  end,
+  on_cost = function(self, event, target, player, data)
+    return player.room:askForSkillInvoke(player, "fushi", nil)
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    player:broadcastSkillInvoke("fushi")
+    room:notifySkillInvoked(player, "fushi", "special")
+    player:addToPile("fushi", data.card, true, "fushi")
+  end,
+
+  refresh_events = {fk.DamageCaused},
+  can_refresh = function(self, event, target, player, data)
+    if target == player and data.card and table.contains(data.card.skillNames, "fushi") then
+      local e = player.room.logic:getCurrentEvent():findParent(GameEvent.UseCard)
+      return e and (e.data[1].extra_data.fushi2 or e.data[1].extra_data.fushi3)
+    end
+  end,
+  on_refresh = function(self, event, target, player, data)
+    local e = player.room.logic:getCurrentEvent():findParent(GameEvent.UseCard)
+    local use = e.data[1]
+    if use.extra_data.fushi2 and use.extra_data.fushi2 == data.to.id then
+      data.damage = data.damage - 1
+    end
+    if use.extra_data.fushi3 and use.extra_data.fushi3 == data.to.id then
+      data.damage = data.damage + 1
+    end
+  end,
+}
+local dongdao = fk.CreateTriggerSkill{
+  name = "dongdao",
+  anim_type = "switch",
+  switch_skill_name = "dongdao",
+  events = {fk.TurnEnd},
+  can_trigger = function(self, event, target, player, data)
+    return player.room.settings.gameMode == "m_1v2_mode" and player:hasSkill(self) and target.role == "rebel"
+  end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    if player:getSwitchSkillState(self.name, false) == fk.SwitchYang then
+      return player.room:askForSkillInvoke(player, self.name, nil, "#dongdao_yang-invoke::"..room:getLord().id)
+    else
+      return player.room:askForSkillInvoke(target, self.name, nil, "#dongdao_yin-invoke:"..player.id)
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    if player:getSwitchSkillState(self.name, true) == fk.SwitchYang then
+      room:doIndicate(player.id, {room:getLord().id})
+      room:getLord():gainAnExtraTurn(true)
+    else
+      room:doIndicate(target.id, {player.id})
+      target:gainAnExtraTurn(true)
+    end
+  end,
+}
+fushi:addRelatedSkill(fushi_trigger)
+lvboshe:addSkill(fushi)
+lvboshe:addSkill(dongdao)
+Fk:loadTranslationTable{
+  ["lvboshe"] = "吕伯奢",
+  ["fushi"] = "缚豕",
+  [":fushi"] = "当一名角色使用【杀】后，若你与其距离1以内，你将之置于你的武将牌上。你可以重铸任意张“缚豕”牌，视为使用一张具有以下等量项效果的"..
+  "【杀】：1.目标数+1；2.对一个目标造成的伤害-1；3.对一个目标造成的伤害+1。若你选择的选项相邻且目标均相邻，此【杀】无次数限制。",
+  ["dongdao"] = "东道",
+  [":dongdao"] = "转换技，阳：农民回合结束后，你可以令地主执行一个额外回合；阴：农民回合结束后，其可以执行一个额外回合。（仅斗地主模式生效）",
+  ["#fushi"] = "缚豕：重铸任意张“缚豕”牌，视为使用一张附加等量效果的【杀】",
+  ["#fushi-choice"] = "缚豕：为此【杀】选择%arg项效果",
+  ["fushi1"] = "目标+1",
+  ["fushi2"] = "对一个目标伤害-1",
+  ["fushi3"] = "对一个目标伤害+1",
+  ["#fushi1-choose"] = "缚豕：为此【杀】增加一个目标",
+  ["#fushi2-choose"] = "缚豕：选择一个目标，此【杀】对其伤害-1",
+  ["#fushi3-choose"] = "缚豕：选择一个目标，此【杀】对其伤害+1",
+  ["#dongdao_yang-invoke"] = "东道：你可以令 %dest 执行一个额外回合",
+  ["#dongdao_yin-invoke"] = "东道：你可以发动 %src 的“东道”，执行一个额外回合",
+}
 
 return extension
