@@ -1933,24 +1933,13 @@ local guangu = fk.CreateActiveSkill{
     if status == "yang" then
       --local choice = tonumber(room:askForChoice(player, {"1", "2", "3", "4"}, self.name, "#guangu-choice"))
       --仪式选牌！
-      --[[
       --fuckNotify
       ids = room:askForCardsChosen(player, player, 1, 4, {
         card_data = {
           { "Top", {-1,-1,-1,-1} }
         }
-      }, self.name)
+      }, self.name, "#guangu-yang")
       ids = room:getNCards(#ids)
-      ]]
-      local command = "AskForCardsChosen"
-      room:notifyMoveFocus(player, command)
-      local data = {player.id, 1, 4, {
-        card_data = {
-          { "Top", {-1,-1,-1,-1} }
-        }
-      }, self.name}
-      local result = room:doRequest(player, command, json.encode(data))
-      ids = room:getNCards(result ~= "" and #json.decode(result) or 1)
     elseif status == "yin" then
       target = room:getPlayerById(effect.tos[1])
       ids = room:askForCardsChosen(player, target, 1, 4, "h", self.name)
@@ -1976,7 +1965,7 @@ local guangu = fk.CreateActiveSkill{
     room:setPlayerMark(player, "guangu_cards", availableCards)
     local success, dat = room:askForUseActiveSkill(player, "guangu_viewas", "#guangu-use", true)
     room:setPlayerMark(player, "guangu_cards", 0)
-
+    -- FIXME：牌都不能用时无法弹出
     if target == nil or target ~= player then
       player.special_cards["guangu"] = {}
       player:doNotify("ChangeSelf", json.encode {
