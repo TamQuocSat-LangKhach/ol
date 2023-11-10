@@ -2746,6 +2746,14 @@ Fk:loadTranslationTable{
 
   ["@@baichu-inhand"] = "<font color='yellow'>未出</font>",
   ["@@baichu_record-inhand"] = "百出",
+
+  ["$baichu1"] = "腹有经纶，到用时施无穷之计。",
+  ["$baichu2"] = "胸纳甲兵，烽烟起可靖疆晏海。",
+  ["$daojie_olz__xunyou1"] = "秉忠正之心，可抚宁内外。",
+  ["$daojie_olz__xunyou2"] = "贤者，温良恭俭让以得之。",
+  ["$qice_olz__xunyou1"] = "二袁相争，此曹公得利之时。",
+  ["$qice_olz__xunyou2"] = "穷寇宜追，需防死蛇之不僵。",
+  ["~olz__xunyou"] = "吾知命之寿，明知命之节……",
 }
 
 return extension

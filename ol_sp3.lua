@@ -3101,6 +3101,12 @@ Fk:loadTranslationTable{
   ["#weifu-invoke"] = "威抚：你可以为%arg额外指定一个目标",
   ["#kuansai-choose"] = "款塞：你可以令其中一个目标选择交给你一张牌或令你回复体力",
   ["#kuansai-give"] = "款塞：交给 %src 一张牌，否则其回复1点体力",
+  
+  ["$weifu1"] = "蛮人畏威，当束甲抚之。",
+  ["$weifu2"] = "以威为抚，可定万世之太平。",
+  ["$kuansai1"] = "君既以礼相待，我何干戈相向。",
+  ["$kuansai2"] = "我备美酒，待君玉帛。",
+  ["~ol__qianzhao"] = "玄德兄，弟……来迟矣……",
 }
 
 local luyusheng = General(extension, "ol__luyusheng", "wu", 3, 3, General.Female)
@@ -3380,6 +3386,16 @@ local lianju = fk.CreateTriggerSkill{
     player.room:setPlayerMark(player, "@@lianju", 0)
   end,
 }
+local lianju_viewas = fk.CreateViewAsSkill{
+  name = "lianju_viewas",
+  card_filter = Util.FalseFunc,
+  view_as = function(self, cards)
+    local card = Fk:cloneCard(Self:getMark("lianju"))
+    card.skillName = "lianju"
+    return card
+  end,
+}
+Fk:addSkill(lianju_viewas)
 local lianju_delay = fk.CreateTriggerSkill{
   name = "#lianju_delay",
   anim_type = "control",
@@ -3409,8 +3425,24 @@ local lianju_delay = fk.CreateTriggerSkill{
     if #cards == 0 or not room:askForSkillInvoke(target, "#lianju_delay", nil,
     "#lianju-supply:" .. player.id .. "::" .. card:toLogString()) then return false end
     room:moveCardTo(cards, Player.Hand, player, fk.ReasonPrey, self.name, nil, true, player.id)
-    if not player.dead and card.trueName == player:getMark("@lianju") then
+    if player.dead then return false end
+    if card.trueName == player:getMark("@lianju") then
       room:loseHp(player, 1, "lianju")
+    else
+      local to_use = Fk:cloneCard(card.name)
+      to_use.skillName = "lianju"
+      if not player:canUse(to_use) or player:prohibitUse(to_use) then return false end
+      room:setPlayerMark(player, "lianju", card.name)
+      local success, dat = player.room:askForUseViewAsSkill(player, "lianju_viewas", "#lianju-use:::"..card.name, true)
+      room:setPlayerMark(player, "lianju",0)
+      if success then
+        room:useCard{
+          from = player.id,
+          tos = table.map(dat.targets, function(p) return {p} end),
+          card = to_use,
+          extraUse = true,
+        }
+      end
     end
   end,
 }
@@ -3420,29 +3452,50 @@ local silv = fk.CreateTriggerSkill{
   events = {fk.AfterCardsMove},
   anim_type = "drawcard",
   can_trigger = function(self, event, target, player, data)
-    if player:hasSkill(self) and player:usedSkillTimes(self.name) == 0 then
+    if player:hasSkill(self) then
       local name = player:getMark("@lianju")
       if type(name) ~= "string" then return false end
-      for _, move in ipairs(data) do
-        if move.from == player.id then
-          for _, info in ipairs(move.moveInfo) do
-            if info.fromArea == Card.PlayerHand and Fk:getCardById(info.cardId).trueName == name then
-              return true
-            end
-          end
-        end
-        if move.to == player.id and move.toArea == Player.Hand then
-          for _, info in ipairs(move.moveInfo) do
-            if Fk:getCardById(info.cardId).trueName == name then
-              return true
+      local silvgetCheak = function(move_data)
+        for _, move in ipairs(move_data) do
+          if move.from == player.id then
+            for _, info in ipairs(move.moveInfo) do
+              if info.fromArea == Card.PlayerHand and Fk:getCardById(info.cardId).trueName == name then
+                return true
+              end
             end
           end
         end
       end
+      local silvloseCheak = function(move_data)
+        for _, move in ipairs(move_data) do
+          if move.to == player.id and move.toArea == Player.Hand then
+            for _, info in ipairs(move.moveInfo) do
+              if Fk:getCardById(info.cardId).trueName == name then
+                return true
+              end
+            end
+          end
+        end
+      end
+      local branches = {}
+      if player:getMark("silv1-turn") == 0 and silvgetCheak(data) then
+        table.insert(branches, "silv1-turn")
+      end
+      if player:getMark("silv2-turn") == 0 and silvloseCheak(data) then
+        table.insert(branches, "silv2-turn")
+      end
+      if #branches > 0 then
+        self.cost_data = branches
+        return true
+      end
     end
   end,
   on_use = function(self, event, target, player, data)
-    player:drawCards(1, self.name)
+    local room = player.room
+    for _, name in ipairs(self.cost_data) do
+      room:setPlayerMark(player, name, 1)
+    end
+    room:drawCards(player, #self.cost_data, self.name)
   end,
 }
 lianju:addRelatedSkill(lianju_delay)
@@ -3453,15 +3506,16 @@ Fk:loadTranslationTable{
   ["ol__liwan"] = "李婉",
   ["lianju"] = "联句",
   [":lianju"] = "结束阶段，你可以令一名其他角色获得弃牌堆中你本回合最后使用的牌并记录之，"..
-  "然后其下个结束阶段可以令你获得弃牌堆中其此回合最后使用的牌，若两者牌名相同，你失去1点体力。",
+  "然后其下个结束阶段可以令你获得弃牌堆中其此回合最后使用的牌，若两者牌名相同，你失去1点体力；牌名不同，你视为使用之。",
   ["silv"] = "思闾",
-  [":silv"] = "锁定技，每回合限一次，当你获得或失去与〖联句〗最后记录牌同名的牌后，你摸一张牌。",
+  [":silv"] = "锁定技，每回合每项各限一次，当你获得或失去与〖联句〗最后记录牌同名的牌后，你摸一张牌。",
 
   ["#lianju-choose"] = "你可以发动 联句，令一名其他角色获得你使用过的 %arg",
   ["@lianju"] = "联句",
   ["@@lianju"] = "联句",
   ["#lianju_delay"] = "联句",
   ["#lianju-supply"] = "联句：你可以令 %src 获得你使用过的 %arg",
+  ["#lianju-use"] = "联句：你可以视为使用【%arg】",
 
   ["$lianju1"] = "",
   ["$lianju2"] = "",
