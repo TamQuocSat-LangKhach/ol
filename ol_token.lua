@@ -1128,13 +1128,15 @@ local py_mirror_skill = fk.CreateTriggerSkill{
     local card = Fk:cloneCard(Fk:getCardById(show).name)
     card.skillName = self.name
     local canUse = false
-    room:setPlayerMark(player, "py_mirror_temp",1)
-    if player:canUse(card) then canUse = true end
-    if not canUse or player:prohibitUse(card) then return end
-    room:setPlayerMark(player, "py_mirror_name",card.name)
-    local success, dat = player.room:askForUseViewAsSkill(player, "py_mirror_viewas", "#py_mirror-use:::"..card.name, true)
-    room:setPlayerMark(player, "py_mirror_temp",0)
-    if success then
+    room:addPlayerMark(player, "BypassTimesLimit")
+    if player:canUse(card) and not player:prohibitUse(card) then canUse = true end
+    local dat
+    if canUse then
+      room:setPlayerMark(player, "py_mirror_name",card.name)
+      _, dat = player.room:askForUseViewAsSkill(player, "py_mirror_viewas", "#py_mirror-use:::"..card.name, true)
+    end
+    room:removePlayerMark(player, "BypassTimesLimit")
+    if dat then
       room:useCard{
         from = player.id,
         tos = table.map(dat.targets, function(p) return {p} end),
@@ -1152,13 +1154,6 @@ local py_mirror_viewas = fk.CreateViewAsSkill{
     return card
   end,
 }
-local py_mirror_targetmod = fk.CreateTargetModSkill{
-  name = "#py_mirror_targetmod",
-  bypass_times = function(self, player)
-    return player:getMark("py_mirror_temp") > 0
-  end,
-}
-py_mirror_skill:addRelatedSkill(py_mirror_targetmod)
 Fk:addSkill(py_mirror_viewas)
 Fk:addSkill(py_mirror_skill)
 local py_mirror = fk.CreateTreasure{

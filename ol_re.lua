@@ -1361,7 +1361,7 @@ local ol__jiangchi = fk.CreateTriggerSkill{
     return target == player and player:hasSkill(self) and player.phase == Player.Draw
   end,
   on_cost = function(self, event, target, player, data)
-    local _, ret = player.room:askForUseActiveSkill(player, "#ol__jiangchi_select", "#ol__jiangchi-invoke", true)
+    local _, ret = player.room:askForUseActiveSkill(player, "ol__jiangchi_select", "#ol__jiangchi-invoke", true)
     if ret then
       self.cost_data = ret.cards
       return true
