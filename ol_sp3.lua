@@ -419,11 +419,173 @@ Fk:loadTranslationTable{
   ["~ol__liuba"] = "恨未见，铸兵为币之日……",
 }
 
+local macheng = General(extension, "macheng", "shu", 4)
+local chenglie = fk.CreateTriggerSkill{
+  name = "chenglie",
+  anim_type = "control",
+  events = {fk.AfterCardTargetDeclared},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self) and data.card.trueName == "slash" and
+      #U.getUseExtraTargets(player.room, data, false) > 0
+  end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    local tos = room:askForChoosePlayers(player, U.getUseExtraTargets(room, data, false), 1, 2,
+    "#chenglie-choose:::"..data.card:toLogString(), self.name, true)
+    if #tos > 0 then
+      self.cost_data = tos
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    table.insertTable(data.tos, table.map(self.cost_data, function(p) return {p} end))
+    data.extra_data = data.extra_data or {}
+    data.extra_data.chenglie = player.id
+    local n = #TargetGroup:getRealTargets(data.tos)
+    local ids = room:getNCards(n)
+    room:moveCardTo(ids, Card.Processing, player, fk.ReasonJustMove, self.name, nil, true, player.id)
+    local results = U.askForExchange(player, "Top", "$Hand", ids, player:getCardIds("h"), "#chenglie-exchange", 1)
+    if #results > 0 then
+      local id1, id2 = results[1], results[2]
+      if room:getCardOwner(results[2]) == player then
+        id1, id2 = results[2], results[1]
+      end
+      local move1 = {
+        ids = {id1},
+        from = player.id,
+        toArea = Card.Processing,
+        moveReason = fk.ReasonExchange,
+        skillName = self.name,
+        moveVisible = false,
+      }
+      local move2 = {
+        ids = {id2},
+        to = player.id,
+        toArea = Card.PlayerHand,
+        moveReason = fk.ReasonExchange,
+        skillName = self.name,
+        moveVisible = false,
+      }
+      room:moveCards(move1, move2)
+      table.insert(ids, id1)
+      table.removeOne(ids, id2)
+    end
+    if player.dead and #ids > 0 then
+      room:moveCardTo(ids, Card.DiscardPile, player, fk.ReasonJustMove, nil, nil, true, nil)
+    end
+    local fakemove = {
+      toArea = Card.PlayerHand,
+      to = player.id,
+      moveInfo = table.map(ids, function(id) return {cardId = id, fromArea = Card.Processing} end),
+      moveReason = fk.ReasonJustMove,
+    }
+    room:notifyMoveCards({player}, {fakemove})
+    for _, id in ipairs(ids) do
+      room:setCardMark(Fk:getCardById(id), "chenglie", 1)
+    end
+    room:setPlayerMark(player, "chenglie-tmp", TargetGroup:getRealTargets(data.tos))
+    while table.find(ids, function(id) return Fk:getCardById(id):getMark("chenglie") > 0 end) do
+      room:askForUseActiveSkill(player, "chenglie_active", "#chenglie-give", false)
+    end
+    room:setPlayerMark(player, "chenglie-tmp", 0)
+  end,
+}
+local chenglie_active = fk.CreateActiveSkill{
+  name = "chenglie_active",
+  mute = true,
+  card_num = 1,
+  target_num = 1,
+  card_filter = function(self, to_select, selected, targets)
+    return #selected == 0 and Fk:getCardById(to_select):getMark("chenglie") > 0
+  end,
+  target_filter = function(self, to_select, selected, selected_cards)
+    return #selected == 0 and table.contains(Self:getMark("chenglie-tmp"), to_select)
+  end,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    local target = room:getPlayerById(effect.tos[1])
+    room:doIndicate(player.id, {target.id})
+    local mark = player:getMark("chenglie-tmp")
+    table.removeOne(mark, target.id)
+    room:setPlayerMark(player, "chenglie-tmp", mark)
+    room:setCardMark(Fk:getCardById(effect.cards[1]), "chenglie", 0)
+    local fakemove = {
+      from = player.id,
+      toArea = Card.Void,
+      moveInfo = table.map(effect.cards, function(id) return {cardId = id, fromArea = Card.PlayerHand} end),
+      moveReason = fk.ReasonJustMove,
+    }
+    room:notifyMoveCards({player}, {fakemove})
+    target:addToPile("chenglie", effect.cards[1], false, "chenglie")
+  end,
+}
+local chenglie_trigger = fk.CreateTriggerSkill{
+  name = "#chenglie_trigger",
+  mute = true,
+  events = {fk.CardUseFinished},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and data.extra_data and data.extra_data.chenglie and data.extra_data.chenglie == player.id
+  end,
+  on_cost = Util.TrueFunc,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    for _, p in ipairs(room:getOtherPlayers(player)) do  --这要是插结完全管不了
+      if #p:getPile("chenglie") > 0 then
+        local id = p:getPile("chenglie")[1]
+        room:moveCards({
+          from = p.id,
+          ids = p:getPile("chenglie"),
+          toArea = Card.DiscardPile,
+          moveReason = fk.ReasonPutIntoDiscardPile,
+          skillName = "chenglie",
+        })
+        if Fk:getCardById(id).color == Card.Red then
+          if data.extra_data.chenglie_cancelled and data.extra_data.chenglie_cancelled[p.id] and not p:isNude() and not player.dead then
+            local card = room:askForCard(p, 1, 1, true, "chenglie", false, ".", "#chenglie-card:"..player.id)
+            room:obtainCard(player.id, card[1], false, fk.ReasonGive)
+          else
+            if p:isWounded() then
+              room:recover{
+              who = p,
+              num = 1,
+              recoverBy = player,
+              skillName = "chenglie",
+              }
+            end
+          end
+        end
+      end
+    end
+  end,
+
+  refresh_events = {fk.CardEffectCancelledOut},
+  can_refresh = function(self, event, target, player, data)
+    return target == player and data.extra_data and data.extra_data.chenglie and data.extra_data.chenglie == player.id
+  end,
+  on_refresh = function(self, event, target, player, data)
+    data.extra_data.chenglie_cancelled = data.extra_data.chenglie_cancelled or {}
+    data.extra_data.chenglie_cancelled[data.to] = true
+  end,
+}
+Fk:addSkill(chenglie_active)
+chenglie:addRelatedSkill(chenglie_trigger)
+macheng:addSkill("mashu")
+macheng:addSkill(chenglie)
 Fk:loadTranslationTable{
   ["macheng"] = "马承",
   ["chenglie"] = "骋烈",
   [":chenglie"] = "你使用【杀】可以多指定至多两个目标，然后展示牌堆顶与目标数等量张牌，秘密将一张手牌与其中一张牌交换，将之分别暗置于"..
   "目标角色武将牌上直到此【杀】结算结束，其中“骋烈”牌为红色的角色若：响应了此【杀】，其交给你一张牌；未响应此【杀】，其回复1点体力。",
+  ["#chenglie-choose"] = "骋烈：你可以为%arg多指定至多两个目标，并执行后续效果",
+  ["#chenglie-exchange"] = "骋烈：你可以用一张手牌交换其中一张牌",
+  ["chenglie_active"] = "骋烈",
+  ["#chenglie-give"] = "骋烈：将这些牌置于目标角色武将牌上直到【杀】结算结束",
+  ["#chenglie-card"] = "骋烈：你需交给 %src 一张牌",
+
+  ["$chenglie1"] = "铁蹄踏南北，烈马惊黄沙！",
+  ["$chenglie2"] = "策马逐金雕，跨鞍寻天狼！",
+  ["~macheng"] = "儿有辱父祖之威名……",
 }
 
 local quhuang = General(extension, "quhuang", "wu", 3)
@@ -3024,7 +3186,7 @@ local weifu_trigger = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     room:setPlayerMark(player, "@weifu-turn", 0)
-    if data.tos and (data.card:isCommonTrick() or data.card.type == Card.TypeBasic) then
+    if data.tos and (data.card:isCommonTrick() or data.card.type == Card.TypeBasic) and #U.getUseExtraTargets(room, data, true) > 0 then
       local tos = room:askForChoosePlayers(player, U.getUseExtraTargets(room, data, true), 1, 1,
         "#weifu-invoke:::"..data.card:toLogString(), "weifu", true)
       if #tos == 1 then
