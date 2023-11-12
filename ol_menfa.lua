@@ -2109,8 +2109,8 @@ local yuzhi = fk.CreateTriggerSkill{
       if event == fk.RoundStart then
         return true
       else
-        return player:getMark("yuzhi") ~= 0 and
-          (player:getMark("yuzhi2-round") < tonumber(player:getMark("yuzhi1")) or player:getMark("yuzhi") < tonumber(player:getMark("yuzhi1")))
+        return player:getMark("_yuzhi") ~= 0 and
+          (player:getMark("yuzhi2-round") < tonumber(player:getMark("yuzhi1")) or tonumber(player:getMark("_yuzhi")) < tonumber(player:getMark("yuzhi1")))
       end
     end
   end,
@@ -2126,7 +2126,7 @@ local yuzhi = fk.CreateTriggerSkill{
       end
       if not player.dead then
         if player:getMark("yuzhi1") ~= 0 then
-          room:setPlayerMark(player, "yuzhi", player:getMark("yuzhi1"))
+          room:setPlayerMark(player, "_yuzhi", player:getMark("yuzhi1"))
         end
         if #cards == 0 then
           room:setPlayerMark(player, "yuzhi1", "0")

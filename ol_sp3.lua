@@ -3400,18 +3400,6 @@ local fudao = fk.CreateTriggerSkill{
   end,
   on_cost = function(self, event, target, player, data)
     if event == fk.GameStart then
-      local choices = {"draw1", "draw2", "draw3", "draw4"}
-      local num = 0
-      for _, id in ipairs(player:getCardIds{Player.Hand, Player.Equip}) do
-        local c = Fk:getCardById(id)
-        if not player:prohibitDiscard(c) then num = num + 1 end
-        if num == 4 then break end
-      end
-      for i = 1, num, 1 do
-        table.insert(choices, "discard" .. tostring(i))
-      end
-      local choice = player.room:askForChoice(player, choices, self.name)
-      self.cost_data = choice
       return true
     else
       return player.room:askForSkillInvoke(player, self.name, data, "#ol__fudao-ask::" .. target.id)
@@ -3419,14 +3407,16 @@ local fudao = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     if event == fk.GameStart then
-      local choice = self.cost_data
       local room = player.room
-      local num = tonumber(choice:sub(-1))
-      if choice:startsWith("discard") then
-        room:askForDiscard(player, num, num, true, self.name, false, nil)
-      else
-        room:drawCards(player, num, self.name)
-      end
+      player:drawCards(3, self.name)
+      if player.dead or player:isNude() then return end
+      local targets = table.map(room:getOtherPlayers(player), Util.IdMapper)
+      local tos, cards = room:askForChooseBoth(player, 1, 3, targets, 1, 1, nil, "#ol__fudao-give", self.name, false)
+      local to = room:getPlayerById(tos[1])
+      room:moveCardTo(cards, Card.PlayerHand, to, fk.ReasonGive, self.name, nil, false, player.id)
+      if player.dead then return false end
+      room:askForDiscard(player, 1, 999, false, self.name, true, nil, "#ol__fudao-discard")
+      if player.dead then return false end
       room:setPlayerMark(player, "@ol__fudao", tostring(player:getHandcardNum())) -- 0
       room:setPlayerMark(player, "_ol__fudao", player:getHandcardNum())
     else
@@ -3450,9 +3440,21 @@ local fengyan = fk.CreateTriggerSkill{
       return target == player and player:hasSkill(self) and not player.dead and data.responseToEvent and data.responseToEvent.from and data.responseToEvent.from ~= player.id and not player.room:getPlayerById(data.responseToEvent.from).dead
     end
   end,
+  on_cost = function(self, event, target, player, data)
+    local to
+    if event == fk.Damaged then
+      to = data.from.id
+    else
+      to = data.responseToEvent.from
+    end
+    local choice = player.room:askForChoice(player, {"ol__fengyan_self:" .. to, "ol__fengyan_other:" .. to}, self.name)
+    self.cost_data = choice
+    return true
+  end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    if event == fk.Damaged then
+    local choice = self.cost_data
+    if choice:startsWith("ol__fengyan_self") then
       player:drawCards(1, self.name)
       local target = data.from
       if target and not target.dead and not player:isNude() then
@@ -3476,20 +3478,17 @@ dingfuren:addSkill(fengyan)
 Fk:loadTranslationTable{
   ["ol__dingfuren"] = "丁尚涴",
   ["ol__fudao"] = "抚悼",
-  [":ol__fudao"] = "游戏开始时，你摸或弃置至多四张牌并记录你的手牌数。每回合结束时，若当前回合角色的手牌数为此数值，你可以与其各摸一张牌。",
+  [":ol__fudao"] = "游戏开始时，你摸三张牌，交给一名其他角色至多三张牌，弃置任意张手牌，然后记录你的手牌数。每回合结束时，若当前回合角色的手牌数为此数值，你可以与其各摸一张牌。",
   ["ol__fengyan"] = "讽言",
-  [":ol__fengyan"] = "锁定技，当你受到其他角色造成的伤害后，你摸一张牌并交给其一张牌；当你响应其他角色使用的牌后，其摸一张牌并弃置两张牌。",
+  [":ol__fengyan"] = "锁定技，当你受到其他角色造成的伤害后，或当你响应其他角色使用的牌后，你选择一项：1. 你摸一张牌并交给其一张牌；2. 其摸一张牌并弃置两张牌。",
 
   ["@ol__fudao"] = "抚悼",
+  ["#ol__fudao-give"] = "抚悼：请交给一名其他角色至多三张牌",
+  ["#ol__fudao-discard"] = "抚悼：请弃置任意张手牌",
   ["#ol__fudao-ask"] = "抚悼：你可与 %dest 各摸一张牌",
+  ["ol__fengyan_self"] = "你摸一张牌并交给%src一张牌",
+  ["ol__fengyan_other"] = "%src摸一张牌并弃置两张牌",
   ["#ol__fengyan-card"] = "讽言：请交给 %dest 一张牌",
-
-  ["draw3"] = "摸三张牌", -- abstract
-  ["draw4"] = "摸四张牌", 
-  ["discard1"] = "弃置一张牌",
-  ["discard2"] = "弃置两张牌",
-  ["discard3"] = "弃置三张牌",
-  ["discard4"] = "弃置四张牌",
 }
 
 local liwan = General(extension, "ol__liwan", "wei", 3, 3, General.Female)
