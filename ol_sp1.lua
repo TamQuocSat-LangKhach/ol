@@ -483,31 +483,44 @@ local biluan = fk.CreateTriggerSkill{
   anim_type = "defensive",
   events = {fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
-    if target == player and player:hasSkill(self) and player.phase == Player.Draw then
-      for _, p in ipairs(player.room:getOtherPlayers(player)) do
-        if p:distanceTo(player) == 1 then
-          return true
-        end
-      end
+    if target == player and player:hasSkill(self) and player.phase == Player.Finish and not player:isNude() then
+      return table.find(player.room:getOtherPlayers(player), function(p) return p:distanceTo(player) == 1 end)
+    end
+  end,
+  on_cost = function (self, event, target, player, data)
+    local kingdoms = {}
+    for _, p in ipairs(player.room.alive_players) do
+      table.insertIfNeed(kingdoms, p.kingdom)
+    end
+    local card = player.room:askForDiscard(player, 1, 1, true, self.name, true, ".", "#biluan-invoke:::"..#kingdoms, true)
+    if #card > 0 then
+      self.cost_data = card
+      return true
     end
   end,
   on_use = function(self, event, target, player, data)
+    local room = player.room
+    room:throwCard(self.cost_data, self.name, player, player)
+    if player.dead then return end
     local kingdoms = {}
-    for _, p in ipairs(Fk:currentRoom().alive_players) do
+    for _, p in ipairs(room.alive_players) do
       table.insertIfNeed(kingdoms, p.kingdom)
     end
-    player.room:addPlayerMark(player, "@biluan", #kingdoms)
-    return true
+    local num = tonumber(player:getMark("@shixie_distance")) + #kingdoms
+    room:setPlayerMark(player,"@shixie_distance",num > 0 and "+"..num or num)
   end,
 }
 local biluan_distance = fk.CreateDistanceSkill{
   name = "#biluan_distance",
   correct_func = function(self, from, to)
-    if to:getMark("@biluan") ~= 0 then
-      return to:getMark("@biluan")
+    local num = tonumber(to:getMark("@shixie_distance"))
+    if num > 0 then
+      return num
     end
   end,
 }
+biluan:addRelatedSkill(biluan_distance)
+shixie:addSkill(biluan)
 local lixia = fk.CreateTriggerSkill{
   name = "lixia",
   anim_type = "drawcard",
@@ -518,26 +531,44 @@ local lixia = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local choice = room:askForChoice(player, {"draw1", "lixia_draw"}, self.name)
-    if choice == "draw1" then
-      player:drawCards(1, self.name)
-    else
-      target:drawCards(1, self.name)
+    local all_choices = {"draw1", "lixia_draw:"..target.id}
+    if target:isWounded() then table.insert(all_choices, "lixia_recover:"..target.id) end
+    local choices = room:askForCheck(player, all_choices, 1, 2, self.name, nil, false)
+    for _, choice in ipairs(choices) do
+      if choice == "draw1" then
+        player:drawCards(1, self.name)
+      elseif choice:startsWith("lixia_draw") then
+        target:drawCards(2, self.name)
+      else
+        room:recover { num = 1, skillName = self.name, who = target, recoverBy = player}
+      end
     end
-    room:setPlayerMark(player, "@biluan", player:getMark("@biluan") - 1)
+    if player.dead then return end
+    local num = tonumber(player:getMark("@shixie_distance"))-1
+    room:setPlayerMark(player,"@shixie_distance",num > 0 and "+"..num or num)
   end,
 }
-biluan:addRelatedSkill(biluan_distance)  --FIXME:maybe this should relate to lixia lest skill be sealed...
-shixie:addSkill(biluan)
+local lixia_distance = fk.CreateDistanceSkill{
+  name = "#lixia_distance",
+  correct_func = function(self, from, to)
+    local num = tonumber(to:getMark("@shixie_distance"))
+    if num < 0 then
+      return num
+    end
+  end,
+}
+lixia:addRelatedSkill(lixia_distance)
 shixie:addSkill(lixia)
 Fk:loadTranslationTable{
   ["shixie"] = "士燮",
   ["biluan"] = "避乱",
-  [":biluan"] = "摸牌阶段开始时，若有其他角色与你距离为1，则你可以放弃摸牌，然后其他角色计算与你距离+X（X为势力数）。",
+  [":biluan"] = "结束阶段，若有其他角色计算与你的距离为1，你可以弃置一张牌，令其他角色计算与你的距离+X（X为存活势力数）。",
   ["lixia"] = "礼下",
-  [":lixia"] = "锁定技，其他角色的结束阶段，若你不在其攻击范围内，你选择一项：1.摸一张牌；2.其摸一张牌。然后其他角色与你的距离-1。",
-  ["@biluan"] = "避乱",
-  ["lixia_draw"] = "其摸一张牌",
+  [":lixia"] = "锁定技，其他角色的结束阶段，若你不在其攻击范围内，你选择一至两项：1.摸一张牌；2.令其摸两张牌；3.令其回复1点体力。选择完成后，其他角色计算与你的距离-1。",
+  ["#biluan-invoke"] = "避乱：你可弃一张牌，令其他角色计算与你距离+%arg",
+  ["@shixie_distance"] = "距离",
+  ["lixia_draw"] = "令%src摸两张牌",
+  ["lixia_recover"] = "令%src回复1点体力",
 
   ["$biluan1"] = "身处乱世，自保足矣。",
   ["$biluan2"] = "避一时之乱，求长世安稳。",
