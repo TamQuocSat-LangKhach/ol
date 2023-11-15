@@ -3448,21 +3448,20 @@ local fengyan = fk.CreateTriggerSkill{
       to = data.responseToEvent.from
     end
     local choice = player.room:askForChoice(player, {"ol__fengyan_self:" .. to, "ol__fengyan_other:" .. to}, self.name)
-    self.cost_data = choice
+    self.cost_data = {choice, to}
     return true
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local choice = self.cost_data
+    local choice = self.cost_data[1]
+    local target = room:getPlayerById(self.cost_data[2])
     if choice:startsWith("ol__fengyan_self") then
       player:drawCards(1, self.name)
-      local target = data.from
       if target and not target.dead and not player:isNude() then
         local c = room:askForCard(player, 1, 1, true, self.name, false, nil, "#ol__fengyan-card::" .. target.id)[1]
         room:moveCardTo(c, Player.Hand, target, fk.ReasonGive, self.name, nil, false, player.id)
       end
     else
-      local target = room:getPlayerById(data.responseToEvent.from)
       room:doIndicate(player.id, {target.id})
       target:drawCards(1, self.name)
       if not target.dead then
