@@ -272,8 +272,10 @@ local shangyangReformSkill = fk.CreateActiveSkill{
   mod_target_filter = function(self, to_select, selected, user, card, distance_limited)
     return to_select ~= Self.id
   end,
-  target_filter = function(self, to_select)
-    return to_select ~= Self.id
+  target_filter = function (self, to_select, selected, selected_cards, card)
+    if #selected < self:getMaxTargetNum(Self, card) then
+      return self:modTargetFilter(to_select, selected, Self.id, card)
+    end
   end,
   on_effect = function(self, room, effect)
     local player = room:getPlayerById(effect.from)

@@ -3014,7 +3014,7 @@ local qifan = fk.CreateTriggerSkill{
   anim_type = "special",
   events = {fk.PreCardUse},
   can_trigger = function (self, event, target, player, data)
-    if target == player and player:hasSkill(self.name, true) then
+    if target == player and player:hasSkill(self, true) then
       local cards = data.card:isVirtual() and data.card.subcards or {data.card.id}
       if #cards == 0 then return end
       local yes = false
@@ -3051,7 +3051,7 @@ local qifan = fk.CreateTriggerSkill{
 
   refresh_events = {fk.AfterCardsMove},
   can_refresh = function(self, event, target, player, data)
-    if player:hasSkill(self.name, true) then
+    if player:hasSkill(self, true) then
       for _, move in ipairs(data) do
         if move.toArea == Card.DrawPile then
           return true
@@ -3967,9 +3967,9 @@ local qisi = fk.CreateTriggerSkill{
   events = {fk.GameStart, fk.DrawNCards},
   can_trigger = function(self, event, target, player, data)
     if event == fk.GameStart then
-      return player:hasSkill(self.name)
+      return player:hasSkill(self)
     else
-      return player:hasSkill(self.name) and target == player and data.n > 0
+      return player:hasSkill(self) and target == player and data.n > 0
     end
   end,
   on_cost = function (self, event, target, player, data)
@@ -4222,6 +4222,196 @@ Fk:loadTranslationTable{
   ["$dongdao1"] = "阿瞒远道而来，老夫当尽地主之谊！",
   ["$dongdao2"] = "我乃嵩兄故交，孟德来此可无忧虑。",
   ["~lvboshe"] = "阿瞒，我沽酒回来……呃！",
+}
+
+local feiyi = General(extension, "ol__feiyi", "shu", 3)
+local yanru = fk.CreateActiveSkill{
+  name = "yanru",
+  anim_type = "drawcard",
+  min_card_num = 0,
+  target_num = 0,
+  prompt = function (self, selected_cards, selected_targets)
+    if Self:getHandcardNum() % 2 == 0 then
+      return "#yanru2:::"..(Self:getHandcardNum() // 2)
+    else
+      return "#yanru1"
+    end
+  end,
+  can_use = function(self, player)
+    if player:getHandcardNum() % 2 == 0 then
+      return not player:isKongcheng() and player:getMark("yanru2-phase") == 0
+    else
+      return player:getMark("yanru1-phase") == 0
+    end
+  end,
+  card_filter = function (self, to_select, selected, selected_targets)
+    if Self:getHandcardNum() % 2 == 0 then
+      return Fk:currentRoom():getCardArea(to_select) == Player.Hand and not Self:prohibitDiscard(Fk:getCardById(to_select))
+    else
+      return false
+    end
+  end,
+  target_filter = Util.FalseFunc,
+  feasible = function (self, selected, selected_cards)
+    if Self:getHandcardNum() % 2 == 0 then
+      return #selected_cards >= (Self:getHandcardNum() // 2)
+    else
+      return true
+    end
+  end,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    if player:getHandcardNum() % 2 == 0 then
+      room:setPlayerMark(player, "yanru2-phase", 1)
+      room:throwCard(effect.cards, self.name, player, player)
+      if not player.dead then
+        player:drawCards(3, self.name)
+      end
+    else
+      room:setPlayerMark(player, "yanru1-phase", 1)
+      player:drawCards(3, self.name)
+      if not player.dead and not player:isKongcheng() then
+        room:askForDiscard(player, player:getHandcardNum() // 2, 999, false, self.name, false, ".",
+          "#yanru-discard:::"..(player:getHandcardNum() // 2))
+      end
+    end
+  end,
+}
+local hezhong = fk.CreateTriggerSkill{
+  name = "hezhong",
+  anim_type = "drawcard",
+  events = {fk.AfterCardsMove},
+  can_trigger = function(self, event, target, player, data)
+    if player:hasSkill(self) and player:getHandcardNum() == 1 and player:usedSkillTimes(self.name, Player.HistoryTurn) < 2 then
+      for _, move in ipairs(data) do
+        if move.from == player.id then
+          for _, info in ipairs(move.moveInfo) do
+            if info.fromArea == Card.PlayerHand then
+              return true
+            end
+          end
+        end
+        if move.to == player.id and move.toArea == Card.PlayerHand then
+          return true
+        end
+      end
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local n = Fk:getCardById(player:getCardIds("h")[1]).number
+    player:showCards(player:getCardIds("h"))
+    if player.dead then return end
+    player:drawCards(1, self.name)
+    if player.dead then return end
+    local choices = {}
+    for i = 1, 2, 1 do
+      if player:getMark("hezhong"..i.."-turn") == 0 then
+        table.insert(choices, "hezhong"..i)
+      end
+    end
+    local choice = room:askForChoice(player, choices, self.name, "#hezhong-choice:::"..n, false, {"hezhong1", "hezhong2"})
+    room:setPlayerMark(player, choice.."-turn", n)
+  end,
+}
+local hezhong_trigger = fk.CreateTriggerSkill{
+  name = "#hezhong_trigger",
+  main_skill = hezhong,  --大概不是延时效果？
+  mute = true,
+  events = {fk.CardUsing},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill("hezhong") and data.tos and data.card:isCommonTrick() and data.card.number > 0 and
+      ((player:getMark("hezhong1-turn") > 0 and data.card.number > player:getMark("hezhong1-turn")) or
+      (player:getMark("hezhong2-turn") > 0 and data.card.number < player:getMark("hezhong2-turn")))
+  end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    local n = 0
+    if player:getMark("hezhong1-turn") > 0 and data.card.number > player:getMark("hezhong1-turn") and
+      player:getMark("hezhong1used-turn") == 0 then
+      if room:askForSkillInvoke(player, "hezhong", nil, "#hezhong-invoke:::"..data.card:toLogString()) then
+        n = n + 1
+      end
+    end
+    if player:getMark("hezhong2-turn") > 0 and data.card.number < player:getMark("hezhong2-turn") and
+      player:getMark("hezhong2used-turn") == 0 then
+      if room:askForSkillInvoke(player, "hezhong", nil, "#hezhong-invoke:::"..data.card:toLogString()) then
+        n = n + 1
+      end
+    end
+    if n > 0 then
+      self.cost_data = n
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    player:broadcastSkillInvoke("hezhong")
+    room:notifySkillInvoked(player, "hezhong", "control")
+    data.extra_data = data.extra_data or {}
+    data.extra_data.hezhong = (data.extra_data.hezhong or 0) + self.cost_data
+  end,
+}
+local hezhong_delay = fk.CreateTriggerSkill{
+  name = "#hezhong_delay",
+  mute = true,
+  events = {fk.CardUseFinished},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and data.extra_data and data.extra_data.hezhong and
+      data.extra_data.hezhong > 0 and not data.extra_data.hezhong_using
+  end,
+  on_cost = Util.TrueFunc,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    data.extra_data.hezhong_using = true
+    data.extra_data.hezhong = data.extra_data.hezhong - 1
+    if data.card.name == "amazing_grace" then
+      room.logic:trigger(fk.CardUseFinished, player, data)
+      table.forEach(room.players, function(p) room:closeAG(p) end)  --手动五谷
+      if data.extra_data and data.extra_data.AGFilled then
+        local toDiscard = table.filter(data.extra_data.AGFilled, function(id) return room:getCardArea(id) == Card.Processing end)
+        if #toDiscard > 0 then
+          room:moveCards({
+            ids = toDiscard,
+            toArea = Card.DiscardPile,
+            moveReason = fk.ReasonPutIntoDiscardPile,
+          })
+        end
+      end
+      data.extra_data.AGFilled = nil
+
+      local toDisplay = room:getNCards(#TargetGroup:getRealTargets(data.tos))
+      room:moveCards({
+        ids = toDisplay,
+        toArea = Card.Processing,
+        moveReason = fk.ReasonPut,
+      })
+      table.forEach(room.players, function(p) room:fillAG(p, toDisplay) end)
+      data.extra_data = data.extra_data or {}
+      data.extra_data.AGFilled = toDisplay
+    end
+    player.room:doCardUseEffect(data)
+    data.extra_data.hezhong_using = false
+  end,
+}
+hezhong:addRelatedSkill(hezhong_trigger)
+hezhong:addRelatedSkill(hezhong_delay)
+feiyi:addSkill(yanru)
+feiyi:addSkill(hezhong)
+Fk:loadTranslationTable{
+  ["ol__feiyi"] = "费祎",
+  ["yanru"] = "晏如",
+  [":yanru"] = "出牌阶段各限一次，若你的手牌数为：奇数，你可以摸三张牌，然后弃置至少半数手牌；偶数，你可以弃置至少半数手牌，然后摸三张牌。",
+  ["hezhong"] = "和衷",
+  [":hezhong"] = "每回合各限一次，当你的手牌数变为1后，你可以展示之并摸一张牌，然后本回合你使用点数大于/小于此牌点数的普通锦囊牌多结算一次。",
+  --FIXME: 真是服了这nt蝶描述，心变佬有兴趣就改叭
+  ["#yanru1"] = "晏如：你可以摸三张牌，然后弃置至少半数手牌",
+  ["#yanru2"] = "晏如：你可以弃置至少%arg张手牌，然后摸三张牌",
+  ["#yanru-discard"] = "晏如：请弃置至少%arg张手牌",
+  ["#hezhong-choice"] = "和衷：令你本回合点数大于或小于%arg的锦囊牌多结算一次",
+  ["hezhong1"] = "大于",
+  ["hezhong2"] = "小于",
+  ["#hezhong-invoke"] = "和衷：是否令%arg多结算一次？",
 }
 
 return extension

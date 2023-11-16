@@ -1,6 +1,8 @@
 local extension = Package("ol_other")
 extension.extensionName = "ol"
 
+local U = require "packages/utility/utility"
+
 Fk:loadTranslationTable{
   ["ol_other"] = "OL-其他",
   ["qin"] = "秦",
@@ -16,7 +18,7 @@ local shenfu = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    if #player.player_cards[Player.Hand] % 2 == 1 then
+    if #player:getCardIds("h") % 2 == 1 then
       while true do
         local tos = room:askForChoosePlayers(player, table.map(room:getOtherPlayers(player), Util.IdMapper), 1, 1, "#shenfu-damage", self.name, true)
         if #tos > 0 then
@@ -51,7 +53,7 @@ local shenfu = fk.CreateTriggerSkill{
               local card = room:askForCardsChosen(player, to, 1, 1, "h", self.name)
               room:throwCard(card, self.name, to, player)
             end
-            if #to.player_cards[Player.Hand] ~= to.hp then return end
+            if #to:getCardIds("h") ~= to.hp then return end
           end
         else
           return
@@ -144,7 +146,7 @@ local tianxing = fk.CreateTriggerSkill{
     local dummy = Fk:cloneCard("dilu")
     dummy:addSubcards(player:getPile("caopi_chu"))
     room:obtainCard(player, dummy, false, fk.ReasonJustMove)
-    local choice = room:askForChoice(player, {"ex__rende", "ex__zhiheng", "ol_ex__luanji"}, self.name, "#tianxing-choice", true)  --TODO:ex__rende
+    local choice = room:askForChoice(player, {"ex__rende", "ex__zhiheng", "ol_ex__luanji"}, self.name, "#tianxing-choice", true)
     room:handleAddLoseSkills(player, choice.."|-chuyuan", nil)
   end,
 }
@@ -280,7 +282,7 @@ Fk:loadTranslationTable{
   ["shenqu"] = "神躯",
   [":shenqu"] = "一名角色的准备阶段，若你的手牌数不大于你的体力上限，你可摸两张牌。当你受到伤害后，你可使用一张【桃】。",
   ["jiwu"] = "极武",
-  [":jiwu"] = "出牌阶段，你可以弃置一张牌，然后本回合你拥有以下其中一个技能：“强袭”、“铁骑”、“旋风”、“完杀”。",
+  [":jiwu"] = "出牌阶段，你可以弃置一张牌，然后本回合你拥有以下其中一个技能：〖强袭〗、〖铁骑〗、〖旋风〗、〖完杀〗。",
 
   ["#shenqu-invoke"] = "是否使用神躯，摸两张牌",
   ["#shenqu-use"] = "神躯：你可以使用一张【桃】",
@@ -389,7 +391,7 @@ Fk:loadTranslationTable{
   [":fentian"] = "锁定技，结束阶段，若你的手牌数小于你的体力值，你将攻击范围内的一名角色的一张牌置于你的武将牌上，称为“焚”；"..
   "你的攻击范围+X（X为“焚”数）。",
   ["zhiri"] = "炙日",
-  [":zhiri"] = "觉醒技，准备阶段，若你的“焚”数不小于3，你减1点体力上限，获得“心惔”。",
+  [":zhiri"] = "觉醒技，准备阶段，若你的“焚”数不小于3，你减1点体力上限，获得〖心惔〗。",
   ["xintan"] = "心惔",
   [":xintan"] = "出牌阶段限一次，你可将两张“焚”置入弃牌堆并选择一名角色，该角色失去1点体力。",
 
@@ -415,6 +417,7 @@ local qin__bianfa = fk.CreateViewAsSkill{
   name = "qin__bianfa",
   anim_type = "offensive",
   pattern = "shangyang_reform",
+  prompt = "#qin__bianfa",
   card_filter = function(self, to_select, selected)
     return #selected == 0 and Fk:getCardById(to_select):isCommonTrick()
   end,
@@ -432,13 +435,13 @@ local qin__bianfa = fk.CreateViewAsSkill{
 local qin__bianfa_trigger = fk.CreateTriggerSkill{
   name = "#qin__bianfa_trigger",
   mute = true,
-  events = {fk.GameStart, fk.TargetSpecifying},
+  events = {fk.GameStart, fk.AfterCardTargetDeclared},
   can_trigger = function(self, event, target, player, data)
     if player:hasSkill("qin__bianfa") then
       if event == fk.GameStart then
         return true
       else
-        return target == player and data.card.trueName == "shangyang_reform"
+        return target == player and data.card.trueName == "shangyang_reform" and #U.getUseExtraTargets(player.room, data, false) > 0
       end
     end
   end,
@@ -447,11 +450,9 @@ local qin__bianfa_trigger = fk.CreateTriggerSkill{
       return true
     else
       local room = player.room
-      local targets = table.map(table.filter(room:getOtherPlayers(player), function(p)
-        return not table.contains(AimGroup:getAllTargets(data.tos), p.id) and
-        not player:isProhibited(p, data.card) end), Util.IdMapper)
-      if #targets == 0 then return end
-      local to = room:askForChoosePlayers(player, targets, 1, 1, "#qin__bianfa:::"..data.card:toLogString(), "qin__bianfa", true)
+      local targets = U.getUseExtraTargets(room, data, false)
+      table.removeOne(targets, player.id)
+      local to = room:askForChoosePlayers(player, targets, 1, 1, "#qin__bianfa-choose:::"..data.card:toLogString(), "qin__bianfa", true)
       if #to > 0 then
         self.cost_data = to[1]
         return true
@@ -473,7 +474,7 @@ local qin__bianfa_trigger = fk.CreateTriggerSkill{
       room:doBroadcastNotify("UpdateDrawPile", tostring(#room.draw_pile))
     else
       room:notifySkillInvoked(player, "qin__bianfa", "offensive")
-      TargetGroup:pushTargets(data.targetGroup, self.cost_data)
+      TargetGroup:pushTargets(data.tos, self.cost_data)
     end
   end,
 }
@@ -483,8 +484,7 @@ local qin__limu = fk.CreateTriggerSkill{
   events = {fk.AfterCardUseDeclared},
   frequency = Skill.Compulsory,
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self) and data.card:isCommonTrick() and
-      player:usedSkillTimes(self.name, Player.HistoryTurn) == 0
+    return target == player and player:hasSkill(self) and data.card:isCommonTrick()
   end,
   on_use = function(self, event, target, player, data)
     data.prohibitedCardNames = {"nullification"}
@@ -496,7 +496,7 @@ local qin__kencao = fk.CreateTriggerSkill{
   events = {fk.Damage},
   frequency = Skill.Compulsory,
   can_trigger = function(self, event, target, player, data)
-    return player:hasSkill(self) and target and not target.dead
+    return player:hasSkill(self) and target and not target.dead and target.kingdom == "qin"
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
@@ -504,9 +504,7 @@ local qin__kencao = fk.CreateTriggerSkill{
     room:addPlayerMark(target, "@qin__kencao", 1)
     if target:getMark("@qin__kencao") > 2 then
       room:setPlayerMark(target, "@qin__kencao", 0)
-      if target.kingdom == "qin" then
-        room:changeMaxHp(target, 1)
-      end
+      room:changeMaxHp(target, 1)
       if target:isWounded() then
         room:recover({
           who = target,
@@ -530,9 +528,10 @@ Fk:loadTranslationTable{
   ["qin__limu"] = "立木",
   [":qin__limu"] = "锁定技，你使用的普通锦囊牌不能被【无懈可击】响应。",
   ["qin__kencao"] = "垦草",
-  [":qin__kencao"] = "锁定技，当一名角色造成伤害后，其获得一枚“功”标记。然后若其“功”标记不小于3，其弃置所有“功”，"..
-  "回复1点体力；若其为秦势力角色，则先加1点体力上限。",
-  ["#qin__bianfa"] = "变法：你可以为%arg额外指定一个目标",
+  [":qin__kencao"] = "锁定技，当一名秦势力角色造成伤害后，其获得一枚“功”标记。然后若其“功”标记不小于3，其弃置所有“功”，加1点体力上限，"..
+  "回复1点体力。",
+  ["#qin__bianfa"] = "变法：你可以将一张普通锦囊牌当【商鞅变法】使用",
+  ["#qin__bianfa-choose"] = "变法：你可以为%arg额外指定一个目标",
   ["@qin__kencao"] = "功",
 
   ["$qin__bianfa"] = "前世不同教，何古之法？",
@@ -545,9 +544,14 @@ Fk:loadTranslationTable{
   ["zhangyiq"] = "张仪",
   ["qin__lianheng"] = "连横",
   [":qin__lianheng"] = "锁定技，游戏开始时，你令随机一名其他角色获得一枚“横”标记。准备阶段，弃置“横”标记，然后令随机另一名其他角色获得“横”标记。"..
-  "有“横”标记的角色使用牌不能指定你为目标。",
+  "每轮开始时，横置所有角色。有“横”标记的角色使用牌不能指定武将牌横置的角色为目标。",
   ["qin__xichu"] = "戏楚",
-  [":qin__xichu"] = "锁定技，。",
+  [":qin__xichu"] = "锁定技，当你成为【杀】的目标时，若使用者攻击范围内有其他角色，其选择一项：1.弃置一张点数为6的牌；2.你将此【杀】转移给其攻击范围内"..
+  "另一名角色。",
+  ["qin__xiongbian"] = "雄辩",
+  [":qin__xiongbian"] = "锁定技，当你成为普通锦囊牌的目标时，你判定，若点数为6，此牌无效。",
+  ["qin__qiaoshe"] = "巧舌",
+  [":qin__qiaoshe"] = "一名角色判定结果生效前，你可以令点数增加或减少至多3。",
 
   ["$qin__lianheng"] = "连横之术，可破合纵之策。",
   ["$qin__xichu"] = "楚王欲贪，此戏方成。",
@@ -556,22 +560,40 @@ Fk:loadTranslationTable{
   ["~zhangyiq"] = "连横之道，后世难存……",
 }
 
+Fk:loadTranslationTable{
+  ["baiqi"] = "白起",
+  ["qin__wuan"] = "武安",
+  [":qin__wuan"] = "锁定技，你使用【杀】无距离限制且出牌阶段使用【杀】次数上限+1。",
+  ["qin__shashen"] = "杀神",
+  [":qin__shashen"] = "你可以将一张手牌当【杀】使用或打出。当你于一回合内使用的第一张【杀】造成伤害后，你摸一张牌。",
+  ["qin__fachu"] = "伐楚",
+  [":qin__fachu"] = "锁定技，你造成伤害使其他角色进入濒死状态时，随机废除其一个装备栏。",
+  ["qin__changsheng"] = "常胜",
+  [":qin__changsheng"] = "锁定技，你使用的【杀】需额外使用一张【闪】抵消；你的回合内，所有角色的【桃】均只能当【杀】或【闪】使用或打出。",
+
+  ["$qin__wuan"] = "受封武安，为国尽忠！",
+  ["$qin__shashen"] = "战场，是我的舞台！",
+  ["$qin__fachu"] = "兴兵伐楚，稳大秦基业！",
+  ["$qin__changsheng"] = "百战百胜，攻无不克！",
+  ["~baiqi"] = "将士迟暮，难以再战……",
+}
+
 local yingzheng = General(extension, "yingzheng", "qin", 4)
-yingzheng.hidden = true
 local qin__yitong = fk.CreateTriggerSkill{
   name = "qin__yitong",
   anim_type = "offensive",
   frequency = Skill.Compulsory,
-  events = {fk.TargetSpecifying},
+  events = {fk.AfterCardTargetDeclared},
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(self) and
-      table.contains({"slash", "dismantlement", "snatch", "fire_attack"}, data.card.trueName)
+      table.contains({"slash", "dismantlement", "snatch", "fire_attack"}, data.card.trueName) and
+      #U.getUseExtraTargets(player.room, data, true) > 0
   end,
   on_use = function(self, event, target, player, data)
-    for _, p in ipairs(player.room:getOtherPlayers(player)) do
-      if not table.contains(AimGroup:getAllTargets(data.tos), p.id) and not player:isProhibited(p, data.card) then
-        player.room:doIndicate(player.id, {p.id})
-        TargetGroup:pushTargets(data.targetGroup, p.id)
+    for _, id in ipairs(U.getUseExtraTargets(player.room, data, true)) do
+      if not id ~= player.id then
+        player.room:doIndicate(player.id, {id})
+        TargetGroup:pushTargets(data.tos, id)
       end
     end
   end,
@@ -659,7 +681,7 @@ Fk:loadTranslationTable{
   [":qin__shihuang"] = "锁定技，其他角色回合结束时，你有X%概率获得一个额外回合（X为游戏轮数的6倍）。",
   ["qin__zulong"] = "祖龙",
   [":qin__zulong"] = "锁定技，游戏开始时，将【传国玉玺】和【真龙长剑】加入牌堆；准备阶段，若【传国玉玺】或【真龙长剑】在牌堆或弃牌堆中，"..
-  "你获得之；否则你摸两张牌。",
+  "你获得之，否则你摸两张牌。",
   ["qin__fenshu"] = "焚书",
   [":qin__fenshu"] = "主公技，锁定技，非秦势力角色于其回合内使用的第一张普通锦囊牌无效。",
 
@@ -671,7 +693,6 @@ Fk:loadTranslationTable{
 }
 
 local lvbuwei = General(extension, "lvbuwei", "qin", 4)
-lvbuwei.hidden = true
 local qin__qihuo = fk.CreateActiveSkill{
   name = "qin__qihuo",
   anim_type = "drawcard",
@@ -680,14 +701,14 @@ local qin__qihuo = fk.CreateActiveSkill{
   prompt = "#qin__qihuo",
   interaction = function(self)
     local choices = {}
-    if table.find(Self.player_cards[Player.Hand], function(id) return Fk:getCardById(id).type == Card.TypeBasic end) then
+    if table.find(Self:getCardIds("h"), function(id) return Fk:getCardById(id).type == Card.TypeBasic end) then
       table.insert(choices, "basic")
     end
-    if table.find(Self.player_cards[Player.Hand], function(id) return Fk:getCardById(id).type == Card.TypeTrick end) then
+    if table.find(Self:getCardIds("h"), function(id) return Fk:getCardById(id).type == Card.TypeTrick end) then
       table.insert(choices, "trick")
     end
-    if table.find(Self.player_cards[Player.Hand], function(id) return Fk:getCardById(id).type == Card.TypeEquip end) or
-      #Self.player_cards[Player.Equip] > 0 then
+    if table.find(Self:getCardIds("h"), function(id) return Fk:getCardById(id).type == Card.TypeEquip end) or
+      #Self:getCardIds("e") > 0 then
       table.insert(choices, "equip")
     end
     return UI.ComboBox { choices = choices }
@@ -699,7 +720,7 @@ local qin__qihuo = fk.CreateActiveSkill{
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
     local cards = {}
-    for _, id in ipairs(player:getCardIds{Player.Hand, Player.Equip}) do
+    for _, id in ipairs(player:getCardIds("he")) do
       if self.interaction.data == "basic" then
         if Fk:getCardById(id).type == Card.TypeBasic then
           table.insertIfNeed(cards, id)
@@ -769,37 +790,28 @@ local qin__zhongfu = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     local skills = {}
-    if not player:hasSkill("ex__jianxiong", true) then
-      table.insert(skills, "ex__jianxiong")
-    end
-    if not player:hasSkill("ex__rende", true) then
-      table.insert(skills, "ex__rende")
-    end
-    if not player:hasSkill("ex__zhiheng", true) then
-      table.insert(skills, "ex__zhiheng")
+    for _, s in ipairs({"ex__jianxiong", "ex__rende", "ex__zhiheng"}) do
+      if not player:hasSkill(s, true) then
+        table.insert(skills, s)
+      end
     end
     if #skills == 0 then return end
     local skill = table.random(skills)
     room:setPlayerMark(player, self.name, skill)
     room:handleAddLoseSkills(player, skill, nil, true, false)
   end,
-}
-local qin__zhongfu_trigger = fk.CreateTriggerSkill {
-  name = "#qin__zhongfu_trigger",
-  mute = true,
-  events = {fk.EventPhaseChanging},
-  can_trigger = function(self, event, target, player, data)
-    return target == player and data.from == Player.RoundStart and player:getMark("qin__zhongfu") ~= 0
+
+  refresh_events = {fk.TurnStart},
+  can_refresh = function(self, event, target, player, data)
+    return target == player and player:getMark("qin__zhongfu") ~= 0
   end,
-  on_cost = Util.TrueFunc,
-  on_use = function(self, event, target, player, data)
+  on_refresh = function(self, event, target, player, data)
     local room = player.room
     local skill = player:getMark("qin__zhongfu")
     room:setPlayerMark(player, "qin__zhongfu", 0)
     room:handleAddLoseSkills(player, "-"..skill, nil, true, false)
   end,
 }
-qin__zhongfu:addRelatedSkill(qin__zhongfu_trigger)
 lvbuwei:addSkill(qin__qihuo)
 lvbuwei:addSkill("jugu")
 lvbuwei:addSkill(qin__chunqiu)
@@ -828,7 +840,25 @@ Fk:loadTranslationTable{
   ["~lvbuwei"] = "酖酒入肠，魂落异乡……",
 }
 
-local zhaoji = General(extension, "zhaoji", "qin", 3, 3, General.Female)
+Fk:loadTranslationTable{
+  ["zhaogao"] = "赵高",
+  ["qin__zhilu"] = "指鹿",
+  [":qin__zhilu"] = "每回合各限一次，你可以将红色手牌当任意基本牌、黑色手牌当任意伤害牌使用或打出。",
+  ["qin__gaizhao"] = "改诏",
+  [":qin__gaizhao"] = "每回合限一次，当你成为【杀】或普通锦囊牌的目标时，你可以将此牌转移给一名不是此牌目标的角色。",
+  ["qin__haizhong"] = "害忠",
+  [":qin__haizhong"] = "锁定技，其他角色回复体力后，你令其选择一项：1.弃置一张红色牌；2.你对其造成X点伤害（X为你以此法对其造成伤害次数+1）。",
+  ["qin__yuanli"] = "爰历",
+  [":qin__yuanli"] = "锁定技，结束阶段开始时，你随机获得两张普通锦囊牌。",
+
+  ["$qin__zhilu"] = "看清楚了，这可是马。",
+  ["$qin__gaizhao"] = "我的话才是诏书所言。",
+  ["$qin__haizhong"] = "违逆我的，可都没有好下场。",
+  ["$qin__yuanli"] = "玉律法令，爰历皆皆记。",
+  ["~zhaogao"] = "唉！权力害己啊！",
+}
+
+local zhaoji = General(extension, "zhaoji", "qin", 3, 4, General.Female)
 local qin__shanwu = fk.CreateTriggerSkill{
   name = "qin__shanwu",
   mute = true,
