@@ -1385,30 +1385,18 @@ local dingpan = fk.CreateActiveSkill{
 }
 local dingpan_record = fk.CreateTriggerSkill{
   name = "#dingpan_record",
-
-  refresh_events = {fk.GameStart, fk.BeforeGameOverJudge},
-  can_refresh = function(self, event, target, player, data)
+  refresh_events = {fk.StartPlayCard},
+  can_refresh = function(self, _, _, player, _)
     return player:hasSkill(self)
   end,
-  on_refresh = function(self, event, target, player, data)
+  on_refresh = function(_, _, _, player, _)
     local room = player.room
-    if event == fk.GameStart then
-      local n
-      if room.settings.gameMode == "aaa_role_mode" then
-        local total = #room.alive_players
-        if total == 8 then n = 4
-        elseif total == 7 or total == 6 then n = 3
-        elseif total == 5 then n = 2
-        else n = 1
-        end
-      elseif room.settings.gameMode == "m_1v2_mode" or room.settings.gameMode == "m_2v2_mode" then
-        n = 2
-      end
+    local n = 0
+    for _, p in ipairs(room.alive_players) do
+      if p.role == "rebel" then n = n + 1 end
+    end
+    if n ~= player:getMark("dingpan") then
       room:setPlayerMark(player, "dingpan", n)
-    else
-      if target.role == "rebel" then
-        room:removePlayerMark(player, "dingpan", 1)
-      end
     end
   end,
 }

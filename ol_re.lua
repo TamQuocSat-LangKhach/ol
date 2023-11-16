@@ -1341,7 +1341,62 @@ Fk:loadTranslationTable{
   ["$ol__yuhua2"] = "羽化成蝶，翩仙舞愿。",
   ["~ol__zhugeguo"] = "化羽难成，仙境已逝。",
 }
+-- yj2011
+local masu = General(extension, "ol__masu", "shu", 3)
+local ol__sanyao = fk.CreateActiveSkill{
+  name = "ol__sanyao",
+  anim_type = "offensive",
+  card_num = 1,
+  target_num = 1,
+  can_use = function(self, player)
+    return not player:isNude() and (player:getMark("ol__sanyao_hp-phase") == 0 or player:getMark("ol__sanyao_hand-phase") == 0)
+  end,
+  interaction = function()
+    local choices = {}
+    for _, m in ipairs({"ol__sanyao_hp-phase", "ol__sanyao_hand-phase"}) do
+      if Self:getMark(m) == 0 then table.insert(choices, m) end
+    end
+    return UI.ComboBox {choices = choices}
+  end,
+  card_filter = function(self, to_select, selected)
+    return #selected == 0 and not Self:prohibitDiscard(Fk:getCardById(to_select))
+  end,
+  target_filter = function(self, to_select, selected)
+    if #selected > 0 or not self.interaction.data then return false end
+    local target = Fk:currentRoom():getPlayerById(to_select)
+    if self.interaction.data == "ol__sanyao_hp-phase" then
+      return table.every(Fk:currentRoom().alive_players, function(p) return p.hp <= target.hp end)
+    else
+      return table.every(Fk:currentRoom().alive_players, function(p) return p:getHandcardNum() <= target:getHandcardNum() end)
+    end
+  end,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    local target = room:getPlayerById(effect.tos[1])
+    room:addPlayerMark(player, self.interaction.data)
+    room:throwCard(effect.cards, self.name, player, player)
+    room:damage{
+      from = player,
+      to = target,
+      damage = 1,
+      skillName = self.name,
+    }
+  end
+}
+masu:addSkill(ol__sanyao)
+masu:addSkill("ty_ex__zhiman")
+Fk:loadTranslationTable{
+  ["ol__masu"] = "马谡",
+  ["ol__sanyao"] = "散谣",
+  [":ol__sanyao"] = "出牌阶段每项各限一次，你可以弃置一张牌并选择一项，1.对全场体力值最大的一名角色造成1点伤害；2.对手牌数最多的一名角色造成1点伤害。",
+  ["ol__sanyao_hp-phase"] = "体力值最大",
+  ["ol__sanyao_hand-phase"] = "手牌数最多",
 
+  ["$ol__sanyao1"] = "吾有一计，可致司马懿于死地。",
+  ["$ol__sanyao2"] = "丞相勿忧，司马懿不足为患。",
+  ["~ol__masu"] = "悔不听王平之言，铸此大错。",
+}
+-- yj2012
 local ol__caozhang = General(extension, "ol__caozhang", "wei", 4)
 local ol__jiangchi_select = fk.CreateActiveSkill{
   name = "ol__jiangchi_select",
@@ -1427,7 +1482,7 @@ Fk:loadTranslationTable{
   ["$ol__jiangchi2"] = "披坚执锐，临危不难，身先士卒。",
   ["~ol__caozhang"] = "黄须儿，愧对父亲……",
 }
-
+-- yj2014
 local ol__guyong = General(extension, "ol__guyong", "wu", 3)
 local ol__bingyi = fk.CreateTriggerSkill{
   name = "ol__bingyi",
@@ -1485,7 +1540,7 @@ Fk:loadTranslationTable{
   ["$ol__bingyi2"] = "秉公守一，不负圣恩！",
   ["~ol__guyong"] = "此番患疾，吾必不起……",
 }
-
+-- yj2017
 local ol__jikang = General(extension, "ol__jikang", "wei", 3)
 local doOl__qingxian = function (room, to, from, choice, skillName)
   if to.dead then return nil end
