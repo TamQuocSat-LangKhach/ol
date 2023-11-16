@@ -3853,12 +3853,12 @@ local shengong = fk.CreateActiveSkill{
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
     room:throwCard(effect.cards, self.name, player, player)
-    local throw = Fk:getCardById(effect.cards[1])
+    local card = Fk:getCardById(effect.cards[1])
     local list,cards = {},{}
-    if throw.sub_type == Card.SubtypeWeapon then
+    if card.sub_type == Card.SubtypeWeapon then
       room:addPlayerMark(player, "shengong_weapon-phase")
       list = ol__puyuan_weapons
-    elseif throw.sub_type == Card.SubtypeArmor then
+    elseif card.sub_type == Card.SubtypeArmor then
       room:addPlayerMark(player, "shengong_armor-phase")
       list = ol__puyuan_armors
     else
@@ -3875,25 +3875,20 @@ local shengong = fk.CreateActiveSkill{
     local throw = {}
     local good,bad = 0,0
     for _, p in ipairs(room:getAlivePlayers()) do
-      local help = false
-      if p == player or room:askForChoice(p, {"shengong_good","shengong_bad"},self.name,"#shengong-help:"..player.id) == "shengong_good" then
-        help = true
-      end
+      local choice = (p == player) and "shengong_good" or
+      room:askForChoice(p, {"shengong_good","shengong_bad"},self.name,"#shengong-help:"..player.id)
       local show = room:getNCards(1)
       table.insertIfNeed(throw, show[1])
       room:moveCards({ ids = show, toArea = Card.Processing, moveReason = fk.ReasonPut })
       local num = Fk:getCardById(show[1]).number
-      if help then
+      room:sendLog{ type = "#shengongChoice", from = p.id, arg = choice, arg2 = num }
+      if choice == "shengong_good" then
         good = good + num
       else
         bad = bad + num
       end
     end
-    room:moveCards({
-      ids = throw,
-      toArea = Card.DiscardPile,
-      moveReason = fk.ReasonPutIntoDiscardPile,
-    })
+    room:moveCards({ ids = throw, toArea = Card.DiscardPile, moveReason = fk.ReasonPutIntoDiscardPile })
     local choose_num = 1
     local result = "shengongFail"
     if bad == 0 then
@@ -3918,16 +3913,14 @@ local shengong_trigger = fk.CreateTriggerSkill{
   anim_type = "drawcard",
   events = {fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
-    return player:hasSkill(self.name) and target.phase == Player.Finish and player:getMark("shengong-turn") > 0
+    return target.phase == Player.Finish and player:getMark("shengong-turn") > 0
   end,
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     player:drawCards(player:getMark("shengong-turn"), self.name)
   end,
   refresh_events = {fk.BeforeCardsMove},
-  can_refresh = function(self, _, _, player, _)
-    return player:hasSkill(self,true,true)
-  end,
+  can_refresh = Util.TrueFunc,
   on_refresh = function(self, event, target, player, data)
     local mirror_moves = {}
     local ids = {}
@@ -3955,8 +3948,13 @@ local shengong_trigger = fk.CreateTriggerSkill{
       end
     end
     if #ids > 0 then
-      player.room:sendLog{type = "#destructDerivedCards", card = ids}
-      player.room:addPlayerMark(player, "shengong-turn", #ids)
+      local room = player.room
+      room:sendLog{type = "#destructDerivedCards", card = ids}
+      for _, p in ipairs(room.alive_players) do
+        if p:hasSkill(self) then
+          room:addPlayerMark(p, "shengong-turn", #ids)
+        end
+      end
     end
     table.insertTable(data, mirror_moves)
   end,
@@ -3975,7 +3973,7 @@ local qisi = fk.CreateTriggerSkill{
     end
   end,
   on_cost = function (self, event, target, player, data)
-    return event == fk.GameStart or player.room:askForSkillInvoke(player, self.name)
+    return event == fk.GameStart or player.room:askForSkillInvoke(player, self.name, nil, "#qisi-invoke")
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
@@ -4031,12 +4029,14 @@ Fk:loadTranslationTable{
   ["shengong_bad"] = "妨害锻造",
   ["#shengong-put"] = "将 %arg 置于一名角色装备区（替换原装备）",
   ["#shengong_trigger"] = "神工",
+  ["#shengongChoice"] = "%from 选择 %arg，点数：%arg2",
   ["#shengongResult"] = "%from 发动了“神工”，助力锻造点数：%arg，妨害锻造点数：%arg2，结果：%arg3",
   ["shengongPerfect"] = "完美锻造",
   ["shengongSuccess"] = "锻造成功",
   ["shengongFail"] = "锻造失败",
   ["qisi"] = "奇思",
   [":qisi"] = "①游戏开始时，将两张不同副类别的装备牌并置入你的装备区。②摸牌阶段，你可以少摸一张牌，声明一种武器、防具、坐骑或宝物牌并从牌堆或弃牌堆中获得之。",
+  ["#qisi-invoke"] = "你可以少摸一张牌，声明一种武器、防具、坐骑或宝物牌并从牌堆或弃牌堆中获得之",
 
   ["$shengong1"] = "技艺若神，大巧不工。",
   ["$shengong2"] = "千锤百炼，始得神兵。",
