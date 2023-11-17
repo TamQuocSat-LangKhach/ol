@@ -1121,14 +1121,73 @@ Fk:loadTranslationTable{
   [":ol__yanhuo"] = "当你死亡时，你可以弃置杀死你的角色至多X张牌（X为你的牌数）。",
 }
 
--- local niujin = General(extension, "ol__niujin", "wei", 4)
-
+local ol__niujin = General(extension, "ol__niujin", "wei", 4)
+local ol__cuorui = fk.CreateTriggerSkill{
+  name = "ol__cuorui",
+  mute = true,
+  frequency = Skill.Compulsory,
+  events = {fk.GameStart, fk.TargetConfirmed},
+  can_trigger = function(self, event, target, player, data)
+    if event == fk.GameStart then
+      return player:hasSkill(self) and player:getHandcardNum() < #player.room.alive_players
+    else
+      return player:hasSkill(self) and target == player and data.card.sub_type == Card.SubtypeDelayedTrick and player:getMark("@@ol__cuorui") == 0
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    player:broadcastSkillInvoke(self.name)
+    local room = player.room
+    if event == fk.GameStart then
+      room:notifySkillInvoked(player, self.name, "drawcard")
+      player:drawCards(#room.alive_players - player:getHandcardNum(), self.name)
+    else
+      room:notifySkillInvoked(player, self.name, "defensive")
+      room:setPlayerMark(player, "@@ol__cuorui", 1)
+    end
+  end,
+}
+local ol__cuorui_delay = fk.CreateTriggerSkill{
+  name = "#ol__cuorui_delay",
+  mute = true,
+  frequency = Skill.Compulsory,
+  events = {fk.EventPhaseChanging},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and data.to == Player.Judge and player:getMark("@@ol__cuorui") > 0
+  end,
+  on_use = function(self, event, target, player, data)
+    player:broadcastSkillInvoke("ol__cuorui")
+    player.room:setPlayerMark(player, "@@ol__cuorui", 0)
+    player:skip(data.to)
+    return true
+  end,
+}
+ol__cuorui:addRelatedSkill(ol__cuorui_delay)
+ol__niujin:addSkill(ol__cuorui)
+local ol__liewei = fk.CreateTriggerSkill{
+  name = "ol__liewei",
+  anim_type = "drawcard",
+  events = {fk.Death},
+  can_trigger = function(self, event, target, player, data)
+    return player:hasSkill(self) and data.damage and data.damage.from and data.damage.from == player
+  end,
+  on_use = function(self, event, target, player, data)
+    player:drawCards(3, self.name)
+  end,
+}
+ol__niujin:addSkill(ol__liewei)
 Fk:loadTranslationTable{
   ["ol__niujin"] = "牛金",
   ["ol__cuorui"] = "挫锐",
   [":ol__cuorui"] = "锁定技，游戏开始时，你将手牌数摸至X张（X为场上角色数）。当你成为延时锦囊牌的目标后，你跳过下个判定阶段。",
+  ["@@ol__cuorui"] = "挫锐",
   ["ol__liewei"] = "裂围",
   [":ol__liewei"] = "当你杀死一名角色时，你可以摸三张牌。",
+
+  ["$ol__cuorui1"] = "敌锐气正盛，吾欲挫之。",
+  ["$ol__cuorui2"] = "锐气受挫，则未敢恋战。",
+  ["$ol__liewei1"] = "一息尚存，亦不容懈。",
+  ["$ol__liewei2"] = "宰了你，可没有好处！",
+  ["~ol__niujin"] = "司马氏负我。",
 }
 
 local hansui = General(extension, "ol__hansui", "qun", 4)
