@@ -8,18 +8,198 @@ Fk:loadTranslationTable{
   ["jin"] = "晋",
 }
 
---local simayi = General(extension, "ol__simayi", "jin", 3)
+local simayi = General(extension, "ol__simayi", "jin", 3)
+local yingshis = fk.CreateActiveSkill{
+  name = "yingshis",
+  anim_type = "special",
+  frequency = Skill.Compulsory,  --锁定主动技（
+  card_num = 0,
+  target_num = 0,
+  prompt = "#yingshis",
+  can_use = function(self, player)
+    return player:getMark("yingshis-phase") == 0
+  end,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    room:setPlayerMark(player, "yingshis-phase", 1)
+    if #room.draw_pile == 0 then return end
+    local cards = room:getNCards(math.min(player.maxHp, #room.draw_pile))
+    U.viewCards(player, cards, self.name, "Top")
+    for i = #cards, 1, -1 do
+      table.insert(room.draw_pile, 1, cards[i])
+    end
+  end,
+}
+local yingshis_trigger = fk.CreateTriggerSkill{
+  name = "#yingshis_trigger",
+
+  refresh_events = {fk.PreCardUse},
+  can_refresh = function(self, event, target, player, data)
+    return target == player and player:getMark("yingshis-phase") > 0
+  end,
+  on_refresh = function(self, event, target, player, data)
+    player.room:setPlayerMark(player, "yingshis-phase", 0)
+  end,
+}
+local xiongzhi = fk.CreateActiveSkill{
+  name = "xiongzhi",
+  anim_type = "offensive",
+  frequency = Skill.Limited,
+  card_num = 0,
+  target_num = 0,
+  prompt = "#xiongzhi",
+  can_use = function(self, player)
+    return player:usedSkillTimes(self.name, Player.HistoryGame) == 0
+  end,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    while not player.dead do
+      local card = room:getNCards(1)[1]
+      room:moveCards({
+        ids = {card},
+        toArea = Card.Processing,
+        skillName = self.name,
+        moveReason = fk.ReasonJustMove,
+      })
+      room:setPlayerMark(player, "xiongzhi-tmp", {card})
+      local success, dat = room:askForUseViewAsSkill(player, "xiongzhi_viewas", "#xiongzhi-use:::"..Fk:getCardById(card):toLogString(), true)
+      room:setPlayerMark(player, "xiongzhi-tmp", 0)
+      if success then
+        local use = {
+          from = player.id,
+          tos = table.map(dat.targets, function(e) return{e} end),
+          card = Fk:getCardById(card),
+          extraUse = true,
+        }
+        room:useCard(use)
+      else
+        room:moveCards({
+          ids = {card},
+          toArea = Card.DiscardPile,
+          moveReason = fk.ReasonPutIntoDiscardPile,
+          skillName = self.name,
+        })
+        break
+      end
+    end
+  end,
+}
+local xiongzhi_viewas = fk.CreateViewAsSkill{
+  name = "xiongzhi_viewas",
+  card_filter = Util.FalseFunc,
+  view_as = function(self, cards)
+    local card = Fk:getCardById(Self:getMark("xiongzhi-tmp")[1])
+    if Self:canUse(card) and not Self:prohibitUse(card) then
+      return card
+    end
+  end,
+}
+local quanbian = fk.CreateTriggerSkill{
+  name = "quanbian",
+  anim_type = "drawcard",
+  events = {fk.CardUsing, fk.CardResponding},
+  can_trigger = function(self, event, target, player, data)
+    if target == player and player:hasSkill(self) and player.phase == Player.Play and data.card.suit ~= Card.NoSuit and
+      U.IsUsingHandcard(player, data) then
+      local card_suit = data.card.suit
+      local room = player.room
+      local logic = room.logic
+      local current_event = logic:getCurrentEvent()
+      local mark_name = "quanbian_" .. data.card:getSuitString() .. "-phase"
+      local mark = player:getMark(mark_name)
+      if mark == 0 then
+        logic:getEventsOfScope(GameEvent.UseCard, 1, function (e)
+          local use = e.data[1]
+          if use.from == player.id and use.card.suit == card_suit then
+            mark = e.id
+            room:setPlayerMark(player, mark_name, mark)
+            return true
+          end
+          return false
+        end, Player.HistoryPhase)
+        logic:getEventsOfScope(GameEvent.RespondCard, 1, function (e)
+          local use = e.data[1]
+          if use.from == player.id and use.card.suit == card_suit then
+            mark = math.max(e.id, mark)
+            room:setPlayerMark(player, mark_name, mark)
+            return true
+          end
+          return false
+        end, Player.HistoryPhase)
+      end
+      return mark == current_event.id
+    end
+  end,
+  on_trigger = function(self, event, target, player, data)
+    local mark = player:getMark("@quanbian-phase")
+    if mark == 0 then mark = {} end
+    table.insert(mark, data.card:getSuitString(true))
+    player.room:setPlayerMark(player, "@quanbian-phase", mark)
+    self:doCost(event, target, player, data)
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local all_cards = room:getNCards(player.maxHp)
+    local available_cards = table.filter(all_cards, function(id) return Fk:getCardById(id).suit ~= data.card.suit end)
+    local cards, choice = U.askforChooseCardsAndChoice(player, available_cards, {"OK"}, self.name, "#quanbian-get", {"Cancel"}, 1, 1, all_cards)
+    if #cards > 0 then
+      table.removeOne(all_cards, cards[1])
+      room:obtainCard(player, cards[1], false, fk.ReasonPrey)
+    end
+    if #all_cards > 0 then
+      room:askForGuanxing(player, all_cards, nil, {0, 0}, self.name)
+    end
+  end,
+
+  refresh_events = {fk.CardUsing},
+  can_refresh = function (self, event, target, player, data)
+    return target == player and player:hasSkill(self) and player.phase == Player.Play and data.card.type ~= Card.TypeEquip and
+      U.IsUsingHandcard(player, data)
+  end,
+  on_refresh = function (self, event, target, player, data)
+    player.room:addPlayerMark(player, "quanbian-phase", 1)
+  end,
+}
+local quanbian_prohibit = fk.CreateProhibitSkill{
+  name = "#quanbian_prohibit",
+  prohibit_use = function(self, player, card)
+    return player:hasSkill(self) and player.phase == Player.Play and player:getMark("quanbian-phase") >= player.maxHp and
+      card and card.type ~= Card.TypeEquip and table.contains(player:getCardIds("h"), card:getEffectiveId())
+  end,
+}
+yingshis:addRelatedSkill(yingshis_trigger)
+quanbian:addRelatedSkill(quanbian_prohibit)
+Fk:addSkill(xiongzhi_viewas)
+simayi:addSkill(yingshis)
+simayi:addSkill(xiongzhi)
+simayi:addSkill(quanbian)
 Fk:loadTranslationTable{
   ["ol__simayi"] = "司马懿",
   ["buchen"] = "不臣",
   [":buchen"] = "<font color='red'>隐匿技（暂时无法生效）</font>，你于其他角色的回合登场后，你可获得其一张牌。",
   ["yingshis"] = "鹰视",
-  [":yingshis"] = "锁定技，出牌阶段内，牌堆顶的X张牌对你可见（X为你的体力上限）。",
+  [":yingshis"] = "锁定技，出牌阶段，你可以观看牌堆顶X张牌（X为你的体力上限）。",
   ["xiongzhi"] = "雄志",
   [":xiongzhi"] = "限定技，出牌阶段，你可展示牌堆顶牌并使用之。你可重复此流程直到牌堆顶牌不能被使用。",
   ["quanbian"] = "权变",
   [":quanbian"] = "当你于出牌阶段首次使用或打出一种花色的手牌时，你可从牌堆顶X张牌中获得一张与此牌花色不同的牌，将其余牌以任意顺序置于牌堆顶。"..
   "出牌阶段，你至多使用X张非装备手牌。（X为你的体力上限）",
+  ["#yingshis"] = "鹰视：你可以观看牌堆顶牌",
+  ["#xiongzhi"] = "雄志：你可以重复亮出牌堆顶牌并使用之！",
+  ["xiongzhi_viewas"] = "雄志",
+  ["#xiongzhi-use"] = "雄志：是否使用%arg？",
+  ["@quanbian-phase"] = "权变",
+  ["#quanbian-get"] = "权变：获得一张花色不同的牌",
+
+  ["$buchen1"] = "螟蛉之光，安敢同日月争辉？",
+  ["$buchen2"] = "巍巍隐帝，岂可为臣？",
+  ["$yingshis1"] = "鹰扬千里，明察秋毫。",
+  ["$yingshis2"] = "鸢飞戾天，目入百川。",
+  ["$xiongzhi1"] = "烈士雄心，志存高远。",
+  ["$xiongzhi2"] = "乱世之中，唯我司马！",
+  ["$quanbian1"] = "筹权谋变，步步为营。",
+  ["$quanbian2"] = "随机应变，谋国窃权。",
+  ["~ol__zhangchunhua"] = "虎入骷冢，司马难兴。",
 }
 
 local zhangchunhua = General(extension, "ol__zhangchunhua", "jin", 3, 3, General.Female)
