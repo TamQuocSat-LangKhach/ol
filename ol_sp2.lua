@@ -1323,9 +1323,7 @@ local xiuhao = fk.CreateTriggerSkill{
   anim_type = "control",
   events = {fk.DamageCaused},
   can_trigger = function(self, event, target, player, data)
-    if player:usedSkillTimes(self.name, Player.HistoryTurn) == 0 and player:hasSkill(self) and data.to then
-      return (target == player and data.to ~= player) or (target ~= player and data.to == player)
-    end
+    return player:usedSkillTimes(self.name, Player.HistoryTurn) == 0 and player:hasSkill(self) and target and data.to and target ~= data.to and (target == player or data.to == player)
   end,
   on_cost = function (self, event, target, player, data)
     local victim = (target == player) and data.to or player
