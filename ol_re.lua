@@ -423,7 +423,59 @@ Fk:loadTranslationTable{
   ["$ol__kongsheng2"] = "箜篌双丝弦，心有千绪结。",
   ["~ol__zhoufei"] = "梧桐半枯衰，鸳鸯白头散……",
 }
+local ol__godguanyu = General(extension, "ol__godguanyu", "god", 5)
+local ol__wushen = fk.CreateTriggerSkill{
+  name = "ol__wushen",
+  frequency = Skill.Compulsory,
+  events = {fk.CardUsing},
+  anim_type = "offensive",
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self) and data.card.trueName == "slash" and data.card.suit == Card.Heart
+  end,
+  on_use = function(self, event, target, player, data)
+    data.disresponsiveList = table.map(player.room.alive_players, Util.IdMapper)
+  end,
+}
+local ol__wushen_filter = fk.CreateFilterSkill{
+  name = "#ol__wushen_filter",
+  frequency = Skill.Compulsory,
+  card_filter = function(self, to_select, player)
+    return player:hasSkill(self) and to_select.suit == Card.Heart and
+    not table.contains(player.player_cards[Player.Equip], to_select.id) and
+    not table.contains(player.player_cards[Player.Judge], to_select.id)
+  end,
+  view_as = function(self, to_select)
+    local card = Fk:cloneCard("slash", Card.Heart, to_select.number)
+    card.skillName = "ol__wushen"
+    return card
+  end,
+}
+local ol__wushen_targetmod = fk.CreateTargetModSkill{
+  name = "#ol__wushen_targetmod",
+  frequency = Skill.Compulsory,
+  bypass_times = function(self, player, skill, scope, card, to)
+    return player:hasSkill(self) and skill.trueName == "slash_skill" and card.suit == Card.Heart
+  end,
+  bypass_distances = function(self, player, skill, card, to)
+    return player:hasSkill(self) and skill.trueName == "slash_skill" and card.suit == Card.Heart
+  end,
+}
+ol__wushen:addRelatedSkill(ol__wushen_filter)
+ol__wushen:addRelatedSkill(ol__wushen_targetmod)
+ol__godguanyu:addSkill(ol__wushen)
+ol__godguanyu:addSkill("wuhun")
+Fk:loadTranslationTable {
+  ["ol__godguanyu"] = "神关羽",
+  ["ol__wushen"] = "武神",
+  [":ol__wushen"] = "锁定技，你的<font color='red'>♥</font>手牌视为【杀】；你使用<font color='red'>♥</font>【杀】无距离与次数限制且不能被响应。",
+  ["#ol__wushen_filter"] = "武神",
 
+  ["$ol__wushen1"] = "千里追魂，一刀索命。",
+  ["$ol__wushen2"] = "鬼龙斩月刀！",
+  ["$wuhun_ol__godguanyu1"] = "还我头来！",
+  ["$wuhun_ol__godguanyu2"] = "不杀此人，何以雪恨？",
+  ["~ol__godguanyu"] = "夙愿已了，魂归地府。",
+}
 local machao = General(extension, "ol__machao", "qun", 4)
 local ol__zhuiji = fk.CreateTriggerSkill{
   name = "ol__zhuiji",

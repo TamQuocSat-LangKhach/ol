@@ -2452,13 +2452,20 @@ wenqin.subkingdom = "wu"
 local guangao = fk.CreateTriggerSkill{
   name = "guangao",
   anim_type = "control",
-  events = {fk.TargetSpecifying, fk.TargetSpecified},
+  events = {fk.AfterCardTargetDeclared, fk.TargetSpecified},
   can_trigger = function(self, event, target, player, data)
     if player:hasSkill(self) and data.card.trueName == "slash" then
-      if event == fk.TargetSpecifying then
-        return target == player and table.find(player.room:getOtherPlayers(player), function(p)
-          return not table.contains(AimGroup:getAllTargets(data.tos), p.id) and
-            not player:isProhibited(p, data.card) and player:inMyAttackRange(p) end)
+      if event == fk.AfterCardTargetDeclared then
+        local orig_tos = TargetGroup:getRealTargets(data.tos)
+        if target == player then
+          return table.find(player.room:getOtherPlayers(player), function(p)
+          return not table.contains(orig_tos, p.id) and not player:isProhibited(p, data.card)
+          and data.card.skill:modTargetFilter(p.id, orig_tos, data.from, data.card, true)
+          end)
+        else
+          return not table.contains(orig_tos, player.id) and not target:isProhibited(player, data.card)
+          and data.card.skill:modTargetFilter(player.id, orig_tos, data.from, data.card, true)
+        end
       else
         return data.extra_data and data.extra_data.guangao and table.contains(data.extra_data.guangao, player.id) and
           player:getHandcardNum() % 2 == 0
@@ -2466,27 +2473,39 @@ local guangao = fk.CreateTriggerSkill{
     end
   end,
   on_cost = function(self, event, target, player, data)
-    if event == fk.TargetSpecifying then
-      local room = player.room
-      local targets = table.map(table.filter(room:getOtherPlayers(player), function(p)
-        return not table.contains(AimGroup:getAllTargets(data.tos), p.id) and
-          not player:isProhibited(p, data.card) and player:inMyAttackRange(p) end), Util.IdMapper)
-      local tos = room:askForChoosePlayers(player, targets, 1, 1, "#guangao-choose:::"..data.card:toLogString(), self.name, true)
+    if event ~= fk.AfterCardTargetDeclared then return true end
+    local room = player.room
+    if target == player then
+      local orig_tos = TargetGroup:getRealTargets(data.tos)
+      local targets = table.filter(room:getOtherPlayers(player), function(p)
+        return not table.contains(TargetGroup:getRealTargets(data.tos), p.id) and not player:isProhibited(p, data.card)
+        and data.card.skill:modTargetFilter(p.id, orig_tos, data.from, data.card, true)
+      end)
+      local tos = room:askForChoosePlayers(player, table.map(targets, Util.IdMapper), 1, 1, "#guangao-choose:::"..data.card:toLogString(), self.name, true)
       if #tos > 0 then
-        self.cost_data = tos
+        self.cost_data = tos[1]
         return true
       end
     else
-      return true
+      if room:askForSkillInvoke(target, self.name, nil, "#guangao2-invoke:"..player.id) then
+        self.cost_data = player.id
+        return true
+      end
     end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    if event == fk.TargetSpecifying then
-      for _, id in ipairs(self.cost_data) do
-        room:doIndicate(player.id, {id})
-        TargetGroup:pushTargets(data.targetGroup, id)
-      end
+    if event == fk.AfterCardTargetDeclared then
+      local toId = self.cost_data
+      room:doIndicate(target.id, {toId})
+      table.insert(data.tos, {toId})
+      room:sendLog{
+        type = "#AddTargetsBySkill",
+        from = target.id,
+        to = {toId},
+        arg = self.name,
+        arg2 = data.card:toLogString()
+      }
       data.extra_data = data.extra_data or {}
       data.extra_data.guangao = data.extra_data.guangao or {}
       table.insertIfNeed(data.extra_data.guangao, player.id)
@@ -2499,41 +2518,6 @@ local guangao = fk.CreateTriggerSkill{
           table.insertIfNeed(data.nullifiedTargets, id)
         end
       end
-    end
-  end,
-}
-local guangao_trigger = fk.CreateTriggerSkill{
-  name = "#guangao_trigger",
-  mute = true,
-  events = {fk.TargetSpecifying},
-  can_trigger = function(self, event, target, player, data)
-    if target == player and data.card.trueName == "slash" then
-      return table.find(player.room:getOtherPlayers(player), function(p)
-        return p:hasSkill("guangao") and not table.contains(AimGroup:getAllTargets(data.tos), p.id) and
-        not player:isProhibited(p, data.card) and player:inMyAttackRange(p) end)
-    end
-  end,
-  on_cost = function(self, event, target, player, data)
-    local room = player.room
-    local targets = table.map(table.filter(room:getOtherPlayers(player), function(p)
-      return p:hasSkill("guangao") and not table.contains(AimGroup:getAllTargets(data.tos), p.id) and
-      not player:isProhibited(p, data.card) and player:inMyAttackRange(p) end), Util.IdMapper)
-    local tos = room:askForChoosePlayers(player, targets, 1, #targets, "#guangao2-choose:::"..data.card:toLogString(), "guangao", true)
-    if #tos > 0 then
-      self.cost_data = tos
-      return true
-    end
-  end,
-  on_use = function(self, event, target, player, data)
-    local room = player.room
-    player:broadcastSkillInvoke("guangao")
-    data.extra_data = data.extra_data or {}
-    data.extra_data.guangao = data.extra_data.guangao or {}
-    for _, id in ipairs(self.cost_data) do
-      room:notifySkillInvoked(room:getPlayerById(id), "guangao", "negative")
-      room:doIndicate(player.id, {id})
-      TargetGroup:pushTargets(data.targetGroup, id)
-      table.insertIfNeed(data.extra_data.guangao, id)
     end
   end,
 }
@@ -2632,7 +2616,6 @@ local xieju_viewas = fk.CreateViewAsSkill{
     return card
   end,
 }
-guangao:addRelatedSkill(guangao_trigger)
 xieju:addRelatedSkill(xieju_record)
 Fk:addSkill(xieju_viewas)
 wenqin:addSkill(guangao)
@@ -2648,11 +2631,12 @@ Fk:loadTranslationTable{
   ["xieju"] = "偕举",
   [":xieju"] = "出牌阶段限一次，你可以选择令任意名本回合成为过牌的目标的角色，这些角色依次可以将一张黑色牌当【杀】使用。",
   ["#guangao-choose"] = "犷骜：你可以为此%arg额外指定一个目标",
-  ["#guangao2-choose"] = "犷骜：此%arg可以额外指定有技能“犷骜”的角色为目标",
+  ["#guangao2-invoke"] = "犷骜：此%arg可以额外指定 %src 为目标",
   ["#guangao-cancel"] = "犷骜：你可以令此%arg对任意名角色无效",
   ["#xieju"] = "偕举：选择任意名角色，这些角色可以将一张黑色牌当【杀】使用",
   ["#xieju-slash"] = "偕举：你可以将一张黑色牌当【杀】使用",
   ["xieju_viewas"] = "偕举",
+  ["#AddTargetsBySkill"] = "用于 %arg 的效果，%from 使用的 %arg2 增加了目标 %to",
 
   ["$guangao1"] = "策马觅封侯，长驱万里之数。",
   ["$guangao2"] = "大丈夫行事，焉能畏首畏尾。",
@@ -2662,6 +2646,7 @@ Fk:loadTranslationTable{
   ["$xieju2"] = "天降大任，当与志士同忾。",
   ["~ol__wenqin"] = "天不佑国魏！天不佑族文！",
 }
+
 
 local duanjiong = General(extension, "duanjiong", "qun", 4)
 local function DoSaogu(player, cards)
