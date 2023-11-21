@@ -629,14 +629,16 @@ local dianzhan = fk.CreateTriggerSkill{
     if event == fk.AfterCardUseDeclared then
       return player == target and player:hasSkill(self.name, true) and data.card.suit ~= Card.NoSuit
     elseif event == fk.EventLoseSkill then
-      return target == player and data == self
+      return target == player and data == self and player:getMark("@dianzhan_suit-round") ~= 0
     end
   end,
   on_refresh = function(self, event, target, player, data)
     if event == fk.AfterCardUseDeclared then
-      local suitRecorded = type(player:getMark("@dianzhan_suit-round")) == "table" and player:getMark("@dianzhan_suit-round") or {}
-      table.insertIfNeed(suitRecorded, data.card:getSuitString(true))
-      player.room:setPlayerMark(player, "@dianzhan_suit-round", suitRecorded)
+      local suitRecorded = U.getMark(player, "@dianzhan_suit-round")
+      if not table.contains(suitRecorded, data.card:getSuitString(true)) then
+        table.insert(suitRecorded, data.card:getSuitString(true))
+        player.room:setPlayerMark(player, "@dianzhan_suit-round", suitRecorded)
+      end
     elseif event == fk.EventLoseSkill then
       player.room:setPlayerMark(player, "@dianzhan_suit-round", 0)
     end
@@ -1947,12 +1949,13 @@ local guangu = fk.CreateActiveSkill{
     room:setPlayerMark(player, "@guangu-phase", #ids)
 
     if target == nil or target ~= player then
-      player.special_cards["guangu"] = table.simpleClone(ids)
-      player:doNotify("ChangeSelf", json.encode {
-        id = player.id,
-        handcards = player:getCardIds("h"),
-        special_cards = player.special_cards,
-      })
+      local fakemove = {
+        toArea = Card.PlayerHand,
+        to = player.id,
+        moveInfo = table.map(ids, function(id) return {cardId = id, fromArea = Card.Void} end),
+        moveReason = fk.ReasonJustMove,
+      }
+      room:notifyMoveCards({player}, {fakemove})
     end
 
     local availableCards = {}
@@ -1965,14 +1968,15 @@ local guangu = fk.CreateActiveSkill{
     room:setPlayerMark(player, "guangu_cards", availableCards)
     local success, dat = room:askForUseActiveSkill(player, "guangu_viewas", "#guangu-use", true)
     room:setPlayerMark(player, "guangu_cards", 0)
-    -- FIXME：牌都不能用时无法弹出
+
     if target == nil or target ~= player then
-      player.special_cards["guangu"] = {}
-      player:doNotify("ChangeSelf", json.encode {
-        id = player.id,
-        handcards = player:getCardIds("h"),
-        special_cards = player.special_cards,
-      })
+      local fakemove = {
+        from = player.id,
+        toArea = Card.Void,
+        moveInfo = table.map(ids, function(id) return {cardId = id, fromArea = Card.PlayerHand} end),
+        moveReason = fk.ReasonJustMove,
+      }
+      room:notifyMoveCards({player}, {fakemove})
     end
     if status == "yang" then
       if success then
@@ -1995,7 +1999,6 @@ local guangu = fk.CreateActiveSkill{
 }
 local guangu_viewas = fk.CreateViewAsSkill{
   name = "guangu_viewas",
-  expand_pile = "guangu",
   card_filter = function(self, to_select, selected)
     if #selected == 0 then
       local ids = Self:getMark("guangu_cards")

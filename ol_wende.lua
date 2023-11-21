@@ -9,6 +9,10 @@ Fk:loadTranslationTable{
 }
 
 local simayi = General(extension, "ol__simayi", "jin", 3)
+local buchen = fk.CreateTriggerSkill{
+  name = "buchen",
+  can_trigger = Util.FalseFunc,
+}
 local yingshis = fk.CreateActiveSkill{
   name = "yingshis",
   anim_type = "special",
@@ -170,6 +174,7 @@ local quanbian_prohibit = fk.CreateProhibitSkill{
 yingshis:addRelatedSkill(yingshis_trigger)
 quanbian:addRelatedSkill(quanbian_prohibit)
 Fk:addSkill(xiongzhi_viewas)
+simayi:addSkill(buchen)
 simayi:addSkill(yingshis)
 simayi:addSkill(xiongzhi)
 simayi:addSkill(quanbian)
