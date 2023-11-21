@@ -1385,9 +1385,15 @@ local dingpan = fk.CreateActiveSkill{
 }
 local dingpan_record = fk.CreateTriggerSkill{
   name = "#dingpan_record",
-  refresh_events = {fk.StartPlayCard},
-  can_refresh = function(self, _, _, player, _)
-    return player:hasSkill(self)
+  refresh_events = {fk.Deathed, fk.EventPhaseStart, fk.EventAcquireSkill},
+  can_refresh = function (self, event, target, player, data)
+    if event == fk.EventPhaseStart then
+      return player:hasSkill(self,true) and target == player and player.phase == Player.Play
+    elseif event == fk.EventAcquireSkill then
+      return player:hasSkill(self,true) and data == dingpan
+    else
+      return player:hasSkill(self,true)
+    end
   end,
   on_refresh = function(_, _, _, player, _)
     local room = player.room
