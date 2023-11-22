@@ -1163,16 +1163,72 @@ Fk:loadTranslationTable{
   ['~ol__sunluyu'] = '姐妹之间，何必至此？',
 }
 
--- local hejin = General(extension, "ol__hejin", "qun", 4)
-
+local ol__hejin = General(extension, "ol__hejin", "qun", 4)
+local ol__mouzhu = fk.CreateActiveSkill{
+  name = "ol__mouzhu",
+  anim_type = "control",
+  can_use = function(self, player)
+    return player:usedSkillTimes(self.name, Player.HistoryPhase) == 0
+  end,
+  card_num = 0,
+  card_filter = Util.FalseFunc,
+  target_num = 1,
+  target_filter = function(self, to_select, selected)
+    return #selected == 0 and to_select ~= Self.id and not Fk:currentRoom():getPlayerById(to_select):isKongcheng()
+  end,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    local target = room:getPlayerById(effect.tos[1])
+    local card = room:askForCard(target, 1, 1, false, self.name, false, ".", "#ol__mouzhu-give::"..player.id)
+    room:obtainCard(player, card[1], false, fk.ReasonGive)
+    if not player.dead and player:getHandcardNum() > target:getHandcardNum() then
+      local choices = {}
+      for _, name in ipairs({"slash", "duel"}) do
+        if not target:isProhibited(player, Fk:cloneCard(name)) then
+          table.insert(choices, name)
+        end
+      end
+      if #choices == 0 then return end
+      local choice = room:askForChoice(target, choices, self.name)
+      room:useVirtualCard(choice, nil, target, player, self.name, true)
+    end
+  end,
+}
+ol__hejin:addSkill(ol__mouzhu)
+local ol__yanhuo = fk.CreateTriggerSkill{
+  name = "ol__yanhuo",
+  anim_type = "offensive",
+  events = {fk.Death},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self.name, false, true) and not player:isNude() and data.damage and data.damage.from and not data.damage.from:isNude()
+  end,
+  on_cost = function(self, event, target, player, data)
+    local n = #player:getCardIds("he")
+    return player.room:askForSkillInvoke(player, self.name, data, "#ol__yanhuo-invoke::"..data.damage.from.id..":"..n)
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local n = #player:getCardIds("he")
+    local cards = room:askForCardsChosen(player, data.damage.from, 1, n, "he", self.name)
+    room:throwCard(cards, self.name, data.damage.from, player)
+  end,
+}
+ol__hejin:addSkill(ol__yanhuo)
 Fk:loadTranslationTable{
   ["ol__hejin"] = "何进",
   ["ol__mouzhu"] = "谋诛",
   [":ol__mouzhu"] = "出牌阶段限一次，你可以令一名其他角色交给你一张手牌，若其手牌数小于你，其视为使用一张【杀】或【决斗】。",
+  ["#ol__mouzhu-give"] = "谋诛：请交给 %dest 一张手牌",
   ["ol__yanhuo"] = "延祸",
   [":ol__yanhuo"] = "当你死亡时，你可以弃置杀死你的角色至多X张牌（X为你的牌数）。",
-}
+  ["#ol__yanhuo-invoke"] = "延祸：你可以弃置 %dest 至多 %arg 张牌",
 
+  ["$ol__mouzhu1"] = "天下之乱，皆宦官所为！",
+  ["$ol__mouzhu2"] = "宦官当道，当杀之以清君侧！",
+  ["$ol__yanhuo1"] = "是谁，泄露了我的计划？",
+  ["$ol__yanhuo2"] = "战斗还没结束呢！",
+  ["~ol__hejin"] = "阉人造反啦！护卫！呀！",
+}
 local ol__niujin = General(extension, "ol__niujin", "wei", 4)
 local ol__cuorui = fk.CreateTriggerSkill{
   name = "ol__cuorui",
@@ -1314,7 +1370,115 @@ Fk:loadTranslationTable{
   ["$ol__xiaoxi2"] = "两军交战，勇者为胜！",
   ["~ol__hansui"] = "马侄儿为何……啊！",
 }
+local ol__zhangbao = General(extension, "ol__zhangbao", "qun", 3)
+local ol__zhoufu = fk.CreateActiveSkill{
+  name = "ol__zhoufu",
+  anim_type = "control",
+  card_num = 1,
+  target_num = 1,
+  can_use = function(self, player)
+    return player:usedSkillTimes(self.name, Player.HistoryPhase) == 0 and not player:isNude()
+  end,
+  card_filter = function(self, to_select, selected)
+    return #selected == 0
+  end,
+  target_filter = function(self, to_select, selected, cards)
+    return #selected == 0 and to_select ~= Self.id and #Fk:currentRoom():getPlayerById(to_select):getPile("ol__zhangbao_zhou") == 0
+  end,
+  on_use = function(self, room, effect)
+    local target = room:getPlayerById(effect.tos[1])
+    target:addToPile("ol__zhangbao_zhou", effect.cards, false, self.name)
+  end,
+}
+local ol__zhoufu_trigger = fk.CreateTriggerSkill{
+  name = "#ol__zhoufu_trigger",
+  anim_type = "control",
+  events = {fk.TurnEnd},
+  main_skill = ol__zhoufu,
+  can_trigger = function(self, event, target, player, data)
+    if player:hasSkill(self) then
+      local room = player.room
+      local tos = {}
+      room.logic:getEventsOfScope(GameEvent.MoveCards, 1, function(e)
+        for _, move in ipairs(e.data) do
+          for _, info in ipairs(move.moveInfo) do
+            if info.fromSpecialName and info.fromSpecialName == "ol__zhangbao_zhou" then
+              if move.from and not room:getPlayerById(move.from).dead then
+                table.insertIfNeed(tos, move.from)
+              end
+            end
+          end
+        end
+        return false
+      end, Player.HistoryTurn)
+      if #tos > 0 then
+        self.cost_data = tos
+        return true
+      end
+    end
+  end,
+  on_cost = Util.TrueFunc,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    player:broadcastSkillInvoke(ol__zhoufu.name)
+    for _, pid in ipairs(self.cost_data) do
+      local p = room:getPlayerById(pid)
+      if not p.dead then
+        room:loseHp(p, 1, self.name)
+      end
+    end
+  end,
 
+  refresh_events = {fk.StartJudge},
+  can_refresh = function(self, event, target, player, data)
+    return target == player and #target:getPile("ol__zhangbao_zhou") > 0
+  end,
+  on_refresh = function(self, event, target, player, data)
+    data.card = Fk:getCardById(target:getPile("ol__zhangbao_zhou")[1])
+    data.card.skillName = "ol__zhoufu"
+  end,
+}
+local ol__yingbing = fk.CreateTriggerSkill{
+  name = "ol__yingbing",
+  anim_type = "drawcard",
+  frequency = Skill.Compulsory,
+  events = {fk.CardUsing},
+  can_trigger = function(self, event, target, player, data)
+    return player:hasSkill(self) and #target:getPile("ol__zhangbao_zhou") > 0 and data.card.color == Fk:getCardById(target:getPile("ol__zhangbao_zhou")[1]).color
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    player:drawCards(1, self.name)
+    if player.dead then return end
+    local zhou = target:getPile("ol__zhangbao_zhou")[1]
+    local record = U.getMark(player, self.name)
+    local n = (record[tostring(zhou)] or 0) + 1
+    if n == 2 then
+      n = 0
+      room:obtainCard(player, zhou, false, fk.ReasonPrey)
+    end
+    record[tostring(zhou)] = n
+    room:setPlayerMark(player, self.name, record)
+  end,
+}
+ol__zhoufu:addRelatedSkill(ol__zhoufu_trigger)
+ol__zhangbao:addSkill(ol__zhoufu)
+ol__zhangbao:addSkill(ol__yingbing)
+Fk:loadTranslationTable{
+  ["ol__zhangbao"] = "张宝",
+  ["ol__zhoufu"] = "咒缚",
+  [":ol__zhoufu"] = "①出牌阶段限一次，你可以将一张牌置于一名武将牌旁没有“咒”的其他角色的武将牌旁，称为“咒”；②当有“咒”的角色判定时，将“咒”作为判定牌；③一名角色的回合结束时，你令本回合移除过“咒”的角色各失去1点体力。",
+  ["ol__yingbing"] = "影兵",
+  [":ol__yingbing"] = "锁定技，有“咒”的角色使用与“咒”颜色相同的牌时，你摸一张牌；若这是你第二次因该“咒”摸牌，你获得该“咒”。",
+  ["ol__zhangbao_zhou"] = "咒",
+  ["#ol__zhoufu_trigger"] = "咒缚",
+
+  ["$ol__zhoufu1"] = "走兽飞禽，术缚齐备。",
+  ["$ol__zhoufu2"] = "符咒晚天成，术缚随人意！",
+  ["$ol__yingbing1"] = "影兵虽虚，亦能伤人无形！",
+  ["$ol__yingbing2"] = "撒豆成兵，挥剑成河！",
+  ["~ol__zhangbao"] = "符咒不够用了……",
+}
 local ol__zhugeguo =  General(extension, "ol__zhugeguo", "shu", 3, 3, General.Female)
 local ol__qirang = fk.CreateTriggerSkill{
   name = "ol__qirang",
