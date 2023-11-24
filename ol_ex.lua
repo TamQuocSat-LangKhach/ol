@@ -104,15 +104,15 @@ local ol_ex__yaowu = fk.CreateTriggerSkill{
   frequency = Skill.Compulsory,
   events = {fk.DamageInflicted},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self) and data.card ~= nil
+    return target == player and player:hasSkill(self) and data.card
   end,
   on_use = function(self, event, target, player, data)
-    if data.card.color ~= Card.Red or not data.card.color then
+    if data.card.color ~= Card.Red then
       player.room:notifySkillInvoked(player, self.name, "masochism")
       player:broadcastSkillInvoke(self.name, 1)
       player:drawCards(1, self.name)
-    else 
-      if data.from ~= nil then
+    else
+      if data.from and not data.from.dead then
         player.room:notifySkillInvoked(player, self.name, "negative")
         player:broadcastSkillInvoke(self.name, 2)
         data.from:drawCards(1, self.name)
@@ -122,23 +122,19 @@ local ol_ex__yaowu = fk.CreateTriggerSkill{
 }
 local ol_ex__shizhan = fk.CreateActiveSkill{
   name = "ol_ex__shizhan",
-  anim_type = "support",
+  anim_type = "offensive",
   can_use = function(self, player)
     return player:usedSkillTimes(self.name, Player.HistoryPhase) < 2
   end,
   card_filter = Util.FalseFunc,
-  target_filter = function(self, to_select, selected, cards)
-    return #selected == 0 
+  target_filter = function(self, to_select, selected)
+    return #selected == 0 and not Fk:currentRoom():getPlayerById(to_select):isProhibited(Self, Fk:cloneCard("duel"))
   end,
   target_num = 1,
-  on_use = function(self, room, use)
-    local duel = Fk:cloneCard("duel")
-    duel.skillName = self.name
-    local new_use = {} ---@type CardUseStruct
-    new_use.from = use.tos[1]
-    new_use.tos = { { use.from } }
-    new_use.card = duel
-    room:useCard(new_use)
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    local target = room:getPlayerById(effect.tos[1])
+    room:useVirtualCard("duel", nil, target, player, self.name, true)
   end,
 }
 local huaxiong = General(extension, "ol_ex__huaxiong", "qun", 6)
@@ -147,7 +143,7 @@ huaxiong:addSkill(ol_ex__shizhan)
 Fk:loadTranslationTable{
   ["ol_ex__huaxiong"] = "界华雄",
   ["ol_ex__yaowu"] = "耀武",
-  [":ol_ex__yaowu"] = "锁定技，当你受到伤害时，若造成伤害的牌：为红色，伤害来源摸一张牌；不为红色，你摸一张牌。",
+  [":ol_ex__yaowu"] = "锁定技，当你受到牌造成的伤害时，若造成伤害的牌：为红色，伤害来源摸一张牌；不为红色，你摸一张牌。",
   ["ol_ex__shizhan"] = "势斩",
   [":ol_ex__shizhan"] = "出牌阶段限两次，你可以令一名其他角色视为对你使用一张【决斗】。",
 
@@ -981,7 +977,7 @@ local ol_ex__qiangxi = fk.CreateActiveSkill{
   max_card_num = 1,
   target_num = 1,
   can_use = function(self, player)
-    return player:usedSkillTimes(self.name) < 2
+    return player:usedSkillTimes(self.name, Player.HistoryPhase) < 2
   end,
   card_filter = function(self, to_select, selected)
     return Fk:getCardById(to_select).sub_type == Card.SubtypeWeapon
@@ -2008,7 +2004,7 @@ local ol_ex__dimeng = fk.CreateActiveSkill{
   card_num = 0,
   target_num = 2,
   can_use = function(self, player)
-    return player:usedSkillTimes(self.name) == 0
+    return player:usedSkillTimes(self.name, Player.HistoryPhase) == 0
   end,
   card_filter = Util.FalseFunc,
   target_filter = function(self, to_select, selected)
@@ -2606,7 +2602,7 @@ local ol_ex__tiaoxin = fk.CreateActiveSkill{
   card_num = 0,
   target_num = 1,
   can_use = function(self, player)
-    return player:usedSkillTimes(self.name) < 1 + player:getMark("ol_ex__tiaoxin_extra-phase")
+    return player:usedSkillTimes(self.name, Player.HistoryPhase) < (1 + player:getMark("ol_ex__tiaoxin_extra-phase"))
   end,
   card_filter = Util.FalseFunc,
   target_filter = function(self, to_select, selected)
@@ -2615,7 +2611,7 @@ local ol_ex__tiaoxin = fk.CreateActiveSkill{
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
     local target = room:getPlayerById(effect.tos[1])
-    local use = room:askForUseCard(target, "slash", "slash", "#ol_ex__tiaoxin-use:" .. player.id, true, {must_targets = {player.id}})
+    local use = room:askForUseCard(target, "slash", "slash", "#ol_ex__tiaoxin-use:" .. player.id, true, {exclusive_targets = {player.id}})
     if use then
       room:useCard(use)
     end
