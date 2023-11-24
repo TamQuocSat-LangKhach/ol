@@ -1935,13 +1935,24 @@ local guangu = fk.CreateActiveSkill{
     if status == "yang" then
       --local choice = tonumber(room:askForChoice(player, {"1", "2", "3", "4"}, self.name, "#guangu-choice"))
       --仪式选牌！
-      --fuckNotify
+      --[[
+      --这个函数在返回时id为-1的卡会自动填充target的随机手牌，因此不能返回超过target的手牌数的数量，by smart Notify
       ids = room:askForCardsChosen(player, player, 1, 4, {
         card_data = {
           { "Top", {-1,-1,-1,-1} }
         }
-      }, self.name, "#guangu-yang")
+      }, self.name, "#guangu-choice")
       ids = room:getNCards(#ids)
+      ]]
+      local command = "AskForCardsChosen"
+      room:notifyMoveFocus(player, command)
+      local data = {player.id, 1, 4, {
+        card_data = {
+          { "Top", {-1,-1,-1,-1} }
+        }
+      }, self.name, "#guangu-choice"}
+      local result = room:doRequest(player, command, json.encode(data))
+      ids = room:getNCards(result ~= "" and #json.decode(result) or 1)
     elseif status == "yin" then
       target = room:getPlayerById(effect.tos[1])
       ids = room:askForCardsChosen(player, target, 1, 4, "h", self.name)
