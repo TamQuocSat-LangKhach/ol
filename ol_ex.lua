@@ -2525,11 +2525,7 @@ local ol_ex__tiaoxin = fk.CreateActiveSkill{
   card_num = 0,
   target_num = 1,
   can_use = function(self, player)
-<<<<<<< HEAD
     return player:usedSkillTimes(self.name, Player.HistoryPhase) < (1 + player:getMark("ol_ex__tiaoxin_extra-phase"))
-=======
-    return player:usedSkillTimes(self.name, Player.HistoryPhase) < 1 + player:getMark("ol_ex__tiaoxin_extra-phase")
->>>>>>> 6e0e505 (回滚族钟琰 twice；修缮老代码（OL界神话）)
   end,
   card_filter = Util.FalseFunc,
   target_filter = function(self, to_select, selected)
