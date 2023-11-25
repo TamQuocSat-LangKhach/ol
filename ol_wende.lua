@@ -1946,12 +1946,15 @@ local sanchen = fk.CreateActiveSkill{
     room:addPlayerMark(target, "sanchen-turn", 1)
     target:drawCards(3, self.name)
     local cards = room:askForDiscard(target, 3, 3, true, self.name, false, ".", "#sanchen-discard:"..player.id)
-    if (Fk:getCardById(cards[1]).type ~= Fk:getCardById(cards[2]).type) and
-      (Fk:getCardById(cards[1]).type ~= Fk:getCardById(cards[3]).type) and
-      (Fk:getCardById(cards[2]).type ~= Fk:getCardById(cards[3]).type) then
-      target:drawCards(1, self.name)
-      player:setSkillUseHistory(self.name, 0, Player.HistoryPhase)
+    local typeMap = {}
+    for _, id in ipairs(cards) do
+      typeMap[tostring(Fk:getCardById(id).type)] = (typeMap[tostring(Fk:getCardById(id).type)] or 0) + 1
     end
+    for _, v in pairs(typeMap) do
+      if v >= 2 then return end
+    end
+    target:drawCards(1, self.name)
+    player:setSkillUseHistory(self.name, 0, Player.HistoryPhase)
   end,
 }
 local zhaotao = fk.CreateTriggerSkill{
@@ -2011,8 +2014,7 @@ duyu:addRelatedSkill(pozhu)
 Fk:loadTranslationTable{
   ["ol__duyu"] = "杜预",
   ["sanchen"] = "三陈",
-  [":sanchen"] = "出牌阶段限一次，你可令一名角色摸三张牌然后弃置三张牌。若其以此法弃置的牌种类均不同，则其摸一张牌，且视为本技能未发动过"..
-  "（本回合不能再指定其为目标）。",
+  [":sanchen"] = "出牌阶段限一次，你可令一名角色摸三张牌然后弃置三张牌。若其未因此次〖三陈〗的效果而弃置至少两张类别相同的牌，则其摸一张牌，且本技能视为未发动过（本回合不能再指定其为目标）。",
   ["zhaotao"] = "昭讨",
   [":zhaotao"] = "觉醒技，准备阶段开始时，若你本局游戏发动过至少3次〖三陈〗，你减1点体力上限，获得〖破竹〗。",
   ["pozhu"] = "破竹",
