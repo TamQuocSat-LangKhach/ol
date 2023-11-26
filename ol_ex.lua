@@ -3268,4 +3268,159 @@ Fk:loadTranslationTable{
   ["~ol_ex__zhangzhaozhanghong"] = "老臣年迈，无力为继……",
 }
 
+
+local ol_ex__zuoci = General(extension, "ol_ex__zuoci", "qun", 3, 3, General.Female)
+local function Gethuashen(player, n)
+  local room = player.room
+  local generals = room:getNGenerals(n)
+  local mark = U.getMark(player, "@&ol_ex__huashen")
+  table.insertTable(mark, generals)
+  room:setPlayerMark(player, "@&ol_ex__huashen", mark)
+end
+local function Dohuashen(player)
+  local room = player.room
+  local mark = U.getMark(player, "@&ol_ex__huashen")
+  if #mark == 0 then return end
+  local name = room:askForGeneral(player, mark, 1, true)
+  if type(name) == "table" then name = name[1] end
+  local general = Fk.generals[name]
+  local current_general = type(player:getMark("ol_ex__huashen_general")) == "string" and player:getMark("ol_ex__huashen_general") or ""
+  if current_general == name then return end
+  room:setPlayerMark(player, "ol_ex__huashen_general", name)
+  local original_general = player.general
+  player.general = name
+  room:broadcastProperty(player, "general")
+  player.gender = general.gender
+  room:broadcastProperty(player, "gender")
+  room:askForChooseKingdom({player})
+  local old_skill = player:getMark("@ol_ex__huashen_skill")
+  if old_skill ~= 0 then room:handleAddLoseSkills(player, "-"..old_skill) end
+  local skills = {}
+  for _, s in ipairs(general.skills) do
+    if not (s.lordSkill or s.switchSkillName or s.frequency > 3 ) then
+      if #s.attachedKingdom == 0 or table.contains(s.attachedKingdom, player.kingdom) then
+        table.insert(skills, s.name)
+      end
+    end
+  end
+  if #skills > 0 then
+    local choice = room:askForChoice(player, skills, "ol_ex__huashen", "#ol_ex__huashen-skill", true)
+    room:setPlayerMark(player, "@ol_ex__huashen_skill", choice)
+    room:handleAddLoseSkills(player, choice)
+  else
+    room:sendLog{ type = "#OLExHuanshenFailed", from = player.id, arg = name }
+    room:setPlayerMark(player, "@ol_ex__huashen_skill", 0)
+  end
+  room:delay(500)
+  player.general = original_general
+  room:broadcastProperty(player, "general")
+end
+local function Recasthuashen(player)
+  local room = player.room
+  local generals = U.getMark(player, "@&ol_ex__huashen")
+  if #generals < 2 then return end
+  local current_general = type(player:getMark("ol_ex__huashen_general")) == "string" and player:getMark("ol_ex__huashen_general") or ""
+  local result = player.room:askForCustomDialog(player, "ol_ex__huashen",
+  "packages/ol/qml/OLEXHuanshenBox.qml", {
+    generals,
+    {"OK"},
+    "#ol_ex__huashen-recast",
+    {"Cancel"},
+    1,
+    2,
+    {current_general},
+  })
+  if result == "" then return end
+  local reply = json.decode(result)
+  if reply.choice ~= "OK" then return end
+  local removed = reply.cards
+  for _, g in ipairs(removed) do
+    table.removeOne(generals, g)
+  end
+  room:setPlayerMark(player, "@&ol_ex__huashen", generals)
+  Gethuashen(player, #removed)
+  room:returnToGeneralPile(removed)
+end
+local ol_ex__huashen = fk.CreateTriggerSkill{
+  name = "ol_ex__huashen",
+  events = {fk.GamePrepared, fk.TurnStart, fk.TurnEnd},
+  can_trigger = function(self, event, target, player, data)
+    if event == fk.GamePrepared then
+      return player:hasSkill(self)
+    else
+      return player:hasSkill(self) and target == player and player:getMark("@&ol_ex__huashen") ~= 0
+    end
+  end,
+  on_cost = function(self, event, target, player, data)
+    if event == fk.GamePrepared then return true end
+    local choice = player.room:askForChoice(player, {"ol_ex__huashen_re", "ol_ex__huashen_recast", "Cancel"},self.name)
+    if choice ~= "Cancel" then
+      self.cost_data = choice
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    if event == fk.GamePrepared then
+      Gethuashen(player, 3)
+      Dohuashen(player)
+    else
+      if self.cost_data == "ol_ex__huashen_re" then
+        Dohuashen(player)
+      else
+        Recasthuashen(player)
+      end
+    end
+  end,
+}
+local ol_ex__xinsheng = fk.CreateTriggerSkill{
+  name = "ol_ex__xinsheng",
+  anim_type = "masochism",
+  events = {fk.Damaged},
+  can_trigger = function(self, event, target, player, data)
+    return player:hasSkill(self) and target == player and player:hasSkill(ol_ex__huashen,true)
+  end,
+  on_trigger = function(self, event, target, player, data)
+    self.cancel_cost = false
+    for _ = 1, data.damage do
+      if self.cancel_cost then break end
+      self:doCost(event, target, player, data)
+    end
+  end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    if room:askForSkillInvoke(player, self.name, data) then return true end
+    self.cancel_cost = true
+  end,
+  on_use = function(self, event, target, player, data)
+    Gethuashen(player, 1)
+  end,
+}
+ol_ex__zuoci:addSkill(ol_ex__huashen)
+ol_ex__zuoci:addSkill(ol_ex__xinsheng)
+Fk:loadTranslationTable{
+  ["ol_ex__zuoci"] = "界左慈",
+  ["ol_ex__huashen"] = "化身",
+  [":ol_ex__huashen"] = "①游戏开始时，你随机获得三张武将牌作为“化身”牌，然后你选择其中一张“化身”牌的一个技能（主公技/限定技/觉醒技/转换技除外），你视为拥有此技能，且性别和势力视为与此“化身”牌相同。<br>"..
+  "②回合开始或结束时，你可以选择一项：1.重新进行一次“化身”；2.移去至多两张不为亮出的“化身”牌，然后获得等量的新“化身”牌。",
+  ["@&ol_ex__huashen"] = "化身",
+  ["@ol_ex__huashen_skill"] = "化身",
+  ["ol_ex__huashen_re"] = "进行一次“化身”",
+  ["ol_ex__huashen_recast"] = "移去至多两张“化身”，获得等量新“化身”",
+  ["#ol_ex__huashen-recast"] = "移去至多两张“化身”，获得等量新“化身”(右键/长按查看武将技能)",
+  ["#OLExHuanshenFailed"] = "%from “化身”失败，因为 %arg 没有可选的技能",
+  ["#ol_ex__huashen-skill"] = "化身：选择获得的技能",
+  ["ol_ex__xinsheng"] = "新生",
+  [":ol_ex__xinsheng"] = "当你受到1点伤害后，若你有技能“化身”，你可以随机获得一张新的“化身”牌。",
+
+  ["$ol_ex__huashen1"] = "容貌发肤，不过浮尘。",
+  ["$ol_ex__huashen2"] = "皮囊万千，吾皆可化。",
+  ["$ol_ex__xinsheng1"] = "枯木发荣，朽木逢春。",
+  ["$ol_ex__xinsheng2"] = "风靡云涌，万丈光芒。",
+  ["~ol_ex__zuoci"] = "红尘看破，驾鹤仙升……",
+}
+
+
+
+
+
 return extension
