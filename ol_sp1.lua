@@ -352,25 +352,21 @@ local benyu = fk.CreateTriggerSkill{
   on_cost = function(self, event, target, player, data)
     local room = player.room
     if player:getHandcardNum() > data.from:getHandcardNum() then
-      local _, discard = room:askForUseActiveSkill(player, "discard_skill", "#benyu-discard::"..data.from.id..":"..data.from:getHandcardNum() + 1, true,{
-        num = player:getHandcardNum(),
-        min_num = data.from:getHandcardNum() + 1,
-        include_equip = false,
-        reason = self.name,
-        pattern = ".|.|.|hand|.|.",
-      })
-      if discard then
-        self.cost_data = discard.cards
+      local num = data.from:getHandcardNum() + 1
+      local discard = room:askForDiscard(player, num, 9999, false, self.name, true, ".", "#benyu-discard::"..data.from.id..":"..num,true)
+      if #discard >= num then
+        self.cost_data = discard
         return true
       end
     else
-      if player:getHandcardNum() < math.min(data.from:getHandcardNum(), 5) then
-        return room:askForSkillInvoke(player, self.name)
+      local num = math.min(data.from:getHandcardNum(), 5)
+      if player:getHandcardNum() < num then
+        return room:askForSkillInvoke(player, self.name, nil, "#benyu-draw:::"..num)
       end
     end
   end,
   on_use = function(self, event, target, player, data)
-    if self.cost_data and type(self.cost_data) == "table" and #self.cost_data > 0 then
+    if self.cost_data and type(self.cost_data) == "table" then
       player.room:throwCard(self.cost_data, self.name, player, player)
       player.room:damage{
         from = player,
@@ -395,6 +391,7 @@ Fk:loadTranslationTable{
   "否则你可以弃置大于伤害来源手牌数的手牌，然后对其造成1点伤害。",
   ["#shefu-cost"] = "设伏：你可以将一张手牌扣置为“伏兵”",
   ["#benyu-discard"] = "贲育：你可以弃置至少%arg张手牌，对 %dest 造成1点伤害",
+  ["#benyu-draw"] = "贲育：你可以将手牌摸至 %arg 张",
 
   ["$shefu1"] = "圈套已设，埋伏已完，只等敌军进来。",
   ["$shefu2"] = "如此天网，量你插翅也难逃。",
