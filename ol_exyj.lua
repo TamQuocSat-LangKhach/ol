@@ -21,41 +21,41 @@ local ol_ex__xuanfeng = fk.CreateTriggerSkill{
             if info.fromArea == Card.PlayerHand then
               n = n + 1
             elseif info.fromArea == Card.PlayerEquip then
-              return true
+              n = 2
             end
           end
           if n > 1 then
-            return true
+            return table.find(player.room:getOtherPlayers(player), function(p) return not p:isNude() end)
           end
         end
       end
     end
   end,
   on_cost = function(self, event, target, player, data)
-    if table.every(player.room:getOtherPlayers(player), function (p) return p:isNude() end) then return end
-    return player.room:askForSkillInvoke(player, self.name)
+    local room = player.room
+    local targets = table.map(table.filter(room:getOtherPlayers(player), function(p)
+      return not p:isNude() end), Util.IdMapper)
+    while player.room:askForSkillInvoke(player, self.name) do
+      local to = room:askForChoosePlayers(player, targets, 1, 1, "#xuanfeng-choose", self.name, true)
+      if #to > 0 then
+        self.cost_data = to[1]
+        return true
+      end
+    end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    for i = 1, 2, 1 do
-      local targets = table.map(table.filter(room:getOtherPlayers(player), function(p)
-        return not p:isNude() end), Util.IdMapper)
-      if #targets == 0 or player.dead then return end
-      local cancelable = true
-      if i == 1 then
-        cancelable = false
-      end
-      local tos = room:askForChoosePlayers(player, targets, 1, 1, "#xuanfeng-choose", self.name, cancelable)
-      if #tos == 0 then
-        if i == 1 then
-          tos = {table.random(targets)}
-        else
-          return
-        end
-      end
-      room:doIndicate(player.id, tos)
-      local card = room:askForCardChosen(player, room:getPlayerById(tos[1]), "he", self.name)
-      room:throwCard({card}, self.name, room:getPlayerById(tos[1]), player)
+    local to = room:getPlayerById(self.cost_data)
+    local card = room:askForCardChosen(player, to, "he", self.name)
+    room:throwCard({card}, self.name, to, player)
+    local targets = table.map(table.filter(room:getOtherPlayers(player), function(p)
+      return not p:isNude() end), Util.IdMapper)
+    if #targets == 0 or player.dead then return end
+    to = room:askForChoosePlayers(player, targets, 1, 1, "#xuanfeng-choose", self.name, true)
+    if #to > 0 then
+      to = room:getPlayerById(to[1])
+      card = room:askForCardChosen(player, to, "he", self.name)
+      room:throwCard({card}, self.name, to, player)
     end
   end,
 }
