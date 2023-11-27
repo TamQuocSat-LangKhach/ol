@@ -646,45 +646,11 @@ local chexuan_ts = fk.CreateTriggerSkill{
         end
       end
       if #ids > 0 then
-        local put = table.random(ids)
-        room:moveCardTo(Fk:getCardById(put), Card.PlayerEquip, player, fk.ReasonPut, self.name)
+        local id = table.random(ids)
+        room:setCardMark(Fk:getCardById(id), MarkEnum.DestructOutEquip, 1)
+        room:moveCardTo(Fk:getCardById(id), Card.PlayerEquip, player, fk.ReasonPut, self.name)
       end
     end
-  end,
-
-  refresh_events = {fk.BeforeCardsMove},
-  can_refresh = Util.TrueFunc,
-  on_refresh = function(self, event, target, player, data)
-    local cart_names = {"caltrop_cart", "grain_cart", "wheel_cart"}
-    local mirror_moves = {}
-    local ids = {}
-    for _, move in ipairs(data) do
-      if move.from == player.id and move.toArea ~= Card.Void then
-        local move_info = {}
-        local mirror_info = {}
-        for _, info in ipairs(move.moveInfo) do
-          local id = info.cardId
-          if table.contains(cart_names, Fk:getCardById(id).name) and info.fromArea == Card.PlayerEquip then
-            table.insert(mirror_info, info)
-            table.insert(ids, id)
-          else
-            table.insert(move_info, info)
-          end
-        end
-        if #mirror_info > 0 then
-          move.moveInfo = move_info
-          local mirror_move = table.clone(move)
-          mirror_move.to = nil
-          mirror_move.toArea = Card.Void
-          mirror_move.moveInfo = mirror_info
-          table.insert(mirror_moves, mirror_move)
-        end
-      end
-    end
-    if #ids > 0 then
-      player.room:sendLog{ type = "#destructDerivedCards", card = ids, }
-    end
-    table.insertTable(data, mirror_moves)
   end,
 }
 chexuan:addRelatedSkill(chexuan_ts)

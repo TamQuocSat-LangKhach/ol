@@ -1645,7 +1645,7 @@ Fk:loadTranslationTable{
   ["#zhaosong2-invoke"] = "诏颂：你可以弃置“赋”，弃置一名角色区域内至多两张牌",
   ["#zhaosong3-invoke"] = "诏颂：你可以弃置“颂”，额外选择至多两个目标",
   ["#lisi-invoke"] = "离思：你可以将%arg交给一名手牌数不大于你的其他角色",
-  
+
   ["$zhaosong1"] = "领诏者，可上而颂之。",
   ["$zhaosong2"] = "今为诏，以上告下也。",
   ["$lisi1"] = "骨肉至亲，化为他人。",
@@ -1774,6 +1774,7 @@ local zhuangshu = fk.CreateTriggerSkill{
         return Fk:getCardById(id).name == comb_name
       end)
       if comb_id == nil then return false end
+      room:setCardMark(Fk:getCardById(comb_id), MarkEnum.DestructOutEquip, 1)
       room:moveCards({
         fromArea = Card.Void,
         ids = {comb_id},
@@ -1784,45 +1785,6 @@ local zhuangshu = fk.CreateTriggerSkill{
         skillName = self.name,
       })
     end
-  end,
-
-  refresh_events = {fk.BeforeCardsMove},
-  can_refresh = Util.TrueFunc,
-  on_refresh = function(self, event, target, player, data)
-    local hold_areas = {Card.PlayerEquip, Card.Processing, Card.Void}
-    local comb_names = {"jade_comb", "rhino_comb", "golden_comb"}
-    local mirror_moves = {}
-    local ids = {}
-    for _, move in ipairs(data) do
-      if not table.contains(hold_areas, move.toArea) then
-        local move_info = {}
-        local mirror_info = {}
-        for _, info in ipairs(move.moveInfo) do
-          local id = info.cardId
-          if table.contains(comb_names, Fk:getCardById(id).name) then
-            table.insert(mirror_info, info)
-            table.insert(ids, id)
-          else
-            table.insert(move_info, info)
-          end
-        end
-        if #mirror_info > 0 then
-          move.moveInfo = move_info
-          local mirror_move = table.clone(move)
-          mirror_move.to = nil
-          mirror_move.toArea = Card.Void
-          mirror_move.moveInfo = mirror_info
-          table.insert(mirror_moves, mirror_move)
-        end
-      end
-    end
-    if #ids > 0 then
-      player.room:sendLog{
-        type = "#destructDerivedCards",
-        card = ids,
-      }
-    end
-    table.insertTable(data, mirror_moves)
   end,
 }
 local chuiti_viewas = fk.CreateViewAsSkill{

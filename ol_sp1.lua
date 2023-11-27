@@ -2158,8 +2158,8 @@ Fk:loadTranslationTable{
 
   ["$xingzhao1"] = "精挑细选，方能成百年之计。",
   ["$xingzhao2"] = "拿些上好的木料来。",
-  --["$xunxun1"] = "让我先探他一探。",
-  --["$xunxun2"] = "船，也不是一天就能造出来的。",
+  ["$xunxun_tangzi1"] = "让我先探他一探。",
+  ["$xunxun_tangzi2"] = "船，也不是一天就能造出来的。",
   ["~tangzi"] = "偷工减料要不得啊……",
 }
 
@@ -2199,6 +2199,7 @@ local lianji = fk.CreateActiveSkill{
           end
         end
       end
+      room:setCardMark(card, MarkEnum.DestructIntoDiscard, 1)
       room:useCard({
         from = target.id,
         tos = {{target.id}},
@@ -2270,37 +2271,6 @@ local lianji = fk.CreateActiveSkill{
     end
   end,
 }
-local lianji_destruct = fk.CreateTriggerSkill{
-  name = "#lianji_destruct",
-  priority = 1.1,
-
-  refresh_events = {fk.AfterCardsMove},
-  can_refresh = function(self, event, target, player, data)
-    if player:hasSkill(self.name, true, true) then
-      for _, move in ipairs(data) do
-        return move.toArea == Card.DiscardPile
-      end
-    end
-  end,
-  on_refresh = function(self, event, target, player, data)
-    for _, move in ipairs(data) do
-      local ids = {}
-      if move.toArea == Card.DiscardPile then
-        for _, info in ipairs(move.moveInfo) do
-          if Fk:getCardById(info.cardId).name == "seven_stars_sword" then
-            table.insert(ids, info.cardId)
-          end
-        end
-      end
-      if #ids > 0 then
-        for _, id in ipairs(ids) do
-          table.insert(player.room.void, id)
-          player.room:setCardArea(id, Card.Void, nil)
-        end
-      end
-    end
-  end,
-}
 local moucheng = fk.CreateTriggerSkill{
   name = "moucheng",
   frequency = Skill.Wake,
@@ -2363,7 +2333,6 @@ local jingong_record = fk.CreateTriggerSkill{
     player.room:setPlayerMark(player, "jingong-phase", names)
   end,
 }
-lianji:addRelatedSkill(lianji_destruct)
 jingong:addRelatedSkill(jingong_record)
 wangyun:addSkill(lianji)
 wangyun:addSkill(moucheng)
