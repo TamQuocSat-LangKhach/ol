@@ -1969,6 +1969,7 @@ local guangu = fk.CreateActiveSkill{
       room:notifyMoveCards({player}, {fakemove})
     end
 
+    room:setPlayerMark(player, MarkEnum.BypassTimesLimit .. "-tmp", 1)
     local availableCards = {}
     for _, id in ipairs(ids) do
       local card = Fk:getCardById(id)
@@ -1979,6 +1980,8 @@ local guangu = fk.CreateActiveSkill{
     room:setPlayerMark(player, "guangu_cards", availableCards)
     local success, dat = room:askForUseActiveSkill(player, "guangu_viewas", "#guangu-use", true)
     room:setPlayerMark(player, "guangu_cards", 0)
+
+    room:setPlayerMark(player, MarkEnum.BypassTimesLimit .. "-tmp", 0)
 
     if target == nil or target ~= player then
       local fakemove = {

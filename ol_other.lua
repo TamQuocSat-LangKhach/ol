@@ -224,7 +224,6 @@ local jiwu = fk.CreateActiveSkill{
   name = "jiwu",
   anim_type = "offensive",
   prompt = "#jiwu-active",
-  mute = true,
   card_num = 1,
   target_num = 0,
   interaction = function(self)
@@ -244,33 +243,18 @@ local jiwu = fk.CreateActiveSkill{
   on_use = function(self, room, effect)
     local skill_name = self.interaction.data
     local player = room:getPlayerById(effect.from)
-    room:notifySkillInvoked(player, self.name)
-    player:broadcastSkillInvoke(self.name, math.random(2))
     room:throwCard(effect.cards, self.name, player, player)
-    local jiwu_skills = type(player:getMark("jiwu_skills")) == "table" and player:getMark("jiwu_skills") or {}
-    table.insertIfNeed(jiwu_skills, skill_name)
-    room:setPlayerMark(player, "jiwu_skills", jiwu_skills)
-    room:handleAddLoseSkills(player, skill_name, nil, true, false)
-  end,
-}
-
-local jiwu_refresh = fk.CreateTriggerSkill{
-  name = "#jiwu_refresh",
-
-  refresh_events = {fk.TurnEnd},
-  can_refresh = function(self, event, target, player, data)
-    return target == player and type(player:getMark("jiwu_skills")) == "table"
-  end,
-  on_refresh = function(self, event, target, player, data)
-    local jiwu_skills = player:getMark("jiwu_skills")
-    if #jiwu_skills > 0 then
-      player.room:handleAddLoseSkills(player, "-"..table.concat(jiwu_skills, "|-"), nil, true, false)
+    if player.dead then return end
+    local turn_event = room.logic:getCurrentEvent():findParent(GameEvent.Turn)
+    if turn_event ~= nil then
+      room:handleAddLoseSkills(player, skill_name, nil, true, false)
+      turn_event:addCleaner(function()
+        room:handleAddLoseSkills(player, "-" .. skill_name, nil, true, false)
+      end)
     end
-    player.room:setPlayerMark(player, "jiwu_skills", 0)
   end,
 }
 
-jiwu:addRelatedSkill(jiwu_refresh)
 lvbu3:addSkill("wushuang")
 lvbu3:addSkill(shenqu)
 lvbu3:addSkill(jiwu)
@@ -290,20 +274,19 @@ Fk:loadTranslationTable{
   ["#shenqu-use"] = "神躯：你可以使用一张【桃】",
   ["#jiwu-active"] = "发动 极武，弃置一张牌获得一项技能",
 
-	["$shenqu1"] = "别心怀侥幸了，你们不可能赢！",
-	["$shenqu2"] = "虎牢关，我一人镇守足矣。",
-	["$jiwu1"] = "我！是不可战胜的！",
-	["$jiwu2"] = "今天！就让你们感受一下真正的绝望！",
-	["$ol_ex__qiangxi_hulao__godlvbu31"] = "这么想死，那我就成全你！",
-	["$ol_ex__qiangxi_hulao__godlvbu32"] = "项上人头，待我来取！",
-	["$ex__tieji_hulao__godlvbu31"] = "哈哈哈！破绽百出！",
-	["$ex__tieji_hulao__godlvbu32"] = "我要让这虎牢关下，血流成河！",
-	["$ty_ex__xuanfeng_hulao__godlvbu31"] = "千钧之势，力贯苍穹！",
-	["$ty_ex__xuanfeng_hulao__godlvbu32"] = "风扫六合，威震八荒！",
-	["$ol_ex__wansha_hulao__godlvbu31"] = "蝼蚁！怎容偷生！",
-	["$ol_ex__wansha_hulao__godlvbu32"] = "沉沦吧！在这无边的恐惧！",
-	["~hulao__godlvbu3"] = "你们的项上人头，我改日再取！",
-
+  ["$shenqu1"] = "别心怀侥幸了，你们不可能赢！",
+  ["$shenqu2"] = "虎牢关，我一人镇守足矣。",
+  ["$jiwu1"] = "我！是不可战胜的！",
+  ["$jiwu2"] = "今天！就让你们感受一下真正的绝望！",
+  ["$ol_ex__qiangxi_hulao__godlvbu31"] = "这么想死，那我就成全你！",
+  ["$ol_ex__qiangxi_hulao__godlvbu32"] = "项上人头，待我来取！",
+  ["$ex__tieji_hulao__godlvbu31"] = "哈哈哈！破绽百出！",
+  ["$ex__tieji_hulao__godlvbu32"] = "我要让这虎牢关下，血流成河！",
+  ["$ty_ex__xuanfeng_hulao__godlvbu31"] = "千钧之势，力贯苍穹！",
+  ["$ty_ex__xuanfeng_hulao__godlvbu32"] = "风扫六合，威震八荒！",
+  ["$ol_ex__wansha_hulao__godlvbu31"] = "蝼蚁！怎容偷生！",
+  ["$ol_ex__wansha_hulao__godlvbu32"] = "沉沦吧！在这无边的恐惧！",
+  ["~hulao__godlvbu3"] = "你们的项上人头，我改日再取！",
 }
 
 local hanba = General(extension, "hanba", "qun", 4, 4, General.Female)
@@ -352,6 +335,7 @@ local zhiri = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     room:changeMaxHp(player, -1)
+    if player.dead then return false end
     room:handleAddLoseSkills(player, "xintan", nil)
   end,
 }
@@ -372,6 +356,7 @@ local xintan = fk.CreateActiveSkill{
     return #selected < 2 and Self:getPileNameOfId(to_select) == "fentian_burn"
   end,
   on_use = function(self, room, effect)
+    local target = room:getPlayerById(effect.tos[1])
     room:moveCards({
       from = effect.from,
       ids = effect.cards,
@@ -379,7 +364,9 @@ local xintan = fk.CreateActiveSkill{
       moveReason = fk.ReasonPutIntoDiscardPile,
       skillName = self.name,
     })
-    room:loseHp(room:getPlayerById(effect.tos[1]), 1, self.name)
+    if not target.dead then
+      room:loseHp(target, 1, self.name)
+    end
   end,
 }
 fentian:addRelatedSkill(fentian_attackrange)
@@ -401,13 +388,13 @@ Fk:loadTranslationTable{
   ["#fentian-choose"] = "焚天：选择一名角色，将其一张牌作为你的“焚”",
   ["#xintan-active"] = "发动心惔，选择两张“焚”牌置入弃牌堆并选择一名角色，令其失去1点体力",
 
-	["$fentian1"] = "烈火燎原，焚天灭地！",
-	["$fentian2"] = "骄阳似火，万物无生！",
-	["$zhiri1"] = "好舒服，这太阳的力量！",
-	["$zhiri2"] = "你以为这样就已经结束了？",
-	["$xintan1"] = "让心中之火慢慢吞噬你吧！哈哈哈哈哈哈！",
-	["$xintan2"] = "人人心中都有一团欲望之火！",
-	["~hanba"] = "应龙，是你在呼唤我吗……",
+  ["$fentian1"] = "烈火燎原，焚天灭地！",
+  ["$fentian2"] = "骄阳似火，万物无生！",
+  ["$zhiri1"] = "好舒服，这太阳的力量！",
+  ["$zhiri2"] = "你以为这样就已经结束了？",
+  ["$xintan1"] = "让心中之火慢慢吞噬你吧！哈哈哈哈哈哈！",
+  ["$xintan2"] = "人人心中都有一团欲望之火！",
+  ["~hanba"] = "应龙，是你在呼唤我吗……",
 }
 
 local xinping = General(extension, "guandu__xinping", "qun", 3)
@@ -482,13 +469,13 @@ Fk:loadTranslationTable{
   ["#fuyuanx-invoke"] = "辅袁：你可以令 %dest 摸一张牌",
   ["#zhongjiex-choose"] = "忠节：你可以令一名角色加1点体力上限，回复1点体力，摸一张牌",
 
-	["$fuyuanx1"] = "袁门一体，休戚与共。",
-	["$fuyuanx2"] = "袁氏荣光，俯仰唯卿。",
-	["$zhongjiex1"] = "义士有忠节，可杀不可量！",
-	["$zhongjiex2"] = "愿以骨血为饲，事汝君临天下。",
-	["$yongdi_guandu__xinping1"] = "袁门当兴，兴在明公！",
-	["$yongdi_guandu__xinping2"] = "主公之位，非君莫属。",
-	["~guandu__xinping"] = "老臣，尽力了……",
+  ["$fuyuanx1"] = "袁门一体，休戚与共。",
+  ["$fuyuanx2"] = "袁氏荣光，俯仰唯卿。",
+  ["$zhongjiex1"] = "义士有忠节，可杀不可量！",
+  ["$zhongjiex2"] = "愿以骨血为饲，事汝君临天下。",
+  ["$yongdi_guandu__xinping1"] = "袁门当兴，兴在明公！",
+  ["$yongdi_guandu__xinping2"] = "主公之位，非君莫属。",
+  ["~guandu__xinping"] = "老臣，尽力了……",
 }
 
 local hanmeng = General(extension, "guandu__hanmeng", "qun", 4)
@@ -593,11 +580,11 @@ Fk:loadTranslationTable{
   ["#jieliang-invoke"] = "截粮：你可以弃置一张牌，令 %dest 本回合摸牌阶段摸牌数和手牌上限-1",
   ["#jieliang-get"] = "截粮：你可以获得其中一张牌",
 
-	["$jieliang1"] = "伏兵起，粮道绝！",
-	["$jieliang2"] = "粮草根本，截之破敌！",
-	["$quanjiu1"] = "大敌当前，怎可松懈畅饮？",
-	["$quanjiu2"] = "乌巢重地，不宜饮酒！",
-	["~guandu__hanmeng"] = "曹操狡诈，防不胜防……",
+  ["$jieliang1"] = "伏兵起，粮道绝！",
+  ["$jieliang2"] = "粮草根本，截之破敌！",
+  ["$quanjiu1"] = "大敌当前，怎可松懈畅饮？",
+  ["$quanjiu2"] = "乌巢重地，不宜饮酒！",
+  ["~guandu__hanmeng"] = "曹操狡诈，防不胜防……",
 }
 
 Fk:loadTranslationTable{
@@ -611,11 +598,11 @@ Fk:loadTranslationTable{
   ["guandu__chenggong"] = "逞功",
   [":guandu__chenggong"] = "当一名角色使用牌指定多于一个目标后，你可以令其摸一张牌。",
 
-	["$guandu__shicai1"] = "主公不听吾之言，实乃障目不见泰山也！",
-	["$guandu__shicai2"] = "遣轻骑以袭许都，大事可成。",
-	["$guandu__chenggong1"] = "我豫州人才济济，元皓之辈，不堪大用。",
-	["$guandu__chenggong2"] = "吾与主公患难之交也！",
-	["~guandu__xuyou"] = "我军之所以败，皆因尔等指挥不当！",
+  ["$guandu__shicai1"] = "主公不听吾之言，实乃障目不见泰山也！",
+  ["$guandu__shicai2"] = "遣轻骑以袭许都，大事可成。",
+  ["$guandu__chenggong1"] = "我豫州人才济济，元皓之辈，不堪大用。",
+  ["$guandu__chenggong2"] = "吾与主公患难之交也！",
+  ["~guandu__xuyou"] = "我军之所以败，皆因尔等指挥不当！",
 }
 
 Fk:loadTranslationTable{
@@ -627,11 +614,11 @@ Fk:loadTranslationTable{
   ["guandu__liangying"] = "粮营",
   [":guandu__liangying"] = "锁定技，若你有“粮”，群势力角色摸牌阶段多摸一张牌；当你失去所有“粮”时，你减1点体力上限，然后魏势力角色各摸一张牌。",
 
-	["$guandu__cangchu1"] = "袁公所托，琼，必当死守！",
-	["$guandu__cangchu2"] = "敌袭！速度整军，坚守营寨！",
-	["$guandu__sushou1"] = "今夜，需再加强巡逻，不要出了差池。",
-	["$guandu__sushou2"] = "吾军之所守，为重中之重，尔等、切莫懈怠！",
-	["~guandu__chunyuqiong"] = "子远老贼，吾死当追汝之魂！",
+  ["$guandu__cangchu1"] = "袁公所托，琼，必当死守！",
+  ["$guandu__cangchu2"] = "敌袭！速度整军，坚守营寨！",
+  ["$guandu__sushou1"] = "今夜，需再加强巡逻，不要出了差池。",
+  ["$guandu__sushou2"] = "吾军之所守，为重中之重，尔等、切莫懈怠！",
+  ["~guandu__chunyuqiong"] = "子远老贼，吾死当追汝之魂！",
 }
 
 local zhanghe = General(extension, "guandu__zhanghe", "qun", 4)
@@ -677,9 +664,9 @@ Fk:loadTranslationTable{
   ["#yuanlve"] = "远略：交给一名其他角色一张非装备牌，其可以使用此牌，令你摸一张牌",
   ["#yuanlve-invoke"] = "远略：你可以使用这张牌，令 %src 摸一张牌",
 
-	["$yuanlve1"] = "若不引兵救乌巢，则主公危矣！",
-	["$yuanlve2"] = "此番攻之不破，吾属尽成俘虏。",
-	["~guandu__zhanghe"] = "袁公不听吾之言，乃至今日。",
+  ["$yuanlve1"] = "若不引兵救乌巢，则主公危矣！",
+  ["$yuanlve2"] = "此番攻之不破，吾属尽成俘虏。",
+  ["~guandu__zhanghe"] = "袁公不听吾之言，乃至今日。",
 }
 
 local dongyue = General(extension, "chaos__dongyue", "qun", 4)
@@ -757,11 +744,11 @@ Fk:loadTranslationTable{
   [":mojun"] = "锁定技，当友方角色使用【杀】造成伤害后，你判定，若结果为黑色，友方角色各摸一张牌。",
   ["#kuangxi"] = "狂袭：失去1点体力，对一名其他角色造成1点伤害！",
 
-	["$kuangxi1"] = "",
-	["$kuangxi2"] = "",
-	["$mojun1"] = "",
-	["$mojun2"] = "",
-	["~dongyue"] = "喵喵喵。",
+  ["$kuangxi1"] = "",
+  ["$kuangxi2"] = "",
+  ["$mojun1"] = "",
+  ["$mojun2"] = "",
+  ["~dongyue"] = "喵喵喵。",
 }
 
 local shangyang = General(extension, "shangyang", "qin", 4)

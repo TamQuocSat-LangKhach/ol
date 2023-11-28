@@ -3600,7 +3600,7 @@ local silv = fk.CreateTriggerSkill{
     if player:hasSkill(self) then
       local name = player:getMark("@lianju")
       if type(name) ~= "string" then return false end
-      local silvgetCheak = function(move_data)
+      local silvgetCheck = function(move_data)
         for _, move in ipairs(move_data) do
           if move.from == player.id then
             for _, info in ipairs(move.moveInfo) do
@@ -3611,7 +3611,7 @@ local silv = fk.CreateTriggerSkill{
           end
         end
       end
-      local silvloseCheak = function(move_data)
+      local silvloseCheck = function(move_data)
         for _, move in ipairs(move_data) do
           if move.to == player.id and move.toArea == Player.Hand then
             for _, info in ipairs(move.moveInfo) do
@@ -3623,10 +3623,10 @@ local silv = fk.CreateTriggerSkill{
         end
       end
       local branches = {}
-      if player:getMark("silv1-turn") == 0 and silvgetCheak(data) then
+      if player:getMark("silv1-turn") == 0 and silvgetCheck(data) then
         table.insert(branches, "silv1-turn")
       end
-      if player:getMark("silv2-turn") == 0 and silvloseCheak(data) then
+      if player:getMark("silv2-turn") == 0 and silvloseCheck(data) then
         table.insert(branches, "silv2-turn")
       end
       if #branches > 0 then

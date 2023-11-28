@@ -823,14 +823,14 @@ local function doGuanxu(player, target, skill_name)
   end
   if player.dead or target.dead then return end
   cids = target:getCardIds(Player.Hand)
-  local cheak = {{}, {}, {}, {}}
+  local check = {{}, {}, {}, {}}
   for _, id in ipairs(cids) do
     local suit = Fk:getCardById(id).suit
     if suit < 5 then
-      table.insert(cheak[suit], id)
+      table.insert(check[suit], id)
     end
   end
-  local ids = table.find(cheak, function (cids)
+  local ids = table.find(check, function (cids)
     return #cids > 2
   end)
   if ids == nil then return false end
@@ -1792,28 +1792,13 @@ local chuiti = fk.CreateTriggerSkill{
   events = {fk.AfterCardsMove},
   can_trigger = function(self, event, target, player, data)
     if not player:hasSkill(self) or player:usedSkillTimes(self.name, Player.HistoryTurn) > 0 then return false end
-    for _, move in ipairs(data) do
-      if move.toArea == Card.DiscardPile and move.moveReason == fk.ReasonDiscard and chuiticheck(player, move.from) then
-        for _, info in ipairs(move.moveInfo) do
-          if (info.fromArea == Card.PlayerHand or info.fromArea == Card.PlayerEquip) and
-              player.room:getCardArea(info.cardId) == Card.DiscardPile then
-            local card = Fk:getCardById(info.cardId)
-            if not player:prohibitUse(card) and player:canUse(card) then
-              return true
-            end
-          end
-        end
-      end
-    end
-  end,
-  on_cost = function(self, event, target, player, data)
-    local room = player.room
     local ids = {}
+    local room = player.room
     for _, move in ipairs(data) do
       if move.toArea == Card.DiscardPile and move.moveReason == fk.ReasonDiscard and chuiticheck(player, move.from) then
         for _, info in ipairs(move.moveInfo) do
           if (info.fromArea == Card.PlayerHand or info.fromArea == Card.PlayerEquip) and
-              player.room:getCardArea(info.cardId) == Card.DiscardPile then
+              room:getCardArea(info.cardId) == Card.DiscardPile then
             local card = Fk:getCardById(info.cardId)
             if not player:prohibitUse(card) and player:canUse(card) then
               table.insert(ids, info.cardId)
@@ -1822,7 +1807,15 @@ local chuiti = fk.CreateTriggerSkill{
         end
       end
     end
-    if #ids == 0 then return false end
+    ids = U.moveCardsHoldingAreaCheck(room, ids)
+    if #ids > 0 then
+      self.cost_data = ids
+      return true
+    end
+  end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    local ids = self.cost_data
     player.special_cards["chuiti"] = table.simpleClone(ids)
     player:doNotify("ChangeSelf", json.encode {
       id = player.id,

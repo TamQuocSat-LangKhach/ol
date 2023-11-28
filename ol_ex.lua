@@ -1249,7 +1249,7 @@ Fk:loadTranslationTable{
   ["$tianyi_ol_ex__taishici2"] = "义不从之，天必不佑！",
   ["$hanzhan1"] = "伯符，且与我一战！",
   ["$hanzhan2"] = "与君酣战，快哉快哉！",
-  ["~ol_ex__pangde"] = "无妄之灾，难以避免……",
+  ["~ol_ex__taishici"] = "无妄之灾，难以避免……",
 }
 
 local ol_ex__shuangxiong = fk.CreateViewAsSkill{
