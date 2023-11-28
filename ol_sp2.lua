@@ -1676,14 +1676,12 @@ local zhuangshu = fk.CreateTriggerSkill{
   can_trigger = function(self, event, target, player, data)
     if not player:hasSkill(self) then return false end
     if event == fk.GameStart then
-      return player:getEquipment(Card.SubtypeTreasure) == nil and #player:getAvailableEquipSlots(Card.SubtypeTreasure) > 0 and
-      table.find(player.room.void, function (id)
+      return player:hasEmptyEquipSlot(Card.SubtypeTreasure) and table.find(player.room.void, function (id)
         local card_name = Fk:getCardById(id).name
         return card_name == "jade_comb" or card_name == "rhino_comb" or card_name == "golden_comb"
       end)
     elseif event == fk.TurnStart then
-      return not target.dead and target:getEquipment(Card.SubtypeTreasure) == nil and not player:isNude() and
-      #target:getAvailableEquipSlots(Card.SubtypeTreasure) > 0
+      return not target.dead and not player:isNude() and target:hasEmptyEquipSlot(Card.SubtypeTreasure)
     end
   end,
   on_cost = function(self, event, target, player, data)
@@ -1728,6 +1726,7 @@ local zhuangshu = fk.CreateTriggerSkill{
     room:notifySkillInvoked(player, self.name)
     player:broadcastSkillInvoke(self.name, math.random(2))
     if event == fk.GameStart then
+      room:setCardMark(Fk:getCardById(self.cost_data[1]), MarkEnum.DestructOutEquip, 1)
       room:moveCards({
         fromArea = Card.Void,
         ids = self.cost_data,
@@ -1740,50 +1739,28 @@ local zhuangshu = fk.CreateTriggerSkill{
     elseif event == fk.TurnStart then
       local card_type = Fk:getCardById(self.cost_data[1]):getTypeString()
       room:throwCard(self.cost_data, self.name, player, player)
-      if target.dead or target:getEquipment(Card.SubtypeTreasure) ~= nil or
-        #target:getAvailableEquipSlots(Card.SubtypeTreasure) == 0 then return false end
+      if target.dead or (not target:hasEmptyEquipSlot(Card.SubtypeTreasure)) then return false end
       local card_types = {"basic", "trick", "equip"}
       local comb_names = {"jade_comb", "rhino_comb", "golden_comb"}
-      if not table.contains(card_types, card_type) then return false end
       local comb_name = comb_names[table.indexOf(card_types, card_type)]
-      local comb_id = nil
-      local from_player = nil
-      for _, p in ipairs(room.alive_players) do
-        comb_id = table.find(p:getCardIds("e"), function (id)
-          return Fk:getCardById(id).name == comb_name
-        end)
-        if comb_id ~= nil then
-          from_player = p.id
-          break
-        end
-      end
-      if comb_id ~= nil then
-        room:moveCards({
-          from = from_player,
-          fromArea = Card.PlayerEquip,
-          ids = {comb_id},
-          to = target.id,
-          toArea = Card.PlayerEquip,
-          moveReason = fk.ReasonPut,
-          proposer = player.id,
-          skillName = self.name,
-        })
-        return false
-      end
-      comb_id = table.find(room.void, function (id)
+      local comb_id = table.find(room.void, function (id)
         return Fk:getCardById(id).name == comb_name
       end)
-      if comb_id == nil then return false end
-      room:setCardMark(Fk:getCardById(comb_id), MarkEnum.DestructOutEquip, 1)
-      room:moveCards({
-        fromArea = Card.Void,
-        ids = {comb_id},
-        to = target.id,
-        toArea = Card.PlayerEquip,
-        moveReason = fk.ReasonPut,
-        proposer = player.id,
-        skillName = self.name,
-      })
+      if not comb_id then
+        for _, p in ipairs(room:getOtherPlayers(target)) do
+          local new = table.find(p:getCardIds("e"), function (id)
+            return Fk:getCardById(id).name == comb_name
+          end)
+          if new then
+            comb_id = new
+            break
+          end
+        end
+      end
+      if comb_id then
+        room:setCardMark(Fk:getCardById(comb_id), MarkEnum.DestructOutEquip, 1)
+        U.moveCardIntoEquip(room, target, comb_id, self.name, true, player)
+      end
     end
   end,
 }
@@ -1885,8 +1862,6 @@ Fk:loadTranslationTable{
   "当“宝梳”进入非装备区时，销毁之。",
   ["chuiti"] = "垂涕",
   [":chuiti"] = "每回合限一次，当你或装备区有“宝梳”的角色的一张牌因弃置而置入弃牌堆后，若你能使用此牌，你可以使用之（有次数限制）。",
-
-  ["#destructDerivedCards"] = "%card 被销毁了",
 
   ["#zhuangshu-choose"] = "是否使用 妆梳，选择一张“宝梳”置入你的装备区",
   ["zhuangshu_select"] = "妆梳",

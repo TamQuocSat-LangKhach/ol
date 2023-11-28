@@ -604,14 +604,18 @@ local chexuan = fk.CreateActiveSkill{
       local choice = room:askForChoice(player, names, self.name, "#chexuan-choice", true, all_choices)
       for i, n in ipairs(names) do
         if n == choice then
-          room:moveCardTo(Fk:getCardById(ids[i]), Card.PlayerEquip, player, fk.ReasonPut, self.name)
+          local cardId = ids[i]
+          room:setCardMark(Fk:getCardById(cardId), MarkEnum.DestructOutMyEquip, 1)
+          U.moveCardIntoEquip(room, player, cardId, self.name, true, player)
         end
       end
     end
   end,
 }
-local chexuan_ts = fk.CreateTriggerSkill{
-  name = "#chexuan_ts",
+local chexuan_trigger = fk.CreateTriggerSkill{
+  name = "#chexuan_trigger",
+  mute = true,
+  main_skill = chexuan,
   events = {fk.AfterCardsMove},
   can_trigger = function(self, event, target, player, data)
     if player:hasSkill(self) and #player:getAvailableEquipSlots(Card.SubtypeTreasure) > 0 and
@@ -628,32 +632,31 @@ local chexuan_ts = fk.CreateTriggerSkill{
     end
   end,
   on_cost = function(self, event, target, player, data)
-    return player.room:askForSkillInvoke(player, self.name, nil, "#chexuan-invoke")
+    return player.room:askForSkillInvoke(player, chexuan.name, nil, "#chexuan-invoke")
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local judge = {  who = player, reason = self.name, pattern = ".|.|spade,club" }
+    room:notifySkillInvoked(player, chexuan.name)
+    player:broadcastSkillInvoke(chexuan.name)
+    local judge = {  who = player, reason = chexuan.name, pattern = ".|.|spade,club" }
     room:judge(judge)
-    if judge.card.color == Card.Black and not player.dead and #player:getAvailableEquipSlots(Card.SubtypeTreasure) > 0 and
-      #player:getEquipments(Card.SubtypeTreasure) == 0 then
+    if judge.card.color == Card.Black and not player.dead and player:hasEmptyEquipSlot(Card.SubtypeTreasure) then
       local ids = {}
-      for _, id in ipairs(Fk:getAllCardIds()) do
+      for _, id in ipairs(room.void) do
         local c = Fk:getCardById(id)
-        if room:getCardArea(id) == Card.Void then
-          if c.name == "wheel_cart" or c.name == "caltrop_cart" or c.name == "grain_cart" then
-            table.insert(ids, id)
-          end
+        if c.name == "wheel_cart" or c.name == "caltrop_cart" or c.name == "grain_cart" then
+          table.insert(ids, id)
         end
       end
       if #ids > 0 then
-        local id = table.random(ids)
-        room:setCardMark(Fk:getCardById(id), MarkEnum.DestructOutEquip, 1)
-        room:moveCardTo(Fk:getCardById(id), Card.PlayerEquip, player, fk.ReasonPut, self.name)
+        local put = ids[math.random(1, #ids)]
+        room:setCardMark(Fk:getCardById(put), MarkEnum.DestructOutMyEquip, 1)
+        U.moveCardIntoEquip(room, player, put, chexuan.name, true, player)
       end
     end
   end,
 }
-chexuan:addRelatedSkill(chexuan_ts)
+chexuan:addRelatedSkill(chexuan_trigger)
 cheliji:addSkill(chexuan)
 local qiangshou = fk.CreateDistanceSkill{
   name = "qiangshou",
@@ -668,9 +671,8 @@ cheliji:addSkill(qiangshou)
 Fk:loadTranslationTable{
   ["cheliji"] = "彻里吉",
   ["chexuan"] = "车悬",
-  [":chexuan"] = "出牌阶段，若你的装备区里没有宝物牌，你可以弃置一张黑色牌，选择一张“舆”置入你的装备区（此牌离开装备区时销毁）。当你不因使用"..
-  "装备牌失去装备区里的宝物牌后，你可以判定，若结果为黑色，将一张随机的“舆”置入你的装备区。",
-  ["#chexuan_ts"] = "车悬",
+  [":chexuan"] = "①出牌阶段，若你的装备区里没有宝物牌，你可以弃置一张黑色牌，选择一张“舆”置入你的装备区（此牌离开装备区时销毁）。②当你不因使用装备牌失去装备区里的宝物牌后，你可以判定，若结果为黑色，将一张随机的“舆”置入你的装备区。",
+  ["#chexuan_trigger"] = "车悬",
   ["#chexuan-choice"] = "车悬：选择一种“舆”置入你的装备区",
   ["#chexuan-invoke"] = "车悬：你可以判定，若结果为黑色，将一张随机的“舆”置入你的装备区",
   ["qiangshou"] = "羌首",

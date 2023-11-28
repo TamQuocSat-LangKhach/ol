@@ -3284,8 +3284,6 @@ local function Dohuashen(player)
   local name = room:askForGeneral(player, mark, 1, true)
   if type(name) == "table" then name = name[1] end
   local general = Fk.generals[name]
-  local current_general = type(player:getMark("ol_ex__huashen_general")) == "string" and player:getMark("ol_ex__huashen_general") or ""
-  if current_general == name then return end
   room:setPlayerMark(player, "ol_ex__huashen_general", name)
   local original_general = player.general
   player.general = name
