@@ -4140,7 +4140,7 @@ local fushi_trigger = fk.CreateTriggerSkill{
   can_refresh = function(self, event, target, player, data)
     if target == player and data.card and table.contains(data.card.skillNames, "fushi") then
       local e = player.room.logic:getCurrentEvent():findParent(GameEvent.UseCard)
-      return e and (e.data[1].extra_data.fushi2 or e.data[1].extra_data.fushi3)
+      return e and e.data[1].extra_data and (e.data[1].extra_data.fushi2 or e.data[1].extra_data.fushi3)
     end
   end,
   on_refresh = function(self, event, target, player, data)
