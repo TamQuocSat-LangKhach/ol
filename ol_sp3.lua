@@ -21,69 +21,62 @@ local huiyun = fk.CreateViewAsSkill{
     card:addSubcard(cards[1])
     return card
   end,
+  before_use = function(self, player, use)
+    local room = player.room
+    use.extra_data = use.extra_data or {}
+    use.extra_data.huiyun_user = player.id
+  end,
 }
 local huiyun_trigger = fk.CreateTriggerSkill{
   name = "#huiyun_trigger",
   mute = true,
   events = {fk.CardUseFinished},
   can_trigger = function(self, event, target, player, data)
-    if target == player and table.contains(data.card.skillNames, "huiyun") then
-      local to = player.room:getPlayerById(TargetGroup:getRealTargets(data.tos)[1])
-      if not to.dead and to:getMark(self.name) ~= 0 then
-        return player.room:getCardOwner(to:getMark(self.name)) == to and player.room:getCardArea(to:getMark(self.name)) == Card.PlayerHand
-      end
-    end
+    return not player.dead and table.contains(data.card.skillNames, "huiyun")
+    and data.extra_data and data.extra_data.huiyun_user == player.id
+    and (player:getMark("huiyun1-round") == 0 or player:getMark("huiyun2-round") == 0 or player:getMark("huiyun3-round") == 0)
+    and table.find(TargetGroup:getRealTargets(data.tos), function(pid) return not player.room:getPlayerById(pid).dead end)
   end,
-  on_trigger = function(self, event, target, player, data)
-    self:doCost(event, target, player, data)
-    local to = player.room:getPlayerById(TargetGroup:getRealTargets(data.tos)[1])
-    if not to.dead then
-      player.room:setPlayerMark(to, self.name, 0)
-    end
-  end,
-  on_cost = function(self, event, target, player, data)
-    local choices = {"Cancel"}
-    for i = 1, 3, 1 do
-      local mark = "huiyun"..tostring(i).."-round"
-      if player:getMark(mark) == 0 then
-        table.insert(choices, mark)
-      end
-    end
-    if #choices == 1 then return end
-    local to = TargetGroup:getRealTargets(data.tos)[1]
-    local choice = player.room:askForChoice(player, choices, "huiyun", "#huiyun-choice::"..to)
-    if choice ~= "Cancel" then
-      self.cost_data = choice
-      return true
-    end
-  end,
+  on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    room:setPlayerMark(player, self.cost_data, 1)
-    local to = room:getPlayerById(TargetGroup:getRealTargets(data.tos)[1])
-    local id = to:getMark(self.name)
-    room:setPlayerMark(to, self.name, 0)
-    if self.cost_data == "huiyun3-round" then
-      to:drawCards(1, "huiyun")
-    else
-      if self.cost_data == "huiyun1-round" then
-        --FIXME：这里需要大量可用判断！满血吃桃、重复挂闪电等
-        local use = room:askForUseCard(to, Fk:getCardById(id).name, "^(jink,nullification)|.|.|.|.|.|"..tostring(id), "#huiyun1-card", true)
-        if use then
-          room:useCard(use)
-          room:delay(1000)
-          if not to.dead and not to:isKongcheng() then
-            room:recastCard(to:getCardIds{Player.Hand}, to, "huiyun")
-          end
+    local showMap = data.extra_data and data.extra_data.huiyun or {}
+    for _, pid in ipairs(TargetGroup:getRealTargets(data.tos)) do
+      local choices = {}
+      for i = 1, 3, 1 do
+        local mark = "huiyun"..tostring(i).."-round"
+        if player:getMark(mark) == 0 then
+          table.insert(choices, mark)
         end
-      elseif self.cost_data == "huiyun2-round" then
-        local use = room:askForUseCard(to, "", "^(jink,nullification)|.|.|hand", "#huiyun2-card", true)
-        if use then
-          --if not CanUseCard(use.card, player.id) then return end
-          room:useCard(use)
-          room:delay(1000)
-          if not to.dead and room:getCardOwner(id) == to and room:getCardArea(id) == Card.PlayerHand then
-            room:recastCard({id}, to, "huiyun")
+      end
+      if player.dead or #choices == 0 then break end
+      local to = room:getPlayerById(pid)
+      if not to.dead then
+        local choice = player.room:askForChoice(player, choices, "huiyun", "#huiyun-choice::"..to.id)
+        room:setPlayerMark(player, choice, 1)
+        local show = showMap[to.id]
+        local name = show and Fk:getCardById(show):toLogString() or ""
+        if choice == "huiyun3-round" then
+          if room:askForSkillInvoke(to, "huiyun", nil, "#huiyun3-draw") then
+            to:drawCards(1, "huiyun")
+          end
+        elseif choice == "huiyun1-round" then
+          if show and table.contains(to:getCardIds("h"), show) then
+            local use = U.askForUseRealCard(room, to, {show}, ".", "huiyun", "#huiyun1-card:::"..name)
+            if use then
+              room:delay(500)
+              if not to.dead and not to:isKongcheng() then
+                room:recastCard(to:getCardIds("h"), to, "huiyun")
+              end
+            end
+          end
+        elseif choice == "huiyun2-round" then
+          local use = U.askForUseRealCard(room, to, to:getCardIds("h"), ".", "huiyun", "#huiyun2-card:::"..name)
+          if use then
+            room:delay(500)
+            if show and table.contains(to:getCardIds("h"), show) then
+              room:recastCard({show}, to, "huiyun")
+            end
           end
         end
       end
@@ -101,7 +94,13 @@ local huiyun_trigger = fk.CreateTriggerSkill{
     end
   end,
   on_refresh = function(self, event, target, player, data)
-    player.room:setPlayerMark(player, self.name, data.cardIds[1])
+    local e = player.room.logic:getCurrentEvent():findParent(GameEvent.UseCard)
+    if e then
+      local use = e.data[1]
+      use.extra_data = use.extra_data or {}
+      use.extra_data.huiyun = use.extra_data.huiyun or {}
+      use.extra_data.huiyun[player.id] = data.cardIds[1]
+    end
   end,
 }
 huiyun:addRelatedSkill(huiyun_trigger)
@@ -109,14 +108,14 @@ huban:addSkill(huiyun)
 Fk:loadTranslationTable{
   ["ol__huban"] = "胡班",
   ["huiyun"] = "晖云",
-  [":huiyun"] = "每轮每项限一次，你可以将一张牌当【火攻】使用，结算后你可以选择一项，令目标可以：1.使用展示牌，然后重铸所有手牌；"..
-  "2.使用一张手牌，然后重铸展示牌；3.摸一张牌。",
-  ["#huiyun-choice"] = "晖云：你可以选择一项，令 %dest 选择是否执行",
+  [":huiyun"] = "你可以将一张牌当【火攻】使用，然后你于此牌结算结束后，对每个目标依次选择一项（每个选项每轮限一次），令其选择是否执行：1.使用展示牌，然后重铸所有手牌；2.使用一张手牌，然后重铸展示牌；3.摸一张牌。",
+  ["#huiyun-choice"] = "晖云：选择一项令 %dest 角色选择是否执行",
   ["huiyun1-round"] = "使用展示牌，然后重铸所有手牌",
   ["huiyun2-round"] = "使用一张手牌，然后重铸展示牌",
   ["huiyun3-round"] = "摸一张牌",
-  ["#huiyun1-card"] = "晖云：你可以使用展示牌，然后重铸所有手牌",
-  ["#huiyun2-card"] = "晖云：你可以使用一张手牌，然后重铸展示牌",
+  ["#huiyun1-card"] = "晖云：你可以使用%arg，然后重铸所有手牌",
+  ["#huiyun2-card"] = "晖云：你可以使用一张手牌，然后重铸%arg",
+  ["#huiyun3-draw"] = "晖云：你可以摸一张牌",
 
   ["$huiyun1"] = "舍身饲离火，不负万古名。",
   ["$huiyun2"] = "义士今犹在，青笺气干云。",
