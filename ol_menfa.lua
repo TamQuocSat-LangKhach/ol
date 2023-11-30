@@ -821,6 +821,7 @@ local yirong = fk.CreateActiveSkill{
       room:askForDiscard(player, n, n, false, self.name, false)
       room:addPlayerMark(player, MarkEnum.AddMaxCards, 1)
     end
+    room:broadcastProperty(player, "MaxCards")
   end,
 }
 local guixiang = fk.CreateTriggerSkill{
