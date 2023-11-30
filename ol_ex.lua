@@ -2732,31 +2732,40 @@ local ol_ex__jiang = fk.CreateTriggerSkill{
       local room = player.room
       local move__event = room.logic:getCurrentEvent()
       if not move__event or (x > 0 and x ~= move__event.id) then return false end
-      local JiangCheck = function(move_data)
+      local searchJiangCards = function(move_data, findOne)
+        local cards = {}
         for _, move in ipairs(move_data) do
           if move.toArea == Card.DiscardPile and move.moveReason == fk.ReasonDiscard then
             for _, info in ipairs(move.moveInfo) do
               local card = Fk:getCardById(info.cardId)
-              if ((card.trueName == "slash" and card.color == Card.Red) or card.name == "duel") and
-                  player.room:getCardArea(info.cardId) == Card.DiscardPile then
-                return true
+              if ((card.trueName == "slash" and card.color == Card.Red) or card.name == "duel") then
+                table.insert(cards, info.cardId)
+                if findOne then
+                  return cards
+                end
               end
             end
           end
         end
+        return cards
       end
-      if JiangCheck(data) then
-        if x == 0 then
-          room.logic:getEventsOfScope(GameEvent.MoveCards, 1, function (e)
-            if JiangCheck(e.data) then
-              x = e.id
-              room:setPlayerMark(player, "jiang_record-turn", x)
-              return true
-            end
-            return false
-          end, Player.HistoryTurn)
-        end
-        return x == move__event.id
+      local cards = searchJiangCards(data, false)
+      if #U.moveCardsHoldingAreaCheck(room, table.filter(cards, function (id)
+        return room:getCardArea(id) == Card.DiscardPile
+      end)) == 0 then return false end
+      if x == 0 then
+        room.logic:getEventsOfScope(GameEvent.MoveCards, 1, function (e)
+          if #searchJiangCards(e.data, true) > 0 then
+            x = e.id
+            room:setPlayerMark(player, "jiang_record-turn", x)
+            return true
+          end
+          return false
+        end, Player.HistoryTurn)
+      end
+      if x == move__event.id then
+        self.cost_data = cards
+        return true
       end
     end
   end,
@@ -2765,21 +2774,13 @@ local ol_ex__jiang = fk.CreateTriggerSkill{
       player:drawCards(1, self.name)
     elseif event == fk.AfterCardsMove then
       local room = player.room
+      local cards = table.simpleClone(self.cost_data)
       room:loseHp(player, 1, self.name)
-      local dummy = Fk:cloneCard("dilu")
-      for _, move in ipairs(data) do
-        if move.toArea == Card.DiscardPile and move.moveReason == fk.ReasonDiscard then
-          for _, info in ipairs(move.moveInfo) do
-            local card = Fk:getCardById(info.cardId)
-            if ((card.trueName == "slash" and card.color == Card.Red) or card.name == "duel") and
-                player.room:getCardArea(info.cardId) == Card.DiscardPile then
-              dummy:addSubcard(card)
-            end
-          end
-        end
-      end
-      if #dummy.subcards > 0 then
-        room:obtainCard(player, dummy, true, fk.ReasonJustMove)
+      cards = U.moveCardsHoldingAreaCheck(room, table.filter(cards, function (id)
+        return room:getCardArea(id) == Card.DiscardPile
+      end))
+      if #cards > 0 then
+        room:moveCardTo(cards, Player.Hand, player, fk.ReasonPrey, self.name, nil, false, player.id)
       end
     end
   end,
@@ -3054,11 +3055,7 @@ local ol_ex__beige = fk.CreateTriggerSkill{
       end
     elseif judge.card.suit == Card.Club then
       if data.from and not data.from.dead then
-        if #data.from:getCardIds{Player.Hand, Player.Equip} < 3 then
-          data.from:throwAllCards("he")
-        else
-          room:askForDiscard(data.from, 2, 2, true, self.name, false, ".")
-        end
+        room:askForDiscard(data.from, 2, 2, true, self.name, false)
       end
     elseif judge.card.suit == Card.Spade then
       if data.from and not data.from.dead then
@@ -3097,48 +3094,13 @@ local ol_ex__zhijian = fk.CreateActiveSkill{
     return #selected == 0 and Fk:getCardById(to_select).type == Card.TypeEquip
   end,
   target_filter = function(self, to_select, selected, selected_cards)
-    if #selected == 0 and #selected_cards == 1 then
-      local target = Fk:currentRoom():getPlayerById(to_select)
-      local card = Fk:getCardById(selected_cards[1])
-      return to_select ~= Self.id and #target:getAvailableEquipSlots(card.sub_type) > 0
-    end
+    return #selected == 0 and #selected_cards == 1 and to_select ~= Self.id and
+    U.canMoveCardIntoEquip(Fk:currentRoom():getPlayerById(to_select), selected_cards[1], true)
   end,
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
     local target = room:getPlayerById(effect.tos[1])
-    local card = Fk:getCardById(effect.cards[1])
-    local existingEquipId = target:getEquipment(card.sub_type)
-    if existingEquipId then
-      room:moveCards(
-        {
-          ids = { existingEquipId },
-          from = target.id,
-          toArea = Card.DiscardPile,
-          moveReason = fk.ReasonPutIntoDiscardPile,
-          proposer = effect.from,
-          skillName = self.name,
-        },
-        {
-          ids = effect.cards,
-          from = effect.from,
-          to = target.id,
-          toArea = Card.PlayerEquip,
-          moveReason = fk.ReasonPut,
-          proposer = effect.from,
-          skillName = self.name,
-        }
-      )
-    else
-      room:moveCards({
-        ids = effect.cards,
-        from = effect.from,
-        to = target.id,
-        toArea = Card.PlayerEquip,
-        moveReason = fk.ReasonPut,
-        proposer = effect.from,
-        skillName = self.name,
-      })
-    end
+    U.moveCardIntoEquip(room, target, effect.cards[1], self.name, true, player)
     if not player.dead then
       room:drawCards(player, 1, self.name)
     end
@@ -3150,7 +3112,8 @@ local ol_ex__guzheng = fk.CreateTriggerSkill{
   events = {fk.AfterCardsMove},
   can_trigger = function(self, event, target, player, data)
     if player:hasSkill(self) and player:usedSkillTimes(self.name, Player.HistoryPhase) < 1 then
-      local currentplayer = player.room.current
+      local room = player.room
+      local currentplayer = room.current
       if currentplayer and currentplayer.phase <= Player.Finish and currentplayer.phase >= Player.Start then
         local guzheng_pairs = {}
         for _, move in ipairs(data) do
@@ -3164,58 +3127,46 @@ local ol_ex__guzheng = fk.CreateTriggerSkill{
             guzheng_pairs[move.from] = guzheng_value
           end
         end
+        local guzheng_data, ids = {{}, {}}, {}
         for key, value in pairs(guzheng_pairs) do
-          if not player.room:getPlayerById(key).dead and #value > 1 and not table.every(value, function (id)
-            return player.room:getCardArea(id) ~= Card.DiscardPile
-          end) then
-            return true
+          if not room:getPlayerById(key).dead and #value > 1 then
+            ids = U.moveCardsHoldingAreaCheck(room, table.filter(value, function (id)
+              return room:getCardArea(id) == Card.DiscardPile
+            end))
+            if #ids > 0 then
+              table.insert(guzheng_data[1], key)
+              table.insert(guzheng_data[2], ids)
+            end
           end
+        end
+        if #guzheng_data[1] > 0 then
+          self.cost_data = guzheng_data
+          return true
         end
       end
     end
   end,
   on_cost = function(self, event, target, player, data)
     local room = player.room
-    local guzheng_pairs = {}
-    for _, move in ipairs(data) do
-      if move.moveReason == fk.ReasonDiscard and move.from ~= nil and move.from ~= player.id then
-        local guzheng_value = guzheng_pairs[move.from] or {}
-        for _, info in ipairs(move.moveInfo) do
-          if info.fromArea == Card.PlayerHand or info.fromArea == Card.PlayerEquip then
-            table.insert(guzheng_value, info.cardId)
-          end
-        end
-        guzheng_pairs[move.from] = guzheng_value
-      end
-    end
-    local targets = {}
-    for key, value in pairs(guzheng_pairs) do
-      if not room:getPlayerById(key).dead and #value > 1 and not table.every(value, function (id)
-        return room:getCardArea(id) ~= Card.DiscardPile
-      end) then
-        table.insert(targets, key)
-      end
-    end
+    local targets = self.cost_data[1]
+    local card_pack = self.cost_data[2]
     if #targets == 1 then
       if room:askForSkillInvoke(player, self.name, nil, "#ol_ex__guzheng-invoke::"..targets[1]) then
         room:doIndicate(player.id, targets)
-        self.cost_data = {targets[1], guzheng_pairs[targets[1]]}
+        self.cost_data = {targets[1], card_pack[1]}
         return true
       end
     elseif #targets > 1 then
-      targets = room:askForChoosePlayers(player, targets, 1, 1, "#ol_ex__guzheng-choose", self.name)
-      if #targets > 0 then
-        self.cost_data = {targets[1], guzheng_pairs[targets[1]]}
+      local tos = room:askForChoosePlayers(player, targets, 1, 1, "#ol_ex__guzheng-choose", self.name)
+      if #tos > 0 then
+        self.cost_data = {tos[1], card_pack[table.indexOf(targets, tos[1])]}
         return true
       end
     end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local cards = table.filter(self.cost_data[2], function (id)
-      return room:getCardArea(id) == Card.DiscardPile
-    end)
-    if #cards == 0 then return false end
+    local cards = self.cost_data[2]
     local to_return = table.random(cards, 1)
     local choice = "guzheng_no"
     if #cards > 1 then
