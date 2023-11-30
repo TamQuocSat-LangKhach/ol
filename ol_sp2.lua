@@ -2699,47 +2699,16 @@ local huaiyuan = fk.CreateTriggerSkill{
   anim_type = "support",
   events = {fk.AfterCardsMove, fk.Death},
   can_trigger = function(self, event, target, player, data)
-    if event == fk.AfterCardsMove and player:hasSkill(self) and player:getMark(self.name) ~= 0 then
-      self.trigger_times = 0
-      for _, move in ipairs(data) do
-        if move.from == player.id then
-          for _, info in ipairs(move.moveInfo) do
-            if info.fromArea == Card.PlayerHand and table.contains(player:getMark(self.name), info.cardId) then
-              self.trigger_times = self.trigger_times + 1
-              table.removeOne(player:getMark(self.name), info.cardId)
-              if #player:getMark(self.name) == 0 then
-                player.room:setPlayerMark(player, self.name, 0)
-                break
-              end
-            end
-          end
-        end
-      end
-      return self.trigger_times > 0
-    elseif event == fk.Death then
-      return target == player and (player:getMark("@huaiyuan_maxcards") > 0 or player:getMark("@huaiyuan_attackrange") > 0)
-    end
-  end,
-  on_trigger = function(self, event, target, player, data)
-    if event == fk.AfterCardsMove then
-      local ret
-      for i = 1, self.trigger_times do
-        ret = self:doCost(event, target, player, data)
-        if ret then return ret end
-      end
+    if event == fk.AfterCardsMove and player:hasSkill(self) then
+      return player:getMark("huaiyuan") > 0
     else
-      return true
+      return target == player and player:hasSkill(self,false,true)
+      and (player:getMark("@huaiyuan_maxcards") > 0 or player:getMark("@huaiyuan_attackrange") > 0)
     end
   end,
   on_cost = function(self, event, target, player, data)
     if event == fk.AfterCardsMove then
-      local to = player.room:askForChoosePlayers(player, table.map(player.room:getAlivePlayers(), Util.IdMapper), 1, 1, "#huaiyuan-invoke", self.name, false)
-        if #to > 0 then
-          self.cost_data = to[1]
-        else
-          self.cost_data = player.id
-        end
-        return true
+      return true
     else
       local to = player.room:askForChoosePlayers(player, table.map(player.room:getOtherPlayers(player), Util.IdMapper), 1, 1, "#huaiyuan-choose", self.name, true)
       if #to > 0 then
@@ -2750,26 +2719,71 @@ local huaiyuan = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local to = room:getPlayerById(self.cost_data)
     if event == fk.AfterCardsMove then
-      local choice = room:askForChoice(player, {"huaiyuan_maxcards", "huaiyuan_attackrange", "draw1"}, self.name, "#huaiyuan-choice::"..to.id)
-      if choice == "draw1" then
-        to:drawCards(1, self.name)
-      else
-        room:addPlayerMark(to, "@"..choice, 1)
+      local n = player:getMark("huaiyuan")
+      room:setPlayerMark(player, "huaiyuan", 0)
+      local choices = {"huaiyuan_maxcards", "huaiyuan_attackrange", "draw1"}
+      for _ = 1, n do
+        local success, dat = room:askForUseActiveSkill(player, "huaiyuan_active", "#huaiyuan-invoke", false)
+        local to = success and room:getPlayerById(dat.targets[1]) or table.random(room.alive_players)
+        local choice = player:getMark("huaiyuan_active")
+        if type(choice) ~= "string" then choice = table.random(choices) end
+        if choice == "draw1" then
+          to:drawCards(1, self.name)
+        else
+          room:addPlayerMark(to, "@"..choice, 1)
+          room:broadcastProperty(to, "MaxCards")
+        end
       end
     else
+      local to = room:getPlayerById(self.cost_data)
       room:addPlayerMark(to, "@huaiyuan_maxcards", player:getMark("@huaiyuan_maxcards"))
       room:addPlayerMark(to, "@huaiyuan_attackrange", player:getMark("@huaiyuan_attackrange"))
+      room:broadcastProperty(to, "MaxCards")
     end
   end,
 
-  refresh_events = {fk.AfterDrawInitialCards},
+  refresh_events = {fk.AfterDrawInitialCards, fk.AfterCardsMove},
   can_refresh = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self)
+    if event == fk.AfterDrawInitialCards then
+      return target == player and player:hasSkill(self)
+    else
+      for _, move in ipairs(data) do
+        if move.from == player.id then
+          for _, info in ipairs(move.moveInfo) do
+            if Fk:getCardById(info.cardId):getMark("@@appease") > 0 then
+              return true
+            end
+          end
+        end
+      end
+    end
   end,
   on_refresh = function(self, event, target, player, data)
-    player.room:setPlayerMark(player, self.name, table.clone(player.player_cards[Player.Hand]))
+    local room = player.room
+    if event == fk.AfterDrawInitialCards then
+      local cards = player:getCardIds(Player.Hand)
+      for _, id in ipairs(cards) do
+        room:setCardMark(Fk:getCardById(id), "@@appease", 1)
+      end
+      room:setPlayerMark(player, "@huaiyuan", #cards)
+    else
+      local n = 0
+      for _, move in ipairs(data) do
+        if move.from == player.id then
+          for _, info in ipairs(move.moveInfo) do
+            if Fk:getCardById(info.cardId):getMark("@@appease") > 0 then
+              n = n + 1
+              room:setCardMark(Fk:getCardById(info.cardId), "@@appease", 0)
+            end
+          end
+        end
+      end
+      room:removePlayerMark(player, "@huaiyuan", n)
+      if player:hasSkill(self) then
+        room:addPlayerMark(player, "huaiyuan", n)
+      end
+    end
   end,
 }
 local huaiyuan_attackrange = fk.CreateAttackRangeSkill{
@@ -2784,6 +2798,26 @@ local huaiyuan_maxcards = fk.CreateMaxCardsSkill{
     return player:getMark("@huaiyuan_maxcards")
   end,
 }
+local huaiyuan_active = fk.CreateActiveSkill{
+  name = "huaiyuan_active",
+  interaction = function()
+    return UI.ComboBox {choices = {"huaiyuan_maxcards", "huaiyuan_attackrange", "draw1"}}
+  end,
+  card_num = 0,
+  card_filter = Util.FalseFunc,
+  target_num = 1,
+  target_filter = function(self, to_select, selected)
+    return #selected == 0
+  end,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    room:setPlayerMark(player, "huaiyuan_active", self.interaction.data)
+  end,
+}
+Fk:addSkill(huaiyuan_active)
+huaiyuan:addRelatedSkill(huaiyuan_maxcards)
+huaiyuan:addRelatedSkill(huaiyuan_attackrange)
+yanghu:addSkill(huaiyuan)
 local chongxin = fk.CreateActiveSkill{
   name = "chongxin",
   anim_type = "drawcard",
@@ -2794,15 +2828,17 @@ local chongxin = fk.CreateActiveSkill{
   end,
   card_filter = Util.FalseFunc,
   target_filter = function(self, to_select, selected)
-    return #selected == 0 and to_select ~= Self.id and not Fk:currentRoom():getPlayerById(to_select):isKongcheng()
+    return #selected == 0 and to_select ~= Self.id and not Fk:currentRoom():getPlayerById(to_select):isNude()
   end,
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
     local target = room:getPlayerById(effect.tos[1])
     local card = room:askForCard(target, 1, 1, true, self.name, false, ".", "#chongxin-card")
     room:recastCard(card, target, self.name)
-    card = room:askForCard(player, 1, 1, true, self.name, false, ".", "#chongxin-card")
-    room:recastCard(card, player, self.name)
+    if not player:isNude() then
+      card = room:askForCard(player, 1, 1, true, self.name, false, ".", "#chongxin-card")
+      room:recastCard(card, player, self.name)
+    end
   end,
 }
 local dezhang = fk.CreateTriggerSkill{
@@ -2813,7 +2849,9 @@ local dezhang = fk.CreateTriggerSkill{
     return target == player and player:hasSkill(self) and player:usedSkillTimes(self.name, Player.HistoryGame) == 0
   end,
   can_wake = function(self, event, target, player, data)
-    return player:getMark("huaiyuan") == 0
+    return not table.find(player:getCardIds("h"), function (id)
+      return Fk:getCardById(id):getMark("@@appease") > 0
+    end)
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
@@ -2872,9 +2910,6 @@ local weishu = fk.CreateTriggerSkill{
     end
   end,
 }
-huaiyuan:addRelatedSkill(huaiyuan_maxcards)
-huaiyuan:addRelatedSkill(huaiyuan_attackrange)
-yanghu:addSkill(huaiyuan)
 yanghu:addSkill(chongxin)
 yanghu:addSkill(dezhang)
 yanghu:addRelatedSkill(weishu)
@@ -2888,6 +2923,9 @@ Fk:loadTranslationTable{
   [":dezhang"] = "觉醒技，回合开始时，若你没有“绥”，你减1点体力上限，获得〖卫戍〗。",
   ["weishu"] = "卫戍",
   [":weishu"] = "锁定技，你于摸牌阶段外非因〖卫戍〗摸牌后，你令一名角色摸一张牌；你于非弃牌阶段弃置牌后，你弃置一名其他角色的一张牌。",
+  ["@@appease"] = "绥",
+  ["@huaiyuan"] = "怀远",
+  ["huaiyuan_active"] = "怀远",
   ["#huaiyuan-invoke"] = "怀远：令一名角色手牌上限+1 / 攻击范围+1 / 摸一张牌",
   ["#huaiyuan-choose"] = "怀远：你可以令一名其他角色获得“怀远”增加的手牌上限和攻击范围",
   ["#huaiyuan-choice"] = "怀远：选择令 %dest 执行的一项",

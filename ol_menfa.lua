@@ -777,6 +777,7 @@ local muyin = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     player.room:addPlayerMark(player.room:getPlayerById(self.cost_data), MarkEnum.AddMaxCards, 1)
+    player.room:broadcastProperty(player, "MaxCards")
   end,
 }
 zhanding:addRelatedSkill(zhanding_record)
