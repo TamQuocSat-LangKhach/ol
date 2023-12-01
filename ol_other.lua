@@ -1434,6 +1434,11 @@ local qin__youmie_prohibit = fk.CreateProhibitSkill{
       return player.phase == Player.NotActive
     end
   end,
+  prohibit_response = function(self, player, card)
+    if player:getMark("@@qin__youmie") ~= 0 then
+      return player.phase == Player.NotActive
+    end
+  end,
 }
 local qin__youmie_record = fk.CreateTriggerSkill{
   name = "#qin__youmie_record",
