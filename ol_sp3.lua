@@ -3867,8 +3867,10 @@ local shengong = fk.CreateActiveSkill{
       local num = Fk:getCardById(show[1]).number
       room:sendLog{ type = "#shengongChoice", from = p.id, arg = choice, arg2 = num }
       if choice == "shengong_good" then
+        room:setCardEmotion(show[1], "judgegood")
         good = good + num
       else
+        room:setCardEmotion(show[1], "judgebad")
         bad = bad + num
       end
     end
@@ -3884,6 +3886,7 @@ local shengong = fk.CreateActiveSkill{
     end
     room:sendLog{ type = "#shengongResult", from = player.id, arg = good, arg2 = bad, arg3 = result }
     local get = room:askForCardChosen(player, player, {card_data = {{self.name, table.random(cards, choose_num) }}}, self.name)
+    room:setCardMark(Fk:getCardById(get), MarkEnum.DestructIntoDiscard, 1)
     local targets = table.filter(room.alive_players, function(p) return U.canMoveCardIntoEquip(p, get) end)
     if #targets > 0 then
       local tos = room:askForChoosePlayers(player, table.map(targets, Util.IdMapper), 1, 1, "#shengong-put:::"..Fk:getCardById(get).name, self.name, false)
@@ -3894,58 +3897,40 @@ local shengong = fk.CreateActiveSkill{
 }
 local shengong_trigger = fk.CreateTriggerSkill{
   name = "#shengong_trigger",
+  mute = true,
+  main_skill = shengong,
   anim_type = "drawcard",
   events = {fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
-    return target.phase == Player.Finish and player:getMark("shengong-turn") > 0
+    if target.phase == Player.Finish and player:hasSkill(shengong) then
+      local n = 0
+      player.room.logic:getEventsOfScope(GameEvent.MoveCards, 999, function(e)
+        for _, move in ipairs(e.data) do
+          if move.toArea == Card.Void then
+            for _, info in ipairs(move.moveInfo) do
+              local name = Fk:getCardById(info.cardId).name
+              if table.contains(ol__puyuan_weapons, name) or table.contains(ol__puyuan_armors, name) or table.contains(ol__puyuan_treasures, name) then
+                n = n + 1
+              end
+            end
+          end
+        end
+        return false
+      end, Player.HistoryTurn)
+      if n > 0 then
+        self.cost_data = n
+        return true
+      end
+    end
   end,
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
-    player:drawCards(player:getMark("shengong-turn"), self.name)
-  end,
-  refresh_events = {fk.BeforeCardsMove},
-  can_refresh = Util.TrueFunc,
-  on_refresh = function(self, event, target, player, data)
-    local mirror_moves = {}
-    local ids = {}
-    for _, move in ipairs(data) do
-      if move.toArea == Card.DiscardPile then
-        local move_info = {}
-        local mirror_info = {}
-        for _, info in ipairs(move.moveInfo) do
-          local name = Fk:getCardById(info.cardId).name
-          if table.contains(ol__puyuan_weapons, name) or table.contains(ol__puyuan_armors, name) or table.contains(ol__puyuan_treasures, name) then
-            table.insert(mirror_info, info)
-            table.insert(ids, info.cardId)
-          else
-            table.insert(move_info, info)
-          end
-        end
-        if #mirror_info > 0 then
-          move.moveInfo = move_info
-          local mirror_move = table.clone(move)
-          mirror_move.to = nil
-          mirror_move.toArea = Card.Void
-          mirror_move.moveInfo = mirror_info
-          table.insert(mirror_moves, mirror_move)
-        end
-      end
-    end
-    if #ids > 0 then
-      local room = player.room
-      room:sendLog{type = "#destructDerivedCards", card = ids}
-      for _, p in ipairs(room.alive_players) do
-        if p:hasSkill(self) then
-          room:addPlayerMark(p, "shengong-turn", #ids)
-        end
-      end
-    end
-    table.insertTable(data, mirror_moves)
+    player:broadcastSkillInvoke(shengong.name)
+    player:drawCards(self.cost_data, shengong.name)
   end,
 }
 shengong:addRelatedSkill(shengong_trigger)
 ol__puyuan:addSkill(shengong)
-
 local qisi = fk.CreateTriggerSkill{
   name = "qisi",
   events = {fk.GameStart, fk.DrawNCards},
@@ -3962,28 +3947,26 @@ local qisi = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     if event == fk.GameStart then
-      local cards,put = {},{}
+      local equipMap = {}
       for _, id in ipairs(room.draw_pile) do
-        if Fk:getCardById(id).type == Card.TypeEquip and player:hasEmptyEquipSlot(Fk:getCardById(id).sub_type) then
-          table.insert(cards, id)
+        local sub_type = Fk:getCardById(id).sub_type
+        if Fk:getCardById(id).type == Card.TypeEquip and player:hasEmptyEquipSlot(sub_type) then
+          local list = equipMap[tostring(sub_type)] or {}
+          table.insert(list, id)
+          equipMap[tostring(sub_type)] = list
         end
       end
-      if #cards == 0 then return end
-      local first = table.random(cards)
-      table.insert(put, first)
-      local other = table.filter(cards, function(id) return Fk:getCardById(id).sub_type ~= Fk:getCardById(first).sub_type end)
-      if #other > 0 then
-        table.insert(put, table.random(other))
+      local types = {}
+      for k, _ in pairs(equipMap) do
+        table.insert(types, k)
       end
-      room:moveCards({
-        fromArea = Card.DrawPile,
-        ids = put,
-        to = player.id,
-        toArea = Card.PlayerEquip,
-        moveReason = fk.ReasonPut,
-        proposer = player.id,
-        skillName = self.name,
-      })
+      if #types == 0 then return end
+      types = table.random(types, 2)
+      local put = {}
+      for _, t in ipairs(types) do
+        table.insert(put, table.random(equipMap[t]))
+      end
+      U.moveCardIntoEquip(room, player, put, self.name, false, player)
     else
       data.n = data.n - 1
       local choices = {"weapon", "armor", "equip_horse", "treasure"}
