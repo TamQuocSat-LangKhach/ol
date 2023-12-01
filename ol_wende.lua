@@ -1355,7 +1355,10 @@ local zhuosheng = fk.CreateTriggerSkill{
   on_cost = function(self, event, target, player, data)
     if event == fk.AfterCardTargetDeclared then
       local room = player.room
-      local targets = TargetGroup:getRealTargets(data.tos)
+      local targets = {}
+      if #TargetGroup:getRealTargets(data.tos) > 1 then
+        table.insertTable(targets, TargetGroup:getRealTargets(data.tos))
+      end
       table.insertTable(targets, U.getUseExtraTargets(room, data, false))
       local tos = room:askForChoosePlayers(player, targets, 1, 1, "#zhuosheng-choose:::"..data.card:toLogString(), self.name, true)
       if #tos > 0 then
@@ -3088,25 +3091,34 @@ local chuming = fk.CreateTriggerSkill{
         if player.dead then return end
         local p = room:getPlayerById(info[1])
         if not p.dead and table.every(info[2], function(id) return room:getCardArea(id) == Card.DiscardPile end) then
-          room:setPlayerMark(p, "chuming-tmp", {player.id, info[2]})
-          local command = "AskForUseActiveSkill"
-          room:notifyMoveFocus(p, "chuming_viewas")
-          local dat = {"chuming_viewas", "#chuming-invoke::"..player.id, false, json.encode({})}
-          local result = room:doRequest(p, command, json.encode(dat))
-          if result ~= "" then
-            dat = json.decode(result)
-            if dat.interaction_data == "collateral" then
-              local card = Fk:cloneCard("collateral")
-              card:addSubcards(info[2])
-              card.skillName = self.name
-              local use = {
-                from = p.id,
-                tos = {{player.id}, {dat.targets[1]}},
-                card = card,
-              }
-              room:useCard(use)
-            else
-              room:useVirtualCard(dat.interaction_data, info[2], p, player, self.name)
+          local yes = false
+          for _, name in ipairs({"dismantlement", "collateral"}) do
+            local card = Fk:cloneCard(name)
+            if not p:isProhibited(player, card) and card.skill:modTargetFilter(player.id, {}, p.id, card, true) then
+              yes = true
+            end
+          end
+          if yes then
+            room:setPlayerMark(p, "chuming-tmp", {player.id, info[2]})
+            local command = "AskForUseActiveSkill"
+            room:notifyMoveFocus(p, "chuming_viewas")
+            local dat = {"chuming_viewas", "#chuming-invoke::"..player.id, false, json.encode({})}
+            local result = room:doRequest(p, command, json.encode(dat))
+            if result ~= "" then
+              dat = json.decode(result)
+              if dat.interaction_data == "collateral" then
+                local card = Fk:cloneCard("collateral")
+                card:addSubcards(info[2])
+                card.skillName = self.name
+                local use = {
+                  from = p.id,
+                  tos = {{player.id}, {dat.targets[1]}},
+                  card = card,
+                }
+                room:useCard(use)
+              else
+                room:useVirtualCard(dat.interaction_data, info[2], p, player, self.name)
+              end
             end
           end
         end

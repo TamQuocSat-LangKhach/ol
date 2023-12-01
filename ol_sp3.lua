@@ -4381,4 +4381,9 @@ Fk:loadTranslationTable{
   ["#hezhong-invoke"] = "和衷：是否令%arg多结算一次？",
 }
 
+--local lukai = General(extension, "ol__lukai", "wu", 3)
+Fk:loadTranslationTable{
+  ["ol__lukai"] = "陆凯",
+}
+
 return extension
