@@ -1163,6 +1163,128 @@ Fk:loadTranslationTable{
   ['~ol__sunluyu'] = '姐妹之间，何必至此？',
 }
 
+-- 璀璨星河-虎贲
+local ol__dingfeng = General(extension, "ol__dingfeng", "wu", 4)
+local ol__duanbing = fk.CreateTriggerSkill{
+  name = "ol__duanbing",
+  anim_type = "offensive",
+  events = {fk.AfterCardTargetDeclared},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self) and data.card.trueName == "slash"
+  end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    local targets = {}
+    for _, p in ipairs(room:getOtherPlayers(player)) do
+      if not table.contains(TargetGroup:getRealTargets(data.tos), p.id) and player:distanceTo(p) == 1 and not player:isProhibited(p, data.card) then
+        table.insertIfNeed(targets, p.id)
+      end
+    end
+    if #targets > 0 then
+      local tos = room:askForChoosePlayers(player, targets, 1, 1, "#ol__duanbing-choose", self.name, true)
+      if #tos > 0 then
+        self.cost_data = tos[1]
+        return true
+      end
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    table.insert(data.tos, {self.cost_data})
+  end,
+}
+local ol__duanbing_effect = fk.CreateTriggerSkill{
+  name = "#ol__duanbing_effect",
+  mute = true,
+  main_skill = ol__duanbing,
+  events = {fk.TargetSpecified},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self) and data.card.trueName == "slash"
+    and player:distanceTo(player.room:getPlayerById(data.to)) == 1
+  end,
+  on_cost = Util.TrueFunc,
+  on_use = function(self, event, target, player, data)
+    data.fixedResponseTimes = data.fixedResponseTimes or {}
+    data.fixedResponseTimes["jink"] = 2
+  end,
+}
+ol__duanbing:addRelatedSkill(ol__duanbing_effect)
+ol__dingfeng:addSkill(ol__duanbing)
+local ol__fenxun = fk.CreateActiveSkill{
+  name = "ol__fenxun",
+  anim_type = "offensive",
+  card_num = 0,
+  target_num = 1,
+  can_use = function(self, player)
+    return player:usedSkillTimes(self.name, Player.HistoryPhase) == 0
+  end,
+  card_filter = Util.FalseFunc,
+  target_filter = function(self, to_select, selected, cards)
+    return #selected == 0 and to_select ~= Self.id
+  end,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    local mark = U.getMark(player, "ol__fenxun-turn")
+    table.insert(mark, effect.tos[1])
+    room:setPlayerMark(player, "ol__fenxun-turn", mark)
+  end,
+}
+local ol__fenxun_distance = fk.CreateDistanceSkill{
+  name = "#ol__fenxun_distance",
+  correct_func = function(self, from, to) return 0 end,
+  fixed_func = function(self, from, to)
+    local mark = U.getMark(from, "ol__fenxun-turn")
+    if table.contains(mark, to.id) then
+      return 1
+    end
+  end,
+}
+ol__fenxun:addRelatedSkill(ol__fenxun_distance)
+local ol__fenxun_delay = fk.CreateTriggerSkill{
+  name = "#ol__fenxun_delay",
+  mute = true,
+  events = {fk.EventPhaseStart},
+  can_trigger = function(self, event, target, player, data)
+    if target == player and player.phase == Player.Finish then
+      local mark = U.getMark(player, "ol__fenxun-turn")
+      if #mark == 0 then return false end
+      player.room.logic:getEventsOfScope(GameEvent.Damage, 1, function(e)
+        local damage = e.data[1]
+        if damage.from == player then
+          table.removeOne(mark, damage.to.id)
+        end
+      end, Player.HistoryTurn)
+      if #mark > 0 then
+        self.cost_data = #mark
+        return true
+      end
+    end
+  end,
+  on_cost = Util.TrueFunc,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    for _ = 1, self.cost_data do
+      if player.dead or player:isNude() then break end
+      room:askForDiscard(player, 1, 1, true, ol__fenxun.name, false)
+    end
+  end,
+}
+ol__fenxun:addRelatedSkill(ol__fenxun_delay)
+ol__dingfeng:addSkill(ol__fenxun)
+Fk:loadTranslationTable{
+  ["ol__dingfeng"] = "丁奉",
+  ["ol__duanbing"] = "短兵",
+  [":ol__duanbing"] = "①你使用【杀】时可以多选择一名距离为1的角色为目标；②你对距离为1的角色使用【杀】需要两张【闪】才能抵消。",
+  ["ol__fenxun"] = "奋迅",
+  [":ol__fenxun"] = "出牌阶段限一次，你可以令你本回合计算与一名其他角色的距离视为1。然后本回合的结束阶段，若你本回合未对其造成过伤害，你弃置一张牌。",
+  ["#ol__duanbing-choose"] = "短兵：你可以额外选择一名距离为1的其他角色为目标",
+
+  ["$ol__duanbing1"] = "弃马，亮兵器，杀！",
+  ["$ol__duanbing2"] = "雪中奋短兵，快者胜！",
+  ["$ol__fenxun1"] = "奋起直击，一战决生死！",
+  ["$ol__fenxun2"] = "疾锋之刃，杀出一条血路！",
+  ["~ol__dingfeng"] = "命乎！命乎……",
+}
+
 local ol__hejin = General(extension, "ol__hejin", "qun", 4)
 local ol__mouzhu = fk.CreateActiveSkill{
   name = "ol__mouzhu",
