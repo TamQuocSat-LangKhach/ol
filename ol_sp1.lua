@@ -1363,6 +1363,7 @@ local lianzhu = fk.CreateActiveSkill{
   anim_type = "control",
   card_num = 1,
   target_num = 1,
+  prompt = "#lianzhu",
   can_use = function(self, player)
     return player:usedSkillTimes(self.name, Player.HistoryPhase) == 0 and not player:isNude()
   end,
@@ -1376,6 +1377,7 @@ local lianzhu = fk.CreateActiveSkill{
     local player = room:getPlayerById(effect.from)
     local target = room:getPlayerById(effect.tos[1])
     player:showCards(effect.cards)
+    if player.dead or not table.contains(player:getCardIds("h"), effect.cards[1]) then return end
     local card = Fk:getCardById(effect.cards[1])
     room:obtainCard(target, card, true, fk.ReasonGive)
     if player.dead then return end
@@ -1389,12 +1391,13 @@ local lianzhu = fk.CreateActiveSkill{
 }
 local xiahui = fk.CreateMaxCardsSkill{
   name = "xiahui",
+  frequency = Skill.Compulsory,
   exclude_from = function(self, player, card)
     return player:hasSkill(self) and card.color == Card.Black
   end,
 }
-local xiahui_record = fk.CreateTriggerSkill{
-  name = "#xiahui_record",
+local xiahui_trigger = fk.CreateTriggerSkill{
+  name = "#xiahui_trigger",
   mute = true,
   frequency = Skill.Compulsory,
   events = {fk.AfterCardsMove, fk.HpChanged},
@@ -1410,7 +1413,8 @@ local xiahui_record = fk.CreateTriggerSkill{
         end
       end
     elseif event == fk.HpChanged then
-      return target == player and player:getMark("xiahui") ~= 0 and data.num < 0
+      return target == player and data.num < 0 and
+        table.find(player:getCardIds("h"), function(id) return Fk:getCardById(id):getMark("@@xiahui-inhand") > 0 end)
     end
   end,
   on_use = function(self, event, target, player, data)
@@ -1420,38 +1424,34 @@ local xiahui_record = fk.CreateTriggerSkill{
         if move.from == player.id and move.to and move.to ~= player.id and move.toArea == Card.PlayerHand then
           local to = room:getPlayerById(move.to)
           for _, info in ipairs(move.moveInfo) do
-            if Fk:getCardById(info.cardId).color == Card.Black then
-              local mark = to:getMark("xiahui")
-              if mark == 0 then mark = {} end
-              table.insertIfNeed(mark, info.cardId)
-              room:setPlayerMark(to, "xiahui", mark)
+            if Fk:getCardById(info.cardId).color == Card.Black and table.contains(to:getCardIds("h"), info.cardId) then
+              room:setCardMark(Fk:getCardById(info.cardId), "@@xiahui-inhand", 1)
             end
           end
         end
       end
-    else
-      room:setPlayerMark(player, "xiahui", 0)
+    elseif event == fk.HpChanged then
+      for _, id in ipairs(player:getCardIds("h")) do
+        room:setCardMark(Fk:getCardById(id), "@@xiahui-inhand", 0)
+      end
     end
   end,
 }
 local xiahui_prohibit = fk.CreateProhibitSkill{
   name = "#xiahui_prohibit",
   prohibit_use = function(self, player, card)
-    local mark = U.getMark(player, "xiahui")
     local cards = card:isVirtual() and card.subcards or {card.id}
-    return table.find(cards, function(id) return table.contains(mark, id) end)
+    return table.find(cards, function(id) return Fk:getCardById(id):getMark("@@xiahui-inhand") > 0 end)
   end,
   prohibit_response = function(self, player, card)
-    local mark = U.getMark(player, "xiahui")
     local cards = card:isVirtual() and card.subcards or {card.id}
-    return table.find(cards, function(id) return table.contains(mark, id) end)
+    return table.find(cards, function(id) return Fk:getCardById(id):getMark("@@xiahui-inhand") > 0 end)
   end,
   prohibit_discard = function(self, player, card)
-    local mark = U.getMark(player, "xiahui")
-    return table.contains(mark, card.id)
+    return card:getMark("@@xiahui-inhand") > 0
   end,
 }
-xiahui:addRelatedSkill(xiahui_record)
+xiahui:addRelatedSkill(xiahui_trigger)
 xiahui:addRelatedSkill(xiahui_prohibit)
 dongbai:addSkill(lianzhu)
 dongbai:addSkill(xiahui)
@@ -1461,6 +1461,7 @@ Fk:loadTranslationTable{
   [":lianzhu"] = "出牌阶段限一次，你可以展示并交给一名其他角色一张牌，若该牌为黑色，其选择一项：1.你摸两张牌；2.弃置两张牌。",
   ["xiahui"] = "黠慧",
   [":xiahui"] = "锁定技，你的黑色牌不占用手牌上限；其他角色获得你的黑色牌时，其不能使用、打出、弃置这些牌直到其体力值减少为止。",
+  ["#lianzhu"] = "连诛：交给一名角色一张牌，若为黑色，其弃两张牌或令你摸两张牌",
   ["#lianzhu-discard"] = "连诛：你需弃置两张牌，否则 %src 摸两张牌",
 
   ["$lianzhu1"] = "若有不臣之心，定当株连九族。",
@@ -1471,6 +1472,7 @@ Fk:loadTranslationTable{
 local zhaoxiang = General(extension, "zhaoxiang", "shu", 4, 4, General.Female)
 local fanghun = fk.CreateViewAsSkill{
   name = "fanghun",
+  prompt = "#fanghun",
   pattern = "slash,jink",
   card_filter = function(self, to_select, selected)
     if #selected == 1 then return false end
@@ -1568,6 +1570,7 @@ Fk:loadTranslationTable{
   ["fuhan"] = "扶汉",
   [":fuhan"] = "限定技，准备阶段开始时，你可以移去所有“梅影”标记，随机观看五名未登场的蜀势力角色，将武将牌替换为其中一名角色，"..
   "并将体力上限数调整为本局游戏中移去“梅影”标记的数量（至少2，至多8），然后若你是体力值最低的角色，你回复1点体力。",
+  ["#fanghun"] = "芳魂：你可以移去1个“梅影”标记，发动〖龙胆〗并摸一张牌",
   ["@meiying"] = "梅影",
   ["#fuhan-invoke"] = "扶汉：你可以变身为一名蜀势力武将！（体力上限为%arg）",
 
