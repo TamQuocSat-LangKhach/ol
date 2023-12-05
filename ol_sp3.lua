@@ -3141,7 +3141,7 @@ local weifu = fk.CreateActiveSkill{
     return not player:isNude()
   end,
   card_filter = function(self, to_select, selected)
-    return #selected == 0 and not Self:prohibitDiscard(to_select)
+    return #selected == 0 and not Self:prohibitDiscard(Fk:getCardById(to_select))
   end,
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
@@ -3698,7 +3698,6 @@ local suji = fk.CreateTriggerSkill{
 zhangyan:addSkill(suji)
 local suji_viewas = fk.CreateViewAsSkill{
   name = "suji_viewas",
-  main_skill = suji,
   card_num = 1,
   card_filter = function(self, to_select, selected)
     return #selected == 0 and Fk:getCardById(to_select).color == Card.Black
