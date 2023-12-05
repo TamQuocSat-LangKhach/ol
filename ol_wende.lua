@@ -204,7 +204,7 @@ Fk:loadTranslationTable{
   ["$xiongzhi2"] = "乱世之中，唯我司马！",
   ["$quanbian1"] = "筹权谋变，步步为营。",
   ["$quanbian2"] = "随机应变，谋国窃权。",
-  ["~ol__zhangchunhua"] = "虎入骷冢，司马难兴。",
+  ["~ol__simayi"] = "虎入骷冢，司马难兴。",
 }
 
 local zhangchunhua = General(extension, "ol__zhangchunhua", "jin", 3, 3, General.Female)

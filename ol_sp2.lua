@@ -1668,6 +1668,7 @@ local zhuangshu_select = fk.CreateActiveSkill{
   end,
 }
 Fk:addSkill(zhuangshu_select)
+local zhuangshu_combs = {{"jade_comb", Card.Spade, 12}, {"rhino_comb", Card.Club, 12}, {"golden_comb", Card.Heart, 12}}
 local zhuangshu = fk.CreateTriggerSkill{
   name = "zhuangshu",
   events = {fk.GameStart, fk.TurnStart},
@@ -1676,9 +1677,10 @@ local zhuangshu = fk.CreateTriggerSkill{
   can_trigger = function(self, event, target, player, data)
     if not player:hasSkill(self) then return false end
     if event == fk.GameStart then
-      return player:hasEmptyEquipSlot(Card.SubtypeTreasure) and table.find(player.room.void, function (id)
-        local card_name = Fk:getCardById(id).name
-        return card_name == "jade_comb" or card_name == "rhino_comb" or card_name == "golden_comb"
+      local room = player.room
+      return player:hasEmptyEquipSlot(Card.SubtypeTreasure) and
+      table.find(U.prepareDeriveCards(room, zhuangshu_combs, "zhuangshu_derivecards"), function (id)
+        return room:getCardArea(id) == Card.Void
       end)
     elseif event == fk.TurnStart then
       return not target.dead and not player:isNude() and target:hasEmptyEquipSlot(Card.SubtypeTreasure)
@@ -1687,9 +1689,8 @@ local zhuangshu = fk.CreateTriggerSkill{
   on_cost = function(self, event, target, player, data)
     local room = player.room
     if event == fk.GameStart then
-      local combs = table.filter(room.void, function (id)
-        local card_name = Fk:getCardById(id).name
-        return card_name == "jade_comb" or card_name == "rhino_comb" or card_name == "golden_comb"
+      local combs = table.filter(U.prepareDeriveCards(room, zhuangshu_combs, "zhuangshu_derivecards"), function (id)
+        return room:getCardArea(id) == Card.Void
       end)
       if #combs == 0 then return false end
       player.special_cards["zhuangshu"] = table.simpleClone(combs)
@@ -1707,7 +1708,7 @@ local zhuangshu = fk.CreateTriggerSkill{
         handcards = player:getCardIds("h"),
         special_cards = player.special_cards,
       })
-
+      
       if success then
         self.cost_data = dat.cards
         return true
@@ -1743,10 +1744,10 @@ local zhuangshu = fk.CreateTriggerSkill{
       local card_types = {"basic", "trick", "equip"}
       local comb_names = {"jade_comb", "rhino_comb", "golden_comb"}
       local comb_name = comb_names[table.indexOf(card_types, card_type)]
-      local comb_id = table.find(room.void, function (id)
-        return Fk:getCardById(id).name == comb_name
+      local comb_id = table.find(U.prepareDeriveCards(room, zhuangshu_combs, "zhuangshu_derivecards"), function (id)
+        return room:getCardArea(id) == Card.Void and Fk:getCardById(id).name == comb_name
       end)
-      if not comb_id then
+      if comb_id == nil then
         for _, p in ipairs(room:getOtherPlayers(target)) do
           local new = table.find(p:getCardIds("e"), function (id)
             return Fk:getCardById(id).name == comb_name
