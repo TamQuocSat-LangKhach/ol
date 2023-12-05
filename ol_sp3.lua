@@ -3687,6 +3687,7 @@ local suji = fk.CreateTriggerSkill{
     local dat = self.cost_data
     local card = Fk.skills["suji_viewas"]:viewAs(dat.cards)
     local use = {from = player.id, tos = table.map(dat.targets, function(p) return {p} end), card = card}
+    if target ~= player then use.extraUse = true end
     room:useCard(use)
     if use.damageDealt and use.damageDealt[target.id] and not player.dead and not target:isNude() then
       local id = room:askForCardChosen(player, target, "he", self.name)
@@ -3716,7 +3717,9 @@ local langdao = fk.CreateTriggerSkill{
   anim_type = "offensive",
   events = {fk.TargetSpecifying},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self) and data.card.trueName == "slash" and data.tos and #AimGroup:getAllTargets(data.tos) == 1 and not (type(player:getMark("langdao_removed")) == "table" and #player:getMark("langdao_removed") == 3)
+    return target == player and player:hasSkill(self) and data.card.trueName == "slash"
+    and data.tos and #AimGroup:getAllTargets(data.tos) == 1
+    and #U.getMark(player, "langdao_removed") < 3
   end,
   on_cost = function(self, event, target, player, data)
     return player.room:askForSkillInvoke(player, self.name, nil, "#langdao-invoke:"..data.to)
@@ -3724,7 +3727,7 @@ local langdao = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     local choices = {}
-    local mark = type(player:getMark("langdao_removed")) == "table" and player:getMark("langdao_removed") or {}
+    local mark = U.getMark(player, "langdao_removed")
     for _, n in ipairs({"AddDamage1","AddTarget1","disresponsive"}) do
       if not table.contains(mark, n) then
         table.insert(choices, n)
@@ -3732,7 +3735,7 @@ local langdao = fk.CreateTriggerSkill{
     end
     if #choices == 0 then return end
     local content = {}
-    for _, p in ipairs({player,room:getPlayerById(data.to)}) do
+    for _, p in ipairs({player, room:getPlayerById(data.to)}) do
       local choice = room:askForChoice(p, choices, self.name)
       table.insert(content, choice)
     end
@@ -3762,7 +3765,13 @@ local langdao = fk.CreateTriggerSkill{
         local tos = room:askForChoosePlayers(player, targets, 1, target_num, "#langdao-AddTarget:::"..target_num, self.name, true)
         if #tos > 0 then
           TargetGroup:pushTargets(data.targetGroup, tos)
-          room:sendLog{ type = "#AddTarget", from = player.id, arg = self.name, arg2 = data.card:toLogString(), to = tos  }
+          room:sendLog{
+            type = "#AddTargetsBySkill",
+            from = player.id,
+            to = tos,
+            arg = self.name,
+            arg2 = data.card:toLogString()
+          }
         end
       end
     end
@@ -3785,7 +3794,7 @@ local langdao = fk.CreateTriggerSkill{
   end,
   on_refresh = function (self, event, target, player, data)
     local room = player.room
-    local mark = type(player:getMark("langdao_removed")) == "table" and player:getMark("langdao_removed") or {}
+    local mark = U.getMark(player, "langdao_removed")
     for _, c in ipairs(data.extra_data.langdao) do
       table.insertIfNeed(mark, c)
     end
@@ -3806,7 +3815,7 @@ Fk:loadTranslationTable{
   ["AddDamage1"] = "伤害值+1",
   ["AddTarget1"] = "目标数+1",
   ["disresponsive"] = "无法响应",
-  ["#AddTarget"] = "由于 %arg 的效果，%from 使用的 %arg2 增加了目标 %to",
+  
   ["$suji1"] = "飞燕如风，非快不得破。",
   ["$suji2"] = "载疾风之势，摧万仞之城。",
   ["$langdao1"] = "虎踞黑山，望天下百城。",

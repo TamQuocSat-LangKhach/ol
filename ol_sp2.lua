@@ -2697,17 +2697,17 @@ local yanghu = General(extension, "ol__yanghu", "jin", 4)
 local huaiyuan = fk.CreateTriggerSkill{
   name = "huaiyuan",
   anim_type = "support",
-  events = {fk.AfterCardsMove, fk.Death},
+  events = {fk.AfterDrawInitialCards, fk.Death},
   can_trigger = function(self, event, target, player, data)
-    if event == fk.AfterCardsMove and player:hasSkill(self) then
-      return player:getMark("huaiyuan") > 0
+    if event == fk.AfterDrawInitialCards then
+      return target == player and player:hasSkill(self)
     else
       return target == player and player:hasSkill(self,false,true)
       and (player:getMark("@huaiyuan_maxcards") > 0 or player:getMark("@huaiyuan_attackrange") > 0)
     end
   end,
   on_cost = function(self, event, target, player, data)
-    if event == fk.AfterCardsMove then
+    if event == fk.AfterDrawInitialCards then
       return true
     else
       local to = player.room:askForChoosePlayers(player, table.map(player.room:getOtherPlayers(player), Util.IdMapper), 1, 1, "#huaiyuan-choose", self.name, true)
@@ -2719,48 +2719,6 @@ local huaiyuan = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    if event == fk.AfterCardsMove then
-      local n = player:getMark("huaiyuan")
-      room:setPlayerMark(player, "huaiyuan", 0)
-      local choices = {"huaiyuan_maxcards", "huaiyuan_attackrange", "draw1"}
-      for _ = 1, n do
-        local success, dat = room:askForUseActiveSkill(player, "huaiyuan_active", "#huaiyuan-invoke", false)
-        local to = success and room:getPlayerById(dat.targets[1]) or table.random(room.alive_players)
-        local choice = player:getMark("huaiyuan_active")
-        if type(choice) ~= "string" then choice = table.random(choices) end
-        if choice == "draw1" then
-          to:drawCards(1, self.name)
-        else
-          room:addPlayerMark(to, "@"..choice, 1)
-          room:broadcastProperty(to, "MaxCards")
-        end
-      end
-    else
-      local to = room:getPlayerById(self.cost_data)
-      room:addPlayerMark(to, "@huaiyuan_maxcards", player:getMark("@huaiyuan_maxcards"))
-      room:addPlayerMark(to, "@huaiyuan_attackrange", player:getMark("@huaiyuan_attackrange"))
-      room:broadcastProperty(to, "MaxCards")
-    end
-  end,
-
-  refresh_events = {fk.AfterDrawInitialCards, fk.AfterCardsMove},
-  can_refresh = function(self, event, target, player, data)
-    if event == fk.AfterDrawInitialCards then
-      return target == player and player:hasSkill(self)
-    else
-      for _, move in ipairs(data) do
-        if move.from == player.id then
-          for _, info in ipairs(move.moveInfo) do
-            if Fk:getCardById(info.cardId):getMark("@@appease") > 0 then
-              return true
-            end
-          end
-        end
-      end
-    end
-  end,
-  on_refresh = function(self, event, target, player, data)
-    local room = player.room
     if event == fk.AfterDrawInitialCards then
       local cards = player:getCardIds(Player.Hand)
       for _, id in ipairs(cards) do
@@ -2768,20 +2726,70 @@ local huaiyuan = fk.CreateTriggerSkill{
       end
       room:setPlayerMark(player, "@huaiyuan", #cards)
     else
-      local n = 0
-      for _, move in ipairs(data) do
-        if move.from == player.id then
-          for _, info in ipairs(move.moveInfo) do
-            if Fk:getCardById(info.cardId):getMark("@@appease") > 0 then
-              n = n + 1
-              room:setCardMark(Fk:getCardById(info.cardId), "@@appease", 0)
-            end
-          end
+      local to = room:getPlayerById(self.cost_data)
+      room:addPlayerMark(to, "@huaiyuan_maxcards", player:getMark("@huaiyuan_maxcards"))
+      room:addPlayerMark(to, "@huaiyuan_attackrange", player:getMark("@huaiyuan_attackrange"))
+      room:broadcastProperty(to, "MaxCards")
+    end
+  end,
+}
+local huaiyuan_effect = fk.CreateTriggerSkill{
+  name = "#huaiyuan_effect",
+  main_skill = huaiyuan,
+  mute = true,
+  events = {fk.AfterCardsMove},
+  can_trigger = function(self, event, target, player, data)
+    if player:hasSkill("huaiyuan") then
+      if data.extra_data and data.extra_data.huaiyuan_effect then
+        local n = data.extra_data.huaiyuan_effect[tostring(player.id)]
+        if n then
+          self.trigger_times = n
+          return true
         end
       end
-      room:removePlayerMark(player, "@huaiyuan", n)
-      if player:hasSkill(self) then
-        room:addPlayerMark(player, "huaiyuan", n)
+    end
+  end,
+  on_trigger = function(self, event, target, player, data)
+    local ret
+    for i = 1, self.trigger_times do
+      if not player:hasSkill("huaiyuan") then break end
+      self:doCost(event, target, player, data)
+    end
+  end,
+  on_cost = Util.TrueFunc,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    room:notifySkillInvoked(player, "huaiyuan")
+    player:broadcastSkillInvoke("huaiyuan")
+    local choices = {"huaiyuan_maxcards", "huaiyuan_attackrange", "draw1"}
+    local success, dat = room:askForUseActiveSkill(player, "huaiyuan_active", "#huaiyuan-invoke", false)
+    local to = success and room:getPlayerById(dat.targets[1]) or table.random(room.alive_players)
+    local choice = player:getMark("huaiyuan_active")
+    if type(choice) ~= "string" then choice = table.random(choices) end
+    if choice == "draw1" then
+      to:drawCards(1, "huaiyuan")
+    else
+      room:addPlayerMark(to, "@"..choice, 1)
+      room:broadcastProperty(to, "MaxCards")
+    end
+  end,
+
+  refresh_events = {fk.AfterCardsMove},
+  can_refresh = Util.TrueFunc,
+  on_refresh = function(self, event, target, player, data)
+    local room = player.room
+    for _, move in ipairs(data) do
+      if move.from == player.id then
+        for _, info in ipairs(move.moveInfo) do
+          if Fk:getCardById(info.cardId):getMark("@@appease") > 0 then
+            room:setCardMark(Fk:getCardById(info.cardId), "@@appease", 0)
+            room:removePlayerMark(player, "@huaiyuan")
+            data.extra_data = data.extra_data or {}
+            local _dat = data.extra_data.huaiyuan_effect or {}
+            _dat[tostring(player.id)] = (_dat[tostring(player.id)] or 0) + 1
+            data.extra_data.huaiyuan_effect = _dat
+          end
+        end
       end
     end
   end,
@@ -2814,6 +2822,7 @@ local huaiyuan_active = fk.CreateActiveSkill{
     room:setPlayerMark(player, "huaiyuan_active", self.interaction.data)
   end,
 }
+huaiyuan:addRelatedSkill(huaiyuan_effect)
 Fk:addSkill(huaiyuan_active)
 huaiyuan:addRelatedSkill(huaiyuan_maxcards)
 huaiyuan:addRelatedSkill(huaiyuan_attackrange)
