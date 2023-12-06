@@ -996,13 +996,13 @@ local qin__changsheng = fk.CreateTriggerSkill{
       data.fixedResponseTimes["jink"] = 2
     else
       for _, p in ipairs(room.alive_players) do
-        room:handleAddLoseSkills(p, "battle_royal&", nil, false, true)
+        room:handleAddLoseSkills(p, "qin__changsheng&", nil, false, true)
       end
       local turn = room.logic:getCurrentEvent():findParent(GameEvent.Turn)
       if turn ~= nil then
         turn:addCleaner(function()
           for _, p in ipairs(room.alive_players) do
-            room:handleAddLoseSkills(p, "-battle_royal&", nil, false, true)
+            room:handleAddLoseSkills(p, "-qin__changsheng&", nil, false, true)
           end
         end)
       end
@@ -1016,6 +1016,48 @@ local qin__changsheng_targetmod = fk.CreateTargetModSkill{
     return player:hasSkill(self) and card and card.trueName == "slash"
   end,
 }
+local qin__changsheng_viewas = fk.CreateViewAsSkill{
+  name = "qin__changsheng&",
+  pattern = "slash,jink",
+  prompt = "#qin__changsheng&",
+  frequency = Skill.Compulsory,  --锁定转化技！
+  interaction = function()
+    local names = {}
+    if Fk.currentResponsePattern == nil and Self:canUse(Fk:cloneCard("slash")) then
+      table.insertIfNeed(names, "slash")
+    else
+      for _, name in ipairs({"slash", "jink"}) do
+        if Fk.currentResponsePattern and Exppattern:Parse(Fk.currentResponsePattern):match(Fk:cloneCard(name)) then
+          table.insertIfNeed(names, name)
+        end
+      end
+    end
+    if #names == 0 then return end
+    return UI.ComboBox {choices = names}
+  end,
+  card_filter = function(self, to_select, selected)
+    return #selected == 0 and Fk:getCardById(to_select).trueName == "peach"
+  end,
+  view_as = function(self, cards)
+    if #cards ~= 1 or self.interaction.data == nil then return end
+    local card = Fk:cloneCard(self.interaction.data)
+    card.skillName = self.name
+    card:addSubcard(cards[1])
+    return card
+  end,
+}
+local qin__changsheng_prohibit = fk.CreateProhibitSkill{
+  name = "#qin__changsheng_prohibit&",
+  prohibit_use = function(self, player, card)
+    if not player:hasSkill(self, true) or not card or card.trueName ~= "peach" or #card.skillNames > 0 then return false end
+    local subcards = Card:getIdList(card)
+    return #subcards > 0 and table.every(subcards, function(id)
+      return table.contains(player:getCardIds("h"), id)
+    end)
+  end
+}
+qin__changsheng_viewas:addRelatedSkill(qin__changsheng_prohibit)
+Fk:addSkill(qin__changsheng_viewas)
 qin__wuan:addRelatedSkill(qin__wuan_targetmod)
 qin__shashen:addRelatedSkill(qin__shashen_trigger)
 qin__changsheng:addRelatedSkill(qin__changsheng_targetmod)
@@ -1023,7 +1065,6 @@ baiqi:addSkill(qin__wuan)
 baiqi:addSkill(qin__shashen)
 baiqi:addSkill(qin__fachu)
 baiqi:addSkill(qin__changsheng)
-baiqi:addRelatedSkill("battle_royal&")
 Fk:loadTranslationTable{
   ["baiqi"] = "白起",
   ["qin__wuan"] = "武安",
@@ -1035,6 +1076,10 @@ Fk:loadTranslationTable{
   ["qin__changsheng"] = "常胜",
   [":qin__changsheng"] = "锁定技，你使用【杀】无距离限制且需额外使用一张【闪】抵消；你的回合内，所有角色的【桃】均只能当【杀】或【闪】使用或打出。",
   ["#qin__shashen"] = "杀神：你可以将一张手牌当【杀】使用或打出",
+  ["qin__changsheng&"] = "常胜",
+  ["#qin__changsheng_prohibit&"] = "常胜",
+  [":qin__changsheng&"] = "锁定技，白起的回合内，所有角色的【桃】均只能当【杀】或【闪】使用或打出。",
+  ["#qin__changsheng&"] = "常胜：将【桃】当【杀】或【闪】使用或打出",
 
   ["$qin__wuan"] = "受封武安，为国尽忠！",
   ["$qin__shashen"] = "战场，是我的舞台！",
@@ -1122,7 +1167,7 @@ local qin__fenshu = fk.CreateTriggerSkill{
   name = "qin__fenshu$",
   anim_type = "control",
   frequency = Skill.Compulsory,
-  events = {fk.PreCardEffect},
+  events = {fk.CardUsing},
   can_trigger = function(self, event, target, player, data)
     if player:hasSkill(self) and data.card:isCommonTrick() and player:usedSkillTimes(self.name, Player.HistoryTurn) == 0 then
       local to = player.room:getPlayerById(data.from)
@@ -1131,7 +1176,7 @@ local qin__fenshu = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     player.room:doIndicate(player.id, {data.from})
-    return true
+    data.tos ={}
   end,
 }
 yingzheng:addSkill(qin__yitong)
