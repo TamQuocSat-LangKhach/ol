@@ -1741,6 +1741,101 @@ Fk:loadTranslationTable{
   ["~mazhong"] = "丞相不在，你们竟然……",
 }
 
+local ol__mazhong = General(extension, "ol__mazhong", "shu", 4)
+local ol__fuman = fk.CreateActiveSkill{
+  name = "ol__fuman",
+  anim_type = "support",
+  card_num = 1,
+  target_num = 1,
+  can_use = function(self, player)
+    return not player:isKongcheng()
+  end,
+  card_filter = function(self, to_select, selected)
+    return #selected == 0 and Fk:currentRoom():getCardArea(to_select) ~= Player.Equip
+  end,
+  target_filter = function(self, to_select, selected)
+    return #selected == 0 and to_select ~= Self.id and Fk:currentRoom():getPlayerById(to_select):getMark("ol__fuman-phase") == 0
+  end,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    local target = room:getPlayerById(effect.tos[1])
+    room:setPlayerMark(target, "ol__fuman-phase", 1)
+    room:moveCards({
+      from = player.id,
+      ids = effect.cards,
+      to = target.id,
+      toArea = Card.PlayerHand,
+      moveReason = fk.ReasonGive,
+      skillName = self.name,
+    })
+  end,
+}
+local ol__fuman_trigger = fk.CreateTriggerSkill{
+  name = "#ol__fuman_trigger",
+  main_skill = ol__fuman,
+  mute = true,
+  events = {fk.CardUseFinished},
+  can_trigger = function(self, event, target, player, data)
+    if player:hasSkill(self.name, true) and data.card.trueName == "slash" then
+      local subcards = data.card:isVirtual() and data.card.subcards or {data.card.id}
+      return #subcards == 1 and Fk:getCardById(subcards[1]):getMark("@@ol__fuman") > 0
+    end
+  end,
+  on_cost = Util.TrueFunc,
+  on_use = function(self, event, target, player, data)
+    player:broadcastSkillInvoke("ol__fuman")
+    player.room:notifySkillInvoked(player, "ol__fuman", "drawcard")
+    local num = (data.damageDealt) and 2 or 1
+    player:drawCards(num, "ol__fuman")
+  end,
+
+  refresh_events = {fk.AfterCardsMove},
+  can_refresh = Util.TrueFunc,
+  on_refresh = function(self, event, target, player, data)
+    local room = player.room
+    for _, move in ipairs(data) do
+      if move.skillName == "ol__fuman" and move.moveReason == fk.ReasonGive and move.to == player.id then
+        for _, info in ipairs(move.moveInfo) do
+          if table.contains(player:getCardIds("h"), info.cardId) then
+            room:setCardMark(Fk:getCardById(info.cardId), "@@ol__fuman", 1)
+            Fk:filterCard(info.cardId, player)
+          end
+        end
+      end
+      if move.toArea ~= Card.Processing and move.skillName ~= "ol__fuman" then
+        for _, info in ipairs(move.moveInfo) do
+          if Fk:getCardById(info.cardId):getMark("@@ol__fuman") > 0 then
+            room:setCardMark(Fk:getCardById(info.cardId), "@@ol__fuman", 0)
+          end
+        end
+      end
+    end
+  end,
+}
+local ol__fuman_filter = fk.CreateFilterSkill{
+  name = "#ol__fuman_filter",
+  card_filter = function(self, card, player)
+    return card:getMark("@@ol__fuman") > 0
+  end,
+  view_as = function(self, card)
+    return Fk:cloneCard("slash", card.suit, card.number)
+  end,
+}
+ol__fuman:addRelatedSkill(ol__fuman_filter)
+ol__fuman:addRelatedSkill(ol__fuman_trigger)
+ol__mazhong:addSkill(ol__fuman)
+Fk:loadTranslationTable{
+  ["ol__mazhong"] = "马忠",
+  ["ol__fuman"] = "抚蛮",
+  [":ol__fuman"] = "出牌阶段每名角色限一次，你可以将一张手牌交给一名其他角色，此牌视为【杀】直到离开其手牌区。当其使用此【杀】结算后，你摸一张牌；若此【杀】造成过伤害，你改为摸两张牌。",
+  ["@@ol__fuman"] = "抚蛮",
+  ["#ol__fuman_filter"] = "抚蛮",
+
+  ["$ol__fuman1"] = "国家兴亡，匹夫有责。",
+  ["$ol__fuman2"] = "跟着我们丞相走，错不了！",
+  ["~ol__mazhong"] = "南中不定，后患无穷……",
+}
+
 local heqi = General(extension, "heqi", "wu", 4)
 local function QizhouChange(player, num, skill_name)
   local room = player.room
