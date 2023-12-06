@@ -3245,10 +3245,11 @@ local function Dohuashen(player)
   local old_skill = player:getMark("@ol_ex__huashen_skill")
   if old_skill ~= 0 then room:handleAddLoseSkills(player, "-"..old_skill) end
   local skills = {}
-  for _, s in ipairs(general.skills) do
+  for _, skillName in ipairs(general:getSkillNameList()) do
+    local s = Fk.skills[skillName]
     if not (s.lordSkill or s.switchSkillName or s.frequency > 3 ) then
       if #s.attachedKingdom == 0 or table.contains(s.attachedKingdom, player.kingdom) then
-        table.insert(skills, s.name)
+        table.insert(skills, skillName)
       end
     end
   end
