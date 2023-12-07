@@ -151,14 +151,14 @@ local ranji = fk.CreateTriggerSkill{
   on_use = function (self, event, target, player, data)
     local room = player.room
     if self.cost_data == 1 then
-      room:handleAddLoseSkills(player, "kunfen", nil, true, false)
+      room:handleAddLoseSkills(player, "kunfenEx", nil, true, false)
     elseif self.cost_data == 2 then
       room:handleAddLoseSkills(player, "zhaxiang", nil, true, false)
     elseif self.cost_data == 3 then
-      room:handleAddLoseSkills(player, "kunfen|zhaxiang", nil, true, false)
+      room:handleAddLoseSkills(player, "kunfenEx|zhaxiang", nil, true, false)
     end
     local choices = {}
-    if player:getHandcardNum() ~= player:getMaxCards() then
+    if player:getHandcardNum() < player.maxHp then
       table.insert(choices, "ranji-draw")
     end
     if player:isWounded() then
@@ -166,12 +166,7 @@ local ranji = fk.CreateTriggerSkill{
     end
     local choice = room:askForChoice(player, choices, self.name)
     if choice == "ranji-draw" then
-      local n = player:getHandcardNum() - player:getMaxCards()
-      if n > 0 then
-        room:askForDiscard(player, n, n, false, self.name, false)
-      else
-        player:drawCards(-n, self.name)
-      end
+      player:drawCards(player.maxHp - player:getHandcardNum(), self.name)
     else
       room:recover({
         who = player,
@@ -207,7 +202,7 @@ Fk:addSkill(zhuri_viewas)
 ranji:addRelatedSkill(ranji_trigger)
 jiangwei:addSkill(zhuri)
 jiangwei:addSkill(ranji)
-jiangwei:addRelatedSkill("kunfen")
+jiangwei:addRelatedSkill("kunfenEx")
 jiangwei:addRelatedSkill("zhaxiang")
 Fk:loadTranslationTable{
   ["olmou__jiangwei"] = "谋姜维",
@@ -215,7 +210,7 @@ Fk:loadTranslationTable{
   [":zhuri"] = "你的阶段结束时，若你本阶段手牌数变化过，你可以拼点：若你赢，你可以使用一张拼点牌；若你没赢，你失去1点体力或本技能直到回合结束。",
   ["ranji"] = "燃己",
   [":ranji"] = "限定技，结束阶段，若你本回合使用过牌的阶段数：不小于体力值，你可以获得〖困奋〗；不大于体力值，你可以获得〖诈降〗。若如此做，"..
-  "你将手牌数或体力值调整至上限，然后你不能回复体力，直到你杀死角色。",
+  "你将手牌数或体力值调整至体力上限，然后你不能回复体力，直到你杀死角色。",
   ["#zhuri-choose"] = "逐日：你可以拼点，若赢，你可以使用一张拼点牌；若没赢，你失去1点体力或本回合失去〖逐日〗",
   ["zhuri_viewas"] = "逐日",
   ["#zhuri-use"] = "逐日：你可以使用其中一张牌",
