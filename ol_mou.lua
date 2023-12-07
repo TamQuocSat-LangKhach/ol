@@ -14,7 +14,7 @@ local zhuri = fk.CreateTriggerSkill{
   anim_type = "control",
   events = {fk.EventPhaseEnd},
   can_trigger = function(self, event, target, player, data)
-    if target == player and player:hasSkill(self) and player.phase > 1 and player.phase < 8 then
+    if target == player and player:hasSkill(self) and player.phase > 1 and player.phase < 8 and not player:isKongcheng() then
       return #player.room.logic:getEventsOfScope(GameEvent.MoveCards, 1, function(e)
         for _, move in ipairs(e.data) do
           if move.to == player.id and move.toArea == Card.PlayerHand then
@@ -70,7 +70,7 @@ local zhuri = fk.CreateTriggerSkill{
           special_cards = player.special_cards,
         })
         if success then
-          local card = Fk.skills["zhuri_viewas"]:viewAs(dat.cards)
+          local card = Fk:getCardById(dat.cards[1])
           local use = {
             from = player.id,
             tos = table.map(dat.targets, function(id) return{id} end),
@@ -99,7 +99,7 @@ local zhuri_viewas = fk.CreateViewAsSkill{
   name = "zhuri_viewas",
   expand_pile = "zhuri",
   card_filter = function(self, to_select, selected)
-    return Self:getPileNameOfId(to_select) == "zhuri"
+    return #selected == 0 and Self:getPileNameOfId(to_select) == "zhuri" and Self:canUse(Fk:getCardById(to_select))
   end,
   view_as = function(self, cards)
     if #cards ~= 1 then return end
@@ -150,7 +150,6 @@ local ranji = fk.CreateTriggerSkill{
   end,
   on_use = function (self, event, target, player, data)
     local room = player.room
-    room:setPlayerMark(player, self.name, 1)
     if self.cost_data == 1 then
       room:handleAddLoseSkills(player, "kunfen", nil, true, false)
     elseif self.cost_data == 2 then
@@ -181,6 +180,7 @@ local ranji = fk.CreateTriggerSkill{
         skillName = self.name
       })
     end
+    room:setPlayerMark(player, self.name, 1)
   end,
 }
 local ranji_trigger = fk.CreateTriggerSkill{
