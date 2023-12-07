@@ -1202,8 +1202,8 @@ local kenshang = fk.CreateViewAsSkill{
     local targets = table.map(table.filter(room:getOtherPlayers(player), function(p)
       return not player:isProhibited(p, use.card) end), Util.IdMapper)
     local n = math.min(#targets, #use.card.subcards)
-    local tos = room:askForChoosePlayers(player, targets, n, n, "#kenshang-choose:::"..n, self.name, false)
-    if #tos > 0 then
+    local tos = room:askForChoosePlayers(player, targets, n, n, "#kenshang-choose:::"..n, self.name, true)
+    if #tos == n then
       table.forEach(TargetGroup:getRealTargets(use.tos), function (id)
         TargetGroup:removeTarget(use.tos, id)
       end)
@@ -1216,26 +1216,27 @@ local kenshang = fk.CreateViewAsSkill{
     return player:hasSkill(self) and not response
   end,
 }
-local kenshang_record = fk.CreateTriggerSkill{
-  name = "#kenshang_record",
-
-  refresh_events = {fk.CardUseFinished},
-  can_refresh = function(self, event, target, player, data)
-    return target == player and table.contains(data.card.skillNames, "kenshang") and data.damageDealt
-  end,
-  on_refresh = function(self, event, target, player, data)
-    local n = 0
-    for _, p in ipairs(player.room:getAllPlayers()) do
-      if data.damageDealt[p.id] then
-        n = n + data.damageDealt[p.id]
+local kenshang_delay = fk.CreateTriggerSkill{
+  name = "#kenshang_delay",
+  mute = true,
+  events = {fk.CardUseFinished},
+  can_trigger = function(self, event, target, player, data)
+    if target == player and table.contains(data.card.skillNames, "kenshang") and data.damageDealt then
+      local n = 0
+      for _, p in ipairs(player.room.players) do
+        if data.damageDealt[p.id] then
+          n = n + data.damageDealt[p.id]
+        end
       end
+      return #data.card.subcards > n
     end
-    if #data.card.subcards > n then
-      player:drawCards(1, "kenshang")
-    end
+  end,
+  on_cost = Util.TrueFunc,
+  on_use = function(self, event, target, player, data)
+    player:drawCards(1, "kenshang")
   end,
 }
-kenshang:addRelatedSkill(kenshang_record)
+kenshang:addRelatedSkill(kenshang_delay)
 maxiumatie:addSkill("mashu")
 maxiumatie:addSkill(kenshang)
 Fk:loadTranslationTable{
