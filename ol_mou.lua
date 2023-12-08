@@ -218,8 +218,8 @@ Fk:loadTranslationTable{
   ["#ranji1-invoke"] = "燃己：是否获得〖困奋〗？",
   ["#ranji2-invoke"] = "燃己：是否获得〖诈降〗？",
   ["#ranji3-invoke"] = "燃己：是否获得〖困奋〗和〖诈降〗？",
-  ["ranji-draw"] = "将手牌调整至手牌上限",
-  ["ranji-recover"] = "将体力调整至体力上限",
+  ["ranji-draw"] = "将手牌摸至手牌上限",
+  ["ranji-recover"] = "回复体力至体力上限",
 }
 
 return extension

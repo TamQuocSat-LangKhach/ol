@@ -880,19 +880,184 @@ Fk:loadTranslationTable{
   ["~shangyang"] = "无人可依，变法难行……",
 }
 
---local zhangyiq = General(extension, "zhangyiq", "qin", 3)
+local zhangyiq = General(extension, "zhangyiq", "qin", 3)
+local qin__lianheng = fk.CreateTriggerSkill{
+  name = "qin__lianheng",
+  anim_type = "control",
+  frequency = Skill.Compulsory,
+  events = {fk.GameStart, fk.EventPhaseStart, fk.RoundStart},
+  can_trigger = function(self, event, target, player, data)
+    if player:hasSkill(self) then
+      if event == fk.GameStart then
+        return true
+      elseif event == fk.EventPhaseStart then
+        return target == player and player.phase == Player.Start and #player.room:getOtherPlayers(player) > 0
+      elseif event == fk.RoundStart then
+        return table.find(player.room.alive_players, function(p) return not p.chained end)
+      end
+    end
+  end,
+  on_use = function (self, event, target, player, data)
+    local room = player.room
+    if event == fk.GameStart then
+      local to = table.random(room:getOtherPlayers(player))
+      room:doIndicate(player.id, {to.id})
+      room:setPlayerMark(to, "@@qin__lianheng", 1)
+    elseif event == fk.EventPhaseStart then
+      local to = table.filter(room.alive_players, function(p) return p:getMark("@@qin__lianheng") > 0 end)
+      local tos = table.simpleClone(room:getOtherPlayers(player))
+      if #to > 0 then
+        room:setPlayerMark(to[1], "@@qin__lianheng", 0)
+        table.removeOne(tos, to[1])
+      end
+      if #tos > 0 then
+        to = table.random(tos)
+        room:doIndicate(player.id, {to.id})
+        room:setPlayerMark(to, "@@qin__lianheng", 1)
+      end
+    elseif event == fk.RoundStart then
+      for _, p in ipairs(room.alive_players) do
+        if not p.dead and not p.chained then
+          room:doIndicate(player.id, {p.id})
+          p:setChainState(true)
+        end
+      end
+    end
+  end,
+}
+local qin__lianheng_prohibit = fk.CreateProhibitSkill{
+  name = "#qin__lianheng_prohibit",
+  is_prohibited = function(self, from, to, card)
+    if from:getMark("@@qin__lianheng") > 0 then
+      return to.chained
+    end
+  end,
+}
+local qin__xichu = fk.CreateTriggerSkill{
+  name = "qin__xichu",
+  anim_type = "defensive",
+  events = {fk.TargetConfirming},
+  can_trigger = function(self, event, target, player, data)
+    if target == player and player:hasSkill(self.name) and data.card.trueName == "slash" then
+      local room = player.room
+      return not room:getPlayerById(data.from).dead and
+        table.find(room:getOtherPlayers(player), function(p)
+        return room:getPlayerById(data.from):inMyAttackRange(p) and
+          table.contains(U.getUseExtraTargets(room, data, false, true), p.id)
+      end)
+    end
+  end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    local targets = table.map(table.filter(room:getOtherPlayers(player), function(p)
+      return room:getPlayerById(data.from):inMyAttackRange(p) and
+        table.contains(U.getUseExtraTargets(room, data, false, true), p.id)
+    end), Util.IdMapper)
+    local tos = room:askForChoosePlayers(player, targets, 1, 1, "#qin__xichu-choose::"..data.from, self.name, true)
+    if #tos > 0 then
+      self.cost_data = tos[1]
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    if #room:askForDiscard(room:getPlayerById(data.from), 1, 1, true, self.name, true, ".|6",
+      "#qin__xichu-discard:"..player.id..":"..self.cost_data) == 0 then
+      TargetGroup:removeTarget(data.targetGroup, player.id)
+      TargetGroup:pushTargets(data.targetGroup, self.cost_data)
+    end
+  end,
+}
+local qin__xiongbian = fk.CreateTriggerSkill{
+  name = "qin__xiongbian",
+  anim_type = "defensive",
+  frequency = Skill.Compulsory,
+  events = {fk.TargetConfirmed},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self) and data.card:isCommonTrick()
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local judge = {
+      who = player,
+      reason = self.name,
+      pattern = ".|6",
+    }
+    room:judge(judge)
+    if judge.card.number == 6 then
+      return true
+    end
+  end,
+}
+local qin__qiaoshe = fk.CreateTriggerSkill{
+  name = "qin__qiaoshe",
+  anim_type = "control",
+  events = {fk.AskForRetrial},
+  can_trigger = function(self, event, target, player, data)
+    return player:hasSkill(self)
+  end,
+  on_cost = function(self, event, target, player, data)
+    local choices = {}
+    for i = -3, 3, 1 do
+      if data.card.number + i > 0 and data.card.number + i < 14 then
+        if i <= 0 then
+          table.insert(choices, tostring(i))
+        else
+          table.insert(choices, "+"..tostring(i))
+        end
+      end
+    end
+    local choice = player.room:askForChoice(player, choices, self.name, "#qin__qiaoshe-choice::"..target.id)
+    if choice ~= "0" then
+      self.cost_data = tonumber(choice)
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    room:doIndicate(player.id, {target.id})
+    data.extra_data = data.extra_data or {}
+    data.extra_data.qin__qiaoshe = data.extra_data.qin__qiaoshe or {}
+    table.insert(data.extra_data.qin__qiaoshe, self.cost_data)
+  end,
+
+  refresh_events = {fk.FinishJudge},
+  can_refresh = function (self, event, target, player, data)
+    return target == player and data.extra_data and data.extra_data.qin__qiaoshe
+  end,
+  on_refresh = function (self, event, target, player, data)
+    local num = data.card.number
+    if num == 0 then return end
+    for _, n in ipairs(data.extra_data.qin__qiaoshe) do
+      num = num + n
+    end
+    local new_card = Fk:cloneCard(data.card.name, data.card.suit, num)
+    new_card.id = data.card.id
+    new_card.skillName = self.name
+    data.card = new_card
+  end,
+}
+qin__lianheng:addRelatedSkill(qin__lianheng_prohibit)
+zhangyiq:addSkill(qin__lianheng)
+zhangyiq:addSkill(qin__xichu)
+zhangyiq:addSkill(qin__xiongbian)
+zhangyiq:addSkill(qin__qiaoshe)
 Fk:loadTranslationTable{
   ["zhangyiq"] = "张仪",
   ["qin__lianheng"] = "连横",
   [":qin__lianheng"] = "锁定技，游戏开始时，你令随机一名其他角色获得一枚“横”标记。准备阶段，弃置“横”标记，然后令随机另一名其他角色获得“横”标记。"..
   "每轮开始时，横置所有角色。有“横”标记的角色使用牌不能指定武将牌横置的角色为目标。",
   ["qin__xichu"] = "戏楚",
-  [":qin__xichu"] = "锁定技，当你成为【杀】的目标时，若使用者攻击范围内有其他角色，其选择一项：1.弃置一张点数为6的牌；2.你将此【杀】转移给其攻击范围内"..
-  "另一名角色。",
+  [":qin__xichu"] = "当你成为【杀】的目标时，你可以指定使用者攻击范围内一名不为此【杀】目标的角色，令使用者选择一项：1.弃置一张点数为6的牌；"..
+  "2.你将此【杀】转移给此角色。",
   ["qin__xiongbian"] = "雄辩",
   [":qin__xiongbian"] = "锁定技，当你成为普通锦囊牌的目标时，你判定，若点数为6，此牌无效。",
   ["qin__qiaoshe"] = "巧舌",
   [":qin__qiaoshe"] = "一名角色判定结果生效前，你可以令点数增加或减少至多3。",
+  ["@@qin__lianheng"] = "横",
+  ["#qin__xichu-choose"] = "戏楚：选择一名角色，令 %dest 弃置一张点数6的牌，或将【杀】转移给你选择的角色",
+  ["#qin__xichu-discard"] = "戏楚：你需弃置一张点数6的牌，否则对 %src 使用的【杀】转移给 %dest",
+  ["#qin__qiaoshe-choice"] = "巧舌：你可以令 %dest 的判定结果增加或减少至多3",
 
   ["$qin__lianheng"] = "连横之术，可破合纵之策。",
   ["$qin__xichu"] = "楚王欲贪，此戏方成。",
