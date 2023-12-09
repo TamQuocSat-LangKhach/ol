@@ -1492,6 +1492,95 @@ Fk:loadTranslationTable{
   ["$ol__xiaoxi2"] = "两军交战，勇者为胜！",
   ["~ol__hansui"] = "马侄儿为何……啊！",
 }
+
+local ol__fanchou = General(extension, "ol__fanchou", "qun", 4)
+local ol__xingluan = fk.CreateTriggerSkill{
+  name = "ol__xingluan",
+  anim_type = "drawcard",
+  events = {fk.CardUseFinished},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self) and player.phase == Player.Play and
+    player:usedSkillTimes(self.name, Player.HistoryPhase) == 0
+  end,
+  on_cost = function (self, event, target, player, data)
+    local room = player.room
+    local choices = {"ol__xingluan_draw"}
+    local can_give, can_get
+    for _, p in ipairs(room.alive_players) do
+      if p ~= player and not p:isNude() then
+        can_give = true
+      end
+      if table.find(p:getCardIds("ej"), function(id) return Fk:getCardById(id).number == 6 end) then
+        can_get = true
+      end
+    end
+    if can_get then table.insert(choices, 1, "ol__xingluan_get") end
+    if can_give then table.insert(choices, "ol__xingluan_give") end
+    table.insert(choices, "Cancel")
+    local choice = room:askForChoice(player, choices, self.name)
+    if choice ~= "Cancel" then
+      self.cost_data = choice
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local choice = self.cost_data
+    if choice == "ol__xingluan_get" then
+      local targets = table.filter(room.alive_players, function (p)
+        return table.find(p:getCardIds("ej"), function(id) return Fk:getCardById(id).number == 6 end)
+      end)
+      if #targets == 0 then return false end
+      local tos = player.room:askForChoosePlayers(player, table.map(targets, Util.IdMapper), 1, 1, "#ol__xingluan-choose", self.name, false)
+      if #tos > 0 then
+        local to = room:getPlayerById(tos[1])
+        local cards = table.filter(to:getCardIds("ej"), function(id) return Fk:getCardById(id).number == 6 end)
+        local card = room:askForCardChosen(player, to, { card_data = { { "$Prey", cards }  } }, self.name, "#ol__xingluan-get")
+        room:obtainCard(player, card, false, fk.ReasonPrey)
+      end
+    elseif choice == "ol__xingluan_draw" then
+      local cards = room:getCardsFromPileByRule(".|6", 2)
+      if #cards > 0 then
+        local card = room:askForCardChosen(player, player, { card_data = { { "$Prey", cards }  } }, self.name, "#ol__xingluan-get")
+        room:obtainCard(player, card, false, fk.ReasonPrey)
+      else
+        player:drawCards(1, self.name)
+      end
+    else
+      local targets = table.filter(room:getOtherPlayers(player), function (p)
+        return not p:isNude()
+      end)
+      if #targets == 0 then return false end
+      local tos = player.room:askForChoosePlayers(player, table.map(targets, Util.IdMapper), 1, 1, "#ol__xingluan-choose2", self.name, false)
+      if #tos > 0 then
+        local to = room:getPlayerById(tos[1])
+        if #room:askForDiscard(to, 1, 1, true, self.name, true, ".|6", "#ol__xingluan-discard:"..player.id) == 0 then
+          local cards = room:askForCard(to, 1, 1, true, self.name, false, ".", "#ol__xingluan-give:"..player.id)
+          room:obtainCard(player, cards[1], false, fk.ReasonGive)
+        end
+      end
+    end
+  end,
+}
+ol__fanchou:addSkill(ol__xingluan)
+Fk:loadTranslationTable{
+  ["ol__fanchou"] = "樊稠",
+  ["ol__xingluan"] = "兴乱",
+  [":ol__xingluan"] = "每阶段限一次，当你于出牌阶段使用一张牌后，你可以选择一项：1.获得场上一张点数为6的牌；2.从牌堆里的两张点数为6的牌中选择一张获得（没有则你摸一张牌）；3.令一名其他角色选择弃置一张点数为6的牌或交给你一张牌。",
+  ["ol__xingluan_get"] = "获得场上一张点数为6的牌",
+  ["ol__xingluan_draw"] = "牌堆里的两张点数为6的牌获得一张",
+  ["ol__xingluan_give"] = "令一名其他角色弃一张点数为6或交给你一张牌",
+  ["#ol__xingluan-choose"] = "兴乱：获得一名角色装备区或判定区一张点数为6的牌",
+  ["#ol__xingluan-get"] = "兴乱：获得其中一张",
+  ["#ol__xingluan-choose2"] = "兴乱：令一名其他角色选择弃置一张点数为6的牌或交给你一张牌",
+  ["#ol__xingluan-discard"] = "兴乱：弃置一张点数为6，否则须交给 %src 一张牌",
+  ["#ol__xingluan-give"] = "兴乱：交给 %src 一张牌",
+
+  ["$ol__xingluan1"] = "大兴兵争，长安当乱。",
+  ["$ol__xingluan2"] = "勇猛兴军，乱世当立。",
+  ["~ol__fanchou"] = "唉，稚然，疑心甚重。",
+}
+
 local ol__zhangbao = General(extension, "ol__zhangbao", "qun", 3)
 local ol__zhoufu = fk.CreateActiveSkill{
   name = "ol__zhoufu",
