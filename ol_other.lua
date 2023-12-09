@@ -1688,9 +1688,9 @@ local qin__daqi = fk.CreateTriggerSkill{
   name = "qin__daqi",
   anim_type = "support",
   frequency = Skill.Compulsory,
-  events = {fk.EventPhaseChanging},
+  events = {fk.TurnStart},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self) and data.from == Player.RoundStart and player:getMark("@qin__daqi") > 9
+    return target == player and player:hasSkill(self) and player:getMark("@qin__daqi") > 9
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
@@ -1889,15 +1889,9 @@ local qin__youmie_prohibit = fk.CreateProhibitSkill{
 local qin__youmie_record = fk.CreateTriggerSkill{
   name = "#qin__youmie_record",
 
-  refresh_events = {fk.EventPhaseChanging, fk.Death},
+  refresh_events = {fk.TurnStart, fk.Death},
   can_refresh = function(self, event, target, player, data)
-    if target == player and player:getMark("qin__youmie") ~= 0 then
-      if event == fk.EventPhaseChanging then
-        return data.from == Player.RoundStart
-      else
-        return true
-      end
-    end
+    return target == player and player:getMark("qin__youmie") ~= 0
   end,
   on_refresh = function(self, event, target, player, data)
     local room = player.room

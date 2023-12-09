@@ -2525,11 +2525,9 @@ local huiqi = fk.CreateTriggerSkill{
   name = "huiqi",
   frequency = Skill.Wake,
   anim_type = "offensive",
-  events = {fk.EventPhaseChanging},
+  events = {fk.TurnEnd},
   can_trigger = function(self, event, target, player, data)
-    return player:hasSkill(self) and
-      data.to == Player.NotActive and
-      player:usedSkillTimes(self.name, Player.HistoryGame) == 0
+    return player:hasSkill(self) and player:usedSkillTimes(self.name, Player.HistoryGame) == 0
   end,
   can_wake = function(self, event, target, player, data)
     local room = player.room

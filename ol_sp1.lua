@@ -1953,7 +1953,8 @@ local xiashu = fk.CreateTriggerSkill{
     return target == player and player:hasSkill(self) and player.phase == Player.Play and not player:isKongcheng()
   end,
   on_cost = function(self, event, target, player, data)
-    local to = player.room:askForChoosePlayers(player, table.map(player.room:getOtherPlayers(player), Util.IdMapper), 1, 1, "#xiashu-choose", self.name, true)
+    local to = player.room:askForChoosePlayers(player, table.map(player.room:getOtherPlayers(player, false), Util.IdMapper),
+    1, 1, "#xiashu-choose", self.name, true)
     if #to > 0 then
       self.cost_data = to[1]
       return true
@@ -1962,15 +1963,15 @@ local xiashu = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     local to = room:getPlayerById(self.cost_data)
-    local dummy = Fk:cloneCard("dilu")
-    dummy:addSubcards(player.player_cards[Player.Hand])
-    room:obtainCard(to, dummy, false, fk.ReasonGive)
-    local cards = room:askForCard(to, 1, #to.player_cards[Player.Hand], false, self.name, false, ".", "#xiashu-card:"..player.id)
-    if #cards == 0 then
-      cards = table.random(to.player_cards[Player.Hand])
-    end
+    room:moveCardTo(player:getCardIds(Player.Hand), Player.Hand, to, fk.ReasonGive, self.name, nil, false, player.id)
+    if to:isKongcheng() then return false end
+    local cards = room:askForCard(to, 1, to:getHandcardNum(), false, self.name, false, ".", "#xiashu-card:"..player.id)
     to:showCards(cards)
-    local choice = room:askForChoice(player, {"xiashu_show", "xiashu_noshow"}, self.name, "#xiashu-choice::"..to.id)
+    local choices = {"xiashu_show"}
+    if #cards < to:getHandcardNum() then
+      table.insert(choices, "xiashu_noshow")
+    end
+    local choice = room:askForChoice(player, choices, self.name, "#xiashu-choice::"..to.id, false, {"xiashu_show", "xiashu_noshow"})
     local dummy2 = Fk:cloneCard("dilu")
     if choice == "xiashu_show" then
       dummy2:addSubcards(cards)
@@ -1987,53 +1988,61 @@ local xiashu = fk.CreateTriggerSkill{
 local kuanshi = fk.CreateTriggerSkill{
   name = "kuanshi",
   anim_type = "defensive",
-  events = {fk.EventPhaseStart, fk.DamageInflicted},
+  events = {fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
-    if event == fk.EventPhaseStart then
-      return target == player and player:hasSkill(self) and player.phase == Player.Finish
-    else
-      return player:hasSkill(self.name, true) and data.damage > 1 and target:getMark(self.name) == player.id
-    end
+    return target == player and player:hasSkill(self) and player.phase == Player.Finish
   end,
   on_cost = function(self, event, target, player, data)
-    if event == fk.EventPhaseStart then
-      local to = player.room:askForChoosePlayers(player, table.map(player.room:getAlivePlayers(), Util.IdMapper), 1, 1, "#kuanshi-choose", self.name, true, true)
-      if #to > 0 then
-        self.cost_data = to[1]
-        return true
-      end
-    else
+    local to = player.room:askForChoosePlayers(player, table.map(player.room.alive_players, Util.IdMapper),
+    1, 1, "#kuanshi-choose", self.name, true, true)
+    if #to > 0 then
+      self.cost_data = to[1]
       return true
     end
   end,
   on_use = function(self, event, target, player, data)
-    local room = player.room
-    if event == fk.EventPhaseStart then
-      room:setPlayerMark(room:getPlayerById(self.cost_data), self.name, player.id)
-    else
-      room:setPlayerMark(target, self.name, 0)
-      room:setPlayerMark(player, "kuanshi_trigger", 1)
-      return true
-    end
+    player.room:setPlayerMark(player, self.name, self.cost_data)
   end,
 
-  refresh_events = {fk.EventPhaseChanging},
+  refresh_events = {fk.TurnStart},
   can_refresh = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name, true) and data.from == Player.RoundStart
+    return target == player and player:getMark(self.name) ~= 0
   end,
   on_refresh = function(self, event, target, player, data)
-    local room = player.room
-    for _, p in ipairs(room:getAlivePlayers()) do
-      if p:getMark(self.name) ~= 0 then
-        room:setPlayerMark(p, self.name, 0)
-      end
+    player.room:setPlayerMark(player, self.name, 0)
+  end,
+}
+
+local kuanshi_delay = fk.CreateTriggerSkill{
+  name = "#kuanshi_delay",
+  mute = true,
+  events = {fk.DamageInflicted, fk.EventPhaseStart},
+  --FIXME:跳过摸牌阶段的时机应该是TurnStart的
+  can_trigger = function(self, event, target, player, data)
+    if event == fk.DamageInflicted then
+      return data.damage > 1 and target and not target.dead and not player.dead and player:getMark("kuanshi") == target.id
+    elseif event == fk.EventPhaseStart then
+      return not player.dead and player == target and player.phase == Player.Start and player:getMark("@@kuanshi") > 0
     end
-    if player:getMark("kuanshi_trigger") > 0 then
-      room:setPlayerMark(player, "kuanshi_trigger", 0)
+  end,
+  on_cost = Util.TrueFunc,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    if event == fk.DamageInflicted then
+      room:notifySkillInvoked(player, kuanshi.name, "defensive")
+      player:broadcastSkillInvoke(kuanshi.name)
+      room:setPlayerMark(player, "kuanshi", 0)
+      room:setPlayerMark(player, "@@kuanshi", 1)
+      return true
+    elseif event == fk.EventPhaseStart then
+      room:notifySkillInvoked(player, kuanshi.name, "negative")
+      player:broadcastSkillInvoke(kuanshi.name)
+      room:setPlayerMark(player, "@@kuanshi", 0)
       player:skip(Player.Draw)
     end
   end,
 }
+kuanshi:addRelatedSkill(kuanshi_delay)
 kanze:addSkill(xiashu)
 kanze:addSkill(kuanshi)
 Fk:loadTranslationTable{
@@ -2049,6 +2058,7 @@ Fk:loadTranslationTable{
   ["xiashu_noshow"] = "获得未展示的牌",
   ["#xiashu-choice"] = "下书：选择获得 %dest 的牌",
   ["#kuanshi-choose"] = "宽释：你可以选择一名角色，直到你下回合开始，防止其下次受到超过1点的伤害",
+  ["#kuanshi_delay"] = "宽释",
   ["@@kuanshi"] = "宽释",
 
   ["$xiashu1"] = "吾有密信，特来献于将军。",
@@ -3350,7 +3360,7 @@ local lingren = fk.CreateTriggerSkill{
 local lingren_trigger = fk.CreateTriggerSkill {
   name = "#lingren_trigger",
   mute = true,
-  events = {fk.DamageCaused, fk.EventPhaseChanging},
+  events = {fk.DamageCaused, fk.TurnStart},
   can_trigger = function(self, event, target, player, data)
     if target == player then
       if event == fk.DamageCaused then
@@ -3361,7 +3371,7 @@ local lingren_trigger = fk.CreateTriggerSkill {
             use.extra_data.lingren[1] == player.id and use.extra_data.lingren[2] == data.to.id
         end
       else
-        return data.from == Player.RoundStart and player:getMark("lingren") ~= 0
+        return player:getMark("lingren") ~= 0
       end
     end
   end,
@@ -3397,9 +3407,7 @@ local fujian = fk.CreateTriggerSkill {
     local to = table.random(room:getOtherPlayers(player))
     room:doIndicate(player.id, {to.id})
     local cards = table.random(to.player_cards[Player.Hand], n)
-    room:fillAG(player, cards)
-    room:delay(5000)
-    room:closeAG(player)
+    U.viewCards(player, cards, self.name)
   end,
 }
 lingren:addRelatedSkill(lingren_trigger)

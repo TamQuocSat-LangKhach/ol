@@ -977,15 +977,15 @@ local juguan = fk.CreateViewAsSkill{
 local juguan_record = fk.CreateTriggerSkill{
   name = "#juguan_record",
 
-  refresh_events = {fk.Damage, fk.Damaged, fk.EventPhaseChanging, fk.DrawNCards},
+  refresh_events = {fk.Damage, fk.Damaged, fk.TurnStart, fk.DrawNCards},
   can_refresh = function(self, event, target, player, data)
     if target == player and player:hasSkill(self.name, true) then
       if event == fk.Damage then
         return data.card and table.contains(data.card.skillNames, "juguan")
       elseif event == fk.Damaged then
         return data.from and player:getMark("@@juguan") ~= 0 and table.contains(player:getMark("@@juguan"), data.from.id)
-      elseif event == fk.EventPhaseChanging then
-        return data.from == Player.RoundStart and player:getMark("@@juguan") ~= 0
+      elseif event == fk.TurnStart then
+        return player:getMark("@@juguan") ~= 0
       else
         return player:getMark("juguan") > 0
       end
@@ -1006,7 +1006,7 @@ local juguan_record = fk.CreateTriggerSkill{
       else
         room:setPlayerMark(player, "@@juguan", mark)
       end
-    elseif event == fk.EventPhaseChanging then
+    elseif event == fk.TurnStart then
       room:setPlayerMark(player, "@@juguan", 0)
       room:addPlayerMark(player, "juguan", 1)
     else
@@ -1180,12 +1180,12 @@ local bixiong = fk.CreateTriggerSkill{
     end
   end,
 
-  refresh_events = {fk.AfterCardsMove, fk.EventPhaseChanging},
+  refresh_events = {fk.AfterCardsMove, fk.TurnStart},
   can_refresh = function(self, event, target, player, data)
     if event == fk.AfterCardsMove then
       return player:hasSkill(self) and player.phase == Player.Discard
     else
-      return target == player and player:getMark("@bixiong") ~= 0 and data.from == Player.RoundStart
+      return target == player and player:getMark("@bixiong") ~= 0
     end
   end,
   on_refresh = function(self, event, target, player, data)
@@ -3731,11 +3731,11 @@ local tongxie = fk.CreateTriggerSkill{
     end
   end,
 
-  refresh_events = {fk.EventPhaseChanging, fk.Death},
+  refresh_events = {fk.TurnStart, fk.Death},
   can_refresh = function(self, event, target, player, data)
     if target == player then
-      if event == fk.EventPhaseChanging then
-        return player:getMark("tongxie_src") ~= 0 and data.from == Player.RoundStart
+      if event == fk.TurnStart then
+        return player:getMark("tongxie_src") ~= 0
       else
         return player:getMark("@@tongxie") ~= 0
       end
@@ -3743,7 +3743,7 @@ local tongxie = fk.CreateTriggerSkill{
   end,
   on_refresh = function(self, event, target, player, data)
     local room = player.room
-    if event == fk.EventPhaseChanging then
+    if event == fk.TurnStart then
       local tos = player:getMark("tongxie_src")
       room:setPlayerMark(player, "tongxie_src", 0)
       for _, id in ipairs(tos) do
@@ -3901,18 +3901,18 @@ local shanduan = fk.CreateTriggerSkill{
     end
   end,
 
-  refresh_events = {fk.EventPhaseChanging, fk.DrawNCards},
+  refresh_events = {fk.TurnStart, fk.DrawNCards},
   can_refresh = function(self, event, target, player, data)
     if target == player then
-      if event == fk.EventPhaseChanging then
-        return data.from == Player.RoundStart
+      if event == fk.TurnStart then
+        return true
       else
         return player:getMark("shanduan1-turn") > 0
       end
     end
   end,
   on_refresh = function(self, event, target, player, data)
-    if event == fk.EventPhaseChanging then
+    if event == fk.TurnStart then
       local nums = player:getMark(self.name)
       if nums == 0 or #nums < 4 then
         player.room:setPlayerMark(player, self.name, {1, 2, 3, 4})

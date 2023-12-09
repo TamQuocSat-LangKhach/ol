@@ -525,12 +525,10 @@ local naxiang = fk.CreateTriggerSkill{
     room:setPlayerMark(player, self.name, mark)
   end,
 
-  refresh_events = {fk.EventPhaseChanging, fk.EventLoseSkill, fk.Death},
+  refresh_events = {fk.TurnStart, fk.EventLoseSkill, fk.Death},
   can_refresh = function(self, event, target, player, data)
     if target == player and player:getMark(self.name) ~= 0 then
-      if event == fk.EventPhaseChanging then
-        return data.from == Player.RoundStart
-      elseif event == fk.EventLoseSkill then
+      if event == fk.EventLoseSkill then
         return data == self
       else
         return true
@@ -1471,55 +1469,87 @@ local ciwei = fk.CreateTriggerSkill{
   anim_type = "control",
   events = {fk.CardUsing},
   can_trigger = function(self, event, target, player, data)
-    return player:hasSkill(self) and target ~= player and target.phase ~= Player.NotActive and target:getMark("ciwei-turn") == 2 and
-      (data.card.type == Card.TypeBasic or data.card:isCommonTrick()) and not player:isNude()
-  end,
-  on_cost = function(self, event, target, player, data)
-    return #player.room:askForDiscard(player, 1, 1, true, self.name, true, ".", "#ciwei-invoke::"..target.id..":"..data.card:toLogString()) > 0
-  end,
-  on_use = function(self, event, target, player, data)  --有目标则取消，无目标则无效
-    if data.card.name == "jink" or data.card.name == "nullification" then
-      data.toCard = nil
-      return true
-    else
-      table.forEach(TargetGroup:getRealTargets(data.tos), function (id)
-        TargetGroup:removeTarget(data.tos, id)
-      end)
+    if player:hasSkill(self) and target ~= player and target.phase ~= Player.NotActive and
+      (data.card.type == Card.TypeBasic or data.card:isCommonTrick()) and not player:isNude() then
+      local room = player.room
+      local use_event = room.logic:getCurrentEvent():findParent(GameEvent.UseCard, true)
+      if use_event == nil then return false end
+      local mark = U.getMark(target, "ciwei_record-turn")
+      if table.contains(mark, use_event.id) then
+        return #mark > 1 and mark[2] == use_event.id
+      end
+      if #mark > 1 then return false end
+      mark = {}
+      room.logic:getEventsOfScope(GameEvent.UseCard, 2, function(e)
+        local use = e.data[1]
+        if use.from == target.id then
+          table.insert(mark, e.id)
+          return true
+        end
+        return false
+      end, Player.HistoryTurn)
+      room:setPlayerMark(target, "ciwei_record-turn", mark)
+      return #mark > 1 and mark[2] == use_event.id
     end
   end,
-
-  refresh_events = {fk.CardUsing},
-  can_refresh = function(self, event, target, player, data)
-    return player:hasSkill(self, true) and target ~= player and target.phase ~= Player.NotActive
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    local cards = room:askForDiscard(player, 1, 1, true, self.name, true, ".",
+    "#ciwei-invoke::"..target.id..":"..data.card:toLogString(), true)
+    if #cards > 0 then
+      self.cost_data = cards
+      room:doIndicate(player.id, {target.id})
+      return true
+    end
   end,
-  on_refresh = function(self, event, target, player, data)
-    player.room:addPlayerMark(target, "ciwei-turn", 1)
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    room:throwCard(self.cost_data, self.name, player, player)
+    data.tos = {}
+    room:sendLog{ type = "#CardNullifiedBySkill", from = target.id, arg = self.name, arg2 = data.card:toLogString() }
   end,
 }
 local caiyuan = fk.CreateTriggerSkill{
   name = "caiyuan",
   anim_type = "drawcard",
   frequency = Skill.Compulsory,
-  events = {fk.EventPhaseChanging},
+  events = {fk.TurnEnd},
   can_trigger = function(self, event, target, player, data)
-    if target == player and player:hasSkill(self) and data.to == Player.NotActive then
-      if player:getMark(self.name) > 0 then
+    if target == player and player:hasSkill(self) then
+      local end_id = player:getMark("caiyuan_record-turn")
+      if end_id < 0 then return false end
+      local room = player.room
+      if end_id == 0 then
+        local turn_event = room.logic:getCurrentEvent():findParent(GameEvent.Turn, true)
+        if turn_event == nil then return false end
+        U.getEventsByRule(room, GameEvent.Turn, 1, function(e)
+          if e.data[1] == player and e.id ~= turn_event.id then
+            end_id = e.id
+            return true
+          end
+          return false
+        end, end_id)
+      end
+      if end_id == 0 then
+        room:setPlayerMark(player, "caiyuan_record-turn", -1)
+        return false
+      end
+      U.getEventsByRule(room, GameEvent.ChangeHp, 1, function(e)
+        if e.data[1] == player and e.data[2] < 0 then
+          end_id = -1
+          room:setPlayerMark(player, "caiyuan_record-turn", -1)
+          return true
+        end
+        return false
+      end, end_id)
+      if end_id > 0 then
+        room:setPlayerMark(player, "caiyuan_record-turn", room.logic.current_event_id)
         return true
-      else
-        player.room:setPlayerMark(player, self.name, 1)
       end
     end
   end,
   on_use = function(self, event, target, player, data)
     player:drawCards(2, self.name)
-  end,
-
-  refresh_events = {fk.HpChanged},
-  can_refresh = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self, true) and data.num < 0
-  end,
-  on_refresh = function(self, event, target, player, data)
-    player.room:setPlayerMark(player, self.name, 0)
   end,
 }
 yanghuiyu:addSkill(huirong)
@@ -1530,7 +1560,7 @@ Fk:loadTranslationTable{
   ["huirong"] = "慧容",
   [":huirong"] = "<font color='red'>隐匿技（暂时无法生效）</font>，锁定技，你登场时，令一名角色将手牌摸或弃至体力值（至多摸至五张）。",
   ["ciwei"] = "慈威",
-  [":ciwei"] = "其他角色于其回合内使用第二张牌时，若此牌为基本牌或普通锦囊牌，你可弃置一张牌令此牌无效或取消所有目标。",
+  [":ciwei"] = "其他角色于其回合内使用第二张牌时，若此牌为基本牌或普通锦囊牌，你可弃置一张牌令此牌无效（取消所有目标）。",
   ["caiyuan"] = "才媛",
   [":caiyuan"] = "锁定技，回合结束前，若你于上回合结束至今未扣减过体力，你摸两张牌。",
   ["#ciwei-invoke"] = "慈威：你可以弃置一张牌，取消 %dest 使用的%arg",

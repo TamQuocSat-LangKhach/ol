@@ -46,9 +46,9 @@ local ol_ex__qinxue = fk.CreateTriggerSkill{
 local ol_ex__botu = fk.CreateTriggerSkill{
   name = "ol_ex__botu",
   anim_type = "drawcard",
-  events = {fk.EventPhaseChanging},
+  events = {fk.TurnEnd},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self) and data.to == Player.NotActive
+    return target == player and player:hasSkill(self)
     and player:usedSkillTimes(self.name, Player.HistoryRound) < math.min(3, #player.room.alive_players)
     and type(player:getMark("ol_ex__botu-turn")) == "table" and #player:getMark("ol_ex__botu-turn") == 4
   end,
