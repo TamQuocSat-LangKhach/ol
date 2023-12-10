@@ -50,28 +50,47 @@ local ol_ex__botu = fk.CreateTriggerSkill{
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(self)
     and player:usedSkillTimes(self.name, Player.HistoryRound) < math.min(3, #player.room.alive_players)
-    and type(player:getMark("ol_ex__botu-turn")) == "table" and #player:getMark("ol_ex__botu-turn") == 4
+    and type(player:getMark("@ol_ex__botu-turn")) == "table" and #player:getMark("@ol_ex__botu-turn") == 4
   end,
   on_use = function(self, event, target, player, data)
     player:gainAnExtraTurn()
   end,
 
-  refresh_events = {fk.AfterCardsMove},
+  refresh_events = {fk.TurnStart, fk.AfterCardsMove},
   can_refresh = function(self, event, target, player, data)
-    return player.phase ~= Player.NotActive
+    if event == fk.TurnStart then
+      return player == target
+    else
+      return player.room.current == player and not player.dead and
+      type(player:getMark("@ol_ex__botu-turn")) == "table" and #player:getMark("@ol_ex__botu-turn") < 4
+    end
   end,
   on_refresh = function(self, event, target, player, data)
     local room = player.room
-    local suitsRecorded = U.getMark(player, "ol_ex__botu-turn")
-    for _, move in ipairs(data) do
-      if move.toArea == Card.DiscardPile then
-        for _, info in ipairs(move.moveInfo) do
-          table.insertIfNeed(suitsRecorded, Fk:getCardById(info.cardId):getSuitString(true))
+    if event == fk.TurnStart then
+      if player:hasSkill(self.name, true) then
+        player.room:setPlayerMark(player, "@ol_ex__botu-turn", {})
+      elseif player:usedSkillTimes(self.name, Player.HistoryRound) > 0 then
+        player:setSkillUseHistory(self.name)
+      end
+    else
+      local suitsRecorded = U.getMark(player, "@ol_ex__botu-turn")
+      local mark_change = false
+      for _, move in ipairs(data) do
+        if move.toArea == Card.DiscardPile then
+          for _, info in ipairs(move.moveInfo) do
+            local suit = Fk:getCardById(info.cardId):getSuitString(true)
+            if not table.contains(suitsRecorded, suit) then
+              mark_change = true
+              table.insert(suitsRecorded, suit)
+            end
+          end
         end
       end
+      if mark_change then
+        room:setPlayerMark(player, "@ol_ex__botu-turn", suitsRecorded)
+      end
     end
-    room:setPlayerMark(player, "ol_ex__botu-turn", suitsRecorded)
-    room:setPlayerMark(player, "@ol_ex__botu-turn", player:hasSkill(self.name, true) and #suitsRecorded > 0 and suitsRecorded or 0)
   end,
 }
 lvmeng:addSkill("keji")
@@ -619,7 +638,7 @@ local ol_ex__piaoling_delay = fk.CreateTriggerSkill{
   events = {fk.FinishJudge},
   mute = true,
   can_trigger = function(self, event, target, player, data)
-    return target == player and data.card.suit == Card.Heart and data.reason == ol_ex__piaoling.name
+    return target == player and not player.dead and data.card.suit == Card.Heart and data.reason == ol_ex__piaoling.name
       and player.room:getCardArea(data.card.id) == Card.Processing
   end,
   on_cost = Util.TrueFunc,
@@ -1379,7 +1398,7 @@ local ol_ex__luanji = fk.CreateViewAsSkill{
   pattern = "archery_attack",
   prompt = "#ol_ex__luanji-viewas",
   card_filter = function(self, to_select, selected)
-    if #selected == 1 then 
+    if #selected == 1 then
       return Fk:currentRoom():getCardArea(to_select) ~= Player.Equip and Fk:getCardById(to_select).suit == Fk:getCardById(selected[1]).suit
     elseif #selected == 2 then
       return false
@@ -1491,6 +1510,7 @@ local ol_ex__duanliang = fk.CreateViewAsSkill{
   name = "ol_ex__duanliang",
   anim_type = "control",
   pattern = "supply_shortage",
+  prompt = "#ol_ex__duanliang-viewas",
   card_filter = function(self, to_select, selected)
     return #selected == 0 and Fk:getCardById(to_select).color == Card.Black and Fk:getCardById(to_select).type ~= Card.TypeTrick
   end,
@@ -2026,6 +2046,7 @@ local ol_ex__jiuchi = fk.CreateViewAsSkill{
   name = "ol_ex__jiuchi",
   anim_type = "offensive",
   pattern = "analeptic",
+  prompt = "#ol_ex__jiuchi-viewas",
   card_filter = function(self, to_select, selected)
     return #selected == 0 and Fk:getCardById(to_select).suit == Card.Spade and Fk:currentRoom():getCardArea(to_select) ~= Player.Equip
   end,
@@ -2242,7 +2263,6 @@ local ol_ex__luanwu = fk.CreateActiveSkill{
     end
   end,
 }
-
 local ol_ex__weimu = fk.CreateTriggerSkill{
   name = "ol_ex__weimu",
   anim_type = "defensive",
@@ -2280,7 +2300,8 @@ Fk:loadTranslationTable{
   [":ol_ex__luanwu"] = "限定技，出牌阶段，你可选择所有其他角色，这些角色各需对包括距离最小的另一名角色在内的角色使用【杀】，否则失去1点体力。最后你可视为使用普【杀】。",
   ["ol_ex__weimu"] = "帷幕",
   ["#ol_ex__weimu_trigger"] = "帷幕",
-  [":ol_ex__weimu"] = "锁定技，①你不是黑色锦囊牌的合法目标。②当你于回合内受到伤害时，你防止此伤害，摸2X张牌（X为伤害值）。",
+  [":ol_ex__weimu"] = "锁定技，①你不是黑色锦囊牌的合法目标。②当你于回合内受到伤害时，你防止此伤害，摸2X张牌（X为伤害值）。"..
+  '<br /><font color="red">（村：在装备【藤甲】的场合火攻自己只能摸两张牌）</font>',
 
   ["#ol_ex__luanwu-active"] = "发动 乱武，所有其他角色需要对距离最近的角色出杀，否则失去1点体力",
   ["#ol_ex__luanwu-use"] = "乱武：你需要对距离最近的一名角色使用一张【杀】，否则失去1点体力",
@@ -2430,7 +2451,7 @@ local ol_ex__tuntian_delay = fk.CreateTriggerSkill{
   events = {fk.FinishJudge},
   mute = true,
   can_trigger = function(self, event, target, player, data)
-    return target == player and data.card.suit ~= Card.Heart and data.reason == ol_ex__tuntian.name
+    return target == player and not player.dead and data.card.suit ~= Card.Heart and data.reason == ol_ex__tuntian.name
       and player.room:getCardArea(data.card.id) == Card.Processing
   end,
   on_cost = Util.TrueFunc,
@@ -2468,7 +2489,7 @@ local ol_ex__jixi = fk.CreateViewAsSkill{
   name = "ol_ex__jixi",
   anim_type = "control",
   pattern = "snatch",
-  prompt = "ol_ex__jixi-viewas",
+  prompt = "#ol_ex__jixi-viewas",
   expand_pile = "ol_ex__dengai_field",
   card_filter = function(self, to_select, selected)
     return #selected == 0 and Self:getPileNameOfId(to_select) == "ol_ex__dengai_field"
@@ -2507,7 +2528,7 @@ Fk:loadTranslationTable{
   [":ol_ex__jixi"] = "你可以将一张“田”当【顺手牵羊】使用。",
 
   ["ol_ex__dengai_field"] = "田",
-  ["ol_ex__jixi-viewas"] = "发动急袭，将一张“田”转化为【顺手牵羊】使用",
+  ["#ol_ex__jixi-viewas"] = "发动 急袭，将一张“田”转化为【顺手牵羊】使用",
 
   ["$ol_ex__tuntian1"] = "兵农一体，以屯养战。",
   ["$ol_ex__tuntian2"] = "垦田南山，志在西川。",
@@ -2521,7 +2542,7 @@ Fk:loadTranslationTable{
 local ol_ex__tiaoxin = fk.CreateActiveSkill{
   name = "ol_ex__tiaoxin",
   anim_type = "control",
-  prompt = "ol_ex__tiaoxin-active",
+  prompt = "#ol_ex__tiaoxin-active",
   card_num = 0,
   target_num = 1,
   can_use = function(self, player)
@@ -2595,7 +2616,7 @@ Fk:loadTranslationTable{
   ["ol_ex__zhiji"] = "志继",
   [":ol_ex__zhiji"] = "觉醒技，准备阶段或结束阶段，若你没有手牌，你回复1点体力或摸两张牌，然后减1点体力上限，获得“观星”。",
 
-  ["ol_ex__tiaoxin-active"] = "发动挑衅，令一名角色对你出【杀】，否则你弃置其一张牌",
+  ["#ol_ex__tiaoxin-active"] = "发动挑衅，令一名角色对你出【杀】，否则你弃置其一张牌",
   ["#ol_ex__tiaoxin-use"] = "挑衅：对 %src 使用一张【杀】，否则其弃置你一张牌",
 
   ["$ol_ex__tiaoxin1"] = "会闻用师，观衅而动。",
