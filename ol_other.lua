@@ -189,7 +189,7 @@ Fk:loadTranslationTable{
 }
 
 local lvbu3 = General(extension, "hulao__godlvbu3", "god", 4)
-lvbu3.hidden = true
+--lvbu3.hidden = true
 
 local shenqu = fk.CreateTriggerSkill{
   name = "shenqu",
@@ -553,8 +553,9 @@ local jieliang_trigger = fk.CreateTriggerSkill{
 }
 local quanjiu = fk.CreateFilterSkill{
   name = "quanjiu",
-  card_filter = function(self, card, player)
-    return player:hasSkill(self) and card.trueName == "analeptic"  --没有酗酒-_-||？
+  card_filter = function(self, card, player, isJudgeEvent)
+    return player:hasSkill(self) and card.trueName == "analeptic" and
+    (table.contains(player.player_cards[Player.Hand], card.id) or isJudgeEvent)
   end,
   view_as = function(self, card)
     return Fk:cloneCard("slash", card.suit, card.number)

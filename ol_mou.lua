@@ -129,7 +129,7 @@ local ranji = fk.CreateTriggerSkill{
       local use = e.data[1]
       if use.from == player.id then
         for _, phase_id in ipairs(phase_ids) do
-          if #phase_id == 2 and e.id > phase_id[1] and e.id < phase_id[2] then
+          if #phase_id == 2 and e.id > phase_id[1] and (e.id < phase_id[2] or phase_id[2] == -1) then
             table.insertIfNeed(record, phase_id[1])
           end
         end

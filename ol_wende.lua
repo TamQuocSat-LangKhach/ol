@@ -758,7 +758,7 @@ local ol__caozhao_record = fk.CreateTriggerSkill{
 local ol__caozhao_filter = fk.CreateFilterSkill{
   name = "#ol__caozhao_filter",
   card_filter = function(self, card, player)
-    return card:getMark("@@ol__caozhao") ~= 0
+    return card:getMark("@@ol__caozhao") ~= 0 and table.contains(player.player_cards[Player.Hand], card.id)
   end,
   view_as = function(self, card)
     return Fk:cloneCard(card:getMark("@@ol__caozhao"), card.suit, card.number)
@@ -1714,7 +1714,7 @@ local choufa_trigger = fk.CreateTriggerSkill{
 local choufa_filter = fk.CreateFilterSkill{
   name = "#choufa_filter",
   card_filter = function(self, card, player)
-    return card:getMark("@@choufa-turn") > 0
+    return card:getMark("@@choufa-turn") > 0 and table.contains(player.player_cards[Player.Hand], card.id)
   end,
   view_as = function(self, card)
     return Fk:cloneCard("slash", card.suit, card.number)

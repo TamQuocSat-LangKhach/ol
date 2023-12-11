@@ -433,16 +433,18 @@ local ol__wushen = fk.CreateTriggerSkill{
     return target == player and player:hasSkill(self) and data.card.trueName == "slash" and data.card.suit == Card.Heart
   end,
   on_use = function(self, event, target, player, data)
+    if not data.extraUse then
+      data.extraUse = true
+      player:addCardUseHistory(data.card.trueName, -1)
+    end
     data.disresponsiveList = table.map(player.room.alive_players, Util.IdMapper)
   end,
 }
 local ol__wushen_filter = fk.CreateFilterSkill{
   name = "#ol__wushen_filter",
-  frequency = Skill.Compulsory,
   card_filter = function(self, to_select, player)
-    return player:hasSkill(self) and to_select.suit == Card.Heart and
-    not table.contains(player.player_cards[Player.Equip], to_select.id) and
-    not table.contains(player.player_cards[Player.Judge], to_select.id)
+    return player:hasSkill(ol__wushen) and to_select.suit == Card.Heart and
+    table.contains(player.player_cards[Player.Hand], to_select.id)
   end,
   view_as = function(self, to_select)
     local card = Fk:cloneCard("slash", Card.Heart, to_select.number)
@@ -467,7 +469,7 @@ ol__godguanyu:addSkill("wuhun")
 Fk:loadTranslationTable {
   ["ol__godguanyu"] = "神关羽",
   ["ol__wushen"] = "武神",
-  [":ol__wushen"] = "锁定技，你的<font color='red'>♥</font>手牌视为【杀】；你使用<font color='red'>♥</font>【杀】无距离与次数限制且不能被响应。",
+  [":ol__wushen"] = "锁定技，你的<font color='red'>♥</font>手牌视为【杀】；你使用<font color='red'>♥</font>【杀】无距离与次数限制、不计次数且不能被响应。",
   ["#ol__wushen_filter"] = "武神",
 
   ["$ol__wushen1"] = "千里追魂，一刀索命。",

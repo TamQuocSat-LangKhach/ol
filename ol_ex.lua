@@ -600,8 +600,9 @@ local ol_ex__tianxiang = fk.CreateTriggerSkill{
 local ol_ex__hongyan = fk.CreateFilterSkill{
   name = "ol_ex__hongyan",
   frequency = Skill.Compulsory,
-  card_filter = function(self, to_select, player)
-    return to_select.suit == Card.Spade and player:hasSkill(self)
+  card_filter = function(self, to_select, player, isJudgeEvent)
+    return to_select.suit == Card.Spade and player:hasSkill(self) and
+    (table.contains(player:getCardIds("he"), to_select.id) or isJudgeEvent)
   end,
   view_as = function(self, to_select)
     return Fk:cloneCard(to_select.name, Card.Heart, to_select.number)
@@ -672,12 +673,15 @@ xiaoqiao:addSkill(ol_ex__piaoling)
 Fk:loadTranslationTable{
   ["ol_ex__xiaoqiao"] = "界小乔",
   ["ol_ex__tianxiang"] = "天香",
-  [":ol_ex__tianxiang"] = "当你受到伤害时，你可弃置一张<font color='red'>♥</font>牌并选择一名其他角色。你防止此伤害，选择：1.令来源对其造成1点普通伤害，其摸X张牌（X为其已损失的体力值且至多为5）；2.令其失去1点体力，其获得牌堆或弃牌堆中你以此法弃置的牌。",
+  [":ol_ex__tianxiang"] = "当你受到伤害时，你可弃置一张<font color='red'>♥</font>牌并选择一名其他角色。你防止此伤害，"..
+  "选择：1.令来源对其造成1点普通伤害，其摸X张牌（X为其已损失的体力值且至多为5）；2.令其失去1点体力，其获得牌堆或弃牌堆中你以此法弃置的牌。",
   ["ol_ex__hongyan"] = "红颜",
-  [":ol_ex__hongyan"] = "锁定技，①你的♠牌视为<font color='red'>♥</font>牌。②若你的装备区里有<font color='red'>♥</font>牌，你的手牌上限初值改为体力上限。",
+  [":ol_ex__hongyan"] = "锁定技，①你的♠牌或你的♠判断牌的花色视为<font color='red'>♥</font>。"..
+  "②若你的装备区里有<font color='red'>♥</font>牌，你的手牌上限初值改为体力上限。",
   ["ol_ex__piaoling"] = "飘零",
   ["#ol_ex__piaoling_delay"] = "飘零",
-  [":ol_ex__piaoling"] = "结束阶段，你可判定，然后当判定结果确定后，若为<font color='red'>♥</font>，你选择：1.将判定牌置于牌堆顶；2.令一名角色获得判定牌，若其为你，你弃置一张牌。",
+  [":ol_ex__piaoling"] = "结束阶段，你可判定，然后当判定结果确定后，若为<font color='red'>♥</font>，你选择：1.将判定牌置于牌堆顶；"..
+  "2.令一名角色获得判定牌，若其为你，你弃置一张牌。",
 
   ["#ol_ex__tianxiang-choose"] = "天香：弃置一张<font color='red'>♥</font>手牌并选择一名其他角色",
   ["#ol_ex__tianxiang-choice"] = "天香：选择一项令 %dest 执行",
@@ -1036,8 +1040,9 @@ local ol_ex__ninge = fk.CreateTriggerSkill{
   events = {fk.Damaged},
   frequency = Skill.Compulsory,
   can_trigger = function(self, event, target, player, data)
-    if player:hasSkill(self) and (target == player or data.from == player)  then
-      return (data.extra_data or {}).secondDamageInTurn
+    if player:hasSkill(self) and (target == player or data.from == player) then
+      local events = U.getActualDamageEvents(player.room, 2, function(e) return e.data[1].to == target end)
+      return #events > 1 and events[2].data[1] == data
     end
   end,
   on_use = function(self, event, target, player, data)
@@ -1047,20 +1052,6 @@ local ol_ex__ninge = fk.CreateTriggerSkill{
     if not player.dead and not target.dead and #target:getCardIds{Player.Judge, Player.Equip} > 0 then
       local id = room:askForCardChosen(player, target, "ej", self.name)
       room:throwCard({id}, self.name, target, player)
-    end
-  end,
-
-  refresh_events = {fk.BeforeHpChanged},
-  can_refresh = function(self, event, target, player, data)
-    if data.damageEvent and player == target then
-      return true
-    end
-  end,
-  on_refresh = function(self, event, target, player, data)
-    player.room:addPlayerMark(player, "ol_ex__ninge-turn", 1)
-    if player:getMark("ol_ex__ninge-turn") == 2 then
-      data.damageEvent.extra_data = data.damageEvent.extra_data or {}
-      data.damageEvent.extra_data.secondDamageInTurn = true
     end
   end,
 }

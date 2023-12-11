@@ -1409,7 +1409,7 @@ local shilu = fk.CreateTriggerSkill{
 local shilu_filter = fk.CreateFilterSkill{
   name = "#shilu_filter",
   card_filter = function(self, card, player)
-    return card:getMark("@@shilu") > 0
+    return card:getMark("@@shilu") > 0 and table.contains(player.player_cards[Player.Hand], card.id)
   end,
   view_as = function(self, card)
     return Fk:cloneCard("slash", card.suit, card.number)

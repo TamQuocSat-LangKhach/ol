@@ -436,9 +436,8 @@ local shangshen = fk.CreateTriggerSkill{
 }
 local fenchai = fk.CreateFilterSkill{
   name = "fenchai",
-  card_filter = function(self, to_select, player)
-    return player:hasSkill(self) and player:getMark(self.name) ~= 0 and RoomInstance and
-      RoomInstance.logic:getCurrentEvent().event == GameEvent.Judge
+  card_filter = function(self, to_select, player, isJudgeEvent)
+    return player:hasSkill(self) and player:getMark(self.name) ~= 0 and isJudgeEvent
   end,
   view_as = function(self, to_select, player)
     local suit = Card.Heart

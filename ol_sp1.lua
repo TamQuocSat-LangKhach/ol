@@ -1815,7 +1815,7 @@ local ol__fuman_trigger = fk.CreateTriggerSkill{
 local ol__fuman_filter = fk.CreateFilterSkill{
   name = "#ol__fuman_filter",
   card_filter = function(self, card, player)
-    return card:getMark("@@ol__fuman") > 0
+    return card:getMark("@@ol__fuman") > 0 and table.contains(player.player_cards[Player.Hand], card.id)
   end,
   view_as = function(self, card)
     return Fk:cloneCard("slash", card.suit, card.number)
@@ -2675,9 +2675,9 @@ Fk:loadTranslationTable{
   ["#qianya_active"] = "谦雅",
   ["#qianya-invoke"] = "谦雅：你可以将任意张手牌交给一名其他角色",
   ["#shuimeng-choose"] = "说盟：你可以拼点，若赢，视为你使用【无中生有】；若没赢，视为其对你使用【过河拆桥】",
-  
-  ["$qianya1"] = "哎！将军过誉了！",
-	["$qianya2"] = "君子不妄动，动必有道。",
+
+	["$qianya1"] = "君子不妄动，动必有道。",
+  ["$qianya2"] = "哎！将军过誉了！",
 	["$shuimeng1"] = "你我唇齿相依，共御外敌，何如？	",
 	["$shuimeng2"] = "今兵薄势寡，可遣某为使往说之。",
   ["~sunqian"] = "恨不能……得见皇叔早登大宝，咳咳咳……",
