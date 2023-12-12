@@ -2225,7 +2225,7 @@ local zhenying = fk.CreateActiveSkill{
           pattern = ".",
           reason = self.name,
         }
-        p.request_data = json.encode({ "choose_cards_skill", "#zhenying-discard:::"..n, true, json.encode(extraData) })
+        p.request_data = json.encode({ "choose_cards_skill", "#zhenying-discard:::"..n, true, extraData })
       end
     end
     room:notifyMoveFocus(tos, self.name)

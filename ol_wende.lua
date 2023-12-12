@@ -961,7 +961,7 @@ local chuming = fk.CreateTriggerSkill{
             room:setPlayerMark(p, "chuming-tmp", {player.id, info[2]})
             local command = "AskForUseActiveSkill"
             room:notifyMoveFocus(p, "chuming_viewas")
-            local dat = {"chuming_viewas", "#chuming-invoke::"..player.id, false, json.encode({})}
+            local dat = {"chuming_viewas", "#chuming-invoke::"..player.id, false, {}}
             local result = room:doRequest(p, command, json.encode(dat))
             if result ~= "" then
               dat = json.decode(result)
@@ -3130,7 +3130,7 @@ local cihuang = fk.CreateTriggerSkill{
     local room = player.room
     local command = "AskForUseActiveSkill"
     room:notifyMoveFocus(player, "cihuang_active")
-    local dat = {"cihuang_active", "#cihuang-invoke::"..data.from, true, json.encode({})}
+    local dat = {"cihuang_active", "#cihuang-invoke::"..data.from, true, {}}
     local result = room:doRequest(player, command, json.encode(dat))
     if result == "" then return false end
     dat = json.decode(result)

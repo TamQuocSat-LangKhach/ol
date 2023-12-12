@@ -2509,7 +2509,7 @@ local qiuxin_trigger = fk.CreateTriggerSkill{
             room:setPlayerMark(player, "qiuxin-tmp", p.id)
             local command = "AskForUseActiveSkill"
             room:notifyMoveFocus(player, "qiuxin_viewas")
-            local dat = {"qiuxin_viewas", "#qiuxin-trick::"..p.id, true, json.encode({})}
+            local dat = {"qiuxin_viewas", "#qiuxin-trick::"..p.id, true, {}}
             local result = room:doRequest(player, command, json.encode(dat))
             room:setPlayerMark(player, "qiuxin-tmp", 0)
             if result ~= "" then

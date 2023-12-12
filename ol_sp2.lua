@@ -1944,7 +1944,7 @@ local juanxia = fk.CreateTriggerSkill{
     room:setPlayerMark(player, "juanxia-phase", {card.name, to.id})
     local command = "AskForUseActiveSkill"
     room:notifyMoveFocus(player, "juanxia_active")
-    local data = {"juanxia_active", "#juanxia-invoke::"..to.id, true, json.encode({})}
+    local data = {"juanxia_active", "#juanxia-invoke::"..to.id, true, {}}
     local result = room:doRequest(player, command, json.encode(data))
     if result ~= "" then
       data = json.decode(result)
