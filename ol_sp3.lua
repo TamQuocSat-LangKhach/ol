@@ -3394,7 +3394,7 @@ local fudao = fk.CreateTriggerSkill{
       player:drawCards(3, self.name)
       if player.dead or player:isNude() then return end
       local targets = table.map(room:getOtherPlayers(player), Util.IdMapper)
-      local tos, cards = room:askForChooseBoth(player, 1, 3, targets, 1, 1, nil, "#ol__fudao-give", self.name, false)
+      local tos, cards = room:askForChooseCardsAndPlayers(player, 1, 3, targets, 1, 1, nil, "#ol__fudao-give", self.name, false)
       local to = room:getPlayerById(tos[1])
       room:moveCardTo(cards, Card.PlayerHand, to, fk.ReasonGive, self.name, nil, false, player.id)
       if player.dead then return false end

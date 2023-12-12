@@ -459,7 +459,7 @@ local lixia = fk.CreateTriggerSkill{
     local room = player.room
     local all_choices = {"draw1", "lixia_draw:"..target.id}
     if target:isWounded() then table.insert(all_choices, "lixia_recover:"..target.id) end
-    local choices = room:askForCheck(player, all_choices, 1, 2, self.name, nil, false)
+    local choices = room:askForChoices(player, all_choices, 1, 2, self.name, nil, false)
     for _, choice in ipairs(choices) do
       if choice == "draw1" then
         player:drawCards(1, self.name)
