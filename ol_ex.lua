@@ -676,7 +676,7 @@ Fk:loadTranslationTable{
   [":ol_ex__tianxiang"] = "当你受到伤害时，你可弃置一张<font color='red'>♥</font>牌并选择一名其他角色。你防止此伤害，"..
   "选择：1.令来源对其造成1点普通伤害，其摸X张牌（X为其已损失的体力值且至多为5）；2.令其失去1点体力，其获得牌堆或弃牌堆中你以此法弃置的牌。",
   ["ol_ex__hongyan"] = "红颜",
-  [":ol_ex__hongyan"] = "锁定技，①你的♠牌或你的♠判断牌的花色视为<font color='red'>♥</font>。"..
+  [":ol_ex__hongyan"] = "锁定技，①你的♠牌或你的♠判定牌的花色视为<font color='red'>♥</font>。"..
   "②若你的装备区里有<font color='red'>♥</font>牌，你的手牌上限初值改为体力上限。",
   ["ol_ex__piaoling"] = "飘零",
   ["#ol_ex__piaoling_delay"] = "飘零",

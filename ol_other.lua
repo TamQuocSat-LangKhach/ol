@@ -881,7 +881,7 @@ Fk:loadTranslationTable{
   ["~shangyang"] = "无人可依，变法难行……",
 }
 
-local zhangyiq = General(extension, "zhangyiq", "qin", 3)
+local zhangyiq = General(extension, "zhangyiq", "qin", 4)
 local qin__lianheng = fk.CreateTriggerSkill{
   name = "qin__lianheng",
   anim_type = "control",
