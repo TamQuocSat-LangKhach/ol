@@ -1148,7 +1148,7 @@ local qin__changsheng = fk.CreateTriggerSkill{
   can_trigger = function(self, event, target, player, data)
     if target == player and player:hasSkill(self.name) then
       if event == fk.TargetSpecified then
-        return data.card.trueName == "slash"
+        return data.card.trueName == "slash" and data.firstTarget
       else
         return true
       end
@@ -1680,7 +1680,7 @@ local qin__shanwu = fk.CreateTriggerSkill{
       }
       room:judge(judge)
       if judge.card.color == Card.Red then
-        return true
+        data.tos = AimGroup:initAimGroup({})
       end
     end
   end,
@@ -1842,10 +1842,10 @@ local qin__taihou = fk.CreateTriggerSkill{
     local room = player.room
     local p = room:getPlayerById(data.from)
     if p.dead or p:isKongcheng() then
-      return true
+      data.tos = AimGroup:initAimGroup({})
     elseif #room:askForDiscard(p, 1, 1, false, self.name, true, ".|.|.|hand|.|"..data.card:getTypeString(),
       "#qin__taihou-card:::"..data.card:getTypeString()..":"..data.card:toLogString()) == 0 then
-      return true
+        data.tos = AimGroup:initAimGroup({})
     end
   end,
 }
