@@ -1159,20 +1159,14 @@ local ol_ex__jianchu = fk.CreateTriggerSkill{
         end
       end
     else
-      room:addPlayerMark(player, "ol_ex__jianchu_slash-phase", 1)
+      room:addPlayerMark(player, MarkEnum.SlashResidue.."-phase")
       data.disresponsive = true
     end
   end,
 }
-local ol_ex__jianchu_targetmod = fk.CreateTargetModSkill{
-  name = "#ol_ex__jianchu_targetmod",
-  residue_func = function(self, player, skill, scope, card)
-    return (skill.trueName == "slash_skill" and scope == Player.HistoryPhase) and player:getMark("ol_ex__jianchu_slash-phase") or 0
-  end,
-}
+
 local pangde = General(extension, "ol_ex__pangde", "qun", 4)
 pangde:addSkill("mashu")
-ol_ex__jianchu:addRelatedSkill(ol_ex__jianchu_targetmod)
 pangde:addSkill(ol_ex__jianchu)
 Fk:loadTranslationTable{
   ["ol_ex__pangde"] = "界庞德",

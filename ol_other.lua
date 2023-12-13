@@ -1573,6 +1573,7 @@ local qin__gaizhao = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     TargetGroup:removeTarget(data.targetGroup, player.id)
     TargetGroup:pushTargets(data.targetGroup, self.cost_data)
+    return true
   end,
 }
 local qin__haizhong = fk.CreateTriggerSkill{
@@ -1653,7 +1654,7 @@ local qin__shanwu = fk.CreateTriggerSkill{
   name = "qin__shanwu",
   mute = true,
   frequency = Skill.Compulsory,
-  events = {fk.TargetSpecified, fk.TargetConfirmed},
+  events = {fk.TargetSpecified, fk.TargetConfirming},
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(self) and data.card.trueName == "slash"
   end,
@@ -1681,6 +1682,7 @@ local qin__shanwu = fk.CreateTriggerSkill{
       room:judge(judge)
       if judge.card.color == Card.Red then
         data.tos = AimGroup:initAimGroup({})
+        return true
       end
     end
   end,
@@ -1785,7 +1787,7 @@ Fk:loadTranslationTable{
   ["zhaoji"] = "赵姬",
   ["qin__shanwu"] = "善舞",
   [":qin__shanwu"] = "锁定技，当你使用【杀】指定目标后，你判定，若为黑色，此【杀】不能被【闪】抵消；"..
-  "当你成为【杀】的目标后，你判定，若为红色，此【杀】无效。",
+  "当你成为【杀】的目标时，你判定，若为红色，此【杀】无效。",
   ["qin__daqi"] = "大期",
   [":qin__daqi"] = "①锁定技，当你使用或打出一张牌时、造成或受到1点伤害后，你获得1枚“期”标记。<br>②回合开始时，若“期”不小于10，"..
   "你弃置所有“期”，然后将体力回复至上限、将手牌摸至体力上限。",
@@ -1831,7 +1833,7 @@ local qin__taihou = fk.CreateTriggerSkill{
   name = "qin__taihou",
   anim_type = "defensive",
   frequency = Skill.Compulsory,
-  events = {fk.TargetConfirmed},
+  events = {fk.TargetConfirming},
   can_trigger = function(self, event, target, player, data)
     if target == player and player:hasSkill(self) and (data.card:isCommonTrick() or data.card.trueName == "slash") then
       local p = player.room:getPlayerById(data.from)
@@ -1840,12 +1842,10 @@ local qin__taihou = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local p = room:getPlayerById(data.from)
-    if p.dead or p:isKongcheng() then
-      data.tos = AimGroup:initAimGroup({})
-    elseif #room:askForDiscard(p, 1, 1, false, self.name, true, ".|.|.|hand|.|"..data.card:getTypeString(),
+    if #room:askForDiscard(room:getPlayerById(data.from), 1, 1, false, self.name, true, ".|.|.|hand|.|"..data.card:getTypeString(),
       "#qin__taihou-card:::"..data.card:getTypeString()..":"..data.card:toLogString()) == 0 then
-        data.tos = AimGroup:initAimGroup({})
+      data.tos = AimGroup:initAimGroup({})
+      return true
     end
   end,
 }
@@ -1951,7 +1951,7 @@ Fk:loadTranslationTable{
   ["qin__zhangzheng"] = "掌政",
   [":qin__zhangzheng"] = "锁定技，准备阶段，所有其他角色依次选择一项：1.弃置一张手牌；2.失去1点体力。",
   ["qin__taihou"] = "太后",
-  [":qin__taihou"] = "锁定技，当你成为男性角色使用【杀】或普通锦囊牌的目标后，其需选择一项：1.弃置一张相同类别的手牌；2.此牌无效。",
+  [":qin__taihou"] = "锁定技，当你成为男性角色使用【杀】或普通锦囊牌的目标时，其需选择一项：1.弃置一张相同类别的手牌；2.此牌无效。",
   ["qin__youmie"] = "诱灭",
   [":qin__youmie"] = "出牌阶段限一次，你可以将一张牌交给一名其他角色，直到你的下回合开始，该角色于其回合外不能使用或打出牌。",
   ["qin__yintui"] = "隐退",

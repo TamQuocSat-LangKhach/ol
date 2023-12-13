@@ -220,6 +220,16 @@ Fk:loadTranslationTable{
   ["#ranji3-invoke"] = "燃己：是否获得〖困奋〗和〖诈降〗？",
   ["ranji-draw"] = "将手牌摸至手牌上限",
   ["ranji-recover"] = "回复体力至体力上限",
+
+  ["$zhuri1"] = "效逐日之夸父，怀忠志而长存。",
+  ["$zhuri2"] = "知天命而不顺，履穷途而强为。",
+  ["$ranji1"] = "此身为薪，炬成灰亦昭大汉长明！",
+  ["$ranji2"] = "维之一腔骨血，可驱驰来北马否？",
+  ["$kunfenEx_olmou__jiangwei1"] = "",
+  ["$kunfenEx_olmou__jiangwei2"] = "",
+  ["$zhaxiang_olmou__jiangwei1"] = "",
+  ["$zhaxiang_olmou__jiangwei2"] = "",
+  ["~olmou__jiangwei"] = "姜维姜维……又将何为？",
 }
 
 return extension
