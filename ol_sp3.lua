@@ -4386,6 +4386,12 @@ Fk:loadTranslationTable{
   ["hezhong1"] = "大于",
   ["hezhong2"] = "小于",
   ["#hezhong-invoke"] = "和衷：是否令%arg多结算一次？",
+  
+  ["$yanru1"] = "国有宁日，民有丰年，大同也。",
+  ["$yanru2"] = "及臻厥成，天下晏如也。",
+  ["$hezhong1"] = "家和而万事兴，国亦如是。",
+  ["$hezhong2"] = "你我同殿为臣，理当协力齐心。",
+  ["~ol__feiyi"] = "今为小人所伤，皆酒醉之误……",
 }
 
 --local lukai = General(extension, "ol__lukai", "wu", 3)

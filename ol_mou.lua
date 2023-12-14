@@ -153,9 +153,9 @@ local ranji = fk.CreateTriggerSkill{
     if self.cost_data == 1 then
       room:handleAddLoseSkills(player, "kunfenEx", nil, true, false)
     elseif self.cost_data == 2 then
-      room:handleAddLoseSkills(player, "zhaxiang", nil, true, false)
+      room:handleAddLoseSkills(player, "ol_ex__zhaxiang", nil, true, false)
     elseif self.cost_data == 3 then
-      room:handleAddLoseSkills(player, "kunfenEx|zhaxiang", nil, true, false)
+      room:handleAddLoseSkills(player, "kunfenEx|ol_ex__zhaxiang", nil, true, false)
     end
     local choices = {}
     if player:getHandcardNum() < player.maxHp then
@@ -198,12 +198,49 @@ local ranji_trigger = fk.CreateTriggerSkill{
     end
   end,
 }
+local ol_ex__zhaxiang = fk.CreateTriggerSkill{
+  name = "ol_ex__zhaxiang",
+  anim_type = "drawcard",
+  frequency = Skill.Compulsory,
+  events = {fk.HpLost},
+  on_trigger = function(self, event, target, player, data)
+    for _ = 1, data.num do
+      if not player:hasSkill(self) then break end
+      self:doCost(event, target, player, data)
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    player:drawCards(3)
+    if player.phase == Player.Play then
+      local room = player.room
+      room:setPlayerMark(player, "@@ol_ex__zhaxiang-turn", 1)
+      room:addPlayerMark(player, MarkEnum.SlashResidue.."-turn")
+    end
+  end,
+
+  refresh_events = {fk.PreCardUse},
+  can_refresh = function(self, event, target, player, data)
+    return data.card.trueName == "slash" and data.card.color == Card.Red and player:getMark("@@ol_ex__zhaxiang-turn") > 0
+  end,
+  on_refresh = function(self, event, target, player, data)
+    data.disresponsiveList = table.map(player.room.alive_players, Util.IdMapper)
+  end,
+}
+local ol_ex__zhaxiang_targetmod = fk.CreateTargetModSkill{
+  name = "#ol_ex__zhaxiang_targetmod",
+  bypass_distances =  function(self, player, skill, card)
+    return card.trueName == "slash" and card.color == Card.Red and player:getMark("@@ol_ex__zhaxiang-turn") > 0
+  end,
+}
+
 Fk:addSkill(zhuri_viewas)
 ranji:addRelatedSkill(ranji_trigger)
+ol_ex__zhaxiang:addRelatedSkill(ol_ex__zhaxiang_targetmod)
 jiangwei:addSkill(zhuri)
 jiangwei:addSkill(ranji)
 jiangwei:addRelatedSkill("kunfenEx")
-jiangwei:addRelatedSkill("zhaxiang")
+jiangwei:addRelatedSkill(ol_ex__zhaxiang)
+
 Fk:loadTranslationTable{
   ["olmou__jiangwei"] = "谋姜维",
   ["zhuri"] = "逐日",
@@ -211,6 +248,9 @@ Fk:loadTranslationTable{
   ["ranji"] = "燃己",
   [":ranji"] = "限定技，结束阶段，若你本回合使用过牌的阶段数：不小于体力值，你可以获得〖困奋〗；不大于体力值，你可以获得〖诈降〗。若如此做，"..
   "你将手牌数或体力值调整至体力上限，然后你不能回复体力，直到你杀死角色。",
+  ["ol_ex__zhaxiang"] = "诈降",
+  [":ol_ex__zhaxiang"] = "锁定技，当你失去1点体力后，你摸三张牌，若在你的出牌阶段，"..
+  "你本回合你使用【杀】次数上限+1、使用红色【杀】无距离限制且不可被响应。",
   ["#zhuri-choose"] = "逐日：你可以拼点，若赢，你可以使用一张拼点牌；若没赢，你失去1点体力或本回合失去〖逐日〗",
   ["zhuri_viewas"] = "逐日",
   ["#zhuri-use"] = "逐日：你可以使用其中一张牌",
@@ -220,6 +260,7 @@ Fk:loadTranslationTable{
   ["#ranji3-invoke"] = "燃己：是否获得〖困奋〗和〖诈降〗？",
   ["ranji-draw"] = "将手牌摸至手牌上限",
   ["ranji-recover"] = "回复体力至体力上限",
+  ["@@ol_ex__zhaxiang-turn"] = "诈降",
 
   ["$zhuri1"] = "效逐日之夸父，怀忠志而长存。",
   ["$zhuri2"] = "知天命而不顺，履穷途而强为。",
@@ -227,8 +268,8 @@ Fk:loadTranslationTable{
   ["$ranji2"] = "维之一腔骨血，可驱驰来北马否？",
   ["$kunfenEx_olmou__jiangwei1"] = "",
   ["$kunfenEx_olmou__jiangwei2"] = "",
-  ["$zhaxiang_olmou__jiangwei1"] = "",
-  ["$zhaxiang_olmou__jiangwei2"] = "",
+  ["$ol_ex__zhaxiang_olmou__jiangwei1"] = "",
+  ["$ol_ex__zhaxiang_olmou__jiangwei2"] = "",
   ["~olmou__jiangwei"] = "姜维姜维……又将何为？",
 }
 
