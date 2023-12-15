@@ -1018,22 +1018,7 @@ local qin__qiaoshe = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     room:doIndicate(player.id, {target.id})
-    data.extra_data = data.extra_data or {}
-    data.extra_data.qin__qiaoshe = data.extra_data.qin__qiaoshe or {}
-    table.insert(data.extra_data.qin__qiaoshe, self.cost_data)
-  end,
-
-  refresh_events = {fk.FinishJudge},
-  can_refresh = function (self, event, target, player, data)
-    return target == player and data.extra_data and data.extra_data.qin__qiaoshe
-  end,
-  on_refresh = function (self, event, target, player, data)
-    local num = data.card.number
-    if num == 0 then return end
-    for _, n in ipairs(data.extra_data.qin__qiaoshe) do
-      num = num + n
-    end
-    local new_card = Fk:cloneCard(data.card.name, data.card.suit, num)
+    local new_card = Fk:cloneCard(data.card.name, data.card.suit, data.card.number + self.cost_data)
     new_card.id = data.card.id
     new_card.skillName = self.name
     data.card = new_card
