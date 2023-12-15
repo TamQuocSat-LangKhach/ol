@@ -620,35 +620,32 @@ local weiyi = fk.CreateTriggerSkill{
 local jinzhi_active = fk.CreateActiveSkill{
   name = "jinzhi_active",
   card_num = function()
-    return Self:usedSkillTimes("jinzhi", Player.HistoryRound) + 1
+    return Self:usedSkillTimes("jinzhi", Player.HistoryRound)
   end,
   target_num = 0,
   card_filter = function(self, to_select, selected, targets)
+    local card = Fk:getCardById(to_select)
+    if Self:prohibitDiscard(card) then return false end
     if #selected == 0 then
       return true
     else
-      return #selected <= Self:usedSkillTimes("jinzhi", Player.HistoryRound) + 1 and
-        Fk:getCardById(to_select).color == Fk:getCardById(selected[1]).color
+      return #selected <= Self:usedSkillTimes("jinzhi", Player.HistoryRound) and card.color == Fk:getCardById(selected[1]).color
     end
-  end,
-  on_use = function(self, room, effect)
-    local player = room:getPlayerById(effect.from)
-    room:throwCard(effect.cards, "jinzhi", player, player)
   end,
 }
 local jinzhi = fk.CreateViewAsSkill{
   name = "jinzhi",
   anim_type = "special",
+  prompt = function ()
+    return "#jinzhi-viewas:::" .. tostring(Self:usedSkillTimes("jinzhi", Player.HistoryRound) + 1)
+  end,
   pattern = "^nullification|.|.|.|.|basic",
   interaction = function()
-    local names = {}
-    for _, id in ipairs(Fk:getAllCardIds()) do
-      local card = Fk:getCardById(id)
-      if card.type == Card.TypeBasic then
-        table.insertIfNeed(names, card.name)
-      end
+    local all_names = U.getAllCardNames("b")
+    local names = U.getViewAsCardNames(Self, "jinzhi", all_names)
+    if #names > 0 then
+      return UI.ComboBox { choices = names, all_choices = all_names }
     end
-    return UI.ComboBox {choices = names}
   end,
   card_filter = Util.FalseFunc,
   view_as = function(self, cards)
@@ -657,18 +654,76 @@ local jinzhi = fk.CreateViewAsSkill{
     return card
   end,
   before_use = function(self, player)
-    player.room:askForUseActiveSkill(player, "jinzhi_active", "#jinzhi-discard:::"..player:usedSkillTimes(self.name, Player.HistoryRound), false)
+    local room = player.room
+    local x = player:usedSkillTimes(self.name, Player.HistoryRound)
+    if x == 1 then
+      if #room:askForDiscard(player, 1, 1, true, self.name, false, "", "#jinzhi-discard:::1") == 0 then
+        return ""
+      end
+    else
+      local red, black = {}, {}
+      local card
+      for _, id in ipairs(player:getCardIds("he")) do
+        card = Fk:getCardById(id)
+        if not player:prohibitDiscard(card) then
+          if card.color == Card.Red then
+            table.insert(red, id)
+          elseif card.color == Card.Black then
+            table.insert(black, id)
+          end
+        end
+      end
+      local toDiscard = {}
+      if #red >= x then
+        toDiscard = table.random(red, x)
+      elseif #black >= x then
+        toDiscard = table.random(black, x)
+      else
+        return ""
+      end
+      local _, ret = room:askForUseActiveSkill(player, "jinzhi_active", "#jinzhi-discard:::"..tostring(x), false)
+      if ret then
+        toDiscard = ret.cards
+      end
+      room:throwCard(toDiscard, self.name, player, player)
+    end
     player:drawCards(1, self.name)
   end,
   enabled_at_play = function(self, player)
-    local black = #table.filter(player:getCardIds("he"), function(id) return Fk:getCardById(id).color == Card.Black end)
-    local red = #table.filter(player:getCardIds("he"), function(id) return Fk:getCardById(id).color == Card.Red end)
-    return math.max(black, red) > player:usedSkillTimes(self.name, Player.HistoryRound)
+    local x = player:usedSkillTimes(self.name, Player.HistoryRound) + 1
+    local a,b,c = 0,0,0
+    local card
+    for _, id in ipairs(player:getCardIds("he")) do
+      card = Fk:getCardById(id)
+      if not player:prohibitDiscard(card) then
+        if card.color == Card.Red then
+          a = a + 1
+        elseif card.color == Card.Black then
+          b = b + 1
+        else
+          c = c + 1
+        end
+      end
+    end
+    return a >= x or b >= x or (c > 0 and x == 1)
   end,
   enabled_at_response = function(self, player, response)
-    local black = #table.filter(player:getCardIds("he"), function(id) return Fk:getCardById(id).color == Card.Black end)
-    local red = #table.filter(player:getCardIds("he"), function(id) return Fk:getCardById(id).color == Card.Red end)
-    return math.max(black, red) > player:usedSkillTimes(self.name, Player.HistoryRound)
+    local x = player:usedSkillTimes(self.name, Player.HistoryRound) + 1
+    local a,b,c = 0,0,0
+    local card
+    for _, id in ipairs(player:getCardIds("he")) do
+      card = Fk:getCardById(id)
+      if not player:prohibitDiscard(card) then
+        if card.color == Card.Red then
+          a = a + 1
+        elseif card.color == Card.Black then
+          b = b + 1
+        else
+          c = c + 1
+        end
+      end
+    end
+    return a >= x or b >= x or (c > 0 and x == 1)
   end,
 }
 Fk:addSkill(jinzhi_active)
@@ -684,6 +739,7 @@ Fk:loadTranslationTable{
   ["#weiyi2-invoke"] = "威仪：你可以令 %dest 失去1点体力",
   ["#weiyi3-invoke"] = "威仪：你可以令 %dest 回复1点体力",
   ["#weiyi-choice"] = "威仪：选择令 %dest 执行的一项",
+  ["#jinzhi-viewas"] = "发动锦织，弃置%arg张颜色相同的牌并摸一张牌，来视为使用或打出一张基本牌",
   ["#jinzhi-discard"] = "锦织：弃置%arg张颜色相同的牌，摸一张牌，视为使用此基本牌",
   ["jinzhi_active"] = "锦织",
 

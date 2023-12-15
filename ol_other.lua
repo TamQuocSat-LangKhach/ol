@@ -986,6 +986,7 @@ local qin__xiongbian = fk.CreateTriggerSkill{
     }
     room:judge(judge)
     if judge.card.number == 6 then
+      data.tos = AimGroup:initAimGroup({})
       return true
     end
   end,
