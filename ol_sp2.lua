@@ -498,7 +498,7 @@ local youlong = fk.CreateViewAsSkill{
     if mark == 0 then mark = {} end
     table.insert(mark, use.card.trueName)
     room:setPlayerMark(player, "@$youlong", mark)
-    local state = player:getSwitchSkillState(self.name, false, true)
+    local state = player:getSwitchSkillState(self.name, true, true)
     room:setPlayerMark(player, "youlong_" .. state .. "-round", 1)
 
     -- FIXME: 傻逼神典韦
