@@ -1696,12 +1696,13 @@ local ol__zhugeguo =  General(extension, "ol__zhugeguo", "shu", 3, 3, General.Fe
 local ol__qirang = fk.CreateTriggerSkill{
   name = "ol__qirang",
   anim_type = "control",
-  events = {fk.CardUseFinished ,fk.TargetSpecifying},
+  events = {fk.CardUseFinished, fk.AfterCardTargetDeclared},
   can_trigger = function(self, event, target, player, data)
     if event == fk.CardUseFinished then
       return player:hasSkill(self) and target == player and data.card.type == Card.TypeEquip
     else
-      return player:hasSkill(self) and target == player and data.card:getMark("@@ol__qirang") > 0 and data.firstTarget and data.tos and #AimGroup:getAllTargets(data.tos) == 1
+      return player:hasSkill(self) and target == player and data.card:getMark("@@ol__qirang") > 0
+      and data.tos and #data.tos == 1 and #U.getUseExtraTargets(player.room, data) > 0
     end
   end,
   on_cost = function(self, event, target, player, data)
@@ -1709,18 +1710,8 @@ local ol__qirang = fk.CreateTriggerSkill{
     if event == fk.CardUseFinished then
       return room:askForSkillInvoke(player, self.name)
     else
-      local targets = {}
-      local current_targets = AimGroup:getAllTargets(data.tos) -- TargetGroup:getRealTargets(data.tos)
-      for _, p in ipairs(room.alive_players) do
-        if not table.contains(current_targets, p.id) and not player:isProhibited(p, data.card) 
-        and data.card.skill:modTargetFilter(p.id, {}, data.from, data.card, true) then
-          if not (data.card.name == "collateral" and not table.find(room:getOtherPlayers(p), function(v) return p:inMyAttackRange(v) end)) then
-            table.insert(targets, p.id)
-          end
-        end
-      end
-      if #targets == 0 then return false end
-      local tos = room:askForChoosePlayers(player, targets, 1, 1, "#ol__qirang-choose:::"..data.card:toLogString(), self.name, true)
+      local tos = room:askForChoosePlayers(player, U.getUseExtraTargets(player.room, data),
+      1, 1, "#ol__qirang-choose:::"..data.card:toLogString(), self.name, true)
       if #tos > 0 then
         self.cost_data = tos[1]
         return true
@@ -1744,16 +1735,7 @@ local ol__qirang = fk.CreateTriggerSkill{
         room:sendLog{type = "#DrawByRuleFailed", from = player.id, arg = self.name}
       end
     else
-      local id = self.cost_data
-      local to = room:getPlayerById(id)
-      if data.card.name == "collateral" then
-        local victim = room:askForChoosePlayers(player, table.map(table.filter(room:getOtherPlayers(to), function(v)
-        return to:inMyAttackRange(v) end), Util.IdMapper), 1, 1,
-        "#collateral-choose::"..to.id..":"..data.card:toLogString(), "collateral_skill", false)
-        TargetGroup:pushTargets(data.targetGroup, {id, victim[1]})
-      else
-        TargetGroup:pushTargets(data.targetGroup, id)
-      end
+      TargetGroup:pushTargets(data.tos, self.cost_data)
     end
   end,
 

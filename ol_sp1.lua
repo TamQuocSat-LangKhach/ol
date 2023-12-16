@@ -942,30 +942,29 @@ local zhidao = fk.CreateTriggerSkill{
   events = {fk.Damage},
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(self) and player.phase == Player.Play and data.to ~= player and
-      not data.to.dead and player:getMark("zhidao-turn") == 0
+      not data.to.dead and not data.to:isAllNude() and player:usedSkillTimes(self.name, Player.HistoryPhase) == 0
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    room:setPlayerMark(player, "zhidao-turn", 1)
-    if data.to:isAllNude() then return end
+    room:doIndicate(player.id, {data.to.id})
     local dummy = Fk:cloneCard("dilu")
     local flag = {"h", "e", "j"}
     local areas = {Player.Hand, Player.Equip, Player.Judge}
     for i = 1, 3, 1 do
       if #data.to.player_cards[areas[i]] > 0 then
-        local id = room:askForCardChosen(player, data.to, flag[i], self.name)
-        dummy:addSubcard(id)
+        dummy:addSubcard(room:askForCardChosen(player, data.to, flag[i], self.name))
       end
     end
-    room:obtainCard(player, dummy, false, fk.ReasonPrey)
+    if #dummy.subcards > 0 then
+      room:obtainCard(player, dummy, false, fk.ReasonPrey)
+    end
+    room:addPlayerMark(player, "@@zhidao-turn")
   end,
 }
 local zhidao_prohibit = fk.CreateProhibitSkill{
   name = "#zhidao_prohibit",
   is_prohibited = function(self, from, to, card)
-    if from:hasSkill(self) then
-      return from:usedSkillTimes("zhidao") > 0 and from ~= to
-    end
+    return from:getMark("@@zhidao-turn") > 0 and from ~= to
   end,
 }
 local jili = fk.CreateTriggerSkill{
@@ -974,24 +973,26 @@ local jili = fk.CreateTriggerSkill{
   frequency = Skill.Compulsory,
   events = {fk.TargetConfirming},
   can_trigger = function(self, event, target, player, data)
-    return player:hasSkill(self) and target ~= player and data.card.color == Card.Red and
-      (data.card.type == Card.TypeBasic or data.card:isCommonTrick()) and
-      (data.from == nil or data.from ~= player.id) and data.targetGroup and #data.targetGroup == 1 and
-      player.room:getPlayerById(AimGroup:getAllTargets(data.tos)[1]):distanceTo(player) == 1
+    return player:hasSkill(self) and not target.dead and target:distanceTo(player) == 1 and
+    data.card.color == Card.Red and (data.card.type == Card.TypeBasic or data.card:isCommonTrick()) and
+    data.from ~= player.id and not table.contains(AimGroup:getAllTargets(data.tos), player.id) and
+    U.canTransferTarget(player, data)
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    if data.card.is_damage_card or table.contains({"dismantlement", "snatch", "chasing_near"}, data.card.name) or data.card.is_derived  then
+    if data.card.is_damage_card or table.contains({"dismantlement", "snatch", "chasing_near"}, data.card.name) or data.card.is_derived then
       player:broadcastSkillInvoke(self.name, 1)
       room:notifySkillInvoked(player, self.name, "negative")
     else
       player:broadcastSkillInvoke(self.name, 2)
       room:notifySkillInvoked(player, self.name, "control")
     end
-    if data.from ~= nil then
-      room:doIndicate(data.from, {player.id})
+    room:doIndicate(player.id, {target.id})
+    local targets = {player.id}
+    if type(data.subTargets) == "table" then
+      table.insertTable(targets, data.subTargets)
     end
-    TargetGroup:pushTargets(data.targetGroup, player.id)
+    AimGroup:addTargets(room, data, targets)
   end,
 }
 zhidao:addRelatedSkill(zhidao_prohibit)
@@ -1003,7 +1004,9 @@ Fk:loadTranslationTable{
   [":zhidao"] = "锁定技，当你于出牌阶段内第一次对区域里有牌的其他角色造成伤害后，你获得其手牌、装备区和判定区里的各一张牌，"..
   "然后直到回合结束，其他角色不能被选择为你使用牌的目标。",
   ["jili"] = "寄篱",
-  [":jili"] = "锁定技，当一名其他角色成为红色基本牌或红色非延时类锦囊牌的目标时，若其与你的距离为1且你既不是此牌的使用者也不是目标，你也成为此牌的目标。",
+  [":jili"] = "锁定技，当一名其他角色成为红色基本牌或红色普通锦囊牌的目标时，若其与你的距离为1且"..
+  "你既不是此牌的使用者也不是目标，你也成为此牌的目标。",
+  ["@@zhidao-turn"] = "雉盗",
 
   ["$zhidao1"] = "谁有地盘，谁是老大！",
   ["$zhidao2"] = "乱世之中，能者为王！",
@@ -1627,16 +1630,22 @@ local sheyan = fk.CreateTriggerSkill{
   anim_type = "control",
   events = {fk.TargetConfirming},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self) and data.card:isCommonTrick()
+    if target == player and player:hasSkill(self) and data.card:isCommonTrick() then
+      local room = player.room
+      local targets = U.getUseExtraTargets(room, data, true, true)
+      local origin_targets = U.getActualUseTargets(room, data, event)
+      if #origin_targets > 1 then
+        table.insertTable(targets, origin_targets)
+      end
+      if #targets > 0 then
+        self.cost_data = targets
+        return true
+      end
+    end
   end,
   on_cost = function(self, event, target, player, data)
-    local room = player.room
-    local targets = {}
-    if #AimGroup:getAllTargets(data.tos) > 1 then
-      table.insertTable(targets, AimGroup:getAllTargets(data.tos))
-    end
-    table.insertTable(targets, U.getUseExtraTargets(room, data, true, true))
-    local to = room:askForChoosePlayers(player, targets, 1, 1, "#sheyan-choose:::"..data.card:toLogString(), self.name, true)
+    local to = player.room:askForChoosePlayers(player, self.cost_data, 1, 1,
+    "#sheyan-choose:::"..data.card:toLogString(), self.name, true)
     if #to > 0 then
       self.cost_data = to[1]
       return true
@@ -1644,9 +1653,10 @@ local sheyan = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     if table.contains(AimGroup:getAllTargets(data.tos), self.cost_data) then
-      TargetGroup:removeTarget(data.targetGroup, self.cost_data)
+      AimGroup:cancelTarget(data, self.cost_data)
+      return self.cost_data == player.id
     else
-      TargetGroup:pushTargets(data.targetGroup, self.cost_data)
+      AimGroup:addTargets(player.room, data, self.cost_data)
     end
   end,
 }

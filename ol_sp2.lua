@@ -1573,8 +1573,9 @@ local zhaosong = fk.CreateTriggerSkill{
     local room = player.room
     room:doIndicate(player.id, {target.id})
     local ids = room:askForCard(target, 1, 1, false, self.name, false, ".", "#zhaosong-give:"..player.id)
-    room:obtainCard(player.id, ids[1], false, fk.ReasonGive)
     local card = Fk:getCardById(ids[1])
+    room:obtainCard(player.id, ids[1], false, fk.ReasonGive)
+    if target.dead then return false end
     local mark
     if card.type == Card.TypeTrick then
       mark = "@@zuofen_lei"
@@ -1589,7 +1590,7 @@ local zhaosong = fk.CreateTriggerSkill{
 local zhaosong_trigger = fk.CreateTriggerSkill{
   name = "#zhaosong_trigger",
   mute = true,
-  events = {fk.EnterDying, fk.EventPhaseStart, fk.TargetSpecifying},
+  events = {fk.EnterDying, fk.EventPhaseStart, fk.AfterCardTargetDeclared},
   can_trigger = function(self, event, target, player, data)
     if target == player then
       if event == fk.EnterDying then
@@ -1598,7 +1599,8 @@ local zhaosong_trigger = fk.CreateTriggerSkill{
         return player:getMark("@@zuofen_fu") > 0 and player.phase == Player.Play and
           not table.every(player.room:getAlivePlayers(), function(p) return p:isAllNude() end)
       else
-        return player:getMark("@@zuofen_song") > 0 and data.card.trueName == "slash" and #data.targetGroup == 1
+        return player:getMark("@@zuofen_song") > 0 and data.card.trueName == "slash" and #data.tos == 1 and
+        #U.getUseExtraTargets(player.room, data) > 0 
       end
     end
   end,
@@ -1614,11 +1616,8 @@ local zhaosong_trigger = fk.CreateTriggerSkill{
         return true
       end
     else
-      local targets = table.map(table.filter(room:getOtherPlayers(player), function(p)
-        return not table.contains(AimGroup:getAllTargets(data.tos), p.id) and
-        not player:isProhibited(p, data.card) end), Util.IdMapper)
-      if #targets == 0 then return end
-      local tos = room:askForChoosePlayers(player, targets, 1, 2, "#zhaosong3-invoke", self.name, true)
+      local tos = room:askForChoosePlayers(player, U.getUseExtraTargets(player.room, data),
+      1, 2, "#zhaosong3-invoke", self.name, true)
       if #tos > 0 then
         self.cost_data = tos
         return true
@@ -1628,7 +1627,6 @@ local zhaosong_trigger = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     if event == fk.EnterDying then
-      player:broadcastSkillInvoke("zhaosong", 1)
       room:notifySkillInvoked(player, self.name, "support")
       room:removePlayerMark(player, "@@zuofen_lei", 1)
       room:recover({
@@ -1637,20 +1635,20 @@ local zhaosong_trigger = fk.CreateTriggerSkill{
         recoverBy = player,
         skillName = self.name
       })
-      player:drawCards(1, self.name)
+      if not player.dead then
+        player:drawCards(1, self.name)
+      end
     elseif event == fk.EventPhaseStart then
-      player:broadcastSkillInvoke("zhaosong", 2)
       room:notifySkillInvoked(player, self.name, "control")
       room:removePlayerMark(player, "@@zuofen_fu", 1)
       local to = room:getPlayerById(self.cost_data)
       local cards = room:askForCardsChosen(player, to, 1, 2, "hej", self.name)
       room:throwCard(cards, self.name, to, player)
     else
-      player:broadcastSkillInvoke("zhaosong", 3)
       room:notifySkillInvoked(player, self.name, "offensive")
       room:removePlayerMark(player, "@@zuofen_song", 1)
       for _, id in ipairs(self.cost_data) do
-        TargetGroup:pushTargets(data.targetGroup, id)
+        TargetGroup:pushTargets(data.tos, id)
       end
     end
   end,
@@ -1660,14 +1658,18 @@ local lisi = fk.CreateTriggerSkill{
   anim_type = "support",
   events = {fk.CardUseFinished},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self) and player.phase == Player.NotActive and
-      player.room:getCardArea(data.card) == Card.Processing
+    if target == player and player:hasSkill(self) and player.phase == Player.NotActive then
+      local room = player.room
+      return U.hasFullRealCard(room, data.card) and table.find(room.alive_players, function (p)
+        return p ~= player and p:getHandcardNum() <= player:getHandcardNum()
+      end)
+    end
   end,
   on_cost = function(self, event, target, player, data)
-    local targets = table.map(table.filter(player.room:getOtherPlayers(player), function(p)
-      return #p.player_cards[Player.Hand] <= #player.player_cards[Player.Hand] end), Util.IdMapper)
-    if #targets == 0 then return end
-    local to = player.room:askForChoosePlayers(player, targets, 1, 1, "#lisi-invoke:::"..data.card:toLogString(), self.name, true)
+    local room = player.room
+    local targets = table.map(table.filter(room.alive_players, function(p)
+      return p ~= player and p:getHandcardNum() <= player:getHandcardNum() end), Util.IdMapper)
+    local to = room:askForChoosePlayers(player, targets, 1, 1, "#lisi-invoke:::"..data.card:toLogString(), self.name, true)
     if #to > 0 then
       self.cost_data = to[1]
       return true
@@ -2492,12 +2494,13 @@ local tianyu = General(extension, "ol__tianyu", "wei", 4)
 local saodi = fk.CreateTriggerSkill{
   name = "saodi",
   anim_type = "offensive",
-  events = {fk.TargetSpecifying},
+  events = {fk.AfterCardTargetDeclared},
   can_trigger = function(self, event, target, player, data)
     if target == player and player:hasSkill(self) and (data.card.trueName == "slash" or data.card:isCommonTrick()) and
       data.tos and #TargetGroup:getRealTargets(data.tos) == 1 and data.tos[1][1] ~= player.id then
       local left, right = 0, 0
       local to = player.room:getPlayerById(TargetGroup:getRealTargets(data.tos)[1])
+      if to.dead or player:isRemoved() or to:isRemoved() then return false end
       local temp = player
       while temp ~= to do
         if not temp.dead then
@@ -2536,10 +2539,11 @@ local saodi = fk.CreateTriggerSkill{
     if self.cost_data == "left" then
       from, to = dest, player
     end
+    local targets = U.getUseExtraTargets(player.room, data)
     local temp = from.next
     while temp ~= to do
-      if not temp.dead and not player:isProhibited(temp, data.card) then
-        TargetGroup:pushTargets(data.targetGroup, temp.id)
+      if not temp.dead and table.contains(targets, temp.id) then
+        TargetGroup:pushTargets(data.tos, temp.id)
         player.room:doIndicate(player.id, {temp.id})
       end
       temp = temp.next
@@ -3484,7 +3488,7 @@ local qingliang = fk.CreateTriggerSkill{
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(self) and data.from ~= player.id and
       (data.card.trueName == "slash" or data.card:isCommonTrick()) and
-      U.isOnlyTarget(player, data, fk.TargetConfirming) and not player:isKongcheng() and
+      U.isOnlyTarget(player, data, event) and not player:isKongcheng() and
       player:usedSkillTimes(self.name, Player.HistoryTurn) == 0
   end,
   on_cost = function(self, event, target, player, data)
@@ -3508,6 +3512,7 @@ local qingliang = fk.CreateTriggerSkill{
       local cards = table.filter(player:getCardIds("h"), function(id) return Fk:getCardById(id):getSuitString() == choice end)
       room:throwCard(cards, self.name, player, player)
       AimGroup:cancelTarget(data, player.id)
+      return true
     end
   end,
 }

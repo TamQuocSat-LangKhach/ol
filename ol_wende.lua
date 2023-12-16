@@ -2545,32 +2545,27 @@ local xinchang = General(extension, "xinchang", "jin", 3)
 local canmou = fk.CreateTriggerSkill{
   name = "canmou",
   anim_type = "control",
-  events = {fk.TargetSpecifying},
+  events = {fk.AfterCardTargetDeclared},
   can_trigger = function(self, event, target, player, data)
-    return player:hasSkill(self) and data.targetGroup and data.firstTarget and data.card:isCommonTrick() and
-      table.every(player.room:getOtherPlayers(target), function (p) return target:getHandcardNum() > p:getHandcardNum() end)
-  end,
-  on_cost = function(self, event, target, player, data)
-    local room = player.room
-    local targets = {}
-    for _, p in ipairs(room:getOtherPlayers(target)) do
-      if not table.contains(AimGroup:getAllTargets(data.tos), p.id) and not player:isProhibited(p, data.card) then
-        table.insertIfNeed(targets, p.id)
+    if player:hasSkill(self) and data.card:isCommonTrick() and table.every(player.room:getOtherPlayers(target),
+    function (p) return target:getHandcardNum() > p:getHandcardNum() end) then
+      local targets = U.getUseExtraTargets(player.room, data)
+      if #targets > 0 then
+        self.cost_data = targets
+        return true
       end
     end
-    if #targets == 0 then return end
-    local to = room:askForChoosePlayers(player, targets, 1, 1, "#canmou-choose:::"..data.card:toLogString(), self.name, true)
+  end,
+  on_cost = function(self, event, target, player, data)
+    local to = player.room:askForChoosePlayers(player, self.cost_data, 1, 1,
+    "#canmou-choose:::"..data.card:toLogString(), self.name, true)
     if #to > 0 then
       self.cost_data = to[1]
       return true
     end
   end,
   on_use = function(self, event, target, player, data)
-    if data.card.name == "collateral" then  --TODO:
-
-    else
-      TargetGroup:pushTargets(data.targetGroup, self.cost_data)  --TODO: sort by action order
-    end
+    TargetGroup:pushTargets(data.tos, self.cost_data)
   end,
 }
 local congjianx = fk.CreateTriggerSkill{
@@ -2579,33 +2574,39 @@ local congjianx = fk.CreateTriggerSkill{
   events = {fk.TargetConfirming},
   can_trigger = function(self, event, target, player, data)
     return player:hasSkill(self) and target ~= player and data.card:isCommonTrick() and
-      data.targetGroup and #AimGroup:getAllTargets(data.tos) == 1 and
-      table.every(player.room:getOtherPlayers(target), function (p) return target.hp > p.hp end) and
-      not player.room:getPlayerById(data.from):isProhibited(player, data.card)
+      U.isOnlyTarget(target, data, event) and U.canTransferTarget(player, data) and
+      table.every(player.room:getOtherPlayers(target), function (p) return target.hp > p.hp end)
   end,
   on_cost = function(self, event, target, player, data)
     return player.room:askForSkillInvoke(player, self.name, data, "#congjianx-invoke:::"..data.card:toLogString())
   end,
   on_use = function(self, event, target, player, data)
-    if data.card.name == "collateral" then  --TODO:
-
-    else
-      TargetGroup:pushTargets(data.targetGroup, {player.id})
-      data.extra_data = data.extra_data or {}
-      data.extra_data.congjianx = data.extra_data.congjianx or player.id
+    local targets = {player.id}
+    if type(data.subTargets) == "table" then
+      table.insertTable(targets, data.subTargets)
     end
-  end,
-
-  refresh_events = {fk.CardUseFinished},
-  can_refresh = function(self, event, target, player, data)
-    return data.extra_data and data.extra_data.congjianx and data.extra_data.congjianx == player.id
-  end,
-  on_refresh = function(self, event, target, player, data)
-    if data.damageDealt and data.damageDealt[player.id] then
-      player:drawCards(2, self.name)
-    end
+    AimGroup:addTargets(player.room, data, targets)
+    data.extra_data = data.extra_data or {}
+    data.extra_data.congjianx = data.extra_data.congjianx or {}
+    table.insert(data.extra_data.congjianx, player.id)
   end,
 }
+
+local congjianx_delay = fk.CreateTriggerSkill{
+  name = "#congjianx_delay",
+  events = {fk.CardUseFinished},
+  mute = true,
+  can_trigger = function(self, event, target, player, data)
+    return not player.dead and data.damageDealt and data.damageDealt[player.id] and
+    data.extra_data and data.extra_data.congjianx and table.contains(data.extra_data.congjianx, player.id)
+  end,
+  on_cost = Util.TrueFunc,
+  on_use = function(self, event, target, player, data)
+    player:drawCards(2, congjianx.name)
+  end,
+}
+
+congjianx:addRelatedSkill(congjianx_delay)
 xinchang:addSkill(canmou)
 xinchang:addSkill(congjianx)
 Fk:loadTranslationTable{
@@ -2616,6 +2617,7 @@ Fk:loadTranslationTable{
   [":congjianx"] = "当体力值全场唯一最大的其他角色成为普通锦囊牌的唯一目标时，你可以也成为此牌目标，此牌结算后，若此牌对你造成伤害，你摸两张牌。",
   ["#canmou-choose"] = "参谋：你可以为此%arg多指定一个目标",
   ["#congjianx-invoke"] = "从鉴：你可以成为此%arg的额外目标，若此牌对你造成伤害，你摸两张牌",
+  ["#congjianx_delay"] = "从鉴",
 
   ["$canmou1"] = "兢兢业业，竭心筹划。",
   ["$canmou2"] = "欲设此法，计谋二人。",

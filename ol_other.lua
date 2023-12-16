@@ -973,7 +973,7 @@ local qin__xiongbian = fk.CreateTriggerSkill{
   name = "qin__xiongbian",
   anim_type = "defensive",
   frequency = Skill.Compulsory,
-  events = {fk.TargetConfirmed},
+  events = {fk.TargetConfirming},
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(self) and data.card:isCommonTrick()
   end,

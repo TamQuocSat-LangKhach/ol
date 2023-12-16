@@ -868,18 +868,16 @@ local bihun = fk.CreateTriggerSkill{
   frequency = Skill.Compulsory,
   events = {fk.TargetSpecifying},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self) and #player.player_cards[Player.Hand] > player:getMaxCards() and data.firstTarget and
-      #AimGroup:getAllTargets(data.tos) > 0 and
-      not table.every(AimGroup:getAllTargets(data.tos), function(id) return id == player.id end)
+    return target == player and player:hasSkill(self) and player:getHandcardNum() > player:getMaxCards() and data.to ~= player.id
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    if #AimGroup:getAllTargets(data.tos) == 1 and AimGroup:getAllTargets(data.tos)[1] ~= player.id and room:getCardArea(data.card) == Card.Processing then
-      room:obtainCard(AimGroup:getAllTargets(data.tos)[1], data.card, true, fk.ReasonJustMove)
+    local to = room:getPlayerById(data.to)
+    if not to.dead and U.isOnlyTarget(to, data, event) and data.firstTarget and U.hasFullRealCard(room, data.card) then
+      room:obtainCard(to, data.card, true, fk.ReasonJustMove)
     end
-    for _, id in ipairs(AimGroup:getAllTargets(data.tos)) do
-      AimGroup:cancelTarget(data, id)
-    end
+    AimGroup:cancelTarget(data, data.to)
+    return true
   end,
 }
 local jianhe = fk.CreateActiveSkill{
@@ -2018,9 +2016,9 @@ local tianhou2 = fk.CreateTriggerSkill{
   frequency = Skill.Compulsory,
   events = {fk.TargetSpecifying},
   can_trigger = function(self, event, target, player, data)
-    if target ~= player and player:hasSkill(self) and data.card.trueName == "slash" and #AimGroup:getAllTargets(data.tos) == 1 then
-      local to = player.room:getPlayerById(AimGroup:getAllTargets(data.tos)[1])
-      return to:getNextAlive() ~= target and target:getNextAlive() ~= to
+    if target ~= player and player:hasSkill(self) and data.card.trueName == "slash" then
+      local to = player.room:getPlayerById(data.to)
+      return U.isOnlyTarget(to, data, event) and to:getNextAlive() ~= target and target:getNextAlive() ~= to
     end
   end,
   on_use = function(self, event, target, player, data)
@@ -2037,7 +2035,8 @@ local tianhou2 = fk.CreateTriggerSkill{
     }
     room:judge(judge)
     if judge.card.number > data.card.number then
-      data.nullifiedTargets = table.map(room.alive_players, Util.IdMapper)
+      data.tos = AimGroup:initAimGroup({})
+      return true
     end
   end,
 }
