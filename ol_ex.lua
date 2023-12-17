@@ -3541,7 +3541,6 @@ local function Dohuashen(player)
   local mark = U.getMark(player, "@&ol_ex__huashen")
   if #mark == 0 then return end
   local name = room:askForGeneral(player, mark, 1, true)
-  if type(name) == "table" then name = name[1] end
   local general = Fk.generals[name]
   room:setPlayerMark(player, "ol_ex__huashen_general", name)
   local original_general = player.general
@@ -3549,7 +3548,9 @@ local function Dohuashen(player)
   room:broadcastProperty(player, "general")
   player.gender = general.gender
   room:broadcastProperty(player, "gender")
+  player.kingdom = general.kingdom
   room:askForChooseKingdom({player})
+  room:broadcastProperty(player, "kingdom")
   local old_skill = player:getMark("@ol_ex__huashen_skill")
   if old_skill ~= 0 then room:handleAddLoseSkills(player, "-"..old_skill) end
   local skills = {}
