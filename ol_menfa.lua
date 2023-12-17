@@ -2484,27 +2484,41 @@ local qiuxin = fk.CreateActiveSkill{
     local player = room:getPlayerById(effect.from)
     local target = room:getPlayerById(effect.tos[1])
     local choice = room:askForChoice(target, {"slash", "trick"}, self.name, "#qiuxin-choice:"..player.id)
-    room:setPlayerMark(target, "@qiuxin", choice)
-    room:setPlayerMark(target, self.name, player.id)
+    local mark = U.getMark(target, "@qiuxin")
+    table.insertIfNeed(mark, choice)
+    room:setPlayerMark(target, "@qiuxin", mark)
   end,
 }
 local qiuxin_trigger = fk.CreateTriggerSkill{
   name = "#qiuxin_trigger",
   mute = true,
-  main_skill = qiuxin,
   events = {fk.CardUseFinished},
   can_trigger = function(self, event, target, player, data)
-    return target == player and data.extra_data and data.extra_data.qiuxin
+    if target ~= player or not player:hasSkill(qiuxin) then return false end
+    local qiuxin_type = ""
+    if data.card.trueName == "slash" then
+      qiuxin_type = "slash"
+    elseif data.card:isCommonTrick() then
+      qiuxin_type = "trick"
+    else
+      return false
+    end
+    local tos = TargetGroup:getRealTargets(data.tos)
+    for _, p in ipairs(player.room.alive_players) do
+      if table.contains(tos, p.id) and table.contains(U.getMark(p, "@qiuxin"), qiuxin_type) then
+        return true
+      end
+    end
   end,
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    for _, p in ipairs(room:getOtherPlayers(player)) do
-      if data.extra_data.qiuxin[p.id] then
-        room:setPlayerMark(p, "@qiuxin", 0)
-        room:setPlayerMark(p, "qiuxin", 0)
-        if data.extra_data.qiuxin[p.id] and not player.dead and not p.dead then
-          if data.extra_data.qiuxin[p.id] == "slash" then
+    if data.card.trueName == "slash" then
+      for _, p in ipairs(player.room.alive_players) do
+        if player.dead then break end
+        if not p.dead then
+          local mark = U.getMark(p, "@qiuxin")
+          if table.contains(mark, "slash") then
             room:setPlayerMark(player, "qiuxin-tmp", p.id)
             local command = "AskForUseActiveSkill"
             room:notifyMoveFocus(player, "qiuxin_viewas")
@@ -2512,43 +2526,44 @@ local qiuxin_trigger = fk.CreateTriggerSkill{
             local result = room:doRequest(player, command, json.encode(dat))
             room:setPlayerMark(player, "qiuxin-tmp", 0)
             if result ~= "" then
+              table.removeOne(mark, "slash")
+              room:setPlayerMark(p, "@qiuxin", #mark > 0 and mark or 0)
               dat = json.decode(result)
-              room:useVirtualCard(dat.interaction_data, nil, player, p, self.name)
-            end
-          elseif data.extra_data.qiuxin[p.id] == "trick" then
-            if not player:isProhibited(p, Fk:cloneCard("slash")) then
-              if room:askForSkillInvoke(player, "qiuxin", nil, "#qiuxin-slash::"..p.id) then
-                player:broadcastSkillInvoke("qiuxin")
-                player.room:notifySkillInvoked(player, "qiuxin", "offensive")
-                room:useVirtualCard("slash", nil, player, p, "qiuxin", true)
+              local trick = Fk:cloneCard(dat.interaction_data)
+              trick.skillName = qiuxin.name
+              local tos = {{p.id}}
+              for _, pid in ipairs(dat.targets) do
+                table.insert(tos, {pid})
               end
+              room:useCard({
+                from = player.id,
+                tos = tos,
+                card = trick,
+                extraUse = true,
+              })
             end
           end
         end
       end
-    end
-  end,
-
-  refresh_events = {fk.TargetSpecified},
-  can_refresh = function(self, event, target, player, data)
-    if target == player then
-      for _, id in ipairs(TargetGroup:getRealTargets(data.tos)) do
-        local p = player.room:getPlayerById(id)
-        if p:getMark("qiuxin") == player.id and
-          (p:getMark("@qiuxin") == data.card.trueName or p:getMark("@qiuxin") == data.card:getTypeString()) then
-          return true
+    elseif data.card:isCommonTrick() then
+      for _, p in ipairs(player.room.alive_players) do
+        local slash = Fk:cloneCard("slash")
+        slash.skillName = qiuxin.name
+        if player.dead or player:prohibitUse(slash) then break end
+        if not (p.dead or player:isProhibited(p, slash)) then
+          local mark = U.getMark(p, "@qiuxin")
+          if table.contains(mark, "trick") and
+          room:askForSkillInvoke(player, qiuxin.name, nil, "#qiuxin-slash::" .. p.id) then
+            table.removeOne(mark, "trick")
+            room:setPlayerMark(p, "@qiuxin", #mark > 0 and mark or 0)
+            room:useCard({
+              from = player.id,
+              tos = {{p.id}},
+              card = slash,
+              extraUse = true,
+            })
+          end
         end
-      end
-    end
-  end,
-  on_refresh = function(self, event, target, player, data)
-    for _, id in ipairs(TargetGroup:getRealTargets(data.tos)) do
-      local p = player.room:getPlayerById(id)
-      if p:getMark("qiuxin") == player.id and
-        (p:getMark("@qiuxin") == data.card.trueName or p:getMark("@qiuxin") == data.card:getTypeString()) then
-        data.extra_data = data.extra_data or {}
-        data.extra_data.qiuxin = data.extra_data.qiuxin or {}
-        data.extra_data.qiuxin[p.id] = p:getMark("@qiuxin")
       end
     end
   end,
@@ -2556,20 +2571,35 @@ local qiuxin_trigger = fk.CreateTriggerSkill{
 local qiuxin_viewas = fk.CreateActiveSkill{
   name = "qiuxin_viewas",
   interaction = function()
-    local names = {}
     local mark = Self:getMark("qiuxin-tmp")
-    for _, id in ipairs(Fk:getAllCardIds()) do
-      local card = Fk:getCardById(id)
-      if card:isCommonTrick() and not card.is_derived and
-        card.skill:targetFilter(mark, {}, {}, card) and
-        not Self:isProhibited(Fk:currentRoom():getPlayerById(mark), card) then
-        table.insertIfNeed(names, card.name)
-      end
-    end
+    local all_names = U.getAllCardNames("t")
+    local to = Fk:currentRoom():getPlayerById(mark)
+    local names = table.filter(all_names, function (card_name)
+      local trick = Fk:cloneCard(card_name)
+      trick.skillName = qiuxin.name
+      return not (Self:prohibitUse(trick) or Self:isProhibited(to, trick)) and
+      trick.skill:modTargetFilter(mark, {}, Self.id, trick, false)
+    end)
     if #names == 0 then return end
-    return UI.ComboBox {choices = names}
+    return UI.ComboBox {choices = names, all_choices = all_names}
   end,
   card_filter = Util.FalseFunc,
+  target_filter = function(self, to_select, selected, selected_cards)
+    if not self.interaction.data then return false end
+    local card = Fk:cloneCard(self.interaction.data)
+    card.skillName = qiuxin.name
+    if card.skill:getMinTargetNum() < 2 then return false end
+    local _selected = {Self:getMark("qiuxin-tmp")}
+    table.insertTable(_selected, selected)
+    return card.skill:targetFilter(to_select, _selected, {}, card)
+  end,
+  feasible = function(self, selected, selected_cards)
+    if not self.interaction.data then return false end
+    local card = Fk:cloneCard(self.interaction.data)
+    card.skillName = qiuxin.name
+    local x = card.skill:getMinTargetNum()
+    return x < 2 or #selected + 1 == x
+  end,
 }
 local jianyuan = fk.CreateTriggerSkill{
   name = "jianyuan",
