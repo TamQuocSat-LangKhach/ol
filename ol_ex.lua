@@ -1476,7 +1476,7 @@ yuanshao:addSkill(ol_ex__xueyi)
 Fk:loadTranslationTable{
   ["ol_ex__yuanshao"] = "界袁绍",
   ["ol_ex__luanji"] = "乱击",
-  [":ol_ex__luanji"] = "①出牌阶段，你可以将两张花色相同的手牌转化为【万箭齐发】使用。②当你使用【万箭齐发】选择目标后，你可取消其中一个目标。",
+  [":ol_ex__luanji"] = "①你可以将两张花色相同的手牌转化为【万箭齐发】使用。②当你使用【万箭齐发】选择目标后，你可取消其中一个目标。",
   ["ol_ex__xueyi"] = "血裔",
   [":ol_ex__xueyi"] = "主公技，①游戏开始时，你获得2X枚“裔”（X为群势力角色数）。②出牌阶段开始时，你可弃1枚“裔”，你摸一张牌。③你的手牌上限+X（X为“裔”数）",
 
@@ -1489,6 +1489,308 @@ Fk:loadTranslationTable{
   ["$ol_ex__xueyi1"] = "高贵名门，族裔盛名。",
   ["$ol_ex__xueyi2"] = "贵裔之脉，后起之秀！",
   ["~ol_ex__yuanshao"] = "孟德此计，防不胜防……",
+}
+
+local wolong = General(extension, "ol_ex__wolong", "shu", 3)
+
+local ol_ex__huoji__fireAttackSkill = fk.CreateActiveSkill{
+  name = "ol_ex__huoji__fire_attack_skill",
+  prompt = "#fire_attack_skill",
+  target_num = 1,
+  mod_target_filter = function(_, to_select, _, _, _, _)
+    return not Fk:currentRoom():getPlayerById(to_select):isKongcheng()
+  end,
+  target_filter = function(self, to_select, selected, _, card)
+    if #selected < self:getMaxTargetNum(Self, card) then
+      return self:modTargetFilter(to_select, selected, Self.id, card)
+    end
+  end,
+  on_effect = function(self, room, cardEffectEvent)
+    local from = room:getPlayerById(cardEffectEvent.from)
+    local to = room:getPlayerById(cardEffectEvent.to)
+    if to:isKongcheng() then return end
+
+    local showCard = table.random(to:getCardIds(Player.Hand))
+    to:showCards(showCard)
+
+    if from.dead then return end
+
+    showCard = Fk:getCardById(showCard)
+    local pattern = ".|.|no_suit"
+    if showCard.color == Card.Red then
+      pattern = ".|.|heart,diamond"
+    elseif showCard.color == Card.Black then
+      pattern = ".|.|spade,club"
+    end
+    local cards = room:askForDiscard(from, 1, 1, false, "fire_attack_skill", true, pattern,
+    "#fire_attack-discard:" .. to.id .. "::" .. showCard:getColorString())
+    if #cards > 0 and not to.dead then
+      room:damage({
+        from = from,
+        to = to,
+        card = cardEffectEvent.card,
+        damage = 1,
+        damageType = fk.FireDamage,
+        skillName = "fire_attack_skill"
+      })
+    end
+  end,
+}
+Fk:addSkill(ol_ex__huoji__fireAttackSkill)
+
+local ol_ex__huoji = fk.CreateViewAsSkill{
+  name = "ol_ex__huoji",
+  anim_type = "offensive",
+  pattern = "fire_attack",
+  prompt = "#ol_ex__huoji-viewas",
+  card_filter = function(self, to_select, selected)
+    return #selected == 0 and Fk:getCardById(to_select).color == Card.Red
+  end,
+  view_as = function(self, cards)
+    if #cards ~= 1 then return end
+    local card = Fk:cloneCard("fire_attack")
+    card.skillName = self.name
+    card:addSubcard(cards[1])
+    return card
+  end,
+}
+local ol_ex__huoji_buff = fk.CreateTriggerSkill{
+  name = "#ol_ex__huoji_buff",
+  events = {fk.PreCardEffect},
+  mute = true,
+  can_trigger = function(self, event, target, player, data)
+    return player:hasSkill(ol_ex__huoji) and data.from == player.id and data.card.trueName == "fire_attack"
+  end,
+  on_cost = Util.TrueFunc,
+  on_use = function(self, event, target, player, data)
+    local card = data.card:clone()
+    local c = table.simpleClone(data.card)
+    for k, v in pairs(c) do
+      card[k] = v
+    end
+    card.skill = ol_ex__huoji__fireAttackSkill
+    data.card = card
+  end,
+}
+local ol_ex__kanpo = fk.CreateViewAsSkill{
+  name = "ol_ex__kanpo",
+  anim_type = "control",
+  pattern = "nullification",
+  prompt = "#ol_ex__kanpo-viewas",
+  card_filter = function(self, to_select, selected)
+    return #selected == 0 and Fk:getCardById(to_select).color == Card.Black
+  end,
+  view_as = function(self, cards)
+    if #cards ~= 1 then return end
+    local card = Fk:cloneCard("nullification")
+    card.skillName = self.name
+    card:addSubcard(cards[1])
+    return card
+  end,
+}
+local ol_ex__kanpo_buff = fk.CreateTriggerSkill{
+  name = "#ol_ex__kanpo_buff",
+
+  refresh_events = {fk.PreCardUse},
+  can_refresh = function(self, event, target, player, data)
+    return target == player and player:hasSkill(ol_ex__kanpo) and data.card.trueName == "nullification"
+  end,
+  on_refresh = function(self, event, target, player, data)
+    data.disresponsiveList = table.map(player.room.alive_players, Util.IdMapper)
+  end,
+}
+
+local cangzhuo = fk.CreateTriggerSkill{
+  name = "cangzhuo",
+  anim_type = "defensive",
+  events = {fk.EventPhaseStart},
+  frequency = Skill.Compulsory,
+  can_trigger = function(self, event, target, player, data)
+    if target == player and player:hasSkill(self) and player.phase == Player.Discard then
+      local room = player.room
+      local logic = room.logic
+      local e = logic:getCurrentEvent():findParent(GameEvent.Turn, true)
+      if e == nil then return false end
+      local end_id = e.id
+      local events = logic.event_recorder[GameEvent.UseCard] or Util.DummyTable
+      for i = #events, 1, -1 do
+        e = events[i]
+        if e.id <= end_id then break end
+        local use = e.data[1]
+        if use.from == player.id and use.card.type == Card.TypeTrick then
+          return false
+        end
+      end
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    player.room:addPlayerMark(player, "cangzhuo-phase")
+  end,
+}
+local cangzhuo_maxcards = fk.CreateMaxCardsSkill{
+  name = "#cangzhuo_maxcards",
+  exclude_from = function(self, player, card)
+    return player:getMark("cangzhuo-phase") > 0 and card.type == Card.TypeTrick
+  end,
+}
+
+wolong:addSkill("bazhen")
+ol_ex__huoji:addRelatedSkill(ol_ex__huoji_buff)
+ol_ex__kanpo:addRelatedSkill(ol_ex__kanpo_buff)
+cangzhuo:addRelatedSkill(cangzhuo_maxcards)
+wolong:addSkill(ol_ex__huoji)
+wolong:addSkill(ol_ex__kanpo)
+wolong:addSkill(cangzhuo)
+
+Fk:loadTranslationTable{
+  ["ol_ex__wolong"] = "界卧龙诸葛亮",
+  ["ol_ex__huoji"] = "火计",
+  [":ol_ex__huoji"] = "①你可以将一张红色牌转化为【火攻】使用。"..
+  "②你使用的【火攻】的作用效果改为：目标角色随机展示一张手牌，然后你可以弃置一张与此牌颜色相同的手牌对其造成1点火焰伤害。",
+  ["ol_ex__kanpo"] = "看破",
+  [":ol_ex__kanpo"] = "①你可以将一张黑色牌转化为【无懈可击】使用。②你使用的【无懈可击】不能被响应。",
+  ["cangzhuo"] = "藏拙",
+  [":cangzhuo"] = "锁定技，弃牌阶段开始时，若你于此回合内未使用过锦囊牌，你的锦囊牌于此阶段内不计入手牌上限。",
+  ["#ol_ex__huoji-viewas"] = "发动火计，选择一张红色牌转化为【火攻】使用",
+  ["#ol_ex__huoji_buff"] = "火计",
+  ["#ol_ex__kanpo-viewas"] = "发动看破，选择一张黑色牌转化为【无懈可击】使用",
+
+  ["$bazhen_ol_ex__wolong1"] = "八阵连心，日月同辉。",
+  ["$bazhen_ol_ex__wolong2"] = "此阵变化，岂是汝等可解？",
+  ["$ol_ex__huoji1"] = "赤壁借东风，燃火灭魏军。",
+  ["$ol_ex__huoji2"] = "东风，让这火烧得再猛烈些吧！",
+  ["$ol_ex__kanpo1"] = "此计奥妙，我已看破。",
+  ["$ol_ex__kanpo2"] = "还有什么是我看不破的？",
+  ["$cangzhuo1"] = "藏巧于拙，用晦而明。",
+  ["$cangzhuo2"] = "寓清于浊，以屈为伸。",
+  ["~ol_ex__wolong"] = "星途半废，夙愿未完……",
+}
+
+local pangtong = General(extension, "ol_ex__pangtong", "shu", 3)
+
+local ol_ex__lianhuan = fk.CreateActiveSkill{
+  name = "ol_ex__lianhuan",
+  mute = true,
+  card_num = 1,
+  min_target_num = 0,
+  prompt = "#ol_ex__lianhuan-active",
+  can_use = Util.TrueFunc,
+  card_filter = function(self, to_select, selected, selected_targets)
+    return #selected == 0 and Fk:getCardById(to_select).suit == Card.Club
+  end,
+  target_filter = function(self, to_select, selected, selected_cards)
+    if #selected_cards == 1 then
+      local card = Fk:cloneCard("iron_chain")
+      card:addSubcard(selected_cards[1])
+      card.skillName = self.name
+      return card.skill:canUse(Self, card) and card.skill:targetFilter(to_select, selected, selected_cards, card) and
+      not Self:prohibitUse(card) and not Self:isProhibited(Fk:currentRoom():getPlayerById(to_select), card)
+    end
+  end,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    player:broadcastSkillInvoke(self.name)
+    if #effect.tos == 0 then
+      room:notifySkillInvoked(player, self.name, "drawcard")
+      room:recastCard(effect.cards, player, self.name)
+    else
+      room:notifySkillInvoked(player, self.name, "control")
+      room:sortPlayersByAction(effect.tos)
+      room:useVirtualCard("iron_chain", effect.cards, player, table.map(effect.tos, function(id)
+        return room:getPlayerById(id) end), self.name)
+    end
+  end,
+}
+local ol_ex__lianhuan_trigger = fk.CreateTriggerSkill{
+  name = "#ol_ex__lianhuan_trigger",
+  anim_type = "control",
+  main_skill = ol_ex__lianhuan,
+  events = {fk.AfterCardTargetDeclared},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(ol_ex__lianhuan) and data.card.trueName == "iron_chain" and
+    #U.getUseExtraTargets(player.room, data) > 0
+  end,
+  on_cost = function(self, event, target, player, data)
+    local to = player.room:askForChoosePlayers(player, U.getUseExtraTargets(player.room, data),
+    1, 1, "#ol_ex__lianhuan-choose:::"..data.card:toLogString(), ol_ex__lianhuan.name, true)
+    if #to > 0 then
+      self.cost_data = to[1]
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    player:broadcastSkillInvoke(ol_ex__lianhuan.name)
+    TargetGroup:pushTargets(data.tos, self.cost_data)
+  end,
+}
+local ol_ex__niepan = fk.CreateTriggerSkill{
+  name = "ol_ex__niepan",
+  anim_type = "defensive",
+  frequency = Skill.Limited,
+  events = {fk.AskForPeaches},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self) and player.dying and player:usedSkillTimes(self.name, Player.HistoryGame) == 0
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    player:throwAllCards("hej")
+    if player.dead then return false end
+    player:reset()
+    if player.dead then return false end
+    player:drawCards(3, self.name)
+    if player.dead then return false end
+    if player:isWounded() then
+      room:recover({
+        who = player,
+        num = math.min(3, player.maxHp) - player.hp,
+        recoverBy = player,
+        skillName = self.name,
+      })
+      if player.dead then return false end
+    end
+    local wolong_skills = {"bazhen", "ol_ex__huoji", "ol_ex__kanpo"}
+    local choices = table.filter(wolong_skills, function (skill_name)
+      return not player:hasSkill(skill_name, true)
+    end)
+    if #choices == 0 then return false end
+    local choice = player.room:askForChoice(player, choices, self.name, "#ol_ex__niepan-choice", true, wolong_skills)
+    room:handleAddLoseSkills(player, choice, nil)
+  end,
+}
+
+ol_ex__lianhuan:addRelatedSkill(ol_ex__lianhuan_trigger)
+pangtong:addSkill(ol_ex__lianhuan)
+pangtong:addSkill(ol_ex__niepan)
+pangtong:addRelatedSkill("bazhen")
+pangtong:addRelatedSkill("ol_ex__huoji")
+pangtong:addRelatedSkill("ol_ex__kanpo")
+
+Fk:loadTranslationTable{
+  ["ol_ex__pangtong"] = "界庞统",
+  ["ol_ex__lianhuan"] = "连环",
+  [":ol_ex__lianhuan"] = "①出牌阶段，你可选择：1.将一张♣牌转化为【铁索连环】使用；2.重铸一张♣牌。"..
+  "②当【铁索连环】选择目标后，若使用者为你，你可令一名角色也成为此牌的目标。",
+  ["ol_ex__niepan"] = "涅槃",
+  [":ol_ex__niepan"] = "限定技，当你处于濒死状态时，你可以：弃置区域里的所有牌，复原，"..
+  "摸三张牌，将体力回复至3点，选择下列一个技能并获得之：1.〖八阵〗；2.〖火计〗；3.〖看破〗。",
+
+  ["#ol_ex__lianhuan-active"] = "发动连环，你可以将一张♣牌转化为【铁索连环】使用，不选目标直接点确定则重铸",
+  ["#ol_ex__lianhuan_trigger"] = "连环",
+  ["#ol_ex__lianhuan-choose"] = "你可以发动 连环，为使用的【%arg】额外指定一个目标",
+  ["#ol_ex__niepan-choice"] = "涅槃：选择获得一项技能",
+
+  ["$ol_ex__lianhuan1"] = "连环之策，攻敌之计。",
+  ["$ol_ex__lianhuan2"] = "锁链连舟，困步难行。",
+  ["$ol_ex__niepan1"] = "烈火脱胎，涅槃重生。",
+  ["$ol_ex__niepan2"] = "破而后立，方有大成。",
+  ["$bazhen_ol_ex__pangtong1"] = "八卦四象，阴阳运转。",
+  ["$bazhen_ol_ex__pangtong2"] = "离火艮山，皆随我用。",
+  ["$ol_ex__huoji_ol_ex__pangtong1"] = "火计诱敌，江水助势。",
+  ["$ol_ex__huoji_ol_ex__pangtong2"] = "火烧赤壁，曹贼必败。",
+  ["$ol_ex__kanpo_ol_ex__pangtong1"] = "卧龙之才，吾也略懂。",
+  ["$ol_ex__kanpo_ol_ex__pangtong2"] = "这些小伎俩，逃不出我的眼睛！",
+  ["~ol_ex__pangtong"] = "骥飞羽落，坡道归尘……",
 }
 
 local ol_ex__duanliang = fk.CreateViewAsSkill{

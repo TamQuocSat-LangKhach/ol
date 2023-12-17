@@ -272,8 +272,10 @@ Fk:loadTranslationTable{
 
   ["#shenqu-invoke"] = "是否使用神躯，摸两张牌",
   ["#shenqu-use"] = "神躯：你可以使用一张【桃】",
-  ["#jiwu-active"] = "发动 极武，弃置一张牌获得一项技能",
+  ["#jiwu-active"] = "发动 极武，弃置一张牌来获得一项技能",
 
+  ["$wushuang_hulao__godlvbu31"] = "此天下，还有挡我者？",
+  ["$wushuang_hulao__godlvbu32"] = "画戟扫沙场，无双立万世。",
   ["$shenqu1"] = "别心怀侥幸了，你们不可能赢！",
   ["$shenqu2"] = "虎牢关，我一人镇守足矣。",
   ["$jiwu1"] = "我！是不可战胜的！",

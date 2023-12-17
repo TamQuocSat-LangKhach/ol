@@ -1961,13 +1961,12 @@ local guangu = fk.CreateActiveSkill{
     room:setPlayerMark(player, "@guangu-phase", #ids)
 
     if target == nil or target ~= player then
-      local fakemove = {
-        toArea = Card.PlayerHand,
-        to = player.id,
-        moveInfo = table.map(ids, function(id) return {cardId = id, fromArea = Card.Void} end),
-        moveReason = fk.ReasonJustMove,
-      }
-      room:notifyMoveCards({player}, {fakemove})
+      player.special_cards["guangu"] = table.simpleClone(ids)
+      player:doNotify("ChangeSelf", json.encode {
+        id = player.id,
+        handcards = player:getCardIds("h"),
+        special_cards = player.special_cards,
+      })
     end
 
     room:setPlayerMark(player, MarkEnum.BypassTimesLimit .. "-tmp", 1)
@@ -1985,13 +1984,12 @@ local guangu = fk.CreateActiveSkill{
     room:setPlayerMark(player, MarkEnum.BypassTimesLimit .. "-tmp", 0)
 
     if target == nil or target ~= player then
-      local fakemove = {
-        from = player.id,
-        toArea = Card.Void,
-        moveInfo = table.map(ids, function(id) return {cardId = id, fromArea = Card.PlayerHand} end),
-        moveReason = fk.ReasonJustMove,
-      }
-      room:notifyMoveCards({player}, {fakemove})
+      player.special_cards["guangu"] = {}
+      player:doNotify("ChangeSelf", json.encode {
+        id = player.id,
+        handcards = player:getCardIds("h"),
+        special_cards = player.special_cards,
+      })
     end
     if status == "yang" then
       if success then
@@ -2014,6 +2012,7 @@ local guangu = fk.CreateActiveSkill{
 }
 local guangu_viewas = fk.CreateViewAsSkill{
   name = "guangu_viewas",
+  expand_pile = "guangu",
   card_filter = function(self, to_select, selected)
     if #selected == 0 then
       local ids = Self:getMark("guangu_cards")
