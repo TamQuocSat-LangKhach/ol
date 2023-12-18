@@ -9,107 +9,72 @@ Fk:loadTranslationTable{
 }
 
 local zhugeke = General(extension, "zhugeke", "wu", 3)
-local aocai = fk.CreateTriggerSkill{
+local aocai = fk.CreateViewAsSkill{
   name = "aocai",
-  anim_type = "defensive",
-  events = {fk.AskForCardUse, fk.AskForCardResponse},
-  can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self) and player.phase == Player.NotActive and
-      ((data.cardName and Fk:cloneCard(data.cardName).type == Card.TypeBasic) or
-      (data.pattern and Exppattern:Parse(data.pattern):matchExp(".|.|.|.|.|basic")))
+  pattern = ".|.|.|.|.|basic",
+  anim_type = "special",
+  expand_pile = "aocai",
+  prompt = function()
+    return "#aocai"
   end,
-  on_use = function(self, event, target, player, data)
-    local room = player.room
-    local ids
-    if player:isKongcheng() then
-      ids = room:getNCards(4)
-    else
-      ids = room:getNCards(2)
-    end
-    local fakemove = {
-      toArea = Card.PlayerHand,
-      to = player.id,
-      moveInfo = table.map(ids, function(id) return {cardId = id, fromArea = Card.Void} end),
-      moveReason = fk.ReasonJustMove,
-    }
-    room:notifyMoveCards({player}, {fakemove})
-    local availableCards = {}
-    for _, id in ipairs(ids) do
-      local card = Fk:getCardById(id)
-      if card.type == Card.TypeBasic then
-        if data.pattern then
-          if Exppattern:Parse(data.pattern):match(card) then
-            table.insertIfNeed(availableCards, id)
-          end
-        else
-          if player:canUse(card) then
-            table.insertIfNeed(availableCards, id)
-          end
-        end
-      end
-    end
-    room:setPlayerMark(player, "aocai_cards", availableCards)
-    local success, dat
-    if event == fk.AskForCardUse then
-      success, dat = room:askForUseActiveSkill(player, "aocai_use", "#aocai-use", true)
-    else
-      success, dat = room:askForUseActiveSkill(player, "aocai_response", "#aocai-response", true)
-    end
-    room:setPlayerMark(player, "aocai_cards", 0)
-    fakemove = {
-      from = player.id,
-      toArea = Card.Void,
-      moveInfo = table.map(ids, function(id) return {cardId = id, fromArea = Card.PlayerHand} end),
-      moveReason = fk.ReasonJustMove,
-    }
-    room:notifyMoveCards({player}, {fakemove})
-    for i = #ids, 1, -1 do
-      table.insert(room.draw_pile, 1, ids[i])
-    end
-    if success then
-      if event == fk.AskForCardUse then
-        local card = Fk.skills["aocai_use"]:viewAs(dat.cards)
-        data.result = {
-          from = player.id,
-          card = card,
-        }
-        data.result.card.skillName = self.name
-        if data.eventData then
-          data.result.toCard = data.eventData.toCard
-          data.result.responseToEvent = data.eventData.responseToEvent
-        end
-      else
-        local card =  Fk:getCardById(dat.cards[1])
-        data.result = card
-        data.result.skillName = self.name
-      end
-    end
-    return true
-  end
-}
-local aocai_use = fk.CreateViewAsSkill{
-  name = "aocai_use",
   card_filter = function(self, to_select, selected)
-    if #selected == 0 then
-      local ids = Self:getMark("aocai_cards")
-      return type(ids) == "table" and table.contains(ids, to_select)
+    if #selected == 0 and Self:getPileNameOfId(to_select) == "aocai" then
+      local card = Fk:getCardById(to_select)
+      if card.type == Card.TypeBasic then
+        if Fk.currentResponsePattern == nil then
+          return Self:canUse(card) and not Self:prohibitUse(card)
+        else
+          return Exppattern:Parse(Fk.currentResponsePattern):match(card)
+        end
+      end
     end
   end,
   view_as = function(self, cards)
-    if #cards == 1 then
-      return Fk:getCardById(cards[1])
-    end
+    if #cards ~= 1 then return end
+    return Fk:getCardById(cards[1])
+  end,
+  enabled_at_play = function(self, player)
+    return false
+  end,
+  enabled_at_response = function(self, player, response)
+    return player.phase == Player.NotActive
   end,
 }
-local aocai_response = fk.CreateActiveSkill{
-  name = "aocai_response",
-  card_num = 1,
-  target_num = 0,
-  card_filter = function(self, to_select, selected)
-    if #selected == 0 then
-      local ids = Self:getMark("aocai_cards")
-      return type(ids) == "table" and table.contains(ids, to_select)
+local aocai_trigger = fk.CreateTriggerSkill{
+  name = "#aocai_trigger",
+
+  refresh_events = {fk.AskForCardUse, fk.AskForCardResponse, fk.EventLoseSkill},
+  can_refresh = function(self, event, target, player, data)
+    if target == player then
+      if event == fk.EventLoseSkill then
+        return data == self
+      else
+        return player:hasSkill("aocai")
+      end
     end
+  end,
+  on_refresh = function(self, event, target, player, data)
+    local room = player.room
+    if event == fk.EventLoseSkill then
+      player.special_cards["aocai"] = {}
+    else
+      local n = player:isKongcheng() and 4 or 2
+      local ids = {}
+      local length = #room.draw_pile
+      if length <= n then
+        ids = table.simpleClone(room.draw_pile)
+      else
+        for i = 1, n, 1 do
+          table.insert(ids, room.draw_pile[i])
+        end
+      end
+      player.special_cards["aocai"] = table.simpleClone(ids)
+    end
+    player:doNotify("ChangeSelf", json.encode {
+      id = player.id,
+      handcards = player:getCardIds("h"),
+      special_cards = player.special_cards,
+    })
   end,
 }
 local duwu = fk.CreateActiveSkill{
@@ -163,8 +128,7 @@ local duwu_trigger = fk.CreateTriggerSkill{
     end
   end,
 }
-Fk:addSkill(aocai_use)
-Fk:addSkill(aocai_response)
+aocai:addRelatedSkill(aocai_trigger)
 duwu:addRelatedSkill(duwu_trigger)
 zhugeke:addSkill(aocai)
 zhugeke:addSkill(duwu)
@@ -175,10 +139,7 @@ Fk:loadTranslationTable{
   ["duwu"] = "黩武",
   [":duwu"] = "出牌阶段，你可以弃置X张牌对你攻击范围内的一名其他角色造成1点伤害（X为该角色的体力值）。"..
   "若其因此进入濒死状态且被救回，则濒死状态结算后你失去1点体力，且本回合不能再发动〖黩武〗。",
-  ["aocai_use"] = "傲才",
-  ["aocai_response"] = "傲才",
-  ["#aocai-use"] = "傲才：你可以使用其中你需要的牌",
-  ["#aocai-response"] = "傲才：你可以打出其中你需要的牌",
+  ["#aocai"] = "傲才：你可以使用或打出其中你需要的基本牌",
   ["@@duwu-turn"] = "黩武失效",
 
   ["$aocai1"] = "哼，易如反掌。",
