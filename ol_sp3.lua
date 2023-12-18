@@ -2991,38 +2991,33 @@ Fk:loadTranslationTable{
 }
 
 local pengyang = General(extension, "ol__pengyang", "shu", 3)
-local qifan = fk.CreateTriggerSkill{
+local qifan = fk.CreateViewAsSkill{
   name = "qifan",
+  pattern = ".",
   anim_type = "special",
-  events = {fk.PreCardUse},
-  can_trigger = function (self, event, target, player, data)
-    if target == player and player:hasSkill(self, true) then
-      local cards = data.card:isVirtual() and data.card.subcards or {data.card.id}
-      if #cards == 0 then return end
-      local yes = false
-      local use = player.room.logic:getCurrentEvent()
-      use:searchEvents(GameEvent.MoveCards, 1, function(e)
-        if e.parent and e.parent.id == use.id then
-          for _, move in ipairs(e.data) do
-            if move.moveReason == fk.ReasonUse then
-              for _, info in ipairs(move.moveInfo) do
-                if info.fromArea == Card.DrawPile then
-                  yes = true
-                end
-              end
-            end
-          end
-        end
-      end)
-      return yes
+  expand_pile = "qifan",
+  prompt = function()
+    return "#qifan:::"..(#U.getMark(Self, "qifan") + 1)
+  end,
+  card_filter = function(self, to_select, selected)
+    if #selected == 0 and Self:getPileNameOfId(to_select) == "qifan" then
+      local card = Fk:getCardById(to_select)
+      if Fk.currentResponsePattern == nil then
+        return Self:canUse(card) and not Self:prohibitUse(card)
+      else
+        return Exppattern:Parse(Fk.currentResponsePattern):match(card)
+      end
     end
   end,
-  on_cost = Util.TrueFunc,
-  on_use = function (self, event, target, player, data)
+  view_as = function(self, cards)
+    if #cards ~= 1 then return end
+    return Fk:getCardById(cards[1])
+  end,
+  before_use = function (self, player, use)
     local room = player.room
     local mark = player:getMark(self.name)
     if mark == 0 then mark = {} end
-    table.insertIfNeed(mark, data.card.type)
+    table.insertIfNeed(mark, use.card.type)
     room:setPlayerMark(player, self.name, mark)
     local areas = {"j", "e", "h"}
     for i = 1, #mark, 1 do
@@ -3030,48 +3025,48 @@ local qifan = fk.CreateTriggerSkill{
       player:throwAllCards(areas[i])
     end
   end,
+  enabled_at_response = function(self, player, response)
+    return not response
+  end,
+}
+local qifan_trigger = fk.CreateTriggerSkill{
+  name = "#qifan_trigger",
 
-  refresh_events = {fk.AfterCardsMove},
+  refresh_events = {fk.StartPlayCard, fk.AskForCardUse, fk.EventLoseSkill},
   can_refresh = function(self, event, target, player, data)
-    if player:hasSkill(self, true) then
-      for _, move in ipairs(data) do
-        if move.toArea == Card.DrawPile then
-          return true
-        end
-        for _, info in ipairs(move.moveInfo) do
-          if info.fromArea == Card.DrawPile then
-            return true
-          end
-        end
+    if target == player then
+      if event == fk.EventLoseSkill then
+        return data == self
+      else
+        return player:hasSkill("qifan")
       end
     end
   end,
   on_refresh = function(self, event, target, player, data)
-    local n = 0
-    if player:getMark(self.name) ~= 0 then
-      n = n + #player:getMark(self.name)
-    end
-    local ids = {}
-    local length = #player.room.draw_pile
-    if length <= n then
-      ids = table.simpleClone(player.room.draw_pile)
+    local room = player.room
+    if event == fk.EventLoseSkill then
+      player.special_cards["qifan"] = {}
     else
-      for i = length, length - n, -1 do
-        table.insert(ids, player.room.draw_pile[i])
+      local n = 0
+      if player:getMark("qifan") ~= 0 then
+        n = n + #player:getMark("qifan")
       end
+      local ids = {}
+      local length = #room.draw_pile
+      if length <= n then
+        ids = table.simpleClone(room.draw_pile)
+      else
+        for i = length, length - n, -1 do
+          table.insert(ids, room.draw_pile[i])
+        end
+      end
+      player.special_cards["qifan"] = table.simpleClone(ids)
     end
-    player.special_cards["qifan&"] = table.simpleClone(ids)  --FIXME: 似乎不应该是这种手感……
     player:doNotify("ChangeSelf", json.encode {
       id = player.id,
       handcards = player:getCardIds("h"),
       special_cards = player.special_cards,
     })
-  end,
-}
-local qifan_prohibit = fk.CreateProhibitSkill{
-  name = "#qifan_prohibit",
-  prohibit_response = function(self, player, card)
-    return #player:getPile("qifan&") > 0 and table.contains(player:getPile("qifan&"), card:getEffectiveId())
   end,
 }
 local tuoshi = fk.CreateTriggerSkill{
@@ -3111,7 +3106,7 @@ local tuoshi_targetmod = fk.CreateTargetModSkill{
     return player:getMark("@@tuoshi") > 0
   end,
 }
-qifan:addRelatedSkill(qifan_prohibit)
+qifan:addRelatedSkill(qifan_trigger)
 tuoshi:addRelatedSkill(tuoshi_prohibit)
 tuoshi:addRelatedSkill(tuoshi_targetmod)
 pengyang:addSkill(qifan)
@@ -3124,7 +3119,7 @@ Fk:loadTranslationTable{
   "判定区、装备区、手牌区。",
   ["tuoshi"] = "侻失",
   [":tuoshi"] = "锁定技，你不能使用【无懈可击】；当你使用点数为字母的牌后，你摸两张牌且使用下一张牌无距离次数限制。",
-  ["qifan&"] = "器翻",
+  ["#qifan"] = "器翻：观看牌堆底%arg张牌，使用其中你需要的牌",
   ["@@tuoshi"] = "侻失",
 }
 
