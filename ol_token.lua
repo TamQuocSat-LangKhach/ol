@@ -4,6 +4,8 @@ Fk:loadTranslationTable{
   ["ol_token"] = "OL衍生牌",
 }
 
+local U = require "packages/utility/utility"
+
 local sevenStarsSwordSkill = fk.CreateTriggerSkill{
   name = "#seven_stars_sword_skill",
   attached_equip = "seven_stars_sword",
@@ -469,12 +471,8 @@ local caltrop_cart_skill = fk.CreateTriggerSkill{
   events = {fk.TurnEnd},
   can_trigger = function(self, event, target, player, data)
     if player:usedSkillTimes("#grain_cart_skill", Player.HistoryTurn) > 0 or player:usedSkillTimes("#caltrop_cart_skill", Player.HistoryTurn) > 0 or player:usedSkillTimes("#wheel_cart_skill", Player.HistoryTurn) > 0 then return false end
-    if player:hasSkill(self) and table.find(player:getEquipments(Card.SubtypeTreasure), function(cid) return Fk:getCardById(cid).name == "caltrop_cart" end) and not target:isNude() and target ~= player then
-      local damage_events = player.room.logic:getEventsOfScope(GameEvent.Damage, 1, function(e)
-        local damage = e.data[1]
-        return damage and damage.from and damage.from == target
-      end, Player.HistoryTurn)
-      return #damage_events == 0
+    if player:hasSkill(self) and table.find(player:getEquipments(Card.SubtypeTreasure), function(cid) return Fk:getCardById(cid).name == "caltrop_cart" end) and target ~= player then
+      return #U.getActualDamageEvents(player.room, 1, function(e) return e.data[1].from == target end) == 0
     end
   end,
   on_cost = function(self, event, target, player, data)

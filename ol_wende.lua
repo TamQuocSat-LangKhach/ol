@@ -572,42 +572,43 @@ Fk:loadTranslationTable{
 }
 
 local cheliji = General(extension, "cheliji", "qun", 4)
+local chexuan_cart = {{"wheel_cart", Card.Spade, 5}, {"caltrop_cart", Card.Club, 5}, {"grain_cart", Card.Heart, 5}}
 local chexuan = fk.CreateActiveSkill{
   name = "chexuan",
   card_num = 1,
   card_filter = function(self, to_select, selected)
     return #selected == 0 and Fk:getCardById(to_select).color == Card.Black
+    and not Self:prohibitDiscard(Fk:getCardById(to_select))
   end,
   target_num = 0,
   can_use = function(self, player)
     return not player:isNude() and #player:getEquipments(Card.SubtypeTreasure) == 0 and
-      #player:getAvailableEquipSlots(Card.SubtypeTreasure) > 0
+    player:hasEmptyEquipSlot(Card.SubtypeTreasure)
   end,
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
     room:throwCard(effect.cards, self.name, player, player)
-    local all_choices = {"wheel_cart","caltrop_cart","grain_cart"}
-    local names,ids = {},{}
-    for _, id in ipairs(Fk:getAllCardIds()) do
-      local c = Fk:getCardById(id)
-      if room:getCardArea(id) == Card.Void then
-        local name = c.name
-        if table.contains(all_choices, name) and not table.contains(names, name) then
-          table.insert(names, name)
-          table.insert(ids, id)
-        end
-      end
-    end
-    if #names > 0 then
-      local choice = room:askForChoice(player, names, self.name, "#chexuan-choice", true, all_choices)
-      for i, n in ipairs(names) do
-        if n == choice then
-          local cardId = ids[i]
-          room:setCardMark(Fk:getCardById(cardId), MarkEnum.DestructOutMyEquip, 1)
-          U.moveCardIntoEquip(room, player, cardId, self.name, true, player)
-        end
-      end
-    end
+    if player.dead or not player:hasEmptyEquipSlot(Card.SubtypeTreasure) then return end
+    local carts = table.filter(U.prepareDeriveCards(room, chexuan_cart, "chexuan_derivecards"), function (id)
+      return room:getCardArea(id) == Card.Void
+    end)
+    if #carts == 0 then return end
+    player.special_cards["chexuan"] = table.simpleClone(carts)
+    player:doNotify("ChangeSelf", json.encode {
+      id = player.id,
+      handcards = player:getCardIds("h"),
+      special_cards = player.special_cards,
+    })
+    local card = room:askForCard(player, 1, 1, false, self.name, false, ".|.|.|chexuan", "#chexuan-put", "chexuan")
+    player.special_cards["chexuan"] = {}
+    player:doNotify("ChangeSelf", json.encode {
+      id = player.id,
+      handcards = player:getCardIds("h"),
+      special_cards = player.special_cards,
+    })
+    local cardId = #card > 0 and card[1] or table.random(carts)
+    room:setCardMark(Fk:getCardById(cardId), MarkEnum.DestructOutMyEquip, 1)
+    U.moveCardIntoEquip(room, player, cardId, self.name, true, player)
   end,
 }
 local chexuan_trigger = fk.CreateTriggerSkill{
@@ -616,8 +617,7 @@ local chexuan_trigger = fk.CreateTriggerSkill{
   main_skill = chexuan,
   events = {fk.AfterCardsMove},
   can_trigger = function(self, event, target, player, data)
-    if player:hasSkill(self) and #player:getAvailableEquipSlots(Card.SubtypeTreasure) > 0 and
-      #player:getEquipments(Card.SubtypeTreasure) == 0 then
+    if player:hasSkill(self) and player:hasEmptyEquipSlot(Card.SubtypeTreasure) then
       for _, move in ipairs(data) do
         if move.from == player.id and move.moveReason ~= fk.ReasonUse then
           for _, info in ipairs(move.moveInfo) do
@@ -639,15 +639,11 @@ local chexuan_trigger = fk.CreateTriggerSkill{
     local judge = {  who = player, reason = chexuan.name, pattern = ".|.|spade,club" }
     room:judge(judge)
     if judge.card.color == Card.Black and not player.dead and player:hasEmptyEquipSlot(Card.SubtypeTreasure) then
-      local ids = {}
-      for _, id in ipairs(room.void) do
-        local c = Fk:getCardById(id)
-        if c.name == "wheel_cart" or c.name == "caltrop_cart" or c.name == "grain_cart" then
-          table.insert(ids, id)
-        end
-      end
-      if #ids > 0 then
-        local put = ids[math.random(1, #ids)]
+      local carts = table.filter(U.prepareDeriveCards(room, chexuan_cart, "chexuan_derivecards"), function (id)
+        return room:getCardArea(id) == Card.Void
+      end)
+      if #carts > 0 then
+        local put = table.random(carts)
         room:setCardMark(Fk:getCardById(put), MarkEnum.DestructOutMyEquip, 1)
         U.moveCardIntoEquip(room, player, put, chexuan.name, true, player)
       end
@@ -671,7 +667,7 @@ Fk:loadTranslationTable{
   ["chexuan"] = "车悬",
   [":chexuan"] = "①出牌阶段，若你的装备区里没有宝物牌，你可以弃置一张黑色牌，选择一张“舆”置入你的装备区（此牌离开装备区时销毁）。②当你不因使用装备牌失去装备区里的宝物牌后，你可以判定，若结果为黑色，将一张随机的“舆”置入你的装备区。",
   ["#chexuan_trigger"] = "车悬",
-  ["#chexuan-choice"] = "车悬：选择一种“舆”置入你的装备区",
+  ["#chexuan-put"] = "车悬：选择一种“舆”置入你的装备区",
   ["#chexuan-invoke"] = "车悬：你可以判定，若结果为黑色，将一张随机的“舆”置入你的装备区",
   ["qiangshou"] = "羌首",
   [":qiangshou"] = "锁定技，若你的装备区里有宝物牌，你至其他角色的距离-1。",
