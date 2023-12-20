@@ -2201,25 +2201,14 @@ local lianji = fk.CreateActiveSkill{
     local target = room:getPlayerById(effect.tos[1])
     room:throwCard(effect.cards, self.name, player, player)
     if target.dead then return end
-    local cards = {}
-    for i = 1, #room.draw_pile, 1 do
-      local card = Fk:getCardById(room.draw_pile[i])
-      if card.sub_type == Card.SubtypeWeapon then
-        table.insertIfNeed(cards, room.draw_pile[i])
-      end
-    end
+    local cards = table.filter(room.draw_pile, function(id) return Fk:getCardById(id).sub_type == Card.SubtypeWeapon end)
     if #cards > 0 then
       local card = Fk:getCardById(table.random(cards))
       if card.name == "qinggang_sword" then
-        for _, id in ipairs(Fk:getAllCardIds()) do
-          if Fk:getCardById(id).name == "seven_stars_sword" then
-            card = Fk:getCardById(id)
-            room:setCardMark(card, MarkEnum.DestructIntoDiscard, 1)
-            break
-          end
-        end
+        room:moveCardTo(card, Card.Void, nil, fk.ReasonJustMove, self.name)
+        card = room:printCard("seven_stars_sword", Card.Spade, 6)
       end
-      if not target:isProhibited(target, card) then
+      if U.canUseCardTo(room, target, target, card) then
         room:useCard({
           from = target.id,
           tos = {{target.id}},
@@ -2227,68 +2216,36 @@ local lianji = fk.CreateActiveSkill{
         })
       end
     end
+    if target.dead or player.dead then return end
     local targets = {}
     for _, p in ipairs(room:getOtherPlayers(target)) do
       if target:inMyAttackRange(p) then
         table.insert(targets, p.id)
       end
     end
-    if #targets == 0 then
-      if target:getEquipment(Card.SubtypeWeapon) then
-        local alivePlayerIds = table.map(room.alive_players, Util.IdMapper)
-        local tos = room:askForChoosePlayers(player, alivePlayerIds, 1, 1, "#lianji-card::"..target.id, self.name, false)
-        local to
-        if #tos > 0 then
-          to = tos[1]
-        else
-          to = table.random(alivePlayerIds)
-        end
-        room:moveCards({
-          from = target.id,
-          ids = {target:getEquipment(Card.SubtypeWeapon)},
-          to = to,
-          toArea = Card.PlayerHand,
-          moveReason = fk.ReasonGive,
-          proposer = player.id,
-          skillName = self.name,
-        })
-      end
-    else
-      local tos = room:askForChoosePlayers(player, targets, 1, 1, "#lianji-choose::"..target.id, self.name, false)
-      local victim
-      if #tos > 0 then
-        victim = tos[1]
-      else
-        victim = table.random(targets)
-      end
+    if #targets > 0 then
+      local victim = room:askForChoosePlayers(player, targets, 1, 1, "#lianji-choose::"..target.id, self.name, false)[1]
       room:doIndicate(target.id, {victim})
-      local use = room:askForUseCard(target, "slash", "slash", "#lianji-slash:"..player.id..":"..victim, true, {must_targets = {victim}})
+      local use = room:askForUseCard(target, "slash", "slash", "#lianji-slash:"..player.id..":"..victim, true, {exclusive_targets = {victim}})
       if use then
         room:useCard(use)
         if use.damageDealt then
           room:addPlayerMark(player, "moucheng", 1)
         end
-      else
-        if target:getEquipment(Card.SubtypeWeapon) then
-          local alivePlayerIds = table.map(room.alive_players, Util.IdMapper)
-          local tos = room:askForChoosePlayers(player, alivePlayerIds, 1, 1, "#lianji-card::"..target.id, self.name, false)
-          local to
-          if #tos > 0 then
-            to = tos[1]
-          else
-            to = table.random(alivePlayerIds)
-          end
-          room:moveCards({
-            from = target.id,
-            ids = {target:getEquipment(Card.SubtypeWeapon)},
-            to = to,
-            toArea = Card.PlayerHand,
-            moveReason = fk.ReasonGive,
-            proposer = player.id,
-            skillName = self.name,
-          })
-        end
+        return false
       end
+    end
+    if target:getEquipment(Card.SubtypeWeapon) then
+      local to = room:askForChoosePlayers(player, table.map(room.alive_players, Util.IdMapper), 1, 1, "#lianji-card::"..target.id, self.name, false)[1]
+      room:moveCards({
+        from = target.id,
+        ids = target:getEquipments(Card.SubtypeWeapon),
+        to = to,
+        toArea = Card.PlayerHand,
+        moveReason = fk.ReasonGive,
+        proposer = player.id,
+        skillName = self.name,
+      })
     end
   end,
 }

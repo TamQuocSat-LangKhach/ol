@@ -755,6 +755,7 @@ Fk:loadTranslationTable{
 }
 
 local shangyang = General(extension, "shangyang", "qin", 4)
+local bianfa_derivecards = {{"shangyang_reform", Card.Spade, 5}, {"shangyang_reform", Card.Spade, 7}, {"shangyang_reform", Card.Spade, 9}}
 local qin__bianfa = fk.CreateViewAsSkill{
   name = "qin__bianfa",
   anim_type = "offensive",
@@ -806,14 +807,14 @@ local qin__bianfa_trigger = fk.CreateTriggerSkill{
     local room = player.room
     player:broadcastSkillInvoke("qin__bianfa")
     if event == fk.GameStart then
-      for i = #room.void, 1, -1 do
-        if Fk:getCardById(room.void[i]).trueName == "shangyang_reform" then
-          local id = table.remove(room.void, i)
+      room:notifySkillInvoked(player, "qin__bianfa", "special")
+      for _, id in ipairs(U.prepareDeriveCards(room, bianfa_derivecards, "bianfa_derivecards")) do
+        if room:getCardArea(id) == Card.Void then
+          table.removeOne(room.void, id)
           table.insert(room.draw_pile, math.random(1, #room.draw_pile), id)
           room:setCardArea(id, Card.DrawPile, nil)
         end
       end
-      room:notifySkillInvoked(player, "qin__bianfa", "special")
       room:doBroadcastNotify("UpdateDrawPile", tostring(#room.draw_pile))
     else
       room:notifySkillInvoked(player, "qin__bianfa", "offensive")
@@ -848,7 +849,7 @@ local qin__kencao = fk.CreateTriggerSkill{
     if target:getMark("@qin__kencao") > 2 then
       room:setPlayerMark(target, "@qin__kencao", 0)
       room:changeMaxHp(target, 1)
-      if target:isWounded() then
+      if target:isWounded() and not target.dead then
         room:recover({
           who = target,
           num = 1,
@@ -1274,6 +1275,7 @@ local qin__shihuang = fk.CreateTriggerSkill{
     player:gainAnExtraTurn(true)
   end,
 }
+local zulong_derivecards = {{"qin_dragon_sword", Card.Heart, 2}, {"qin_seal", Card.Heart, 7}}
 local qin__zulong = fk.CreateTriggerSkill{
   name = "qin__zulong",
   anim_type = "drawcard",
@@ -1291,17 +1293,16 @@ local qin__zulong = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     if event == fk.GameStart then
-      for i = #room.void, 1, -1 do
-        if Fk:getCardById(room.void[i]).trueName == "qin_dragon_sword" or Fk:getCardById(room.void[i]).trueName == "qin_seal" then
-          local id = table.remove(room.void, i)
+      for _, id in ipairs(U.prepareDeriveCards(room, zulong_derivecards, "zulong_derivecards")) do
+        if room:getCardArea(id) == Card.Void then
+          table.removeOne(room.void, id)
           table.insert(room.draw_pile, math.random(1, #room.draw_pile), id)
           room:setCardArea(id, Card.DrawPile, nil)
         end
       end
       room:doBroadcastNotify("UpdateDrawPile", tostring(#room.draw_pile))
     else
-      local cards = room:getCardsFromPileByRule("qin_dragon_sword", 1, "allPiles")
-      table.insertTable(cards, room:getCardsFromPileByRule("qin_seal", 1, "allPiles"))
+      local cards = room:getCardsFromPileByRule("qin_dragon_sword,qin_seal", 2, "allPiles")
       if #cards > 0 then
         room:moveCards({
           ids = cards,

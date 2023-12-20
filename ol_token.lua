@@ -6,54 +6,6 @@ Fk:loadTranslationTable{
 
 local U = require "packages/utility/utility"
 
-local sevenStarsSwordSkill = fk.CreateTriggerSkill{
-  name = "#seven_stars_sword_skill",
-  attached_equip = "seven_stars_sword",
-  frequency = Skill.Compulsory,
-  events = {fk.TargetSpecified},
-  can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self) and data.card and data.card.trueName == "slash"
-  end,
-  on_use = function(self, event, target, player, data)
-    local room = player.room
-    room:addPlayerMark(room:getPlayerById(data.to), fk.MarkArmorNullified)
-    if not room:getPlayerById(data.to):isWounded() then
-      data.additionalDamage = (data.additionalDamage or 0) + 1
-    end
-    data.extra_data = data.extra_data or {}
-    data.extra_data.qinggangNullified = data.extra_data.qinggangNullified or {}
-    data.extra_data.qinggangNullified[tostring(data.to)] = (data.extra_data.qinggangNullified[tostring(data.to)] or 0) + 1
-  end,
-
-  refresh_events = {fk.CardUseFinished},
-  can_refresh = function(self, event, target, player, data)
-    return data.extra_data and data.extra_data.qinggangNullified
-  end,
-  on_refresh = function(self, event, target, player, data)
-    local room = player.room
-    for key, num in pairs(data.extra_data.qinggangNullified) do
-      local p = room:getPlayerById(tonumber(key))
-      if p:getMark(fk.MarkArmorNullified) > 0 then
-        room:removePlayerMark(p, fk.MarkArmorNullified, num)
-      end
-    end
-    data.qinggangNullified = nil
-  end,
-}
-Fk:addSkill(sevenStarsSwordSkill)
-local sevenStarsSword = fk.CreateWeapon{
-  name = "&seven_stars_sword",
-  suit = Card.Spade,
-  number = 6,
-  attack_range = 2,
-  equip_skill = sevenStarsSwordSkill,
-}
-extension:addCard(sevenStarsSword)
-Fk:loadTranslationTable{
-  ["seven_stars_sword"] = "七宝刀",
-  ["#seven_stars_sword_skill"] = "七宝刀",
-  [":seven_stars_sword"] = "装备牌·武器<br /><b>攻击范围</b>：2<br /><b>武器技能</b>：锁定技，你使用【杀】无视目标防具，若目标角色未损失体力值，此【杀】伤害+1。",
-}
 
 local honeyTrapSkill = fk.CreateActiveSkill{
   name = "honey_trap_skill",
@@ -608,9 +560,9 @@ Fk:loadTranslationTable{
   [":py_blade"] = "装备牌·武器<br/><b>攻击范围</b>：3<br/><b>武器技能</b>：锁定技，你使用红色【杀】不能被【闪】响应。",
 }
 
-local py_sword_skill = fk.CreateTriggerSkill{
-  name = "#py_sword_skill",
-  attached_equip = "py_sword",
+local blood_sword_skill = fk.CreateTriggerSkill{
+  name = "#blood_sword_skill",
+  attached_equip = "blood_sword",
   frequency = Skill.Compulsory,
   events = { fk.TargetSpecified },
   can_trigger = function(self, event, target, player, data)
@@ -620,59 +572,59 @@ local py_sword_skill = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     room:addPlayerMark(room:getPlayerById(data.to), fk.MarkArmorNullified)
-    room:addPlayerMark(room:getPlayerById(data.to), "py_swordMark")
+    room:addPlayerMark(room:getPlayerById(data.to), "blood_swordMark")
     data.extra_data = data.extra_data or {}
-    data.extra_data.py_swordNullified = data.extra_data.py_swordNullified or {}
-    data.extra_data.py_swordNullified[tostring(data.to)] = (data.extra_data.py_swordNullified[tostring(data.to)] or 0) + 1
+    data.extra_data.blood_swordNullified = data.extra_data.blood_swordNullified or {}
+    data.extra_data.blood_swordNullified[tostring(data.to)] = (data.extra_data.blood_swordNullified[tostring(data.to)] or 0) + 1
   end,
 
   refresh_events = {fk.CardUseFinished},
   can_refresh = function(self, event, target, player, data)
-    return data.extra_data and data.extra_data.py_swordNullified
+    return data.extra_data and data.extra_data.blood_swordNullified
   end,
   on_refresh = function(self, event, target, player, data)
     local room = player.room
-    for key, num in pairs(data.extra_data.py_swordNullified) do
+    for key, num in pairs(data.extra_data.blood_swordNullified) do
       local p = room:getPlayerById(tonumber(key))
       if p:getMark(fk.MarkArmorNullified) > 0 then
         room:removePlayerMark(p, fk.MarkArmorNullified, num)
       end
-      if p:getMark("py_swordMark") > 0 then
-        room:removePlayerMark(p, "py_swordMark", num)
+      if p:getMark("blood_swordMark") > 0 then
+        room:removePlayerMark(p, "blood_swordMark", num)
       end
     end
-    data.py_swordNullified = nil
+    data.blood_swordNullified = nil
   end,
 }
-local py_sword_prohibit = fk.CreateProhibitSkill{
-  name = "#py_sword_prohibit",
+local blood_sword_prohibit = fk.CreateProhibitSkill{
+  name = "#blood_sword_prohibit",
   prohibit_use = function(self, player, card)
-    if player:getMark("py_swordMark") > 0 then
+    if player:getMark("blood_swordMark") > 0 then
       local subcards = card:isVirtual() and card.subcards or {card.id}
       return #subcards > 0 and table.every(subcards, function(id) return table.contains(player:getCardIds(Player.Hand), id) end)
     end
   end,
   prohibit_response = function(self, player, card)
-    if player:getMark("py_swordMark") > 0 then
+    if player:getMark("blood_swordMark") > 0 then
       local subcards = card:isVirtual() and card.subcards or {card.id}
       return #subcards > 0 and table.every(subcards, function(id) return table.contains(player:getCardIds(Player.Hand), id) end)
     end
   end,
 }
-py_sword_skill:addRelatedSkill(py_sword_prohibit)
-Fk:addSkill(py_sword_skill)
-local py_sword = fk.CreateWeapon{
-  name = "&py_sword",
+blood_sword_skill:addRelatedSkill(blood_sword_prohibit)
+Fk:addSkill(blood_sword_skill)
+local blood_sword = fk.CreateWeapon{
+  name = "&blood_sword",
   suit = Card.Spade,
   number = 6,
   attack_range = 2,
-  equip_skill = py_sword_skill,
+  equip_skill = blood_sword_skill,
 }
-extension:addCard(py_sword)
+extension:addCard(blood_sword)
 Fk:loadTranslationTable{
-  ["py_sword"] = "赤血青锋",
-  ["#py_sword_skill"] = "赤血青锋",
-  [":py_sword"] = "装备牌·武器<br /><b>攻击范围</b>：２<br /><b>武器技能</b>：锁定技，你使用【杀】指定目标后，此【杀】无视目标角色的防具且目标不能使用或打出手牌，直至此【杀】结算完毕。",
+  ["blood_sword"] = "赤血青锋",
+  ["#blood_sword_skill"] = "赤血青锋",
+  [":blood_sword"] = "装备牌·武器<br /><b>攻击范围</b>：２<br /><b>武器技能</b>：锁定技，你使用【杀】指定目标后，此【杀】无视目标角色的防具且目标不能使用或打出手牌，直至此【杀】结算完毕。",
 }
 
 local py_double_halberd_skill = fk.CreateTriggerSkill{
@@ -1170,95 +1122,6 @@ Fk:loadTranslationTable{
   ["py_mirror_viewas"] = "照骨镜",
   ["#py_mirror-show"] = "照骨镜：你可展示一张基本牌或普通锦囊牌",
   ["#py_mirror-use"] = "照骨镜：视为使用%arg",
-}
-
-local py_map_skill = fk.CreateTriggerSkill{
-  name = "#py_map_skill",
-  attached_equip = "py_map",
-}
-Fk:addSkill(py_map_skill)
-local wonderMap = fk.CreateTreasure{
-  name = "&py_map",
-  suit = Card.Club,
-  number = 12,
-  equip_skill = py_map_skill,
-  on_install = function(self, room, player)
-    if player:isAlive() and self.equip_skill:isEffectable(player) then
-      room:askForDiscard(player, 1, 1, true, self.name, false, "^py_map", "#py_map-discard")
-    end
-  end,
-  on_uninstall = function(self, room, player)
-    if player:isAlive() and self.equip_skill:isEffectable(player) then
-      local n = 5 - #player.player_cards[Player.Hand]
-      if n > 0 then
-        player:drawCards(n, self.name)
-      end
-    end
-  end,
-}
-extension:addCard(wonderMap)
-Fk:loadTranslationTable{
-  ["py_map"] = "天机图",
-  [":py_map"] = "装备牌·宝物<br/><b>宝物技能</b>：锁定技，此牌进入你的装备区时，弃置一张其他牌；此牌离开你的装备区时，你将手牌摸至五张。",
-  ["#py_map-discard"] = "天机图：你须弃置一张【天机图】以外的牌",
-}
-
-local py_tactics_skill = fk.CreateTriggerSkill{
-  name = "#py_tactics_skill",
-  events = {fk.EventPhaseStart, fk.EventPhaseEnd},
-  can_trigger = function(self, event, target, player, data)
-    if target == player and player:hasSkill(self) and player.phase == Player.Play then
-      if event == fk.EventPhaseStart then
-        return true
-      else
-        return not player:isKongcheng()
-      end
-    end
-  end,
-  on_cost = function(self, event, target, player, data)
-    local room = player.room
-    if event == fk.EventPhaseStart then
-      local to = room:askForChoosePlayers(player, table.map(room:getAlivePlayers(), Util.IdMapper), 1, 1, "#py_tactics-choose", self.name, true)
-      if #to > 0 then
-        self.cost_data = to[1]
-        return true
-      end
-    else
-      local card = room:askForCard(player, 1, 1, false, self.name, true, ".", "#py_tactics-invoke")
-      if #card > 0 then
-        self.cost_data = card
-        return true
-      end
-    end
-  end,
-  on_use = function(self, event, target, player, data)
-    local room = player.room
-    if event == fk.EventPhaseStart then
-      local to = room:getPlayerById(self.cost_data)
-      if to.chained then
-        to:setChainState(false)
-      else
-        to:setChainState(true)
-      end
-    else
-      room:recastCard(self.cost_data, player, self.name)
-    end
-  end,
-}
-Fk:addSkill(py_tactics_skill)
-local taigongTactics = fk.CreateTreasure{
-  name = "&py_tactics",
-  suit = Card.Spade,
-  number = 2,
-  equip_skill = py_tactics_skill,
-}
-extension:addCard(taigongTactics)
-Fk:loadTranslationTable{
-  ["py_tactics"] = "太公阴符",
-  ["#py_tactics_skill"] = "太公阴符",
-  [":py_tactics"] = "装备牌·宝物<br/><b>宝物技能</b>：出牌阶段开始时，你可以横置或重置一名角色；出牌阶段结束时，你可以重铸一张手牌。",
-  ["#py_tactics-choose"] = "太公阴符：你可以横置或重置一名角色",
-  ["#py_tactics-invoke"] = "太公阴符：你可以重铸一张手牌",
 }
 
 return extension
