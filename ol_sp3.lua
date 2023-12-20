@@ -4035,7 +4035,7 @@ Fk:loadTranslationTable{
   ["ol__puyuan"] = "蒲元",
   ["shengong"] = "神工",
   [":shengong"] = "①出牌阶段各限一次，你可以弃置一张武器/防具/〔坐骑或宝物牌〕，进行一次“锻造”，选择一张武器/防具/宝物牌置于一名角色的装备区（替换原装备）。②当以此法获得的装备牌进入弃牌堆时，销毁之，然后此回合结束阶段，你摸一张牌。",
-  ["#shengong-help"] = "神工：点“确定”：助力 %src 的锻造。点“取消”：妨害锻造",
+  ["#shengong-help"] = "神工：选择助力或妨害 %src 的锻造",
   ["shengong_good"] = "助力锻造",
   ["shengong_bad"] = "妨害锻造",
   ["shengong_active"] = "神工",
