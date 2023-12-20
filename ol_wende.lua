@@ -2378,10 +2378,9 @@ local bolan_skills = {
   --yjcm
   "nos__xuanhuo", "xinzhan", "nos__jujian", "ganlu", "xianzhen", "anxu", "gongqi", "huaiyi", "zhige",
   --ol
-  "ziyuan", "lianzhu", "shanxi", "lianji", "jianji", "liehou", "xianbi", "shidu", "yanxi", "xuanbei", "yushen", "bolong", "fuxun",
+  "ziyuan", "lianzhu", "shanxi", "lianji", "jianji", "liehou", "xianbi", "shidu", "yanxi", "xuanbei", "yushen", "bolong", "fuxun", "qiuxin",
   --mobile
   "wuyuan", "zhujian", "duansuo", "poxiang", "hannan", "shihe", "wisdom__qiai", "shameng", "zundi", "mobile__shangyi", "yangjie",
-  "mou__jushou", "mou__fanjian",
   --overseas
   "os__jimeng", "os__beini", "os__yuejian", "os__waishi", "os__weipo", "os__shangyi",
   --tenyear
