@@ -2513,10 +2513,11 @@ local qiuxin_trigger = fk.CreateTriggerSkill{
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     local room = player.room
+    local tos = TargetGroup:getRealTargets(data.tos)
     if data.card.trueName == "slash" then
       for _, p in ipairs(player.room.alive_players) do
         if player.dead then break end
-        if not p.dead then
+        if not p.dead and table.contains(tos, p.id) then
           local mark = U.getMark(p, "@qiuxin")
           if table.contains(mark, "slash") then
             room:setPlayerMark(player, "qiuxin-tmp", p.id)
@@ -2550,7 +2551,7 @@ local qiuxin_trigger = fk.CreateTriggerSkill{
         local slash = Fk:cloneCard("slash")
         slash.skillName = qiuxin.name
         if player.dead or player:prohibitUse(slash) then break end
-        if not (p.dead or player:isProhibited(p, slash)) then
+        if table.contains(tos, p.id) and not (p.dead or player:isProhibited(p, slash))  then
           local mark = U.getMark(p, "@qiuxin")
           if table.contains(mark, "trick") and
           room:askForSkillInvoke(player, qiuxin.name, nil, "#qiuxin-slash::" .. p.id) then
