@@ -4962,34 +4962,111 @@ Fk:loadTranslationTable{
 local zhangzhi = General(extension, "zhangzhi", "qun", 3)
 local bixin_viewas = fk.CreateViewAsSkill{
   name = "bixin_viewas",
+  expand_pile = "bixin",
   interaction = function()
-    local names = {}
-    local mark = Self:getMark("bixin-turn")
-    for _, id in ipairs(Fk:getAllCardIds()) do
-      local card = Fk:getCardById(id)
-      if mark == 0 or (not table.contains(mark, card.trueName)) then
-        if card.type == Card.TypeBasic and card.name ~= "jink" and (card.name ~= "peach" or (card.name == "peach" and Self:isWounded())) and
-          Self:usedCardTimes(card.name, Player.HistoryRound) == 0 then
-          table.insertIfNeed(names, card.name)
+    local all_choices = {"basic", "trick", "equip"}
+    local choices = table.filter(all_choices, function (card_type)
+      return Self:getMark("bixin_" .. card_type) == 0
+    end)
+    if #choices == 0 then return end
+    return UI.ComboBox{ choices = choices, all_choices = all_choices }
+  end,
+  card_filter = function(self, to_select, selected)
+    if #selected > 0 then return false end
+    local mark = U.getMark(Self, "bixin_cards")
+    if table.contains(mark, to_select) then
+      local name = Fk:getCardById(to_select).name
+      mark = U.getMark(Self, "bixin-round")
+      if not table.contains(mark, name) then
+        local card = Fk:cloneCard(name)
+        card.skillName = "bixin"
+        return Self:canUse(card) and not Self:prohibitUse(card)
+      end
+    end
+  end,
+  view_as = function(self, cards)
+    if #cards == 1 then
+      local card = Fk:cloneCard(Fk:getCardById(cards[1]).name)
+      card.skillName = "bixin"
+      return card
+    end
+  end,
+}
+local bixin = fk.CreateViewAsSkill{
+  name = "bixin",
+  pattern = ".|.|.|.|.|basic",
+  expand_pile = "bixin",
+  prompt = "#bixin-viewas",
+  interaction = function()
+    local types, choices, all_choices = {"basic", "trick", "equip"}, {}, {}
+    local x = 0
+    local choice = ""
+    for _, card_type in ipairs(types) do
+      x = 3 - Self:getMark("bixin_" .. card_type)
+      choice = "bixin_" .. card_type .. ":::bixin_times" .. tostring(x)
+      table.insert(all_choices, choice)
+      if x > 0 then
+        table.insert(choices, choice)
+      end
+    end
+    if #choices == 0 then return end
+    return UI.ComboBox{ choices = choices, all_choices = all_choices }
+  end,
+  card_filter = function(self, to_select, selected)
+    if #selected > 0 or self.interaction.data == nil then return false end
+    local mark = U.getMark(Self, "bixin_cards")
+    if table.contains(mark, to_select) then
+      local name = Fk:getCardById(to_select).name
+      mark = U.getMark(Self, "bixin-round")
+      if not table.contains(mark, name) then
+        local card = Fk:cloneCard(name)
+        card.skillName = "bixin"
+        if Self:prohibitUse(card) then return false end
+        local pat = Fk.currentResponsePattern
+        if pat == nil then
+          return Self:canUse(card)
+        else
+          return Exppattern:Parse(pat):match(card)
         end
       end
     end
-    if #names == 0 then return end
-    return UI.ComboBox {choices = names}
   end,
-  card_filter = Util.FalseFunc,
   view_as = function(self, cards)
-    local card = Fk:cloneCard(self.interaction.data)
-    card.skillName = "bixin"
-    return card
+    if #cards == 1 and self.interaction.data ~= nil then
+      local card = Fk:cloneCard(Fk:getCardById(cards[1]).name)
+      card.skillName = "bixin"
+      return card
+    end
+  end,
+  before_use = function(self, player, use)
+    local room = player.room
+    local card_type = string.sub(self.interaction.data, 7, 11)
+    room:addPlayerMark(player, "bixin_" .. card_type)
+    player:drawCards(1, self.name)
+    if player.dead then return "" end
+    local cards = table.filter(player:getCardIds(Player.Hand), function (id)
+      return Fk:getCardById(id):getTypeString() == card_type
+    end)
+    if #cards == 0 then return "" end
+    use.card:addSubcards(cards)
+    if player:prohibitUse(use.card) then return "" end
+  end,
+  enabled_at_play = function(self, player)
+    return player:usedSkillTimes("ximo", Player.HistoryGame) == 3 and
+    (player:getMark("bixin_basic") < 3 or player:getMark("bixin_trick") < 3 or player:getMark("bixin_equip") < 3)
+  end,
+  enabled_at_response = function(self, player, response)
+    return not response and player:usedSkillTimes("ximo", Player.HistoryGame) == 3 and
+    (player:getMark("bixin_basic") < 3 or player:getMark("bixin_trick") < 3 or player:getMark("bixin_equip") < 3)
   end,
 }
-local bixin = fk.CreateTriggerSkill{
-  name = "bixin",
+local bixin_trigger = fk.CreateTriggerSkill{
+  name = "#bixin_trigger",
   anim_type = "control",
   events = {fk.EventPhaseStart},
+  main_skill = bixin,
   can_trigger = function(self, event, target, player, data)
-    if player:hasSkill(self) and
+    if player:hasSkill(bixin) and
       (player:getMark("bixin_basic") == 0 or player:getMark("bixin_trick") == 0 or player:getMark("bixin_equip") == 0) then
       if player:usedSkillTimes("ximo", Player.HistoryGame) == 2 then
         return target == player and player.phase == Player.Finish
@@ -5001,103 +5078,85 @@ local bixin = fk.CreateTriggerSkill{
     end
   end,
   on_cost = function(self, event, target, player, data)
-    local success, dat = player.room:askForUseActiveSkill(player, "bixin_viewas", "#bixin-invoke", true)
-    if success then
+    local room = player.room
+    local mark = player:getMark("bixin_cards")
+    if type(mark) ~= "table" then
+      mark = U.getUniversalCards(room, "b")
+      room:setPlayerMark(player, "bixin_cards", mark)
+      player.special_cards["bixin"] = mark
+      player:doNotify("ChangeSelf", json.encode {
+        id = player.id,
+        handcards = player:getCardIds("h"),
+        special_cards = player.special_cards,
+      })
+    end
+
+    local command = "AskForUseActiveSkill"
+    room:notifyMoveFocus(player, "bixin_viewas")
+    local dat = {"bixin_viewas", "#bixin-invoke", true, {}}
+    room:setPlayerMark(player, MarkEnum.BypassTimesLimit.."-tmp", 1)
+    local result = room:doRequest(player, command, json.encode(dat))
+    room:setPlayerMark(player, MarkEnum.BypassTimesLimit.."-tmp", 0)
+    if result ~= "" then
+      dat = json.decode(result)
       self.cost_data = dat
       return true
     end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local types = {}
-    for _, type in ipairs({"basic", "trick", "equip"}) do
-      if player:getMark("bixin_"..type) == 0 then
-        table.insert(types, type)
-      end
-    end
-    if #types == 0 then return true end
-    local choice = room:askForChoice(player, types, self.name, "#bixin-choice")
-    room:addPlayerMark(player, "bixin_"..choice, 1)
-    player:drawCards(3, self.name)
+    player:broadcastSkillInvoke(bixin.name)
+    local dat = table.simpleClone(self.cost_data)
+    local card_type = dat.interaction_data
+    room:addPlayerMark(player, "bixin_" .. card_type)
+    player:drawCards(3, bixin.name)
+    if player.dead then return false end
     local cards = {}
     for _, id in ipairs(player.player_cards[Player.Hand]) do
-      if Fk:getCardById(id):getTypeString() == choice then
+      if Fk:getCardById(id):getTypeString() == card_type then
         table.insert(cards, id)
       end
     end
-    if #cards == 0 then return true end
-    local card = Fk.skills["bixin_viewas"]:viewAs(self.cost_data.cards)
+    if #cards == 0 then return false end
+    local card_data = json.decode(dat.card)
+    local selected_cards = card_data.subcards
+    local card = Fk:cloneCard(Fk:getCardById(selected_cards[1]).name)
+    card.skillName = "bixin"
     card:addSubcards(cards)
+    if player:prohibitUse(card) then return false end
     room:useCard{
       from = player.id,
-      tos = table.map(self.cost_data.targets, function(id) return {id} end),
+      tos = table.map(dat.targets, function(id) return {id} end),
       card = card,
     }
   end,
-}
-local bixinEx = fk.CreateViewAsSkill{
-  name = "bixinEx",
-  pattern = ".|.|.|.|.|basic",
-  interaction = function()
-    local names = {}
-    for _, id in ipairs(Fk:getAllCardIds()) do
-      local card = Fk:getCardById(id)
-      if card.type == Card.TypeBasic and Self:usedCardTimes(card.name, Player.HistoryRound) == 0 then
-        table.insertIfNeed(names, card.name)
-      end
-    end
-    if #names == 0 then return false end
-    return UI.ComboBox {choices = names}
-  end,
-  card_filter = Util.FalseFunc,
-  view_as = function(self, cards)
-    if not self.interaction.data then return end
-    local card = Fk:cloneCard(self.interaction.data)
-    card.skillName = "bixin"
-    return card
-  end,
-  enabled_at_response = function(self, player, response)
-    return not response
-  end,
-}
-local bixinEx_trigger = fk.CreateTriggerSkill{
-  name = "#bixinEx_trigger",
-  events = {fk.PreCardUse},
-  mute = true,
-  priority = 10,
-  can_trigger = function(self, event, target, player, data)
-    return target == player and table.contains(data.card.skillNames, "bixin")
-  end,
-  on_cost = Util.TrueFunc,
-  on_use = function(self, event, target, player, data)
-    local room = player.room
-    local types = {}
-    for _, type in ipairs({"basic", "trick", "equip"}) do
-      if player:getMark("bixin_"..type) < 3 then
-        table.insert(types, type)
-      end
-    end
-    if #types == 0 then return true end
-    local choice = room:askForChoice(player, types, "bixin", "#bixin-choice")
-    room:addPlayerMark(player, "bixin_"..choice, 1)
-    player:drawCards(1, "bixin")
-    local cards = {}
-    for _, id in ipairs(player.player_cards[Player.Hand]) do
-      if Fk:getCardById(id):getTypeString() == choice then
-        table.insert(cards, id)
-      end
-    end
-    if #cards > 0 then
-      room:moveCards({
-        ids = cards,
-        from = player.id,
-        toArea = Card.Processing,
-        moveReason = fk.ReasonUse,
-      })
-      data.card:addSubcards(cards)  --甚至可以手动加子卡
-      return false
+
+  refresh_events = {fk.AfterCardUseDeclared, fk.EventAcquireSkill},
+  can_refresh = function(self, event, target, player, data)
+    if event == fk.AfterCardUseDeclared then
+      return target == player and player:hasSkill("bixin", true)
     else
-      return true
+      return target == player and data == bixin
+    end
+  end,
+  on_refresh = function(self, event, target, player, data)
+    local room = player.room
+    if event == fk.AfterCardUseDeclared then
+      local mark = U.getMark(player, "bixin-round")
+      table.insert(mark, data.card.name)
+      room:setPlayerMark(player, "bixin-round", mark)
+    else
+      if room.logic:getCurrentEvent() then
+        local names = {}
+        room.logic:getEventsOfScope(GameEvent.UseCard, 1, function(e)
+          local use = e.data[1]
+          if use.from == player.id then
+            table.insertIfNeed(names, use.card.name)
+          end
+          return false
+        end, Player.HistoryRound)
+        room:setPlayerMark(player, "bixin-round", names)
+      end
     end
   end,
 }
@@ -5106,17 +5165,17 @@ local ximo = fk.CreateTriggerSkill{
   anim_type = "special",
   frequency = Skill.Compulsory,
   events = {fk.AfterSkillEffect},
+  mute = true,
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(self) and data.name == "bixin"
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    for _, type in ipairs({"basic", "trick", "equip"}) do
-      room:setPlayerMark(player, "bixin_"..type, 0)
-    end
-    if player:usedSkillTimes(self.name, Player.HistoryGame) > 2 then
+    room:notifySkillInvoked(player, self.name)
+    local x = player:usedSkillTimes(self.name, Player.HistoryGame)
+    player:broadcastSkillInvoke(self.name, x)
+    if x > 2 then
       room:handleAddLoseSkills(player, "-ximo|feibai", nil, true, false)
-      room:handleAddLoseSkills(player, "-bixin|bixinEx", nil, false, true)
     end
   end,
 }
@@ -5146,11 +5205,10 @@ local feibai = fk.CreateTriggerSkill{
   end,
 }
 Fk:addSkill(bixin_viewas)
+bixin:addRelatedSkill(bixin_trigger)
 zhangzhi:addSkill(bixin)
 zhangzhi:addSkill(ximo)
 zhangzhi:addRelatedSkill(feibai)
-bixinEx:addRelatedSkill(bixinEx_trigger)
-Fk:addSkill(bixinEx)
 Fk:loadTranslationTable{
   ["zhangzhi"] = "张芝",
   ["bixin"] = "笔心",
@@ -5162,8 +5220,15 @@ Fk:loadTranslationTable{
   ["bixinEx"] = "笔心",
   [":bixinEx"] = "你可以声明一种牌的类型并摸1张牌（每种类型限3次），将所有此类型手牌当你本轮未使用过的基本牌使用。",
   ["#bixin-invoke"] = "笔心：你可以声明一种牌的类型并摸3张牌，将所有此类型手牌当一种基本牌使用",
-  ["#bixin-choice"] = "笔心：选择用来转化的牌的类别",
+  ["#bixin-viewas"] = "笔心：你可以声明一种牌的类型并摸1张牌，将所有此类型手牌当一种基本牌使用",
   ["bixin_viewas"] = "笔心",
+  ["#bixin_trigger"] = "笔心",
+  ["bixin_basic"] = "基本牌%arg",
+  ["bixin_trick"] = "锦囊牌%arg",
+  ["bixin_equip"] = "装备牌%arg",
+  ["bixin_times0"] = "[0/3]",
+  ["bixin_times1"] = "[1/3]",
+  ["bixin_times2"] = "[2/3]",
 
   ["$bixin1"] = "携笔落云藻，文书剖纤毫。",
   ["$bixin2"] = "执纸抒胸臆，挥笔涕汍澜。",

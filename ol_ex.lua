@@ -60,9 +60,13 @@ local ol_ex__botu = fk.CreateTriggerSkill{
   can_refresh = function(self, event, target, player, data)
     if event == fk.TurnStart then
       return player == target
-    else
-      return player.room.current == player and not player.dead and
-      type(player:getMark("@ol_ex__botu-turn")) == "table" and #player:getMark("@ol_ex__botu-turn") < 4
+    elseif (player.room.current == player and player:hasSkill(self, true)) then
+      local mark = player:getMark("@ol_ex__botu-turn")
+      if type(mark) == "table" then
+        return #mark < 4
+      else
+        return player:hasSkill(self, true)
+      end
     end
   end,
   on_refresh = function(self, event, target, player, data)
