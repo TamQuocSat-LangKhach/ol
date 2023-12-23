@@ -1428,7 +1428,10 @@ local niluan = fk.CreateTriggerSkill{
   anim_type = "offensive",
   events = {fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
-    return player:hasSkill(self) and target.phase == Player.Finish and target.hp > player.hp and target:usedCardTimes("slash") > 0 and not player:prohibitUse(Fk:cloneCard("slash")) and not player:isProhibited(target, Fk:cloneCard("slash"))
+    return player:hasSkill(self) and target.phase == Player.Finish and target.hp > player.hp and #player.room.logic:getEventsOfScope(GameEvent.UseCard, 1, function(e)
+      local use = e.data[1]
+      return use.from == target.id and use.card.trueName == "slash"
+    end, Player.HistoryTurn) > 0 and U.canUseCardTo(player.room, player, target, Fk:cloneCard("slash"))
   end,
   on_cost = function(self, event, target, player, data)
     local cids = player.room:askForCard(player, 1, 1, true, self.name, true, ".|.|club,spade", "#ol__niluan-slash:" .. target.id)
@@ -1438,7 +1441,7 @@ local niluan = fk.CreateTriggerSkill{
     end
   end,
   on_use = function(self, event, target, player, data)
-    player.room:useVirtualCard("slash", self.cost_data, player, target, self.name)
+    player.room:useVirtualCard("slash", self.cost_data, player, target, self.name, true)
   end,
 }
 local xiaoxi = fk.CreateTriggerSkill{
@@ -1466,14 +1469,7 @@ local xiaoxi = fk.CreateTriggerSkill{
     end
   end,
   on_use = function(self, event, target, player, data)
-    local slash = Fk:cloneCard("slash")
-    slash.skillName = self.name
-    player.room:useCard{
-      from = target.id,
-      tos = table.map(self.cost_data, function(pid) return { pid } end),
-      card = slash,
-      extraUse = true,
-    }
+    player.room:useVirtualCard("slash", nil, player, table.map(self.cost_data, Util.Id2PlayerMapper), self.name, true)
   end,
 }
 hansui:addSkill(niluan)
