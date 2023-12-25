@@ -988,7 +988,7 @@ local gushe = fk.CreateActiveSkill{
   end,
   card_filter = Util.FalseFunc,
   target_filter = function(self, to_select, selected)
-    return #selected < 3 and to_select ~= Self.id and not Fk:currentRoom():getPlayerById(to_select):isKongcheng()
+    return #selected < 3 and to_select ~= Self.id and Self:canPindian(Fk:currentRoom():getPlayerById(to_select))
   end,
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
@@ -2572,7 +2572,7 @@ local shuimeng = fk.CreateTriggerSkill{
   on_cost = function(self, event, target, player, data)
     local room = player.room
     local to = room:askForChoosePlayers(player, table.map(table.filter(room:getOtherPlayers(player), function(p)
-      return not p:isKongcheng() end), Util.IdMapper),
+      return player:canPindian(p) end), Util.IdMapper),
       1, 1, "#shuimeng-choose", self.name, true)
     if #to > 0 then
       self.cost_data = to[1]
@@ -2717,7 +2717,7 @@ local fenglve = fk.CreateTriggerSkill{
     local room = player.room
     if event == fk.EventPhaseStart then
       local to = room:askForChoosePlayers(player, table.map(table.filter(room:getOtherPlayers(player), function(p)
-        return not p:isKongcheng() end), Util.IdMapper),
+        return player:canPindian(p) end), Util.IdMapper),
         1, 1, "#fenglve-choose", self.name, true)
       if #to > 0 then
         self.cost_data = to[1]

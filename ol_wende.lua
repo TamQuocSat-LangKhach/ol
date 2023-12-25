@@ -1226,7 +1226,7 @@ local shidu = fk.CreateActiveSkill{
   end,
   card_filter = Util.FalseFunc,
   target_filter = function(self, to_select, selected, selected_cards)
-    return #selected == 0 and to_select ~= Self.id and not Fk:currentRoom():getPlayerById(to_select):isKongcheng()
+    return #selected == 0 and to_select ~= Self.id and Self:canPindian(Fk:currentRoom():getPlayerById(to_select))
   end,
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
@@ -2879,20 +2879,22 @@ local xuanbei = fk.CreateActiveSkill{
     local id = room:askForCardChosen(player, target, "hej", self.name)
     local card = Fk:cloneCard("slash")
     card:addSubcard(id)
-    local use = {
-      from = target.id,
-      tos = {{player.id}},
-      card = card,
-      skillName = self.name,
-      extraUse = true,
-    }
-    room:useCard(use)
-    if not player.dead then
+    local num = 1
+    if U.canUseCardTo(room, target, player, card, false, false) then
+      local use = {
+        from = target.id,
+        tos = {{player.id}},
+        card = card,
+        skillName = self.name,
+        extraUse = true,
+      }
+      room:useCard(use)
       if use.damageDealt and use.damageDealt[player.id] then
-        player:drawCards(2, self.name)
-      else
-        player:drawCards(1, self.name)
+        num = 2
       end
+    end
+    if not player.dead then
+      player:drawCards(num, self.name)
     end
   end,
 }

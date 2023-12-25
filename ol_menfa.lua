@@ -936,7 +936,7 @@ local liuju = fk.CreateTriggerSkill{
   on_cost = function(self, event, target, player, data)
     local room = player.room
     local to = room:askForChoosePlayers(player, table.map(table.filter(room:getOtherPlayers(player), function(p)
-      return not p:isKongcheng() end), Util.IdMapper), 1, 1, "#liuju-choose", self.name, true)
+      return player:canPindian(p) end), Util.IdMapper), 1, 1, "#liuju-choose", self.name, true)
     if #to > 0 then
       self.cost_data = to[1]
       return true
@@ -1169,7 +1169,7 @@ local huanjia = fk.CreateTriggerSkill{
   on_cost = function(self, event, target, player, data)
     local room = player.room
     local to = room:askForChoosePlayers(player, table.map(table.filter(room:getOtherPlayers(player), function(p)
-      return not p:isKongcheng() end), Util.IdMapper), 1, 1, "#huanjia-choose", self.name, true)
+      return not player:canPindian(p) end), Util.IdMapper), 1, 1, "#huanjia-choose", self.name, true)
     if #to > 0 then
       self.cost_data = to[1]
       return true

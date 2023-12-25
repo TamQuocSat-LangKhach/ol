@@ -3159,7 +3159,7 @@ local ol_ex__zhiba = fk.CreateActiveSkill{
   target_filter = function(self, to_select, selected)
     if #selected == 0 and to_select ~= Self.id then
       local target = Fk:currentRoom():getPlayerById(to_select)
-      return target.kingdom == "wu" and not target:isKongcheng()
+      return target.kingdom == "wu" and Self:canPindian(target)
     end
   end,
   on_use = function(self, room, effect)
@@ -3245,7 +3245,7 @@ local ol_ex__zhiba_other = fk.CreateActiveSkill{
   target_filter = function(self, to_select, selected)
     if #selected == 0 and to_select ~= Self.id then
       local target = Fk:currentRoom():getPlayerById(to_select)
-      return target:hasSkill(ol_ex__zhiba) and not target:isKongcheng() and
+      return target:hasSkill(ol_ex__zhiba) and Self:canPindian(target) and
       not table.contains(U.getMark(Self, "ol_ex__zhiba_sources-phase"), to_select)
     end
   end,

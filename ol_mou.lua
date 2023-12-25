@@ -34,7 +34,7 @@ local zhuri = fk.CreateTriggerSkill{
   on_cost = function(self, event, target, player, data)
     local room = player.room
     local to = room:askForChoosePlayers(player, table.map(table.filter(room:getOtherPlayers(player), function(p)
-      return not p:isKongcheng() end), Util.IdMapper),
+      return player:canPindian(p) end), Util.IdMapper),
       1, 1, "#zhuri-choose", self.name, true)
     if #to > 0 then
       self.cost_data = to[1]
