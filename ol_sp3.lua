@@ -1972,20 +1972,26 @@ local tianhou = fk.CreateTriggerSkill{
     local tos = room:askForChoosePlayers(player, targets, 1, 1,
       "#tianhou-choose:::"..skill..":"..Fk:translate(":"..skill), self.name, false)
     local to = room:getPlayerById(tos[1])
-    room:setPlayerMark(player, self.name, {to.id, skill})
+    player.tag[self.name] = {to.id, skill}
     room:handleAddLoseSkills(to, skill, nil, true)
   end,
 
-  refresh_events = {fk.EventPhaseStart, fk.Death},
+  refresh_events = {fk.EventPhaseStart, fk.RoundEnd},
   can_refresh = function (self, event, target, player, data)
-    return target == player and (event == fk.Death or player.phase == Player.Start) and player:getMark(self.name) ~= 0
+    if type(player.tag[self.name]) == "table" then
+      if event == fk.RoundEnd then
+        return player.dead
+      else
+        return target == player and player.phase == Player.Start
+      end
+    end
   end,
   on_refresh = function (self, event, target, player, data)
     local room = player.room
-    local mark = player:getMark(self.name)
-    room:setPlayerMark(player, self.name, 0)
+    local mark = player.tag[self.name]
     local p = room:getPlayerById(mark[1])
     room:handleAddLoseSkills(p, "-"..mark[2], nil, true)
+    player.tag[self.name] = 0
   end,
 }
 local tianhou_hot = fk.CreateTriggerSkill{
@@ -2139,7 +2145,7 @@ zhouqun:addRelatedSkill(tianhou_frost)
 Fk:loadTranslationTable{
   ["ol__zhouqun"] = "周群",
   ["tianhou"] = "天候",
-  [":tianhou"] = "锁定技，准备阶段，你观看牌堆顶牌并选择是否用一张牌交换之，然后展示牌堆顶的牌，令一名角色根据此牌花色获得技能直到你下个准备阶段或你死亡："..
+  [":tianhou"] = "锁定技，准备阶段，你观看牌堆顶牌并选择是否用一张牌交换之，然后展示牌堆顶的牌，令一名角色根据此牌花色获得技能直到你下个准备阶段(若你死亡，改为直到本轮结束时)："..
   "<font color='red'>♥</font>〖烈暑〗；<font color='red'>♦</font>〖凝雾〗；♠〖骤雨〗；♣〖严霜〗。"..
   "<font color='grey'><br>♥〖烈暑〗：锁定技，其他角色的结束阶段，若其体力值全场最大，其失去1点体力。"..
   "<br>♦〖凝雾〗：锁定技，当其他角色使用【杀】指定不与其相邻的角色为唯一目标时，其判定，若判定牌点数大于此【杀】，此【杀】无效。"..
