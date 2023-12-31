@@ -4742,7 +4742,7 @@ local qingyix = fk.CreateActiveSkill{
   min_target_num = 1,
   max_target_num = 2,
   can_use = function(self, player)
-    return not player:isKongcheng() and player:usedSkillTimes(self.name, Player.HistoryPhase) == 0
+    return not player:isNude() and player:usedSkillTimes(self.name, Player.HistoryPhase) == 0
   end,
   card_filter = Util.FalseFunc,
   target_filter = function(self, to_select, selected, selected_cards)
@@ -4750,37 +4750,68 @@ local qingyix = fk.CreateActiveSkill{
   end,
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
+    local mark = U.getMark(player, "qingyi-turn")
     local targets = {player}
     for _, id in ipairs(effect.tos) do
       table.insert(targets, room:getPlayerById(id))
     end
     local cards = {}
     while true do
+      local cardsMap = {}
       for _, p in ipairs(targets) do
-        local id = room:askForCard(p, 1, 1, true, self.name, false, ".", "#qingyi-discard")
-        if #id == 1 then
-          id = id[1]
-        else
-          id = table.random(p:getCardIds("he"))
+        cardsMap[p.id] = table.filter(p:getCardIds("he"), function(id)
+          return not p:prohibitDiscard(Fk:getCardById(id))
+        end)
+      end
+      local extra_data = {
+        num = 1,
+        min_num = 1,
+        include_equip = true,
+        skillName = self.name,
+        pattern = ".",
+        reason = self.name,
+      }
+      local toAsk = {}
+      for _, p in ipairs(targets) do
+        if #cardsMap > 0 then
+          table.insert(toAsk, p)
+          p.request_data = json.encode({ "discard_skill", "#AskForDiscard:::1:1", false, extra_data })
         end
-        p.tag[self.name] = id
       end
-      local ids = {}
-      for _, p in ipairs(targets) do
-        table.insertIfNeed(cards, p.tag[self.name])  --小心落英、纵玄
-        table.insertIfNeed(ids, p.tag[self.name])
-        room:throwCard({p.tag[self.name]}, self.name, p, p)
-        p.tag[self.name] = nil
+      local chosen = {}
+      if #toAsk > 0 then
+        room:notifyMoveFocus(targets, self.name)
+        room:doBroadcastRequest("AskForUseActiveSkill", toAsk)
+        local moveInfos = {}
+        for _, p in ipairs(toAsk) do
+          local throw
+          if p.reply_ready then
+            local replyCard = json.decode(p.client_reply).card
+            throw = json.decode(replyCard).subcards
+          else
+            throw = table.random(cardsMap[p.id], 1)
+          end
+          table.insert(chosen, throw[1])
+          table.insertIfNeed(mark, throw[1])
+          table.insert(moveInfos, {
+            ids = throw,
+            from = p.id,
+            toArea = Card.DiscardPile,
+            moveReason = fk.ReasonDiscard,
+            proposer = player.id,
+            skillName = self.name,
+          })
+        end
+        room:moveCards(table.unpack(moveInfos))
       end
-      if table.every(ids, function(id) return Fk:getCardById(id).type == Fk:getCardById(ids[1]).type end) and
-        table.every(targets, function(p) return not p:isNude() end) and
-        room:askForSkillInvoke(player, self.name, nil, "#qingyi-invoke") then
-        --continue
-      else
+      if table.find(targets, function(p) return #cardsMap[p.id] == 0 end)
+      or table.find(targets, function(p) return p:isNude() end)
+      or table.find(chosen, function(id) return Fk:getCardById(id).type ~= Fk:getCardById(chosen[1]).type end)
+      or not room:askForSkillInvoke(player, self.name, nil, "#qingyi-invoke") then
         break
       end
     end
-    room:setPlayerMark(player, "qingyi-turn", cards)
+    room:setPlayerMark(player, "qingyi-turn", mark)
   end,
 }
 local qingyix_record = fk.CreateTriggerSkill{
@@ -4788,38 +4819,30 @@ local qingyix_record = fk.CreateTriggerSkill{
   anim_type = "drawcard",
   events = {fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self) and player.phase == Player.Finish and player:usedSkillTimes("qingyix") > 0
+    return target == player and player:hasSkill(self) and player.phase == Player.Finish
+    and table.find(U.getMark(player, "qingyi-turn"), function(id) return player.room:getCardArea(id) == Card.DiscardPile end)
+  end,
+  on_cost = function (self, event, target, player, data)
+    return player.room:askForSkillInvoke(player, "qingyi", nil, "#qingyi_get-invoke")
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local cards = player:getMark("qingyi-turn")
+    local cards = table.filter(U.getMark(player, "qingyi-turn"), function(id) return room:getCardArea(id) == Card.DiscardPile end)
+    local cardsMap = {}
     for _, id in ipairs(cards) do
-      if room:getCardArea(id) ~= Card.DiscardPile then
-        table.removeOne(cards, id)
-      end
+      local color = Fk:getCardById(id):getColorString()
+      cardsMap[color] = cardsMap[color] or {}
+      table.insert(cardsMap[color], id)
     end
-    if #cards == 0 then return end
     local get = {}
-    room:fillAG(player, cards)
-    while #cards > 0 do
-      local id = room:askForAG(player, cards, false, self.name)
-      if id ~= nil then
-        for i = #cards, 1, -1 do
-          if Fk:getCardById(cards[i]).color == Fk:getCardById(id).color then
-            room:takeAG(player, cards[i], room.players)
-            table.removeOne(cards, cards[i])
-          end
-        end
-        table.insert(get, id)
-      else
-        id = table.random(cards)
-      end
+    for _, c in pairs(cardsMap) do
+      local chosen = room:askForCardChosen(player, player, { card_data = { { "$Prey", c }  } }, self.name, "#qingyi-get")
+      table.insert(get, chosen)
     end
-    room:closeAG(player)
     if #get > 0 then
       local dummy = Fk:cloneCard("dilu")
       dummy:addSubcards(get)
-      room:obtainCard(player.id, dummy, true, fk.ReasonJustMove)
+      room:obtainCard(player.id, dummy, true, fk.ReasonPrey)
     end
   end,
 }
@@ -4945,6 +4968,8 @@ Fk:loadTranslationTable{
   ["#huanfu-invoke"] = "宦浮：你可以弃置至多%arg张牌，若此【杀】造成伤害值等于弃牌数，你摸两倍的牌",
   ["#qingyi-discard"] = "清议：弃置一张牌",
   ["#qingyi-invoke"] = "清议：是否继续发动“清议”？",
+  ["#qingyi_get-invoke"] = "是否获得因“清议”弃置的牌中每颜色各一张？",
+  ["#qingyi-get"] = "清议：选择一张获得",
   ["#qingyix_record"] = "清议",
   ["#zeyue-choose"] = "迮阅：你可以令一名角色失去一个技能，其每轮视为对你使用【杀】，造成伤害后恢复失去的技能",
   ["#zeyue-choice"] = "迮阅：选择令 %dest 失去的一个技能",
