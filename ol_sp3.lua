@@ -1374,40 +1374,22 @@ local shilu = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     player:drawCards(player.hp, self.name)
-    local targets = table.map(table.filter(room:getOtherPlayers(player), function(p)
+    local targets = table.map(table.filter(room.alive_players, function(p)
       return player:inMyAttackRange(p) and not p:isKongcheng() end), Util.IdMapper)
     if #targets == 0 then return end
     local tos = room:askForChoosePlayers(player, targets, 1, 1, "#shilu-choose", self.name, false)
-    local to
-    if #tos > 0 then
-      to = room:getPlayerById(tos[1])
-    else
-      to = room:getPlayerById(table.random(targets))
-    end
+    local to = room:getPlayerById(tos[1])
     local id = room:askForCardChosen(player, to, "h", self.name)
     to:showCards(id)
     if room:getCardArea(id) == Card.PlayerHand then
-      room:setCardMark(Fk:getCardById(id), "@@shilu", 1)
-    end
-  end,
-
-  refresh_events = {fk.AfterCardsMove},
-  can_refresh = Util.TrueFunc,
-  on_refresh = function(self, event, target, player, data)
-  local room = player.room
-    for _, move in ipairs(data) do
-      if move.toArea ~= Card.Processing then
-        for _, info in ipairs(move.moveInfo) do
-          room:setCardMark(Fk:getCardById(info.cardId), "@@shilu", 0)
-        end
-      end
+      room:setCardMark(Fk:getCardById(id), "@@shilu-inhand", 1)
     end
   end,
 }
 local shilu_filter = fk.CreateFilterSkill{
   name = "#shilu_filter",
   card_filter = function(self, card, player)
-    return card:getMark("@@shilu") > 0 and table.contains(player.player_cards[Player.Hand], card.id)
+    return card:getMark("@@shilu-inhand") > 0 and table.contains(player.player_cards[Player.Hand], card.id)
   end,
   view_as = function(self, card)
     return Fk:cloneCard("slash", card.suit, card.number)
@@ -1426,7 +1408,7 @@ Fk:loadTranslationTable{
   [":shilu"] = "锁定技，当你受到伤害后，你摸等同体力值张牌并展示攻击范围内一名其他角色的一张手牌，令此牌视为【杀】。",
   ["@@miuyan-round"] = "谬焰失效",
   ["#shilu-choose"] = "失路：展示一名角色的一张手牌，此牌视为【杀】",
-  ["@@shilu"] = "失路",
+  ["@@shilu-inhand"] = "失路",
   ["#shilu_filter"] = "失路",
 
   ["$miuyan1"] = "未时引火，必大败蜀军。",

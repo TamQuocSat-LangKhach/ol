@@ -1290,23 +1290,30 @@ local yimie = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     room:loseHp(player, 1, self.name)
-    data.extra_data = data.extra_data or {}
-    data.extra_data.yimie = {player.id, data.to.id, data.to.hp - data.damage}
-    data.damage = data.to.hp
+    local x = data.to.hp - data.damage
+    if x > 0 then
+      data.extra_data = data.extra_data or {}
+      data.extra_data.yimie = (data.extra_data.yimie or 0) + x
+      data.damage = data.to.hp
+    end
   end,
+}
 
-  refresh_events = {fk.DamageFinished},
-  can_refresh = function(self, event, target, player, data)
-    return target == player and not player.dead and data.extra_data and data.extra_data.yimie and data.extra_data.yimie[2] == player.id
+local yimie_delay = fk.CreateTriggerSkill{
+  name = "#yimie_delay",
+  events = {fk.Damage},
+  mute = true,
+  can_trigger = function(self, event, target, player, data)
+    return data.to == player and not player.dead and player:isWounded() and
+    data.extra_data and data.extra_data.yimie
   end,
-  on_refresh = function(self, event, target, player, data)
-    local room = player.room
-    room:recover({
+  on_cost = Util.TrueFunc,
+  on_use = function(self, event, target, player, data)
+    player.room:recover{
       who = player,
-      num = math.min(player:getLostHp(), data.extra_data.yimie[3]),
-      recoverBy = room:getPlayerById(data.extra_data.yimie[1]),
-      skillName = self.name
-    })
+      num = data.extra_data.yimie,
+      skillName = yimie.name
+    }
   end,
 }
 local tairan = fk.CreateTriggerSkill{
@@ -1317,11 +1324,12 @@ local tairan = fk.CreateTriggerSkill{
   can_trigger = function(self, event, target, player, data)
     if target == player and player:hasSkill(self) then
       if player.phase == Player.Finish then
-        player.room:setPlayerMark(player, "tairan_hp", 0)
-        player.room:setPlayerMark(player, "tairan_cards", 0)
         return player:isWounded() or player:getHandcardNum() < player.maxHp
       elseif player.phase == Player.Play then
-        return player:getMark("tairan_hp") > 0 or player:getMark("tairan_cards") ~= 0
+        return player:getMark("tairan_hp") > 0 or table.find(player:getCardIds(Player.Hand), function (id)
+          local card = Fk:getCardById(id)
+          return card:getMark("@@tairan-inhand") > 0 and not player:prohibitDiscard(card)
+        end)
       end
     end
   end,
@@ -1339,26 +1347,35 @@ local tairan = fk.CreateTriggerSkill{
         room:setPlayerMark(player, "tairan_hp", n)
       end
       if player:getHandcardNum() < player.maxHp then
-        local cards = player:drawCards(player.maxHp - player:getHandcardNum(), self.name)
-        room:setPlayerMark(player, "tairan_cards", cards)
+        player:drawCards(player.maxHp - player:getHandcardNum(), self.name)
       end
     else
       if player:getMark("tairan_hp") > 0 then
         room:loseHp(player, player:getMark("tairan_hp"), self.name)
       end
       if not player.dead then
-        local cards = player:getMark("tairan_cards")
-        if cards ~= 0 then
-          local ids = {}
-          for _, id in ipairs(cards) do
-            for _, card in ipairs(player.player_cards[Player.Hand]) do
-              if id == card then
-                table.insertIfNeed(ids, id)
-              end
-            end
-          end
-          if #ids > 0 then
-            room:throwCard(ids, self.name, player, player)
+        local card = nil
+        local cards = table.filter(player:getCardIds(Player.Hand), function (id)
+          card = Fk:getCardById(id)
+          return card:getMark("@@tairan-inhand") > 0 and not player:prohibitDiscard(card)
+        end)
+        if #cards > 0 then
+          room:throwCard(cards, self.name, player, player)
+        end
+      end
+    end
+  end,
+
+  refresh_events = {fk.AfterCardsMove},
+  can_refresh = Util.TrueFunc,
+  on_refresh = function(self, event, target, player, data)
+    local room = player.room
+    for _, move in ipairs(data) do
+      if move.to == player.id and move.toArea == Card.PlayerHand and move.skillName == self.name then
+        for _, info in ipairs(move.moveInfo) do
+          local id = info.cardId
+          if room:getCardArea(id) == Card.PlayerHand and room:getCardOwner(id) == player then
+            room:setCardMark(Fk:getCardById(id), "@@tairan-inhand", 1)
           end
         end
       end
@@ -1425,6 +1442,7 @@ local ruilve_active = fk.CreateActiveSkill{
   end,
 }
 Fk:addSkill(ruilve_active)
+yimie:addRelatedSkill(yimie_delay)
 simashi:addSkill(taoyin)
 simashi:addSkill(yimie)
 simashi:addSkill(tairan)
@@ -1436,13 +1454,15 @@ Fk:loadTranslationTable{
   ["yimie"] = "夷灭",
   [":yimie"] = "每回合限一次，当你对一名其他角色造成伤害时，你可失去1点体力，令此伤害值+X（X为其体力值减去伤害值）。伤害结算后，其回复X点体力。",
   ["tairan"] = "泰然",
-  [":tairan"] = "锁定技，回合结束时，你回复体力至体力上限，将手牌摸至体力上限；出牌阶段开始时，你失去上回合以此法回复的体力值，弃置以此法获得的手牌。",
+  [":tairan"] = "锁定技，回合结束时，你回复体力至体力上限，将手牌摸至体力上限；出牌阶段开始时，你失去上次以此法回复的体力值，弃置以此法获得的手牌。",
   ["ruilve"] = "睿略",
   [":ruilve"] = "主公技，其他晋势力角色的出牌阶段限一次，该角色可以将一张【杀】或伤害锦囊牌交给你。",
   ["ruilve&"] = "睿略",
   [":ruilve&"] = "出牌阶段限一次，你可以将一张【杀】或伤害锦囊牌交给司马师。",
   ["#ruilve"] = "睿略：你可以将一张伤害牌交给司马师",
+  ["#yimie_delay"] = "夷灭",
   ["#yimie-invoke"] = "夷灭：你可以失去1点体力，令你对 %arg 造成的伤害增加至其体力值！",
+  ["@@tairan-inhand"] = "泰然",
 
   ["$taoyin1"] = "司马氏善谋、善忍，善置汝于绝境！",
   ["$taoyin2"] = "隐忍数载，亦不坠青云之志！",
@@ -1685,7 +1705,7 @@ local choufa = fk.CreateActiveSkill{
     if not target.dead then
       for _, id in ipairs(target:getCardIds("h")) do
         if Fk:getCardById(id).type ~= Fk:getCardById(card).type then
-          room:setCardMark(Fk:getCardById(id), "@@choufa-turn", 1)
+          room:setCardMark(Fk:getCardById(id), "@@choufa-inhand", 1)
         end
       end
     end
@@ -1694,23 +1714,18 @@ local choufa = fk.CreateActiveSkill{
 local choufa_trigger = fk.CreateTriggerSkill{
   name = "#choufa_trigger",
 
-  refresh_events = {fk.AfterCardsMove},
-  can_refresh = Util.TrueFunc,
+  refresh_events = {fk.AfterTurnEnd},
+  can_refresh = function(self, event, target, player, data)
+    return player == target
+  end,
   on_refresh = function(self, event, target, player, data)
-  local room = player.room
-    for _, move in ipairs(data) do
-      if move.toArea ~= Card.Processing then
-        for _, info in ipairs(move.moveInfo) do
-          room:setCardMark(Fk:getCardById(info.cardId), "@@choufa-turn", 0)
-        end
-      end
-    end
+    U.clearHandMark(player, "@@choufa-inhand")
   end,
 }
 local choufa_filter = fk.CreateFilterSkill{
   name = "#choufa_filter",
   card_filter = function(self, card, player)
-    return card:getMark("@@choufa-turn") > 0 and table.contains(player.player_cards[Player.Hand], card.id)
+    return card:getMark("@@choufa-inhand") > 0 and table.contains(player.player_cards[Player.Hand], card.id)
   end,
   view_as = function(self, card)
     return Fk:cloneCard("slash", card.suit, card.number)
@@ -1830,7 +1845,8 @@ Fk:loadTranslationTable{
   ["chengwu"] = "成务",
   [":chengwu"] = "主公技，锁定技，其他晋势力角色攻击范围内的角色均视为在你的攻击范围内。",
   ["#choufa"] = "筹伐：展示一名其他角色一张手牌，本回合其手牌中不为此类别的牌均视为【杀】",
-  ["@@choufa-turn"] = "筹伐",
+  ["@@choufa-inhand"] = "筹伐",
+  ["#choufa_filter"] = "筹伐",
   ["#zhaoran-invoke"] = "昭然：你可以展示所有手牌，本阶段你失去一种花色最后的手牌后摸一张牌或弃置一名角色一张牌",
   ["@zhaoran-phase"] = "昭然",
   ["#zhaoran-discard"] = "昭然：弃置一名其他角色一张牌，或点“取消”摸一张牌",
@@ -2094,9 +2110,7 @@ local yanxi_refresh = fk.CreateTriggerSkill{
         end
       end
     elseif event == fk.AfterTurnEnd then
-      for _, id in ipairs(player:getCardIds(Player.Hand)) do
-        room:setCardMark(Fk:getCardById(id), "@@yanxi-inhand", 0)
-      end
+      U.clearHandMark(player, "@@yanxi-inhand")
     end
   end,
 }

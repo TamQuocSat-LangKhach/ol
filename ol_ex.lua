@@ -3429,7 +3429,8 @@ local ol_ex__guzheng = fk.CreateTriggerSkill{
       if currentplayer and currentplayer.phase <= Player.Finish and currentplayer.phase >= Player.Start then
         local guzheng_pairs = {}
         for _, move in ipairs(data) do
-          if move.moveReason == fk.ReasonDiscard and move.from ~= nil and move.from ~= player.id then
+          if move.moveReason == fk.ReasonDiscard and move.toArea == Card.DiscardPile and
+          move.from ~= nil and move.from ~= player.id then
             local guzheng_value = guzheng_pairs[move.from] or {}
             for _, info in ipairs(move.moveInfo) do
               if info.fromArea == Card.PlayerHand or info.fromArea == Card.PlayerEquip then

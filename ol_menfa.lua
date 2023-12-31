@@ -348,6 +348,7 @@ Fk:loadTranslationTable{
   ["@$shenjun"] = "神君",
   ["@@shenjun-inhand"] = "神君",
   ["#shenjun-invoke"] = "神君：你可以将%arg张牌当一种“神君”牌使用",
+  ["shenjun_viewas"] = "神君",
 
   ["$shenjun1"] = "区区障眼之法，难遮神人之目。",
   ["$shenjun2"] = "我以天地为师，自可道法自然。",
