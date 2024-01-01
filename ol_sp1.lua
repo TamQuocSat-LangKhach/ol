@@ -3229,8 +3229,8 @@ local lingren = fk.CreateTriggerSkill{
   anim_type = "offensive",
   events = {fk.TargetSpecified},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self) and player.phase == Player.Play and data.firstTarget and data.card.is_damage_card and
-      #AimGroup:getAllTargets(data.tos) > 0 and player:usedSkillTimes(self.name, Player.HistoryPhase) == 0
+    return target == player and player:hasSkill(self) and player.phase == Player.Play and data.firstTarget and
+    data.card.is_damage_card and player:usedSkillTimes(self.name, Player.HistoryPhase) == 0
   end,
   on_cost = function(self, event, target, player, data)
     local to = player.room:askForChoosePlayers(player, data.tos[1], 1, 1, "#lingren-choose", self.name, true)
@@ -3242,18 +3242,11 @@ local lingren = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     local to = room:getPlayerById(self.cost_data)
-    local choices = {"lingren_basic", "lingren_trick", "lingren_equip", "lingren_end"}
-    local yes = {}
-    for i = 1, 3, 1 do
-      local choice = room:askForChoice(player, choices, self.name)
-      if choice == "lingren_end" then
-        break
-      else
-        table.insert(yes, choice)
-        table.removeOne(choices, choice)
-      end
+    local choices = {"lingren_basic", "lingren_trick", "lingren_equip"}
+    local yes = room:askForChoices(player, choices, 0, 3, self.name, "#lingren-choice::" .. self.cost_data, false)
+    for _, value in ipairs(yes) do
+      table.removeOne(choices, value)
     end
-    table.removeOne(choices, "lingren_end")
     local right = 0
     for _, id in ipairs(to.player_cards[Player.Hand]) do
       local str = "lingren_"..Fk:getCardById(id):getTypeString()
@@ -3265,9 +3258,15 @@ local lingren = fk.CreateTriggerSkill{
       end
     end
     right = right + #choices
+    room:sendLog{
+      type = "#lingren_result",
+      from = player.id,
+      arg = tostring(right),
+    }
     if right > 0 then
       data.extra_data = data.extra_data or {}
-      data.extra_data.lingren = {player.id, self.cost_data}
+      data.extra_data.lingren = data.extra_data.lingren or {}
+      table.insert(data.extra_data.lingren, self.cost_data)
     end
     if right > 1 then
       player:drawCards(2, self.name)
@@ -3285,34 +3284,32 @@ local lingren = fk.CreateTriggerSkill{
     end
   end,
 }
-local lingren_trigger = fk.CreateTriggerSkill {
-  name = "#lingren_trigger",
+local lingren_delay = fk.CreateTriggerSkill {
+  name = "#lingren_delay",
   mute = true,
-  events = {fk.DamageCaused, fk.TurnStart},
+  events = {fk.DamageInflicted},
   can_trigger = function(self, event, target, player, data)
-    if target == player then
-      if event == fk.DamageCaused then
-        local e = player.room.logic:getCurrentEvent():findParent(GameEvent.UseCard)
-        if e then
-          local use = e.data[1]
-          return use.extra_data and use.extra_data.lingren and
-            use.extra_data.lingren[1] == player.id and use.extra_data.lingren[2] == data.to.id
-        end
-      else
-        return player:getMark("lingren") ~= 0
-      end
-    end
+    if player.dead or data.card == nil then return false end
+    local room = player.room
+    local card_event = room.logic:getCurrentEvent():findParent(GameEvent.UseCard)
+    if not card_event then return false end
+    local use = card_event.data[1]
+    return use.extra_data and use.extra_data.lingren and table.contains(use.extra_data.lingren, player.id)
   end,
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
-    if event == fk.DamageCaused then
-      data.damage = data.damage + 1
-    else
-      local room = player.room
-      local skills = player:getMark("lingren")
-      room:setPlayerMark(player, "lingren", 0)
-      room:handleAddLoseSkills(player, "-"..table.concat(skills, "|-"), nil, true, false)
-    end
+    data.damage = data.damage + 1
+  end,
+  
+  refresh_events = {fk.TurnStart},
+  can_refresh = function(self, event, target, player, data)
+    return target == player and player:getMark("lingren") ~= 0
+  end,
+  on_refresh = function(self, event, target, player, data)
+    local room = player.room
+    local skills = player:getMark("lingren")
+    room:setPlayerMark(player, "lingren", 0)
+    room:handleAddLoseSkills(player, "-"..table.concat(skills, "|-"), nil, true, false)
   end,
 }
 local fujian = fk.CreateTriggerSkill {
@@ -3338,7 +3335,7 @@ local fujian = fk.CreateTriggerSkill {
     U.viewCards(player, cards, self.name)
   end,
 }
-lingren:addRelatedSkill(lingren_trigger)
+lingren:addRelatedSkill(lingren_delay)
 caoying:addSkill(lingren)
 caoying:addSkill(fujian)
 caoying:addRelatedSkill("ex__jianxiong")
@@ -3351,10 +3348,12 @@ Fk:loadTranslationTable{
   ["fujian"] = "伏间",
   [":fujian"] = "锁定技，结束阶段，你随机观看一名其他角色的X张手牌（X为全场手牌数最小的角色的手牌数）。",
   ["#lingren-choose"] = "凌人：你可以猜测其中一名目标角色的手牌中是否有基本牌、锦囊牌或装备牌",
+  ["#lingren-choice"] = "凌人：猜测%dest的手牌中是否有基本牌、锦囊牌或装备牌",
   ["lingren_basic"] = "有基本牌",
   ["lingren_trick"] = "有锦囊牌",
   ["lingren_equip"] = "有装备牌",
-  ["lingren_end"] = "结束",
+  ["#lingren_result"] = "%from 猜对了 %arg 项",
+  ["lingren_delay"] = "凌人",
 
   ["$lingren1"] = "敌势已缓，休要走了老贼！",
   ["$lingren2"] = "精兵如炬，困龙难飞！",
