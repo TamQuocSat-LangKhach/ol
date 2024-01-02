@@ -3534,11 +3534,17 @@ Fk:loadTranslationTable{
 
 
 local ol_ex__zuoci = General(extension, "ol_ex__zuoci", "qun", 3, 3, General.Female)
+local huashen_blacklist = {"zuoci", "ol_ex__zuoci", "qyt__dianwei", "starsp__xiahoudun"}
 local function Gethuashen(player, n)
   local room = player.room
-  local generals = room:getNGenerals(n)
+  local generals = table.filter(room.general_pile, function (name)
+    return not table.contains(huashen_blacklist, name)
+  end)
   local mark = U.getMark(player, "@&ol_ex__huashen")
-  table.insertTable(mark, generals)
+  for _ = 1, n do
+    if #generals == 0 then break end
+    table.insert(mark, table.remove(room.general_pile, math.random(#room.general_pile)))
+  end
   room:setPlayerMark(player, "@&ol_ex__huashen", mark)
 end
 local function Dohuashen(player)
@@ -3585,7 +3591,7 @@ local function Recasthuashen(player)
   if #generals < 2 then return end
   local current_general = type(player:getMark("ol_ex__huashen_general")) == "string" and player:getMark("ol_ex__huashen_general") or ""
   local result = player.room:askForCustomDialog(player, "ol_ex__huashen",
-  "packages/ol/qml/OLEXHuanshenBox.qml", {
+  "packages/utility/qml/ChooseGeneralsAndChoiceBox.qml", {
     generals,
     {"OK"},
     "#ol_ex__huashen-recast",
@@ -3670,7 +3676,7 @@ Fk:loadTranslationTable{
   ["@ol_ex__huashen_skill"] = "化身",
   ["ol_ex__huashen_re"] = "进行一次“化身”",
   ["ol_ex__huashen_recast"] = "移去至多两张“化身”，获得等量新“化身”",
-  ["#ol_ex__huashen-recast"] = "移去至多两张“化身”，获得等量新“化身”(右键/长按查看武将技能)",
+  ["#ol_ex__huashen-recast"] = "移去至多两张“化身”，获得等量新“化身”",
   ["#OLExHuanshenFailed"] = "%from “化身”失败，因为 %arg 没有可选的技能",
   ["#ol_ex__huashen-skill"] = "化身：选择获得的技能",
   ["ol_ex__xinsheng"] = "新生",
