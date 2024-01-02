@@ -4773,7 +4773,7 @@ local qingyix = fk.CreateActiveSkill{
       }
       local toAsk = {}
       for _, p in ipairs(targets) do
-        if #cardsMap > 0 then
+        if #cardsMap[p.id] > 0 then
           table.insert(toAsk, p)
           p.request_data = json.encode({ "discard_skill", "#AskForDiscard:::1:1", false, extra_data })
         end
@@ -5560,26 +5560,30 @@ local jueman = fk.CreateTriggerSkill{
   events = {fk.TurnEnd},
   can_trigger = function(self, event, target, player, data)
     if player:hasSkill(self) then
-      player.tag[self.name] = player.tag[self.name] or {}
-      if #player.tag[self.name] < 2 then
-        player.tag[self.name] = {}
-        return
-      end
+      local list = {}
+      player.room.logic:getEventsOfScope(GameEvent.UseCard, 1, function(e)
+        if #list == 3 then return true end
+        local use = e.data[1]
+        if use.card.type == Card.TypeBasic then
+          table.insert(list, {use.from, use.card})
+        end
+        return false
+      end, Player.HistoryTurn)
+      if #list < 2 then return false end
       local n = 0
-      if player.tag[self.name][1][1] == player.id then
+      if list[1][1] == player.id then
         n = n + 1
       end
-      if player.tag[self.name][2][1] == player.id then
+      if list[2][1] == player.id then
         n = n + 1
       end
       self.cost_data = nil
-      if #player.tag[self.name] > 2 and n == 0 then
-        self.cost_data = player.tag[self.name][3][2]
+      if #list > 2 and n == 0 then
+        self.cost_data = list[3][2]
       end
-      if #player.tag[self.name] > 1 and n == 1 then
+      if n == 1 then
         self.cost_data = 1
       end
-      player.tag[self.name] = {}
       return self.cost_data
     end
   end,
@@ -5588,33 +5592,8 @@ local jueman = fk.CreateTriggerSkill{
       player:drawCards(1, self.name)
     else
       local room = player.room
-      local name = self.cost_data.name
-      local targets = {}
-      if name == "slash" then
-        targets = table.map(table.filter(room:getOtherPlayers(player), function(p)
-          return not player:isProhibited(p, Fk:cloneCard(name)) end), Util.IdMapper)
-      elseif (name == "peach" and player:isWounded()) or name == "analeptic" then
-        targets = {player.id}
-      end
-      if #targets > 0 then
-        local to = room:askForChoosePlayers(player, targets, 1, 1, "#jueman-choose:::"..name, self.name, false)
-        if #to > 0 then
-          to = to[1]
-        else
-          to = table.random(targets)
-        end
-        room:useVirtualCard(name, nil, player, room:getPlayerById(to), self.name, true)
-      end
+      U.askForUseVirtualCard(room, player, self.cost_data.name, nil, self.name, nil, false, true, false, true)
     end
-  end,
-
-  refresh_events = {fk.CardUsing},
-  can_refresh = function(self, event, target, player, data)
-    return player:hasSkill(self) and data.card.type == Card.TypeBasic and not table.contains(data.card.skillNames, self.name)
-  end,
-  on_refresh = function(self, event, target, player, data)
-    player.tag[self.name] = player.tag[self.name] or {}
-    table.insert(player.tag[self.name], {target.id, data.card})
   end,
 }
 ahuinan:addSkill(jueman)
@@ -5622,7 +5601,6 @@ Fk:loadTranslationTable{
   ["ahuinan"] = "阿会喃",
   ["jueman"] = "蟨蛮",
   [":jueman"] = "锁定技，每回合结束时，若本回合前两张基本牌的使用者：均不为你，你视为使用本回合第三张使用的基本牌；仅其中之一为你，你摸一张牌。",
-  ["#jueman-choose"] = "蟨蛮：选择视为使用【%arg】的目标",
 
   ["$jueman1"] = "伤人之蛇蝎，向来善藏行。",
   ["$jueman2"] = "我不欲伤人，奈何人自伤。",
