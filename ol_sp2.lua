@@ -2162,12 +2162,12 @@ local ol__zhouxuan = fk.CreateTriggerSkill{
 local ol__zhouxuan_trigger = fk.CreateTriggerSkill{
   name = "#ol__zhouxuan_trigger",
   mute = true,
-  expand_pile = "zhanghe_xuan",
+  main_skill = ol__zhouxuan,
   events = {fk.EventPhaseEnd, fk.CardUsing},
   can_trigger = function(self, event, target, player, data)
-    if target == player and #player:getPile("zhanghe_xuan") > 0 then
+    if target == player and player:hasSkill(ol__zhouxuan) and #player:getPile("zhanghe_xuan") > 0 then
       if event == fk.EventPhaseEnd then
-        return player:hasSkill("ol__zhouxuan") and player.phase == Player.Play
+        return player.phase == Player.Play
       else
         return true
       end
@@ -2177,6 +2177,8 @@ local ol__zhouxuan_trigger = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     if event == fk.EventPhaseEnd then
+      player:broadcastSkillInvoke("ol__zhouxuan")
+      room:notifySkillInvoked(player, "ol__zhouxuan", "negative")
       room:moveCards({
         from = player.id,
         ids = player:getPile("zhanghe_xuan"),
@@ -2195,11 +2197,9 @@ local ol__zhouxuan_trigger = fk.CreateTriggerSkill{
         player:drawCards(1, "ol__zhouxuan")
       end
       if #player:getPile("zhanghe_xuan") == 0 then return false end
-      local card = room:askForCard(player, 1, 1, false, "ol__zhouxuan", false, ".|.|.|zhanghe_xuan|.|.", "#ol__zhouxuan-discard", "zhanghe_xuan")
-      if #card == 0 then card = {table.random(player:getPile("zhanghe_xuan"))} end
       room:moveCards({
         from = player.id,
-        ids = card,
+        ids = table.random(player:getPile("zhanghe_xuan"), 1),
         toArea = Card.DiscardPile,
         moveReason = fk.ReasonPutIntoDiscardPile,
         skillName = "ol__zhouxuan",
@@ -2213,11 +2213,10 @@ zhanghe:addSkill(ol__zhouxuan)
 Fk:loadTranslationTable{
   ["ol__zhanghe"] = "张郃",
   ["ol__zhouxuan"] = "周旋",
-  [":ol__zhouxuan"] = "弃牌阶段开始时，你可将至多五张手牌置于武将牌上（称为“旋”）直到你下个出牌阶段结束。"..
-  "当你使用一张牌时，你摸一张牌，然后移去一张“旋”；若你的手牌不是场上唯一最多，则改为摸X张牌（X为“旋”的数量）。",
+  [":ol__zhouxuan"] = "弃牌阶段开始时，你可将至多五张手牌置于武将牌上（称为“旋”），出牌阶段结束时，你移去所有“旋”。"..
+  "当你使用牌时，若你有“旋”，你摸一张牌，若你不是唯一手牌数最大的角色，则改为摸X张牌（X为“旋”的数量），然后随机移去一张“旋”。",
   ["zhanghe_xuan"] = "旋",
-  ["#ol__zhouxuan-invoke"] = "周旋：你可以将至多5张手牌置为“旋”",
-  ["#ol__zhouxuan-discard"] = "周旋：请移去一张“旋”",
+  ["#ol__zhouxuan-invoke"] = "你可以发动 周旋，将至多5张手牌置为“旋”",
 
   ["$ol__zhouxuan1"] = "详勘细察，洞若观火。",
   ["$ol__zhouxuan2"] = "知敌底细，方能百战百胜。",
@@ -2225,48 +2224,49 @@ Fk:loadTranslationTable{
 }
 
 local dongzhao = General(extension, "ol__dongzhao", "wei", 3)
-local xianlve = fk.CreateTriggerSkill{
-  name = "xianlve",
+local xianlue = fk.CreateTriggerSkill{
+  name = "xianlue",
   anim_type = "control",
   events = {fk.TurnStart},
   can_trigger = function(self, event, target, player, data)
     return target.role == "lord" and player:hasSkill(self)
   end,
   on_cost = function(self, event, target, player, data)
-    return player.room:askForSkillInvoke(player, self.name, data, "#xianlve-invoke")
+    return player.room:askForSkillInvoke(player, self.name, data, "#xianlue-invoke")
   end,
   on_use = function(self, event, target, player, data)
-    local names = {}
-    for _, id in ipairs(Fk:getAllCardIds()) do
-      local card = Fk:getCardById(id)
-      if card:isCommonTrick() then
-        table.insertIfNeed(names, card.name)
-      end
+    local room = player.room
+    local cards = player:getMark("xianlue_cards")
+    if type(cards) ~= "table" then
+      cards = U.getUniversalCards(room, "t", true)
+      room:setPlayerMark(player, "xianlue_cards", cards)
     end
-    local choice = player.room:askForChoice(player, names, self.name, "#xianlve-choice")
-    player.room:setPlayerMark(player, self.name, choice)
+    if #cards == 0 then return false end
+    local result = U.askforChooseCardsAndChoice(player, cards, {"OK"}, self.name, "#xianlue-choice")
+    room:setPlayerMark(player, "@[private]xianlue", Fk:getCardById(result[1]).name)
   end,
 }
-local xianlve_trigger = fk.CreateTriggerSkill{
-  name = "#xianlve_trigger",
+local xianlue_trigger = fk.CreateTriggerSkill{
+  name = "#xianlue_trigger",
   mute = true,
   events = {fk.CardUsing},
   can_trigger = function(self, event, target, player, data)
-    return player:hasSkill("xianlve") and target ~= player and player:getMark("xianlve") ~= 0 and
-      player:getMark("xianlve") == data.card.trueName and player:usedSkillTimes(self.name, Player.HistoryTurn) == 0
+    return player:hasSkill(xianlue) and target ~= player and
+    player:getMark("@[private]xianlue") == data.card.trueName and
+    player:usedSkillTimes(self.name, Player.HistoryTurn) == 0
   end,
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    player:broadcastSkillInvoke("xianlve")
-    room:notifySkillInvoked(player, "xianlve", "drawcard")
-    local cards = player:drawCards(2, "xianlve")
+    player:broadcastSkillInvoke("xianlue")
+    room:notifySkillInvoked(player, "xianlue", "drawcard")
+    local cards = player:drawCards(2, "xianlue")
     cards = table.filter(cards, function(id) return table.contains(player:getCardIds("h"), id) end)
     if #cards > 0 then
-      U.askForDistribution(player, cards, room.alive_players, self.name, 0, #cards, "#xianlve-give")
+      U.askForDistribution(player, cards, room.alive_players, self.name, 0, #cards, "#xianlue-give")
     end
     if player.dead then return end
-    local skill = Fk.skills["xianlve"]
+    local skill = Fk.skills["xianlue"]
     skill:use(event, target, player, data)
   end,
 }
@@ -2325,27 +2325,28 @@ local zaowang_trigger = fk.CreateTriggerSkill{
     end
   end,
 }
-xianlve:addRelatedSkill(xianlve_trigger)
+xianlue:addRelatedSkill(xianlue_trigger)
 zaowang:addRelatedSkill(zaowang_trigger)
-dongzhao:addSkill(xianlve)
+dongzhao:addSkill(xianlue)
 dongzhao:addSkill(zaowang)
 Fk:loadTranslationTable{
   ["ol__dongzhao"] = "董昭",
-  ["xianlve"] = "先略",
-  [":xianlve"] = "主公的回合开始时，你可以声明一种普通锦囊牌牌名。每回合限一次，当其他角色使用被声明的牌后，你摸两张牌并分配给任意角色，"..
+  ["xianlue"] = "先略",
+  [":xianlue"] = "主公的回合开始时，你可以声明一种普通锦囊牌牌名。每回合限一次，当其他角色使用被声明的牌后，你摸两张牌并分配给任意角色，"..
   "然后重新声明一张普通锦囊牌。",
   ["zaowang"] = "造王",
   [":zaowang"] = "限定技，出牌阶段，你可以令一名角色增加1点体力上限、回复1点体力并摸三张牌，若其为：忠臣，当主公死亡时与主公交换身份牌；"..
   "反贼，当其被主公或忠臣杀死时，主公方获胜。",
-  ["#xianlve-invoke"] = "先略：你可以声明“先略”锦囊牌名",
-  ["#xianlve-choice"] = "先略：选择要记录的牌名",
-  ["#xianlve-give"] = "先略：将这些牌分配给任意角色，点“取消”：自己保留",
-  ["xianlve_active"] = "先略",
+  ["#xianlue-invoke"] = "先略：你可以声明“先略”锦囊牌名",
+  ["#xianlue-choice"] = "先略：选择要记录的牌名",
+  ["#xianlue-give"] = "先略：将这些牌分配给任意角色，点“取消”：自己保留",
+  ["xianlue_active"] = "先略",
+  ["@[private]xianlue"] = "先略",
   ["@@zaowang"] = "造王",
   ["#zaowang-invoke"] = "造王：令一名角色加1点体力上限、回复1点体力并摸三张牌！",
 
-  ["$xianlve1"] = "行略于先，未雨绸缪。",
-  ["$xianlve2"] = "先见梧叶，而后知秋。",
+  ["$xianlue1"] = "行略于先，未雨绸缪。",
+  ["$xianlue2"] = "先见梧叶，而后知秋。",
   ["$zaowang1"] = "大魏当兴，吾主可王。",
   ["$zaowang2"] = "身加九锡，当君不让。",
   ["~ol__dongzhao"] = "昭，一心向魏，绝无二心……",
