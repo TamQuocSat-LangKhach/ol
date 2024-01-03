@@ -2886,7 +2886,7 @@ local gangshu = fk.CreateTriggerSkill{
         elseif event == fk.CardUseFinished then
           return data.responseToEvent
         elseif event == fk.DrawNCards then
-          return player:getMark("gangshu3_fix") > 0
+          return player:getMark("gangshu2_fix") > 0
         end
       end
     end
