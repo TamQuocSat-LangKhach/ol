@@ -1011,7 +1011,7 @@ local ol__meibu = fk.CreateTriggerSkill{
   events = {fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
     return player:hasSkill(self) and target.phase == Player.Play and target ~= player
-      and target:inMyAttackRange(player) and not target:hasSkill('ol__zhixi')
+      and target:inMyAttackRange(player) and not target:hasSkill('ol__zhixi', true) and not player:isNude()
   end,
   on_cost = function(self, event, target, player, data)
     local room = player.room
@@ -1020,16 +1020,17 @@ local ol__meibu = fk.CreateTriggerSkill{
 
     if c then
       self.cost_data = c
+      room:doIndicate(player.id, {target.id})
       return true
     end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
     local c = self.cost_data
-    room:throwCard(c, self.name, player, player)
     local card = Fk:getCardById(c)
+    room:throwCard(c, self.name, player, player)
     room:setPlayerMark(target, "ol__meibu", 1)
-    room:handleAddLoseSkills(target, 'ol__zhixi', nil, true, true)
+    room:handleAddLoseSkills(target, 'ol__zhixi', nil, true)
 
     if card.trueName ~= 'slash' and not (card.color == Card.Black and card.type == Card.TypeTrick) then
       room:setPlayerMark(player, "ol__meibu_src-turn", 1)
@@ -1043,7 +1044,7 @@ local ol__meibu = fk.CreateTriggerSkill{
   on_refresh = function(self, event, target, player, data)
     local room = player.room
     room:setPlayerMark(target, "ol__meibu", 0)
-    room:handleAddLoseSkills(target, '-ol__zhixi', nil, true, true)
+    room:handleAddLoseSkills(target, '-ol__zhixi', nil, true)
   end,
 }
 ol__meibu:addRelatedSkill(ol__meibu_dis)
@@ -1111,31 +1112,77 @@ local ol__mumu = fk.CreateTriggerSkill{
 }
 ol__mumu:addRelatedSkill(ol__mumu_pro)
 ol__sunluyu:addSkill(ol__mumu)
-local zhixip = fk.CreateProhibitSkill{
-  name = '#ol__zhixi_prohibit',
-  prohibit_use = function(self, player)
-    if not player:hasSkill('ol__zhixi') then
-      return false
-    end
-    local mark = player:getMark('@ol__zhixi-phase')
-    if type(mark) == "string" then mark = math.huge end
-    return mark >= player.hp
-  end,
-}
 local zhixi = fk.CreateTriggerSkill{
   name = 'ol__zhixi',
   frequency = Skill.Compulsory,
-  refresh_events = { fk.CardUsing },
+
+  refresh_events = { fk.PreCardUse, fk.HpChanged, fk.MaxHpChanged, fk.EventAcquireSkill, fk.EventLoseSkill},
   can_refresh = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self)
+    if player ~= target or player.dead or player.phase ~= Player.Play then return false end
+    if event == fk.PreCardUse then
+      return player:hasSkill(self, true) and player:getMark("ol__zhixi_prohibit-phase") == 0
+    elseif event == fk.HpChanged or event == fk.MaxHpChanged then
+      return player:hasSkill(self, true) and player:getMark("ol__zhixi_prohibit-phase") == 0
+    elseif event == fk.EventPhaseStart then
+      return player:hasSkill(self, true)
+    elseif event == fk.EventAcquireSkill then
+      return data == self
+    elseif event == fk.EventLoseSkill then
+      return data == self
+    end
   end,
   on_refresh = function(self, event, target, player, data)
     local room = player.room
-    if data.card.type == Card.TypeTrick then
-      room:setPlayerMark(player, '@ol__zhixi-phase', '∞')
-    elseif type(player:getMark('@ol__zhixi-phase')) == "number" then
-      room:addPlayerMark(player, '@ol__zhixi-phase', 1)
+    if event == fk.PreCardUse then
+      if data.card.type == Card.TypeTrick then
+        room:setPlayerMark(player, "ol__zhixi_prohibit-phase", 1)
+        room:setPlayerMark(player, "@ol__zhixi-phase", {"ol__zhixi_prohibit"})
+      else
+        local x = player:getMark("ol__zhixi-phase") + 1
+        room:setPlayerMark(player, "ol__zhixi-phase", x)
+        x = player.hp - x
+        room:setPlayerMark(player, "@ol__zhixi-phase", x > 0 and {"ol__zhixi_remains", x} or {"ol__zhixi_prohibit"})
+      end
+    elseif event == fk.HpChanged or event == fk.MaxHpChanged then
+      local x = player.hp - player:getMark("ol__zhixi-phase")
+      room:setPlayerMark(player, "@ol__zhixi-phase", x > 0 and {"ol__zhixi_remains", x} or {"ol__zhixi_prohibit"})
+    elseif event == fk.EventPhaseStart then
+      room:setPlayerMark(player, "@ol__zhixi-phase", player.hp > 0 and {"ol__zhixi_remains", player.hp} or {"ol__zhixi_prohibit"})
+    elseif event == fk.EventAcquireSkill then
+      local phase_event = room.logic:getCurrentEvent():findParent(GameEvent.Phase, true)
+      if phase_event == nil then return false end
+      local end_id = phase_event.id
+      local x = 0
+      local use_trick = false
+      U.getEventsByRule(room, GameEvent.UseCard, 1, function (e)
+        local use = e.data[1]
+        if use.from == player.id then
+          if use.card.type == Card.TypeTrick then
+            use_trick = true
+            return true
+          end
+          x = x + 1
+        end
+        return false
+      end, end_id)
+      if use_trick then
+        room:setPlayerMark(player, "ol__zhixi_prohibit-phase", 1)
+        room:setPlayerMark(player, "@ol__zhixi-phase", {"ol__zhixi_prohibit"})
+      else
+        room:setPlayerMark(player, "ol__zhixi-phase", x)
+        x = player.hp - x
+        room:setPlayerMark(player, "@ol__zhixi-phase", x > 0 and {"ol__zhixi_remains", x} or {"ol__zhixi_prohibit"})
+      end
+    elseif event == fk.EventLoseSkill then
+      room:setPlayerMark(player, "@ol__zhixi-phase", 0)
     end
+  end,
+}
+local zhixip = fk.CreateProhibitSkill{
+  name = '#ol__zhixi_prohibit',
+  prohibit_use = function(self, player)
+    return player:hasSkill(zhixi) and player.phase == Player.Play and
+    (player:getMark("ol__zhixi_prohibit-phase") > 0 or player:getMark("ol__zhixi-phase") >= player.hp)
   end,
 }
 zhixi:addRelatedSkill(zhixip)
@@ -1156,7 +1203,9 @@ Fk:loadTranslationTable{
   ['@ol__mumu-turn'] = '穆穆不能出杀',
   ['ol__zhixi'] = '止息',
   [':ol__zhixi'] = '锁定技，出牌阶段你可至多使用X张牌，你使用锦囊牌后，不能再使用牌（X为你的体力值）。',
-  ['@ol__zhixi-phase'] = '止息已使用',
+  ['@ol__zhixi-phase'] = '止息',
+  ["ol__zhixi_remains"] = "剩余",
+  ["ol__zhixi_prohibit"] = "不能出牌",
 
   ['$ol__meibu1'] = '姐姐，妹妹不求达官显贵，但求家人和睦。',
   ['$ol__meibu2'] = '储君之争，实为仇者快，亲者痛矣。',

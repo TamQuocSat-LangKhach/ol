@@ -3908,12 +3908,13 @@ local shanduan = fk.CreateTriggerSkill{
       if #nums ~= 4 then
         nums = {2, 2, 3, 4}
       else
+        local k = 1
         for i = 2, 4, 1 do
-          if nums[i] >= nums[i-1] then
-            nums[i-1] = nums[i-1] + 1
-            break
+          if nums[i] < nums[k] then
+            k = i
           end
         end
+        nums[k] = nums[k] + 1
       end
       room:setPlayerMark(player, "@shanduan", nums)
     else
@@ -4070,19 +4071,9 @@ local huamu = fk.CreateTriggerSkill{
         return room:getCardArea(id) == Card.Processing
       end) then return false end
     end
+    if not U.IsUsingHandcard(player, data) then return false end
     local logic = room.logic
     local use_event = logic:getCurrentEvent()
-    local move_events = use_event:searchEvents(GameEvent.MoveCards, 1, function()
-      return true
-    end)
-    if #move_events == 0 then return false end
-    local moves = move_events[1].data
-    for _, move in ipairs(moves) do
-      if move.from ~= player.id then return false end
-      for _, info in ipairs(move.moveInfo) do
-        if info.fromArea ~= Card.PlayerHand then return false end
-      end
-    end
     local turn_event = use_event:findParent(GameEvent.Turn, false)
     if not turn_event then return false end
     local events = logic.event_recorder[GameEvent.UseCard] or Util.DummyTable
@@ -4222,6 +4213,7 @@ local qianmeng = fk.CreateTriggerSkill{
 local liangyuan = fk.CreateViewAsSkill{
   name = "liangyuan",
   pattern = "peach,analeptic",
+  prompt = "#liangyuan-viewas",
   interaction = function()
     local all_names, piles, names = {"peach", "analeptic"}, {"huamu_YuShu", "huamu_LingShan"}, {}
     local mark = Self:getMark("liangyuan_record-round")
@@ -4408,7 +4400,7 @@ Fk:loadTranslationTable{
 
   ["huamu_LingShan"] = "灵杉",
   ["huamu_YuShu"] = "玉树",
-  ["#liangyuan-active"] = "发动良缘，将全场所有「灵杉」当【酒】、「玉树」当【桃】来使用",
+  ["#liangyuan-viewas"] = "发动 良缘，将全场所有「灵杉」当【酒】、「玉树」当【桃】来使用",
   ["#jisi-choose"] = "你可以发动羁肆，令一名角色获得一个技能，然后你弃置所有手牌并视为对其使用【杀】",
 
   ["$huamu1"] = "左杉右树，可共余生。",
@@ -4536,7 +4528,7 @@ Fk:loadTranslationTable{
   ["#fenrui-choice"] = "奋锐：选择你要恢复的栏位",
   ["@@fenrui"] = "奋锐",
   ["#fenrui-choose"] = "奋锐：你可以对一名装备少于你的角色造成你与其装备数之差的伤害！（每局限一次）",
-  
+
   ["$qiongshou1"] = "戍守孤城，其势不侵。",
   ["$qiongshou2"] = "吾头可得，而城不可得。",
   ["$fenrui1"] = "待其疲敝，则可一击破之。",
@@ -5290,7 +5282,7 @@ local yuheng_skills = {
 
 --[[
   "ex__zhiheng", "dimeng", "anxu", "ol__bingyi", "shenxing",
-  "xingxue", "anguo", "os__jiexun", "xiashu", "ol__hongyuan",
+  "xingxue", "anguo", "jiexun", "xiashu", "ol__hongyuan",
   "lanjiang", "sp__youdi", "guanwei", "diaodu", "bizheng"
 ]]
 
