@@ -463,7 +463,7 @@ local caiwang_trigger = fk.CreateTriggerSkill{
   can_trigger = function(self, event, target, player, data)
     if player:hasSkill(self) and data.responseToEvent then
       if (event == fk.CardUseFinished and data.toCard and data.toCard.color == data.card.color) or
-        (event == fk.CardRespondFinished and data.responseToEvent.card and data.responseToEvent.card == data.card.color) then
+        (event == fk.CardRespondFinished and data.responseToEvent.card and data.responseToEvent.card.color == data.card.color) then
         local id
         if data.responseToEvent.from == player.id then
           id = data.responseToEvent.to
