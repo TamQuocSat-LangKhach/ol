@@ -3894,64 +3894,64 @@ local shanduan = fk.CreateTriggerSkill{
   can_trigger = function(self, event, target, player, data)
     if target == player and player:hasSkill(self) then
       if event == fk.EventPhaseStart then
-        return player.phase > 3 and player.phase < 7
+        return player.phase > 3 and player.phase < 7 and #U.getMark(player, "@shanduan") > 0 and
+        player:getMark("shanduan"..(player.phase - 3).."-turn") == 0
       else
-        return player.phase == Player.NotActive
+        return player.room.current ~= player
       end
     end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local nums = player:getMark(self.name)
+    local nums = U.getMark(player, "@shanduan")
     if event == fk.Damaged then
-      if nums == 0 or #nums < 4 then
+      if #nums ~= 4 then
         nums = {2, 2, 3, 4}
       else
-        local min = math.min(table.unpack(nums))
-        for i = 1, 4, 1 do
-          if nums[i] == min then
-            nums[i] = min + 1
-            table.sort(nums)
+        for i = 2, 4, 1 do
+          if nums[i] >= nums[i-1] then
+            nums[i-1] = nums[i-1] + 1
             break
           end
         end
       end
-      room:setPlayerMark(player, self.name, nums)
+      room:setPlayerMark(player, "@shanduan", nums)
     else
       local choices = table.map(nums, function (i) return tostring(i) end)
       if #choices == 0 then return end
       local choice = room:askForChoice(player, choices, self.name, "#shanduan"..(player.phase - 3).."-choice")
       room:setPlayerMark(player, "shanduan"..(player.phase - 3).."-turn", tonumber(choice))
       table.removeOne(nums, tonumber(choice))
-      table.sort(nums)
-      room:setPlayerMark(player, self.name, nums)
+      room:setPlayerMark(player, "@shanduan", nums)
       if player.phase == Player.Play then
         choice = room:askForChoice(player, table.map(nums, function (i) return tostring(i) end), self.name, "#shanduan4-choice")
         room:setPlayerMark(player, "shanduan4-turn", tonumber(choice))
         table.removeOne(nums, tonumber(choice))
-        table.sort(nums)
-        room:setPlayerMark(player, self.name, nums)
+        room:setPlayerMark(player, "@shanduan", nums)
       end
     end
   end,
 
-  refresh_events = {fk.TurnStart, fk.DrawNCards},
+  refresh_events = {fk.TurnStart, fk.TurnEnd, fk.EventAcquireSkill, fk.EventLoseSkill, fk.DrawNCards},
   can_refresh = function(self, event, target, player, data)
     if target == player then
       if event == fk.TurnStart then
-        return true
-      else
+        return player:hasSkill(self, true) and #U.getMark(player, "@shanduan") ~= 4
+      elseif event == fk.TurnEnd then
+        return player:hasSkill(self, true)
+      elseif event == fk.EventAcquireSkill or event == fk.EventLoseSkill then
+        return data == self
+      elseif event == fk.DrawNCards then
         return player:getMark("shanduan1-turn") > 0
       end
     end
   end,
   on_refresh = function(self, event, target, player, data)
-    if event == fk.TurnStart then
-      local nums = player:getMark(self.name)
-      if nums == 0 or #nums < 4 then
-        player.room:setPlayerMark(player, self.name, {1, 2, 3, 4})
-      end
-    else
+    if event == fk.TurnStart or event == fk.TurnEnd or event == fk.EventAcquireSkill then
+      player.room:setPlayerMark(player, "@shanduan", {1, 2, 3, 4})
+    elseif event == fk.EventLoseSkill then
+      player.room:setPlayerMark(player, "@shanduan", 0)
+    elseif event == fk.DrawNCards then
       data.n = data.n + player:getMark("shanduan1-turn") - 2
     end
   end,
@@ -3985,21 +3985,17 @@ local shanduan_maxcards = fk.CreateMaxCardsSkill{
 local yilie = fk.CreateViewAsSkill{
   name = "yilie",
   pattern = "^nullification|.|.|.|.|basic|.",
+  prompt = "#yilie-viewas",
   interaction = function()
-    local names = {}
     local mark = Self:getMark("yilie-round")
-    for _, id in ipairs(Fk:getAllCardIds()) do
-      local card = Fk:getCardById(id)
-      if card.type == Card.TypeBasic and
-        ((Fk.currentResponsePattern == nil and Self:canUse(card)) or
-        (Fk.currentResponsePattern and Exppattern:Parse(Fk.currentResponsePattern):match(card))) then
-        if mark == 0 or (not table.contains(mark, card.trueName)) then
-          table.insertIfNeed(names, card.name)
-        end
-      end
+    local all_names = U.getAllCardNames("b")
+    local names = table.filter(U.getViewAsCardNames(Self, "yilie", all_names), function (name)
+      local card = Fk:cloneCard(name)
+      return not table.contains(mark, card.trueName)
+    end)
+    if #names > 0 then
+      return UI.ComboBox { choices = names, all_choices = all_names }
     end
-    if #names == 0 then return end
-    return UI.ComboBox {choices = names}
   end,
   card_filter = function(self, to_select, selected)
     if Fk:currentRoom():getCardArea(to_select) ~= Player.Equip then
@@ -4020,8 +4016,7 @@ local yilie = fk.CreateViewAsSkill{
     return card
   end,
   before_use = function(self, player)
-    local mark = player:getMark("yilie-round")
-    if mark == 0 then mark = {} end
+    local mark = U.getMark(player, "yilie-round")
     table.insert(mark, Fk:cloneCard(self.interaction.data).trueName)
     player.room:setPlayerMark(player, "yilie-round", mark)
   end,
@@ -4042,10 +4037,12 @@ Fk:loadTranslationTable{
   "弃牌阶段开始时，你选择本回合手牌上限。<br>当你于回合外受到伤害后，你下回合分配数值中的最小值+1。",
   ["yilie"] = "义烈",
   [":yilie"] = "你可以将两张颜色相同的手牌当一张本轮未以此法使用过的基本牌使用。",
+  ["@shanduan"] = "善断",
   ["#shanduan1-choice"] = "善断：选择摸牌阶段摸牌数",
   ["#shanduan2-choice"] = "善断：选择攻击范围",
   ["#shanduan3-choice"] = "善断：选择手牌上限",
   ["#shanduan4-choice"] = "善断：选择使用【杀】次数上限",
+  ["#yilie-viewas"] = "发动 义烈，将两张颜色相同的手牌转化为一张基本牌使用",
 
   ["$shanduan1"] = "浪子回头，其期未晚矣！",
   ["$shanduan2"] = "心既存蛟虎，秉慧剑斩之！",

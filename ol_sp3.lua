@@ -4431,4 +4431,203 @@ Fk:loadTranslationTable{
   ["ol__lukai"] = "陆凯",
 }
 
+local caoyu = General(extension, "caoyu", "wei", 3)
+local gongjie = fk.CreateTriggerSkill{
+  name = "gongjie",
+  events = {fk.TurnStart},
+  can_trigger = function(self, event, target, player, data)
+    if not player:hasSkill(self) or player:isNude() then return false end
+    local room = player.room
+    local turn_event = room.logic:getCurrentEvent()
+    if not turn_event then return false end
+    local x = player:getMark("gongjie-turn")
+    if x == 0 then
+      room.logic:getEventsOfScope(GameEvent.Turn, 1, function (e)
+        x = e.id
+        room:setPlayerMark(player, "gongjie-turn", x)
+        return true
+      end, Player.HistoryRound)
+    end
+    return turn_event.id == x
+  end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    local targets = table.map(room:getOtherPlayers(player, false), function (p) return p.id end)
+    local x = math.min(#player:getCardIds("he"), #targets)
+    local tos = room:askForChoosePlayers(player, targets, 1, x, "#gongjie-choose:::" .. tostring(x), self.name, true)
+    if #tos > 0 then
+      room:sortPlayersByAction(tos)
+      self.cost_data = tos
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local targets = table.simpleClone(self.cost_data)
+    local to = nil
+    local suits = {}
+    local mark = U.getMark(player, "gongjie_targets")
+    table.insertTableIfNeed(mark, targets)
+    room:setPlayerMark(player, "gongjie_targets", mark)
+    for _, pid in ipairs(targets) do
+      if player.dead or player:isNude() then break end
+      to = room:getPlayerById(pid)
+      if not to.dead then
+        local cid = room:askForCardChosen(to, player, "he", self.name)
+        local suit = Fk:getCardById(cid).suit
+        if suit ~= Card.NoSuit then
+          table.insertIfNeed(suits, suit)
+        end
+        room:obtainCard(pid, cid, false, fk.ReasonPrey)
+      end
+    end
+    if not player.dead and #suits > 0 then
+      room:drawCards(player, #suits, self.name)
+    end
+  end,
+}
+
+local xiangxu = fk.CreateTriggerSkill{
+  name = "xiangxu",
+  events = {fk.AfterCardsMove, fk.TurnEnd},
+  mute = true,
+  can_trigger = function(self, event, target, player, data)
+    if not player:hasSkill(self) then return end
+    if event == fk.AfterCardsMove and player:getMark("@@xiangxu-turn") == 0 then
+      for _, move in ipairs(data) do
+        if move.from == player.id then
+          for _, info in ipairs(move.moveInfo) do
+            if info.fromArea == Card.PlayerHand then
+              return table.every(player.room.alive_players, function (p)
+                return p:getHandcardNum() >= player:getHandcardNum()
+              end)
+            end
+          end
+        end
+        if move.to == player.id and move.toArea == Card.PlayerHand then
+          return table.every(player.room.alive_players, function (p)
+            return p:getHandcardNum() >= player:getHandcardNum()
+          end)
+        end
+      end
+    elseif event == fk.TurnEnd and player:getMark("@@xiangxu-turn") > 0 and not target.dead then
+      local x, y = player:getHandcardNum(), target:getHandcardNum()
+      return x > y or (x < y and x < 5)
+    end
+  end,
+  on_cost = function(self, event, target, player, data)
+    if event == fk.AfterCardsMove then
+      return true
+    else
+      local x, y = player:getHandcardNum(), target:getHandcardNum()
+      if x > y then
+        local n = x - y
+        local cards = player.room:askForDiscard(player, n, n, false, self.name, true, ".", "#xiangxu-discard:::"..tostring(n), true)
+        if #cards > 0 then
+          self.cost_data = cards
+          return true
+        end
+      else
+        local n = math.min(y, 5) - x
+        if player.room:askForSkillInvoke(player, self.name, nil, "#xiangxu-draw:::"..tostring(n)) then
+          self.cost_data = {}
+          return true
+        end
+      end
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    if event == fk.AfterCardsMove then
+      player.room:setPlayerMark(player, "@@xiangxu-turn", 1)
+    else
+      local mark = U.getMark(player, "xiangxu_targets")
+      if not table.contains(mark, target.id) then
+        table.insert(mark, target.id)
+      end
+      local room = player.room
+      room:setPlayerMark(player, "xiangxu_targets", mark)
+      player:broadcastSkillInvoke(self.name)
+      if #self.cost_data > 0 then
+        room:notifySkillInvoked(player, self.name, "negative")
+        room:throwCard(self.cost_data, self.name, player, player)
+      else
+        room:notifySkillInvoked(player, self.name, "drawcard")
+        local n = math.min(target:getHandcardNum(), 5) - player:getHandcardNum()
+        player:drawCards(n, self.name)
+      end
+    end
+  end,
+}
+local xiangzuo = fk.CreateTriggerSkill{
+  name = "xiangzuo",
+  anim_type = "support",
+  frequency = Skill.Limited,
+  events = {fk.EnterDying},
+  can_trigger = function(self, event, target, player, data)
+    if target == player and player:hasSkill(self) and player.dying and not player:isNude() and
+    player:usedSkillTimes(self.name, Player.HistoryGame) == 0 then
+      local current = player.room.current
+      return not current.dead and player ~= current
+    end
+  end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    local current = room.current
+    local prompt = "#xiangzuo-cost::" .. room.current.id .. ":"
+    if table.contains(U.getMark(player, "gongjie_targets"), current.id) and
+    table.contains(U.getMark(player, "xiangxu_targets"), current.id) then
+      prompt = prompt .. "xiangzuo_recover"
+    end
+    local cards = room:askForCard(player, 1, 998, true, self.name, true, ".", prompt)
+    if #cards > 0 then
+      room:doIndicate(player.id, {current.id})
+      self.cost_data = cards
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local current = room.current
+    local cards = table.simpleClone(self.cost_data)
+    room:moveCardTo(cards, Player.Hand, current, fk.ReasonGive, self.name, nil, false, player.id)
+    if not player.dead and player:isWounded() and table.contains(U.getMark(player, "gongjie_targets"), current.id) and
+    table.contains(U.getMark(player, "xiangxu_targets"), current.id) then
+      room:recover({
+        who = player,
+        num = #cards,
+        recoverBy = player,
+        skillName = self.name
+      })
+    end
+  end,
+}
+caoyu:addSkill(gongjie)
+caoyu:addSkill(xiangxu)
+caoyu:addSkill(xiangzuo)
+
+Fk:loadTranslationTable{
+  ["caoyu"] = "曹宇",
+  ["gongjie"] = "恭节",
+  [":gongjie"] = "每轮的第一个回合开始后，你可以令任意名角色各获得你一张牌，然后你摸X张牌（X为被获得牌的花色数）。",
+  ["xiangxu"] = "相胥",
+  [":xiangxu"] = "当你得到/失去手牌后，若你是手牌数最小的角色，你于本回合结束时可以将手牌调整至与当前回合角色相同（至多摸至五张）。",
+  ["xiangzuo"] = "襄胙",
+  [":xiangzuo"] = "限定技，当你进入濒死状态时，你可以交给当前回合角色任意张牌，若你对其发动过〖恭节〗和〖相胥〗，你回复等量体力。",
+
+  ["#gongjie-choose"] = "你可以发动 恭节，令至多%arg名角色获得你的牌",
+  ["@@xiangxu-turn"] = "相胥",
+  ["#xiangxu-discard"] = "你可以发动 相胥，弃置%arg张手牌",
+  ["#xiangxu-draw"] = "你可以发动 相胥，摸%arg张牌",
+  ["#xiangzuo-cost"] = "你可以发动 襄胙，将任意张牌交给%dest%arg",
+  ["xiangzuo_recover"] = "，并回复等量的体力",
+
+  ["$gongjie1"] = "身负浩然之气，当以恭节待人。",
+  ["$gongjie2"] = "生于帝王之家，不可忘恭失节。",
+  ["$xiangxu1"] = "今之大魏，非一家一姓之国。",
+  ["$xiangxu2"] = "宇内同庆，奏凯歌于长垣。",
+  ["$xiangzuo1"] = "怀济沧海之心，徒拔剑而茫然。",
+  ["$xiangzuo2"] = "执三尺之青锋，卫大魏之宗庙。",
+  ["~caoyu"] = "满园秋霜落，一人叹奈何……",
+}
+
 return extension
