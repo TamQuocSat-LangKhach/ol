@@ -392,7 +392,7 @@ local yushen = fk.CreateActiveSkill{
     else
       room:useVirtualCard("ice__slash", nil, player, target, self.name, true)
     end
-   end
+  end
 }
 local shangshen = fk.CreateTriggerSkill{
   name = "shangshen",
@@ -412,7 +412,7 @@ local shangshen = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     room:doIndicate(player.id, {target.id})
-    if player:getMark("fenchai") == 0 and player.gender ~= target.gender then
+    if player:getMark("fenchai") == 0 and player:compareGenderWith(target, true) then
       room:setPlayerMark(player, "fenchai", target.id)
     end
     local judge = {
