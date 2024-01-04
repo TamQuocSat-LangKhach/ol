@@ -2186,46 +2186,67 @@ local zhenying = fk.CreateActiveSkill{
     local player = room:getPlayerById(effect.from)
     local target = room:getPlayerById(effect.tos[1])
     local tos = {player, target}
+    local cardsMap = {}
     for _, p in ipairs(tos) do
       local choices = {"0", "1", "2"}
       p.request_data = json.encode({choices, choices, self.name, "#zhenying-choice"})
+      cardsMap[p.id] = table.filter(p:getCardIds("h"), function(id)
+        return not p:prohibitDiscard(Fk:getCardById(id))
+      end)
     end
     room:notifyMoveFocus(tos, self.name)
     room:doBroadcastRequest("AskForChoice", tos)
+    local discard_num_map = {}
     for _, p in ipairs(tos) do
-      local n
-      if p.reply_ready then
-        n = p:getHandcardNum() - tonumber(p.client_reply)
-      else
-        n = p:getHandcardNum() - 2
-      end
-      room:setPlayerMark(p, "zhenying-tmp", n)
-      if n > 0 then
-        local extraData = {
-          num = n,
-          min_num = n,
+      local choice = p.reply_ready and tonumber(p.client_reply) or 2
+      discard_num_map[p.id] = p:getHandcardNum() - choice
+    end
+    local toAsk = {}
+    for _, p in ipairs(tos) do
+      local num = math.min(discard_num_map[p.id], #cardsMap[p.id])
+      if num > 0 then
+        table.insert(toAsk, p)
+        local extra_data = {
+          num = num,
+          min_num = num,
           include_equip = false,
+          skillName = self.name,
           pattern = ".",
           reason = self.name,
         }
-        p.request_data = json.encode({ "choose_cards_skill", "#zhenying-discard:::"..n, true, extraData })
+        p.request_data = json.encode({ "discard_skill", "#AskForDiscard:::"..num..":"..num, false, extra_data })
       end
     end
-    room:notifyMoveFocus(tos, self.name)
-    room:doBroadcastRequest("AskForUseActiveSkill", tos)
-    for _, p in ipairs(tos) do
-      local n = p:getMark("zhenying-tmp")
-      if n < 0 then
-        p:drawCards(-n, self.name)
-      elseif n > 0 then
+    if #toAsk > 0 then
+      local moveInfos = {}
+      room:notifyMoveFocus(tos, self.name)
+      room:doBroadcastRequest("AskForUseActiveSkill", toAsk)
+      for _, p in ipairs(toAsk) do
+        local throw
         if p.reply_ready then
           local replyCard = json.decode(p.client_reply).card
-          room:throwCard(json.decode(replyCard).subcards, self.name, p, p)
+          throw = json.decode(replyCard).subcards
         else
-          room:throwCard(table.random(p:getCardIds("h"), n), self.name, p, p)
+          throw = table.random(cardsMap[p.id], discard_num_map[p.id])
+        end
+        table.insert(moveInfos, {
+          ids = throw,
+          from = p.id,
+          toArea = Card.DiscardPile,
+          moveReason = fk.ReasonDiscard,
+          proposer = p.id,
+          skillName = self.name,
+        })
+      end
+      room:moveCards(table.unpack(moveInfos))
+    end
+    for _, p in ipairs(tos) do
+      if not p.dead then
+        local num = discard_num_map[p.id]
+        if num < 0 then
+          p:drawCards(-num, self.name)
         end
       end
-      room:setPlayerMark(p, "zhenying-tmp", 0)
     end
     if not player.dead and not target.dead and player:getHandcardNum() ~= target:getHandcardNum() then
       local from, to = player, target
@@ -2241,7 +2262,7 @@ Fk:loadTranslationTable{
   ["haopu"] = "郝普",
   ["zhenying"] = "镇荧",
   [":zhenying"] = "出牌阶段限两次，你可以与一名手牌数不大于你的其他角色同时摸或弃置手牌至至多两张，然后手牌数较少的角色视为对另一名角色使用【决斗】。",
-  ["#zhenying"] = "镇荧：与一名角色同时选择将手牌调整至0~2",
+  ["#zhenying"] = "镇荧：与一名手牌数不大于你的其他角色同时选择将手牌调整至 0~2",
   ["#zhenying-choice"] = "镇荧：选择你要调整至的手牌数",
   ["#zhenying-discard"] = "镇荧：请弃置%arg张手牌",
 

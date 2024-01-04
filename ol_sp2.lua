@@ -3985,10 +3985,10 @@ local shanduan_maxcards = fk.CreateMaxCardsSkill{
 }
 local yilie = fk.CreateViewAsSkill{
   name = "yilie",
-  pattern = "^nullification|.|.|.|.|basic|.",
+  pattern = ".|.|.|.|.|basic",
   prompt = "#yilie-viewas",
   interaction = function()
-    local mark = Self:getMark("yilie-round")
+    local mark = U.getMark(Self, "yilie-round")
     local all_names = U.getAllCardNames("b")
     local names = table.filter(U.getViewAsCardNames(Self, "yilie", all_names), function (name)
       local card = Fk:cloneCard(name)
@@ -4043,7 +4043,7 @@ Fk:loadTranslationTable{
   ["#shanduan2-choice"] = "善断：选择攻击范围",
   ["#shanduan3-choice"] = "善断：选择手牌上限",
   ["#shanduan4-choice"] = "善断：选择使用【杀】次数上限",
-  ["#yilie-viewas"] = "发动 义烈，将两张颜色相同的手牌转化为一张基本牌使用",
+  ["#yilie-viewas"] = "义烈：你可将两张颜色相同的手牌转化为一张基本牌使用",
 
   ["$shanduan1"] = "浪子回头，其期未晚矣！",
   ["$shanduan2"] = "心既存蛟虎，秉慧剑斩之！",
@@ -4788,7 +4788,7 @@ local qingyix = fk.CreateActiveSkill{
             from = p.id,
             toArea = Card.DiscardPile,
             moveReason = fk.ReasonDiscard,
-            proposer = player.id,
+            proposer = p.id,
             skillName = self.name,
           })
         end

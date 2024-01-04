@@ -3540,16 +3540,16 @@ local function Gethuashen(player, n)
   local generals = table.filter(room.general_pile, function (name)
     return not table.contains(huashen_blacklist, name)
   end)
-  local mark = U.getMark(player, "@&ol_ex__huashen")
+  local mark = U.getMark(player, "@[private]&ol_ex__huashen")
   for _ = 1, n do
     if #generals == 0 then break end
     table.insert(mark, table.remove(room.general_pile, math.random(#room.general_pile)))
   end
-  room:setPlayerMark(player, "@&ol_ex__huashen", mark)
+  room:setPlayerMark(player, "@[private]&ol_ex__huashen", mark)
 end
 local function Dohuashen(player)
   local room = player.room
-  local mark = U.getMark(player, "@&ol_ex__huashen")
+  local mark = U.getMark(player, "@[private]&ol_ex__huashen")
   if #mark == 0 then return end
   local name = room:askForGeneral(player, mark, 1, true)
   local general = Fk.generals[name]
@@ -3587,7 +3587,7 @@ local function Dohuashen(player)
 end
 local function Recasthuashen(player)
   local room = player.room
-  local generals = U.getMark(player, "@&ol_ex__huashen")
+  local generals = U.getMark(player, "@[private]&ol_ex__huashen")
   if #generals < 2 then return end
   local current_general = type(player:getMark("ol_ex__huashen_general")) == "string" and player:getMark("ol_ex__huashen_general") or ""
   local result = player.room:askForCustomDialog(player, "ol_ex__huashen",
@@ -3607,7 +3607,7 @@ local function Recasthuashen(player)
   for _, g in ipairs(removed) do
     table.removeOne(generals, g)
   end
-  room:setPlayerMark(player, "@&ol_ex__huashen", generals)
+  room:setPlayerMark(player, "@[private]&ol_ex__huashen", generals)
   Gethuashen(player, #removed)
   room:returnToGeneralPile(removed)
 end
@@ -3618,7 +3618,7 @@ local ol_ex__huashen = fk.CreateTriggerSkill{
     if event == fk.GamePrepared then
       return player:hasSkill(self)
     else
-      return player:hasSkill(self) and target == player and player:getMark("@&ol_ex__huashen") ~= 0
+      return player:hasSkill(self) and target == player and player:getMark("@[private]&ol_ex__huashen") ~= 0
     end
   end,
   on_cost = function(self, event, target, player, data)
@@ -3672,7 +3672,7 @@ Fk:loadTranslationTable{
   ["ol_ex__huashen"] = "化身",
   [":ol_ex__huashen"] = "①游戏开始时，你随机获得三张武将牌作为“化身”牌，然后你选择其中一张“化身”牌的一个技能（主公技/限定技/觉醒技/转换技除外），你视为拥有此技能，且性别和势力视为与此“化身”牌相同。<br>"..
   "②回合开始或结束时，你可以选择一项：1.重新进行一次“化身”；2.移去至多两张不为亮出的“化身”牌，然后获得等量的新“化身”牌。",
-  ["@&ol_ex__huashen"] = "化身",
+  ["@[private]&ol_ex__huashen"] = "化身",
   ["@ol_ex__huashen_skill"] = "化身",
   ["ol_ex__huashen_re"] = "进行一次“化身”",
   ["ol_ex__huashen_recast"] = "移去至多两张“化身”，获得等量新“化身”",
