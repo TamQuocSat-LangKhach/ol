@@ -3689,7 +3689,159 @@ Fk:loadTranslationTable{
   ["~ol_ex__zuoci"] = "红尘看破，驾鹤仙升……",
 }
 
+local ol_ex__yuji = General(extension, "ol_ex__yuji", "qun", 3)
+local ol_ex__guhuo = fk.CreateViewAsSkill{
+  name = "ol_ex__guhuo",
+  pattern = ".",
+  interaction = function()
+    local names = {}
+    for _, id in ipairs(Fk:getAllCardIds()) do
+      local card = Fk:getCardById(id)
+      if (card.type == Card.TypeBasic or card:isCommonTrick()) and not card.is_derived and
+      ((Fk.currentResponsePattern == nil and Self:canUse(card)) or
+      (Fk.currentResponsePattern and Exppattern:Parse(Fk.currentResponsePattern):match(card))) then
+        table.insertIfNeed(names, card.name)
+      end
+    end
+    if #names == 0 then return false end
+    return UI.ComboBox { choices = names }
+  end,
+  card_filter = function(self, to_select, selected)
+    return #selected == 0 and Fk:currentRoom():getCardArea(to_select) ~= Card.PlayerEquip
+  end,
+  view_as = function(self, cards)
+    if #cards ~= 1 or not self.interaction.data then return end
+    local card = Fk:cloneCard(self.interaction.data)
+    self.cost_data = cards
+    card.skillName = self.name
+    return card
+  end,
+  before_use = function(self, player, use)
+    local room = player.room
+    local cards = self.cost_data
+    local card_id = cards[1]
+    room:moveCardTo(cards, Card.Void, nil, fk.ReasonPut, self.name, "", false)  --暂时放到Card.Void,理论上应该是Card.Processing,只要moveVisible可以false
+    local targets = TargetGroup:getRealTargets(use.tos)
+    if targets and #targets > 0 then
+      room:sendLog{
+        type = "#guhuo_use",
+        from = player.id,
+        to = targets,
+        arg = use.card.name,
+        arg2 = self.name
+      }
 
+      room:doIndicate(player.id, targets)
+    else
+      room:sendLog{
+        type = "#guhuo_no_target",
+        from = player.id,
+        arg = use.card.name,
+        arg2 = self.name
+      }
+    end
+
+    local canuse = true
+    local players = table.filter(room:getOtherPlayers(player), function(p) return not p:hasSkill("ol_ex__chanyuan") end)
+    if #players > 0 then
+      local questioners = {}
+      local choices = {"noquestion", "question"}
+      for _, p in ipairs(players) do
+        local _data = json.encode({ choices, choices, self.name, "#guhuo-ask::"..player.id..":"..use.card.name })
+        p.request_data = _data
+      end
+      room:notifyMoveFocus(players, self.name)
+      room:doBroadcastRequest("AskForChoice", players)
+      for _, p in ipairs(players) do
+        local choice = p.reply_ready and p.client_reply or choices[1]
+        room:sendLog{
+          type = "#guhuo_query",
+          from = p.id,
+          arg = choice
+        }
+        if choice == "question" then
+          table.insert(questioners, p)
+        end
+        room:delay(200)
+      end
+      if #questioners > 0 then
+        player:showCards({card_id})
+        if use.card.name == Fk:getCardById(card_id).name then
+          for _, p in ipairs(questioners) do
+            if not p.dead then
+              if #room:askForDiscard(p, 1, 1, true, self.name, true, ".", "#ol_ex__guhuo-discard") == 0 then
+                room:loseHp(p, 1, self.name)
+              end
+            end
+            room:handleAddLoseSkills(p, "ol_ex__chanyuan")
+          end
+        else
+          for _, p in ipairs(questioners) do
+            if not p.dead then
+              p:drawCards(1, self.name)
+            end
+          end
+          canuse = false
+        end
+      end
+    end
+
+	--暂时使用setCardArea,当moveVisible可以false之后,不必再移动到Card.Void,也就不必再setCardArea
+    table.removeOne(room.void, card_id)
+    table.insert(room.processing_area, card_id)
+    room:setCardArea(card_id, Card.Processing, nil)
+	--
+    if canuse then
+      use.card:addSubcard(card_id)
+    else
+      room:moveCardTo(card_id, Card.DiscardPile, nil, fk.ReasonPutIntoDiscardPile, self.name)
+      return ""
+    end
+  end,
+  enabled_at_play = function(self, player)
+    return not player:isKongcheng() and player:usedSkillTimes(self.name, Player.HistoryTurn) == 0
+  end,
+  enabled_at_response = function(self, player, response)
+    return not player:isKongcheng() and player:usedSkillTimes(self.name, Player.HistoryTurn) == 0
+  end,
+}
+ol_ex__yuji:addSkill(ol_ex__guhuo)
+local ol_ex__chanyuan = fk.CreateInvaliditySkill {
+  name = "ol_ex__chanyuan",
+  invalidity_func = function(self, from, skill)
+    return from:hasSkill(self, true, true) and from.hp <= 1
+    and not (skill:isEquipmentSkill() or skill.name:endsWith("&"))
+  end
+}
+local ol_ex__chanyuan_audio = fk.CreateTriggerSkill{
+  name = "#ol_ex__chanyuan_audio",
+  refresh_events = {fk.HpChanged},
+  can_refresh = function(self, event, target, player, data)
+    return target == player and player:hasSkill("ol_ex__chanyuan") and not player:isFakeSkill("ol_ex__chanyuan")
+    and player.hp <= 1 and data.num < 0 and (player.hp - data.num) > 1
+  end,
+  on_refresh = function(self, event, target, player, data)
+    local room = player.room
+    room:notifySkillInvoked(player, "ol_ex__chanyuan", "negative")
+    player:broadcastSkillInvoke("ol_ex__chanyuan")
+  end,
+}
+ol_ex__chanyuan:addRelatedSkill(ol_ex__chanyuan_audio)
+ol_ex__yuji:addRelatedSkill(ol_ex__chanyuan)
+Fk:loadTranslationTable{
+  ["ol_ex__yuji"] = "界于吉",
+  ["ol_ex__guhuo"] = "蛊惑",
+  [":ol_ex__guhuo"] = "每回合限一次，你可以扣置一张手牌，将此牌当任意一张基本牌或普通锦囊牌使用或打出。此牌使用前，其他角色同时选择是否质疑，选择结束后，若有质疑则翻开此牌，若此牌为：假，此牌作废且所有质疑角色摸一张牌；真，所有质疑角色依次弃置一张牌或失去1点体力，然后获得技能〖缠怨〗。",
+  ["#ol_ex__guhuo-discard"] = "蛊惑：弃置一张牌，否则失去1点体力",
+  ["ol_ex__chanyuan"] = "缠怨",
+  [":ol_ex__chanyuan"] = "锁定技，你不能质疑〖蛊惑〗；若你的体力值小于等于1，你的其他技能失效。",
+
+  ["$ol_ex__guhuo1"] = "真真假假，虚实难测。",
+  ["$ol_ex__guhuo2"] = "这牌，猜对了吗？",
+  ["$ol_ex__chanyuan1"] = "此咒甚重，怨念缠身。",
+  ["$ol_ex__chanyuan2"] = "不信吾法，无福之缘。",
+  ["~ol_ex__yuji"] = "符水失效，此病难医……",
+}
 
 
 

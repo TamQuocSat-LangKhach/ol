@@ -2243,7 +2243,7 @@ local xianlue = fk.CreateTriggerSkill{
     end
     if #cards == 0 then return false end
     local result = U.askforChooseCardsAndChoice(player, cards, {"OK"}, self.name, "#xianlue-choice")
-    room:setPlayerMark(player, "@[private]xianlue", Fk:getCardById(result[1]).name)
+    room:setPlayerMark(player, "xianlue", Fk:getCardById(result[1]).name)
   end,
 }
 local xianlue_trigger = fk.CreateTriggerSkill{
@@ -2251,9 +2251,8 @@ local xianlue_trigger = fk.CreateTriggerSkill{
   mute = true,
   events = {fk.CardUsing},
   can_trigger = function(self, event, target, player, data)
-    return player:hasSkill(xianlue) and target ~= player and
-    player:getMark("@[private]xianlue") == data.card.trueName and
-    player:usedSkillTimes(self.name, Player.HistoryTurn) == 0
+    return player:hasSkill(xianlue) and target ~= player and player:usedSkillTimes(self.name, Player.HistoryTurn) == 0
+    and player:getMark("xianlue") == data.card.trueName
   end,
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
@@ -2332,8 +2331,7 @@ dongzhao:addSkill(zaowang)
 Fk:loadTranslationTable{
   ["ol__dongzhao"] = "董昭",
   ["xianlue"] = "先略",
-  [":xianlue"] = "主公的回合开始时，你可以声明一种普通锦囊牌牌名。每回合限一次，当其他角色使用被声明的牌后，你摸两张牌并分配给任意角色，"..
-  "然后重新声明一张普通锦囊牌。",
+  [":xianlue"] = "①主公的回合开始时，你可以记录一个普通锦囊牌的牌名（覆盖原记录）；②每回合限一次，当其他角色使用与记录的牌牌名相同的牌结算后，你摸两张牌并分配给任意角色，然后你记录一个普通锦囊牌的牌名（覆盖原记录）。",
   ["zaowang"] = "造王",
   [":zaowang"] = "限定技，出牌阶段，你可以令一名角色增加1点体力上限、回复1点体力并摸三张牌，若其为：忠臣，当主公死亡时与主公交换身份牌；"..
   "反贼，当其被主公或忠臣杀死时，主公方获胜。",
@@ -2341,7 +2339,6 @@ Fk:loadTranslationTable{
   ["#xianlue-choice"] = "先略：选择要记录的牌名",
   ["#xianlue-give"] = "先略：将这些牌分配给任意角色，点“取消”：自己保留",
   ["xianlue_active"] = "先略",
-  ["@[private]xianlue"] = "先略",
   ["@@zaowang"] = "造王",
   ["#zaowang-invoke"] = "造王：令一名角色加1点体力上限、回复1点体力并摸三张牌！",
 
