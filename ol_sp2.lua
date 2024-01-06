@@ -2243,7 +2243,7 @@ local xianlue = fk.CreateTriggerSkill{
     end
     if #cards == 0 then return false end
     local result = U.askforChooseCardsAndChoice(player, cards, {"OK"}, self.name, "#xianlue-choice")
-    room:setPlayerMark(player, "xianlue", Fk:getCardById(result[1]).name)
+    room:setPlayerMark(player, "@[private]$xianlue", Fk:getCardById(result[1]).name)
   end,
 }
 local xianlue_trigger = fk.CreateTriggerSkill{
@@ -2252,7 +2252,7 @@ local xianlue_trigger = fk.CreateTriggerSkill{
   events = {fk.CardUsing},
   can_trigger = function(self, event, target, player, data)
     return player:hasSkill(xianlue) and target ~= player and player:usedSkillTimes(self.name, Player.HistoryTurn) == 0
-    and player:getMark("xianlue") == data.card.trueName
+    and player:getMark("@[private]$xianlue") == data.card.trueName
   end,
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
@@ -2339,6 +2339,7 @@ Fk:loadTranslationTable{
   ["#xianlue-choice"] = "先略：选择要记录的牌名",
   ["#xianlue-give"] = "先略：将这些牌分配给任意角色，点“取消”：自己保留",
   ["xianlue_active"] = "先略",
+  ["@[private]$xianlue"] = "先略",
   ["@@zaowang"] = "造王",
   ["#zaowang-invoke"] = "造王：令一名角色加1点体力上限、回复1点体力并摸三张牌！",
 
