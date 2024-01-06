@@ -674,7 +674,7 @@ Fk:loadTranslationTable{
 
   ["$chexuan1"] = "兵车疾动，以悬敌首！",
   ["$chexuan2"] = "层层布设，以多胜强！",
-  ["~cheliji"] = "元气已伤，不如归去。",
+  ["~cheliji"] = "元气已伤，不如归去……",
 }
 
 local huaxin = General(extension, "ol__huaxin", "wei", 3)
@@ -1050,67 +1050,77 @@ local xijue = fk.CreateTriggerSkill{
   can_trigger = function(self, event, target, player, data)
     if player:hasSkill(self) then
       if event == fk.GameStart then
+        self.cost_data = 4
         return true
       else
-        return target == player and player:getMark(self.name) > 0
+        if target == player then
+          local room = player.room
+          local turn_event = room.logic:getCurrentEvent():findParent(GameEvent.Turn, true)
+          if turn_event == nil then return false end
+          local n = 0
+          U.getActualDamageEvents(room, 1, function(e)
+            local damage = e.data[1]
+            if damage.from == player then
+              n = n + damage.damage
+            end
+          end, nil, turn_event.id)
+          if n > 0 then
+            self.cost_data = n
+            return true
+          end
+        end
       end
     end
   end,
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
-    local room = player.room
-    if event == fk.GameStart then
-      room:addPlayerMark(player, "@zhanghuyuechen_jue", 4)
-    else
-      room:addPlayerMark(player, "@zhanghuyuechen_jue", player:getMark(self.name))
-      room:setPlayerMark(player, self.name, 0)
-    end
-  end,
-
-  refresh_events = {fk.Damage},
-  can_refresh = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self, true) and player.phase ~= Player.NotActive
-  end,
-  on_refresh = function(self, event, target, player, data)
-    player.room:addPlayerMark(player, self.name, data.damage)
+    player.room:addPlayerMark(player, "@zhanghuyuechen_jue", self.cost_data)
   end,
 }
 local xijue_tuxi = fk.CreateTriggerSkill{
   name = "#xijue_tuxi",
   anim_type = "control",
+  main_skill = xijue,
   events = {fk.DrawNCards},
   can_trigger = function(self, event, target, player, data)
-    return (target == player and player:hasSkill(self) and data.n > 0 and player:getMark("@zhanghuyuechen_jue") > 0 and
-      not table.every(player.room:getOtherPlayers(player), function (p) return p:isKongcheng() end))
+    return (target == player and player:hasSkill(xijue) and data.n > 0 and player:getMark("@zhanghuyuechen_jue") > 0 and
+      not table.every(player.room:getOtherPlayers(player, false), function (p) return p:isKongcheng() end))
   end,
   on_cost = function(self, event, target, player, data)
     local room = player.room
-    local targets = table.map(table.filter(room:getOtherPlayers(player), function(p)
+    local targets = table.map(table.filter(room:getOtherPlayers(player, false), function(p)
       return not p:isKongcheng() end), Util.IdMapper)
     local tos = room:askForChoosePlayers(player, targets, 1, data.n, "#xijue_tuxi-invoke", "ex__tuxi", true)
     if #tos > 0 then
       self.cost_data = tos
-      room:removePlayerMark(player, "@zhanghuyuechen_jue", 1)
       return true
     end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    for _, id in ipairs(self.cost_data) do
+    room:removePlayerMark(player, "@zhanghuyuechen_jue", 1)
+    player:broadcastSkillInvoke("ex__tuxi")
+    local targets = table.simpleClone(self.cost_data)
+    room:sortPlayersByAction(targets)
+    for _, id in ipairs(targets) do
+      if player.dead then break end
       local p = room:getPlayerById(id)
-      local c = room:askForCardChosen(player, p, "h", "ex__tuxi")
-      room:obtainCard(player.id, c, false, fk.ReasonPrey)
+      if not (p.dead or p:isKongcheng()) then
+        local c = room:askForCardChosen(player, p, "h", "ex__tuxi")
+        room:obtainCard(player.id, c, false, fk.ReasonPrey)
+      end
     end
-    data.n = data.n - #self.cost_data
+    data.n = data.n - #targets
   end,
 }
 local xijue_xiaoguo = fk.CreateTriggerSkill{
   name = "#xijue_xiaoguo",
   anim_type = "offensive",
+  main_skill = xijue,
   events = {fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
-    return target ~= player and player:hasSkill(self) and target.phase == Player.Finish and
-      not player:isKongcheng() and player:getMark("@zhanghuyuechen_jue") > 0
+    return target ~= player and not target.dead and player:hasSkill(xijue) and not player:isKongcheng() and
+    player:getMark("@zhanghuyuechen_jue") > 0 and target.phase == Player.Finish
   end,
   on_cost = function(self, event, target, player, data)
     local card = player.room:askForDiscard(player, 1, 1, false, "xiaoguo", true, ".|.|.|.|.|basic", "#xijue_xiaoguo-invoke::"..target.id, true)
@@ -1121,10 +1131,13 @@ local xijue_xiaoguo = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    room:throwCard(self.cost_data, "xiaoguo", player, player)
     room:removePlayerMark(player, "@zhanghuyuechen_jue", 1)
+    player:broadcastSkillInvoke("xiaoguo")
+    room:doIndicate(player.id, {target.id})
+    room:throwCard(self.cost_data, "xiaoguo", player, player)
+    if target.dead then return false end
     if #room:askForDiscard(target, 1, 1, true, "xiaoguo", true, ".|.|.|.|.|equip", "#xiaoguo-discard:"..player.id) > 0 then
-      player:drawCards(1)
+      player:drawCards(1, "xiaoguo")
     else
       room:damage{
         from = player,
@@ -1148,16 +1161,14 @@ Fk:loadTranslationTable{
   ["#xijue_tuxi-invoke"] = "袭爵：你可以移去1个“爵”标记发动〖突袭〗",
   ["#xijue_xiaoguo-invoke"] = "袭爵：你可以移去1个“爵”标记对 %dest 发动〖骁果〗",
   ["#xijue_tuxi"] = "突袭",
-  [":#xijue_tuxi"] = "摸牌阶段，你可以少摸任意张牌，获得等量其他角色各一张手牌。",
   ["#xijue_xiaoguo"] = "骁果",
-  [":#xijue_xiaoguo"] = "其他角色结束阶段开始时，你可以弃置一张基本牌。若如此做，该角色需弃置一张装备牌并令你摸一张牌，否则受到你对其造成的1点伤害。",
 
   ["$xijue1"] = "承爵于父，安能辱之！",
-  ["$xijue2"] = "虎父安有犬子乎！",
-  ["$#xijue_tuxi1"] = "动如霹雳，威震枭首！",
-  ["$#xijue_tuxi2"] = "行略如风，摧枯拉朽！",
-  ["$#xijue_xiaoguo1"] = "大丈夫生于世，当沙场效忠！",
-  ["$#xijue_xiaoguo2"] = "骁勇善战，刚毅果断！",
+  ["$xijue2"] = "虎父安有犬子乎？",
+  ["$ex__tuxi_zhanghuyuechen1"] = "动如霹雳，威震宵小！",
+  ["$ex__tuxi_zhanghuyuechen2"] = "行略如风，摧枯拉朽！",
+  ["$xiaoguo_zhanghuyuechen1"] = "大丈夫生于世，当沙场效忠！",
+  ["$xiaoguo_zhanghuyuechen2"] = "骁勇善战，刚毅果断！",
   ["~zhanghuyuechen"] = "儿有辱……父亲威名……",
 }
 

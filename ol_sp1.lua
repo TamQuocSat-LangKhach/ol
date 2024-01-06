@@ -3373,22 +3373,17 @@ local yuxu = fk.CreateTriggerSkill{
     return target == player and player:hasSkill(self) and player.phase == Player.Play
   end,
   on_cost = function(self, event, target, player, data)
-    if player:getMark("yuxu-phase") == 0 then
-      return player.room:askForSkillInvoke(player, self.name, data, "#yuxu-invoke")
-    else
-      return true
-    end
+    return player:usedSkillTimes(self.name, Player.HistoryPhase) % 2 == 1 or
+    player.room:askForSkillInvoke(player, self.name, data, "#yuxu-invoke")
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    if player:getMark("yuxu-phase") == 0 then
+    if player:usedSkillTimes(self.name, Player.HistoryPhase) % 2 == 1 then
       player:drawCards(1, self.name)
-      room:addPlayerMark(player, "yuxu-phase", 1)
     else
       if not player:isNude() then
         room:askForDiscard(player, 1, 1, true, self.name, false)
       end
-      room:removePlayerMark(player, "yuxu-phase", 1)
     end
   end,
 }
@@ -3451,29 +3446,38 @@ local neifa = fk.CreateTriggerSkill{
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(self) and player.phase == Player.Play
   end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    local _, ret = room:askForUseActiveSkill(player, "choose_players_skill", "#neifa-choose", true, {
+      targets = table.map(table.filter(room.alive_players, function(p)
+        return #p:getCardIds("ej") > 0 end), Util.IdMapper),
+      num = 1,
+      min_num = 0,
+      pattern = "",
+      skillName = self.name
+    })
+    if ret then
+      self.cost_data = ret.targets
+      return true
+    end
+  end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local targets = table.map(table.filter(room:getAlivePlayers(), function(p) return #p:getCardIds("ej") > 0 end), Util.IdMapper)
-    if #targets == 0 then
-      player:drawCards(2, self.name)
+    if #self.cost_data > 0 then
+      room:doIndicate(player.id, self.cost_data)
+      local id = room:askForCardChosen(player, room:getPlayerById(self.cost_data[1]), "ej", self.name)
+      room:obtainCard(player, id, true, fk.ReasonPrey)
     else
-      local to = room:askForChoosePlayers(player, targets, 1, 1, "#neifa-choose", self.name, true)
-      if #to > 0 then
-        local id = room:askForCardChosen(player, room:getPlayerById(to[1]), "ej", self.name)
-        room:obtainCard(player, id, true, fk.ReasonPrey)
-      else
-        player:drawCards(2, self.name)
-      end
+      room:drawCards(player, 2, self.name)
     end
     local card = room:askForDiscard(player, 1, 1, true, self.name, false)
+    if #card == 0 then return false end
     if Fk:getCardById(card[1]).type == Card.TypeBasic then
       local cards = table.filter(player.player_cards[Player.Hand], function(id) return Fk:getCardById(id).type ~= Card.TypeBasic end)
-      room:setPlayerMark(player, "@neifa-turn", "basic")
-      room:setPlayerMark(player, "neifa-turn", math.min(#cards, 5))
+      room:setPlayerMark(player, "@neifa-turn", {"basic", math.min(#cards, 5)})
     else
       local cards = table.filter(player.player_cards[Player.Hand], function(id) return Fk:getCardById(id).type == Card.TypeBasic end)
-      room:setPlayerMark(player, "@neifa-turn", "non_basic")
-      room:setPlayerMark(player, "neifa-turn", math.min(#cards, 5))
+      room:setPlayerMark(player, "@neifa-turn", {"non_basic", math.min(#cards, 5)})
     end
   end,
 }
@@ -3482,26 +3486,42 @@ local neifa_trigger = fk.CreateTriggerSkill{
   anim_type = "control",
   events = {fk.AfterCardTargetDeclared},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:getMark("@neifa-turn") == "non_basic" and data.card:isCommonTrick() and data.tos
+    if player == target then
+      local mark = U.getMark(player, "@neifa-turn")
+      if #mark ~= 2 then return false end
+      if data.card:isCommonTrick() and mark[1] == "non_basic" then
+        local targets = U.getUseExtraTargets(player.room, data, false)
+        if #TargetGroup:getRealTargets(data.tos) > 1 then
+          table.insertTable(targets, TargetGroup:getRealTargets(data.tos))
+        end
+        if #targets > 0 then
+          self.cost_data = targets
+          return true
+        end
+      elseif data.card.trueName == "slash" and mark[1] == "basic" then
+        local targets = U.getUseExtraTargets(player.room, data, false)
+        if #targets > 0 then
+          self.cost_data = targets
+          return true
+        end
+      end
+    end
   end,
   on_cost = function(self, event, target, player, data)
     local room = player.room
-    local targets = {}
-    if #TargetGroup:getRealTargets(data.tos) > 1 then
-      table.insertTable(targets, TargetGroup:getRealTargets(data.tos))
-    end
-    table.insertTable(targets, U.getUseExtraTargets(room, data, false))
-    local to = room:askForChoosePlayers(player, targets, 1, 1, "#neifa_trigger-choose:::"..data.card:toLogString(), self.name, true)
+    local to = room:askForChoosePlayers(player, self.cost_data, 1, 1,
+    "#neifa_trigger-choose:::"..data.card:toLogString(), neifa.name, true)
     if #to > 0 then
-      self.cost_data = to[1]
+      self.cost_data = to
       return true
     end
   end,
   on_use = function(self, event, target, player, data)
-    if table.contains(TargetGroup:getRealTargets(data.tos), self.cost_data) then
-      TargetGroup:removeTarget(data.tos, self.cost_data)
+    player:broadcastSkillInvoke(neifa.name)
+    if table.contains(TargetGroup:getRealTargets(data.tos), self.cost_data[1]) then
+      TargetGroup:removeTarget(data.tos, self.cost_data[1])
     else
-      table.insert(data.tos, {self.cost_data})
+      table.insert(data.tos, self.cost_data)
     end
   end,
 }
@@ -3510,35 +3530,36 @@ local neifa_draw = fk.CreateTriggerSkill{
   anim_type = "drawcard",
   events = {fk.CardUsing},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:getMark("@neifa-turn") == "non_basic" and data.card.type == Card.TypeEquip and
-      player:usedSkillTimes(self.name, Player.HistoryTurn) < 2
+    if not player.dead and target == player and data.card.type == Card.TypeEquip and
+    player:usedSkillTimes(self.name, Player.HistoryTurn) < 2 then
+      local mark = U.getMark(player, "@neifa-turn")
+      return #mark == 2 and mark[1] == "non_basic" and mark[2] > 0
+    end
   end,
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
-    local n = player:getMark("neifa-turn")
-    if n > 0 then
-      player:drawCards(n, "neifa")
+    player:broadcastSkillInvoke(neifa.name)
+    local mark = U.getMark(player, "@neifa-turn")
+    if #mark == 2 and mark[2] > 0 then
+      player:drawCards(mark[2], "neifa")
     end
   end,
 }
 local neifa_targetmod = fk.CreateTargetModSkill{
   name = "#neifa_targetmod",
   residue_func = function(self, player, skill, scope)
-    if skill.trueName == "slash_skill" and player:getMark("@neifa-turn") == "basic" and scope == Player.HistoryPhase then
-      return player:getMark("neifa-turn")
-    end
-  end,
-  extra_target_func = function(self, player, skill)
-    if skill.trueName == "slash_skill" and player:getMark("@neifa-turn") == "basic" then
-      return 1
+    if skill.trueName == "slash_skill" and scope == Player.HistoryPhase then
+      local mark = U.getMark(player, "@neifa-turn")
+      return #mark == 2 and mark[1] == "basic" and mark[2] or 0
     end
   end,
 }
 local neifa_prohibit = fk.CreateProhibitSkill{
   name = "#neifa_prohibit",
   prohibit_use = function(self, player, card)
-    return (player:getMark("@neifa-turn") == "basic" and card.type ~= Card.TypeBasic) or
-      (player:getMark("@neifa-turn") == "non_basic" and card.type == Card.TypeBasic)
+    local mark = U.getMark(player, "@neifa-turn")
+    return #mark == 2 and (mark[1] == "basic" and card.type ~= Card.TypeBasic) or
+      (mark[1] == "non_basic" and card.type == Card.TypeBasic)
   end,
 }
 neifa:addRelatedSkill(neifa_targetmod)
@@ -3552,7 +3573,7 @@ Fk:loadTranslationTable{
   [":neifa"] = "出牌阶段开始时，你可以摸两张牌或获得场上一张牌，然后弃置一张牌。若弃置的牌：是基本牌，你本回合不能使用非基本牌，"..
   "本阶段使用【杀】次数上限+X，目标上限+1；不是基本牌，你本回合不能使用基本牌，使用普通锦囊牌的目标+1或-1，前两次使用装备牌时摸X张牌"..
   "（X为发动技能时手牌中因本技能不能使用的牌且至多为5）。",
-  ["#neifa-choose"] = "内伐：获得场上的一张牌，或点“取消”摸两张牌",
+  ["#neifa-choose"] = "是否使用 内伐，获得场上的一张牌，或不选择角色则摸两张牌",
   ["@neifa-turn"] = "内伐",
   ["non_basic"] = "非基本牌",
   ["#neifa_trigger-choose"] = "内伐：你可以为%arg增加/减少一个目标",
@@ -3573,8 +3594,8 @@ local bizheng = fk.CreateTriggerSkill{
     return target == player and player:hasSkill(self) and player.phase == Player.Draw
   end,
   on_cost = function(self, event, target, player, data)
-    local to = player.room:askForChoosePlayers(player, table.map(player.room:getOtherPlayers(player), Util.IdMapper), 1, 1,
-      "#bizheng-choose", self.name, true)
+    local to = player.room:askForChoosePlayers(player, table.map(player.room:getOtherPlayers(player, false),
+    Util.IdMapper), 1, 1, "#bizheng-choose", self.name, true)
     if #to > 0 then
       self.cost_data = to[1]
       return true
@@ -3584,10 +3605,11 @@ local bizheng = fk.CreateTriggerSkill{
     local room = player.room
     local to = room:getPlayerById(self.cost_data)
     to:drawCards(2, self.name)
-    for _, p in ipairs({player, to}) do
-      if p:getHandcardNum() > p.maxHp then
-        room:askForDiscard(p, 2, 2, true, self.name, false)
-      end
+    if not player.dead and player:getHandcardNum() > player.maxHp then
+      room:askForDiscard(player, 2, 2, true, self.name, false)
+    end
+    if not to.dead and to:getHandcardNum() > to.maxHp then
+      room:askForDiscard(to, 2, 2, true, self.name, false)
     end
   end,
 }
@@ -3606,12 +3628,12 @@ local yidian = fk.CreateTriggerSkill{
     local targets = U.getUseExtraTargets(room, data, true)
     local to = room:askForChoosePlayers(player, targets, 1, 1, "#yidian-choose:::"..data.card:toLogString(), self.name, true)
     if #to > 0 then
-      self.cost_data = to[1]
+      self.cost_data = to
       return true
     end
   end,
   on_use = function(self, event, target, player, data)
-    table.insert(data.tos, {self.cost_data})
+    table.insert(data.tos, self.cost_data)
   end,
 }
 sunshao:addSkill(bizheng)
