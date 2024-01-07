@@ -3053,6 +3053,19 @@ Fk:loadTranslationTable{
 }
 
 local qianzhao = General(extension, "ol__qianzhao", "wei", 4)
+local updataWeifuMark = function (player)
+  local room = player.room
+  local mark = {}
+  local basic = player:getMark("weifu_basic-turn")
+  if basic > 0 then
+    table.insert(mark, Fk:translate("basic_char")..basic)
+  end
+  local trick = player:getMark("weifu_trick-turn")
+  if trick > 0 then
+    table.insert(mark, Fk:translate("trick_char")..trick)
+  end
+  room:setPlayerMark(player, "@weifu-turn", #mark > 0 and mark or 0)
+end
 local weifu = fk.CreateActiveSkill{
   name = "weifu",
   anim_type = "offensive",
@@ -3075,28 +3088,42 @@ local weifu = fk.CreateActiveSkill{
     }
     room:judge(judge)
     if player.dead then return end
-    room:setPlayerMark(player, "@weifu-turn", judge.card:getTypeString())
+    if judge.card.type ~= Card.TypeEquip then
+      room:addPlayerMark(player, "weifu_"..judge.card:getTypeString().."-turn")
+      updataWeifuMark(player)
+    end
     if judge.card.type == Fk:getCardById(effect.cards[1]).type then
       player:drawCards(1, self.name)
     end
   end,
 }
-local weifu_trigger = fk.CreateTriggerSkill{
-  name = "#weifu_trigger",
+local weifu_delay = fk.CreateTriggerSkill{
+  name = "#weifu_delay",
   events = {fk.AfterCardTargetDeclared},
   mute = true,
   can_trigger = function(self, event, target, player, data)
-    return player == target and not player.dead and player:getMark("@weifu-turn") == data.card:getTypeString()
+    return player == target and not player.dead and player:getMark("weifu_"..data.card:getTypeString().."-turn") > 0
   end,
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    room:setPlayerMark(player, "@weifu-turn", 0)
+    local n = player:getMark("weifu_"..data.card:getTypeString().."-turn")
+    room:setPlayerMark(player, "weifu_"..data.card:getTypeString().."-turn", 0)
+    updataWeifuMark(player)
     if data.tos and (data.card:isCommonTrick() or data.card.type == Card.TypeBasic) and #U.getUseExtraTargets(room, data, true) > 0 then
-      local tos = room:askForChoosePlayers(player, U.getUseExtraTargets(room, data, true), 1, 1,
-        "#weifu-invoke:::"..data.card:toLogString(), "weifu", true)
-      if #tos == 1 then
-        table.insert(data.tos, tos)
+      local tos = room:askForChoosePlayers(player, U.getUseExtraTargets(room, data, true), 1, n,
+      "#weifu-invoke:::"..data.card:toLogString()..":"..n, "weifu", true)
+      if #tos > 0 then
+        for _, pid in ipairs(tos) do
+          table.insert(data.tos, {pid})
+        end
+        room:sendLog{
+          type = "#AddTargetsBySkill",
+          from = player.id,
+          to = tos,
+          arg = "weifu",
+          arg2 = data.card:toLogString()
+        }
       end
     end
   end,
@@ -3104,7 +3131,7 @@ local weifu_trigger = fk.CreateTriggerSkill{
 local weifu_targetmod = fk.CreateTargetModSkill{
   name = "#weifu_targetmod",
   bypass_distances =  function(self, player, skill, card, to)
-    return player:getMark("@weifu-turn") ~= 0 and card and player:getMark("@weifu-turn") == card:getTypeString()
+    return card and player:getMark("weifu_"..card:getTypeString().."-turn") > 0
   end,
 }
 local kuansai = fk.CreateTriggerSkill{
@@ -3153,20 +3180,20 @@ local kuansai = fk.CreateTriggerSkill{
     end
   end,
 }
-weifu:addRelatedSkill(weifu_trigger)
+weifu:addRelatedSkill(weifu_delay)
 weifu:addRelatedSkill(weifu_targetmod)
 qianzhao:addSkill(weifu)
 qianzhao:addSkill(kuansai)
 Fk:loadTranslationTable{
   ["ol__qianzhao"] = "牵招",
   ["weifu"] = "威抚",
-  [":weifu"] = "出牌阶段，你可以弃置一张牌并判定，你本回合下次使用与判定牌类别相同的牌无距离限制且可以多指定一个目标；若弃置牌与判定牌类别相同，"..
-  "你摸一张牌。",
+  [":weifu"] = "出牌阶段，你可以弃置一张牌并判定，你本回合下次使用与判定牌类别相同的牌无距离限制且可以多指定一个目标；若弃置牌与判定牌类别相同，你摸一张牌。",
   ["kuansai"] = "款塞",
   [":kuansai"] = "每回合限一次，当一张牌指定目标后，若目标数大于你的体力值，你可以令其中一个目标选择一项：1.交给你一张牌；2.你回复1点体力。",
   ["#weifu"] = "威抚：你可以弃置一张牌并判定，你使用下一张判定结果类别的牌无距离限制且目标+1",
   ["@weifu-turn"] = "威抚",
-  ["#weifu-invoke"] = "威抚：你可以为%arg额外指定一个目标",
+  ["#weifu_delay"] = "威抚",
+  ["#weifu-invoke"] = "威抚：你可以为%arg额外指定至多 %arg2 个目标",
   ["#kuansai-choose"] = "款塞：你可以令其中一个目标选择交给你一张牌或令你回复体力",
   ["#kuansai-give"] = "款塞：交给 %src 一张牌，否则其回复1点体力",
   
