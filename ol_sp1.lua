@@ -265,7 +265,7 @@ local benyu = fk.CreateTriggerSkill{
         skillName = self.name,
       }
     else
-      player:drawCards(math.min(5, data.from:getHandcardNum()) - player:getHandcardNum())
+      player:drawCards(math.min(5, data.from:getHandcardNum()) - player:getHandcardNum(), self.name)
     end
   end,
 }
@@ -786,10 +786,10 @@ local zhengnan = fk.CreateTriggerSkill{
     return player:hasSkill(self)
   end,
   on_use = function(self, event, target, player, data)
-    player:drawCards(3)
+    player:drawCards(3, self.name)
     local choices = {"wusheng", "dangxian", "zhiman"}
     for i = 3, 1, -1 do
-      if player:hasSkill(choices[i]) then
+      if player:hasSkill(choices[i], true) then
         table.removeOne(choices, choices[i])
       end
     end
@@ -2095,7 +2095,7 @@ local tunjiang = fk.CreateTriggerSkill{
     for _, p in ipairs(player.room.alive_players) do
       table.insertIfNeed(kingdoms, p.kingdom)
     end
-    player:drawCards(#kingdoms)
+    player:drawCards(#kingdoms, self.name)
   end,
 
   refresh_events = {fk.TargetSpecified},
@@ -2643,7 +2643,7 @@ local beizhan = fk.CreateTriggerSkill{
     local to = player.room:getPlayerById(self.cost_data)
     local n = math.min(to.maxHp, 5) - #to.player_cards[Player.Hand]
     if n > 0 then
-      to:drawCards(n)
+      to:drawCards(n, self.name)
     end
     player.room:addPlayerMark(to, self.name, 1)
   end,

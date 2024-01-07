@@ -370,7 +370,7 @@ local shoufu = fk.CreateActiveSkill{
   card_filter = Util.FalseFunc,
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
-    player:drawCards(1)
+    player:drawCards(1, self.name)
     local targets = {}
     for _, p in ipairs(room:getAlivePlayers()) do
       if #p:getPile("zhangling_lu") == 0 then
@@ -2835,7 +2835,7 @@ local huaiyuan = fk.CreateTriggerSkill{
   events = {fk.GameStart, fk.Death},
   can_trigger = function(self, event, target, player, data)
     if event == fk.GameStart then
-      return target == player and player:hasSkill(self) and not player:isKongcheng()
+      return player:hasSkill(self) and not player:isKongcheng()
     else
       return target == player and player:hasSkill(self, false, true)
       and (player:getMark("@huaiyuan_maxcards") > 0 or player:getMark("@huaiyuan_attackrange") > 0)
@@ -2897,10 +2897,9 @@ local huaiyuan_effect = fk.CreateTriggerSkill{
     room:notifySkillInvoked(player, "huaiyuan")
     player:broadcastSkillInvoke("huaiyuan")
     local choices = {"huaiyuan_maxcards", "huaiyuan_attackrange", "draw1"}
-    local success, dat = room:askForUseActiveSkill(player, "huaiyuan_active", "#huaiyuan-invoke", false)
-    local to = success and room:getPlayerById(dat.targets[1]) or table.random(room.alive_players)
-    local choice = player:getMark("huaiyuan_active")
-    if type(choice) ~= "string" then choice = table.random(choices) end
+    local _, dat = room:askForUseActiveSkill(player, "huaiyuan_active", "#huaiyuan-invoke", false)
+    local to = dat and room:getPlayerById(dat.targets[1]) or table.random(room.alive_players)
+    local choice = dat and dat.interaction or table.random(choices)
     if choice == "draw1" then
       to:drawCards(1, "huaiyuan")
     else
@@ -2951,10 +2950,6 @@ local huaiyuan_active = fk.CreateActiveSkill{
   target_num = 1,
   target_filter = function(self, to_select, selected)
     return #selected == 0
-  end,
-  on_use = function(self, room, effect)
-    local player = room:getPlayerById(effect.from)
-    room:setPlayerMark(player, "huaiyuan_active", self.interaction.data)
   end,
 }
 Fk:addSkill(huaiyuan_active)
@@ -3087,8 +3082,8 @@ Fk:loadTranslationTable{
   ["#huaiyuan-choice"] = "怀远：选择令 %dest 执行的一项",
   ["huaiyuan_maxcards"] = "手牌上限+1",
   ["huaiyuan_attackrange"] = "攻击范围+1",
-  ["@huaiyuan_maxcards"] = "怀远:手牌上限",
-  ["@huaiyuan_attackrange"] = "怀远:攻击范围",
+  ["@huaiyuan_maxcards"] = "怀远:上限+",
+  ["@huaiyuan_attackrange"] = "怀远:范围+",
   ["#huaiyuan-choose"] = "怀远：你可以令一名其他角色获得“怀远”增加的手牌上限和攻击范围",
   ["#chongxin-active"] = "发动 崇信，选择一名有手牌的其他角色",
   ["#chongxin-card"] = "崇信：请重铸一张牌",

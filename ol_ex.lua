@@ -3034,7 +3034,7 @@ local ol_ex__zhiji = fk.CreateTriggerSkill{
     end
     local choice = room:askForChoice(player, choices, self.name)
     if choice == "draw2" then
-      player:drawCards(2)
+      player:drawCards(2, self.name)
     else
       room:recover({
         who = player,

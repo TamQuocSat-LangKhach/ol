@@ -210,7 +210,7 @@ local ol_ex__zhaxiang = fk.CreateTriggerSkill{
     end
   end,
   on_use = function(self, event, target, player, data)
-    player:drawCards(3)
+    player:drawCards(3, self.name)
     if player.phase == Player.Play then
       local room = player.room
       room:setPlayerMark(player, "@@ol_ex__zhaxiang-turn", 1)
