@@ -3219,6 +3219,33 @@ local function CanLuochong(player, target, i)
   end
   return true
 end
+local luochong_active = fk.CreateActiveSkill{
+  name = "luochong_active",
+  card_num = 0,
+  target_num = 1,
+  interaction = function()
+    local choices, all_choices = {}, {}
+    for i = 1, 4 do
+      local choice = "luochong"..tostring(i)
+      table.insert(all_choices, choice)
+      if Self:getMark(choice) == "0" then
+        table.insert(choices, choice)
+      end
+    end
+    return UI.ComboBox {choices = choices, all_choices = all_choices}
+  end,
+  card_filter = Util.FalseFunc,
+  target_filter = function(self, to_select, selected, selected_cards)
+    local choice = self.interaction.data
+    if #selected > 0 or not choice then return false end
+    local target = Fk:currentRoom():getPlayerById(to_select)
+    if target:getMark("luochong-round") > 0 then return false end
+    if not target:isWounded() and choice == "luochong1" then return false end
+    if target:isNude() and choice == "luochong3" then return false end
+    return true
+  end,
+}
+Fk:addSkill(luochong_active)
 local luochong = fk.CreateTriggerSkill{
   name = "luochong",
   anim_type = "masochism",
@@ -3228,38 +3255,36 @@ local luochong = fk.CreateTriggerSkill{
       if event == fk.EventPhaseStart then
         return player.phase == Player.Start
       else
-        if player:getMark("luochong_damaged-turn") == 0 then
-          player.room:setPlayerMark(player, "luochong_damaged-turn", 1)
-          return true
+        local _event = U.getActualDamageEvents(player.room, 1, function(e) return e.data[1].to == player end)
+        if #_event > 0 and _event[1].data[1] == data then
+          for i = 1, 4 do
+            if player:getMark("luochong"..tostring(i)) == "0" then
+              return true
+            end
+          end
         end
       end
     end
   end,
   on_cost = function(self, event, target, player, data)
     local room = player.room
-    local targets = {}
-    for _, p in ipairs(room.alive_players) do
-      for i = 1, 4, 1 do
-        if CanLuochong(player, p, i) then
-          table.insert(targets, p.id)
-          break
-        end
-      end
-    end
-    if #targets == 0 then return end
-    local to = room:askForChoosePlayers(player, targets, 1, 1, "#luochong-choose", self.name, true)
-    if #to > 0 then
-      self.cost_data = to[1]
+    local _, dat = room:askForUseActiveSkill(player, "luochong_active", "#luochong-active", true)
+    if dat then
+      self.cost_data = {dat.targets[1], dat.interaction}
       return true
     end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local to = room:getPlayerById(self.cost_data)
-    local choices = table.map(table.filter({1, 2, 3, 4}, function(i)
-      return CanLuochong(player, to, i) end), function(n) return "luochong"..tostring(n) end)
+    local to = room:getPlayerById(self.cost_data[1])
+    local choice = self.cost_data[2]
     room:setPlayerMark(to, "luochong-round", 1)
-    local choice = room:askForChoice(player, choices, self.name, "#luochong-choice::"..to.id)
+    room:setPlayerMark(player, choice, "✓")
+    room:setPlayerMark(player, "@luochong", string.format("%s-%s-%s-%s",
+    player:getMark("luochong1"),
+    player:getMark("luochong2"),
+    player:getMark("luochong3"),
+    player:getMark("luochong4")))
     if choice == "luochong1" then
       room:recover{
         who = to,
@@ -3270,24 +3295,15 @@ local luochong = fk.CreateTriggerSkill{
     elseif choice == "luochong2" then
       room:loseHp(to, 1, self.name)
     elseif choice == "luochong3" then
-      if #to:getCardIds("he") < 3 then
-        to:throwAllCards("he")
-      else
-        room:askForDiscard(to, 2, 2, true, self.name, false)
-      end
+      room:askForDiscard(to, 2, 2, true, self.name, false)
     elseif choice == "luochong4" then
       to:drawCards(2, self.name)
     end
-    room:setPlayerMark(player, choice, "✓")
-    room:setPlayerMark(player, "@luochong", string.format("%s-%s-%s-%s",
-    player:getMark("luochong1"),
-    player:getMark("luochong2"),
-    player:getMark("luochong3"),
-    player:getMark("luochong4")))
   end,
 
-  refresh_events = {fk.GameStart, fk.RoundStart},
+  refresh_events = {fk.GameStart, fk.RoundStart, fk.EventAcquireSkill},
   can_refresh = function(self, event, target, player, data)
+    if event == fk.EventAcquireSkill and not (target == player and data == self) then return false end
     return player:hasSkill(self.name, true)
   end,
   on_refresh = function(self, event, target, player, data)
@@ -3336,9 +3352,9 @@ Fk:loadTranslationTable{
   "每轮每项限一次，每轮对每名角色限一次。",
   ["aichen"] = "哀尘",
   [":aichen"] = "锁定技，当你进入濒死状态时，若〖落宠〗选项数大于1，你移除其中一项。",
-  ["#luochong-choose"] = "落宠：你可以令一名角色执行一项效果",
+  ["#luochong-active"] = "落宠：你可以令一名角色执行一项效果",
   ["@luochong"] = "落宠",
-  ["#luochong-choice"] = "落宠：选择令 %dest 执行的一项",
+  ["luochong_active"] = "落宠",
   ["luochong1"] = "回复1点体力",
   ["luochong2"] = "失去1点体力",
   ["luochong3"] = "弃置两张牌",
