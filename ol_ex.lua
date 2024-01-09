@@ -887,7 +887,7 @@ local ol_ex__guidao = fk.CreateTriggerSkill{
     return player:hasSkill(self) and not player:isNude()
   end,
   on_cost = function(self, event, target, player, data)
-    local card = player.room:askForResponse(player, self.name, ".|.|spade,club|hand,equip", "#guidao-ask::" .. target.id, true)
+    local card = player.room:askForResponse(player, self.name, ".|.|spade,club|hand,equip", "#ol_ex__guidao-ask::" .. target.id..":"..data.reason, true)
     if card ~= nil then
       self.cost_data = card
       return true
@@ -983,7 +983,7 @@ Fk:loadTranslationTable{
   [":ol_ex__huangtian_other&"] = "出牌阶段限一次，你可将一张【闪】或【闪电】（正面朝上移动）交给张角。",
 
   ["#ol_ex__leiji-choose"] = "雷击：你可以选择一名其他角色，对其造成%arg点雷电伤害",
-  ["#guidao-ask"] = "鬼道：你可以打出一张黑色牌替换 %dest 的判定，若打出的牌是黑桃2~9，你摸一张牌。",
+  ["#ol_ex__guidao-ask"] = "鬼道：可以打出一张黑色牌替换 %dest 的“%arg”判定，若打出♠2~9，你摸一张牌",
   ["#ol_ex__huangtian-active"] = "发动黄天，选择一张【闪】或黑桃手牌交给一名拥有“黄天”的角色",
 
   ["$ol_ex__leiji1"] = "疾雷迅电，不可趋避！",
