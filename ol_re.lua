@@ -1126,7 +1126,7 @@ local zhixi = fk.CreateTriggerSkill{
     elseif event == fk.EventPhaseStart then
       return player:hasSkill(self, true)
     elseif event == fk.EventAcquireSkill then
-      return data == self
+      return data == self and player.room:getTag("RoundCount")
     elseif event == fk.EventLoseSkill then
       return data == self
     end

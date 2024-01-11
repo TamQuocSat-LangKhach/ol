@@ -5525,7 +5525,7 @@ local bixin_trigger = fk.CreateTriggerSkill{
     if event == fk.AfterCardUseDeclared then
       return target == player and player:hasSkill("bixin", true)
     else
-      return target == player and data == bixin
+      return target == player and data == bixin and player.room:getTag("RoundCount")
     end
   end,
   on_refresh = function(self, event, target, player, data)
