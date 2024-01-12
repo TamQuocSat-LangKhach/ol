@@ -489,7 +489,7 @@ local jieliang = fk.CreateTriggerSkill{
     return target ~= player and player:hasSkill(self) and target.phase == Player.Draw and not player:isNude()
   end,
   on_cost = function(self, event, target, player, data)
-    local card = player.room:askForDiscard(player, 1, 1, false, self.name, true, ".", "#jieliang-invoke::"..target.id, true)
+    local card = player.room:askForDiscard(player, 1, 1, true, self.name, true, ".", "#jieliang-invoke::"..target.id, true)
     if #card > 0 then
       self.cost_data = card
       return true
@@ -563,6 +563,18 @@ local quanjiu = fk.CreateFilterSkill{
     return Fk:cloneCard("slash", card.suit, card.number)
   end,
 }
+local quanjiu_trigger = fk.CreateTriggerSkill{
+  name = "#quanjiu_trigger",
+  mute = true,
+  events = {fk.PreCardUse},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and table.contains(data.card.skillNames, "quanjiu")
+  end,
+  on_cost = Util.TrueFunc,
+  on_use = function (self, event, target, player, data)
+    data.extraUse = true
+  end,
+}
 local quanjiu_targetmod = fk.CreateTargetModSkill{
   name = "#quanjiu_targetmod",
   bypass_times = function(self, player, skill, scope, card)
@@ -571,6 +583,7 @@ local quanjiu_targetmod = fk.CreateTargetModSkill{
 }
 jieliang:addRelatedSkill(jieliang_trigger)
 quanjiu:addRelatedSkill(quanjiu_targetmod)
+quanjiu:addRelatedSkill(quanjiu_trigger)
 hanmeng:addSkill(jieliang)
 hanmeng:addSkill(quanjiu)
 Fk:loadTranslationTable{
@@ -582,6 +595,7 @@ Fk:loadTranslationTable{
   [":quanjiu"] = "锁定技，你的【酒】和【酗酒】均视为【杀】，且使用时不计入次数限制。",
   ["#jieliang-invoke"] = "截粮：你可以弃置一张牌，令 %dest 本回合摸牌阶段摸牌数和手牌上限-1",
   ["#jieliang-get"] = "截粮：你可以获得其中一张牌",
+  ["#quanjiu_trigger"] = "劝酒",
 
   ["$jieliang1"] = "伏兵起，粮道绝！",
   ["$jieliang2"] = "粮草根本，截之破敌！",
