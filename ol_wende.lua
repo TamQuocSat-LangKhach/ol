@@ -321,12 +321,12 @@ local qiaoyan = fk.CreateTriggerSkill{
     local room = player.room
     if #player:getPile("ol__lisu_zhu") == 0 then
       player:drawCards(1, self.name)
-      if player:isKongcheng() or player.dead then return end
+      if player:isNude() or player.dead then return end
       local card = room:askForCard(player, 1, 1, true, self.name, false, ".", "#qiaoyan-card")
       player:addToPile("ol__lisu_zhu", card[1], false, self.name)
       return true
     else
-      room:obtainCard(data.from.id, player:getPile("ol__lisu_zhu")[1], false, fk.ReasonJustMove)
+      room:obtainCard(data.from.id, player:getPile("ol__lisu_zhu")[1], false, fk.ReasonPrey)
     end
   end,
 }
@@ -336,30 +336,21 @@ local ol__xianzhu = fk.CreateTriggerSkill{
   frequency = Skill.Compulsory,
   events = {fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self) and player.phase == Player.Start and #player:getPile("ol__lisu_zhu") > 0
+    return target == player and player:hasSkill(self) and player.phase == Player.Play and #player:getPile("ol__lisu_zhu") > 0
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local targets = table.map(room.alive_players, Util.IdMapper)
-    local to = room:askForChoosePlayers(player, targets, 1, 1,
+    local tos = room:askForChoosePlayers(player, table.map(room.alive_players, Util.IdMapper), 1, 1,
       "#ol__xianzhu-choose:::"..Fk:getCardById(player:getPile("ol__lisu_zhu")[1]):toLogString(), self.name, false)
-    if #to > 0 then
-      to = room:getPlayerById(to[1])
-    else
-      to = room:getPlayerById(table.random(targets))
-    end
-    room:obtainCard(to.id, player:getPile("ol__lisu_zhu")[1], false, fk.ReasonJustMove)
+    local to = room:getPlayerById(tos[1])
+    room:obtainCard(to.id, player:getPile("ol__lisu_zhu")[1], false, fk.ReasonPrey)
     if to == player or player.dead or #room.alive_players < 3 then return end
-    targets = table.map(table.filter(room:getOtherPlayers(to), function(p)
-      return player:inMyAttackRange(p) and not to:isProhibited(p, Fk:cloneCard("slash")) end), Util.IdMapper)
+    local targets = table.filter(room:getOtherPlayers(to), function(p)
+      return player:inMyAttackRange(p) and not to:isProhibited(p, Fk:cloneCard("slash")) 
+    end)
     if #targets == 0 then return end
-    local tos = room:askForChoosePlayers(player, targets, 1, 1, "#ol__xianzhu-slash::"..to.id, self.name, false)
-    if #tos > 0 then
-      tos = tos[1]
-    else
-      tos = table.random(targets)
-    end
-    room:useVirtualCard("slash", nil, to, room:getPlayerById(tos), self.name, true)
+    local victim = #targets == 1 and targets[1] or room:getPlayerById(room:askForChoosePlayers(player, table.map(targets, Util.IdMapper), 1, 1, "#ol__xianzhu-slash::"..to.id, self.name, false)[1])
+    room:useVirtualCard("slash", nil, to, victim, self.name, true)
   end,
 }
 lisu:addSkill(qiaoyan)
@@ -3243,30 +3234,15 @@ local cihuang_active = fk.CreateActiveSkill{
   card_num = 1,
   target_num = 0,
   interaction = function()
-    local names = {}
-    local mark = Self:getMark("cihuang-round")
-    for _, id in ipairs(Fk:getAllCardIds()) do
-      local card = Fk:getCardById(id)
-      if mark == 0 or (not table.contains(mark, card.name)) then
-        if Self.phase == Player.NotActive then
-          if (card.trueName == "slash" and card.name ~= "slash") or
-            (card:isCommonTrick() and card.skill.target_num == 1 and not card.is_derived) then
-            table.insertIfNeed(names, card.name)
-          end
-        else
-          if table.contains({"ex_nihilo", "fire_attack", "foresight"}, card.name) then
-            table.insertIfNeed(names, card.name)
-          end
-        end
-      end
-    end
-    if #names == 0 then return end
-    return UI.ComboBox {choices = names}
+    return UI.ComboBox {choices = Self:getMark("cihuang_names")}
   end,
   card_filter = function(self, to_select, selected)
+    if #selected ~= 0 or not self.interaction.data then return false end
     local card = Fk:cloneCard(self.interaction.data)
     card:addSubcard(to_select)
-    return #selected == 0
+    card.skillName = "cihuang"
+    local to = Fk:currentRoom():getPlayerById(self.cihuang_to)
+    return not Self:isProhibited(to, card) and not Self:prohibitUse(card)
   end,
 }
 local cihuang = fk.CreateTriggerSkill{
@@ -3275,26 +3251,40 @@ local cihuang = fk.CreateTriggerSkill{
   events = {fk.CardEffectCancelledOut},
   can_trigger = function(self, event, target, player, data)
     return player:hasSkill(self) and data.from and player.room:getPlayerById(data.from).phase ~= Player.NotActive and
-      data.tos and #data.tos == 1 and not player:isNude()
+      data.tos and #TargetGroup:getRealTargets(data.tos) == 1 and not player:isNude()
   end,
   on_cost = function(self, event, target, player, data)
     local room = player.room
-    local command = "AskForUseActiveSkill"
-    room:notifyMoveFocus(player, "cihuang_active")
-    local dat = {"cihuang_active", "#cihuang-invoke::"..data.from, true, {}}
-    local result = room:doRequest(player, command, json.encode(dat))
-    if result == "" then return false end
-    dat = json.decode(result)
-    self.cost_data = {
-      cards = json.decode(dat.card).subcards,
-      interaction_data = dat.interaction_data,
-    }
-    return true
+    local names = {}
+    local mark = U.getMark(player, "cihuang-round")
+    for _, id in ipairs(Fk:getAllCardIds()) do
+      local card = Fk:getCardById(id)
+      if not table.contains(mark, card.name) and card.name ~= "collateral" then
+        if not (card.skill.target_num == 0 and data.from ~= player.id) then
+          if not card.is_derived and card.skill:modTargetFilter(data.from, {}, player.id, card, true) then
+            if (card.trueName == "slash" and card.name ~= "slash") or (card:isCommonTrick() and not card.multiple_targets) then
+              table.insertIfNeed(names, card.name)
+            end
+          end
+        end
+      end
+    end
+    if #names == 0 then return false end
+    room:setPlayerMark(player, "cihuang_names", names)
+    local _,dat = room:askForUseActiveSkill(player, "cihuang_active", "#cihuang-invoke::"..data.from, true, {cihuang_to = data.from})
+    if dat then
+      self.cost_data = {
+        cards = dat.cards,
+        interaction_data = dat.interaction,
+      }
+      return true
+    end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
     local card = Fk:cloneCard(self.cost_data.interaction_data)
     card:addSubcards(self.cost_data.cards)
+    card.skillName = self.name
     room:useCard{
       from = player.id,
       tos = {{room.current.id}},
@@ -3303,25 +3293,41 @@ local cihuang = fk.CreateTriggerSkill{
     }
   end,
 
-  refresh_events = {fk.CardUsing},
+  refresh_events = {fk.AfterCardUseDeclared, fk.EventAcquireSkill},
   can_refresh = function(self, event, target, player, data)
-    return target == player and (data.card.trueName == "slash" or data.card.type == Card.TypeTrick)
+    if event == fk.AfterCardUseDeclared then
+      return target == player and (data.card.trueName == "slash" or data.card.type == Card.TypeTrick)
+    else
+      return target == player and data == self and player.room:getTag("RoundCount")
+    end
   end,
   on_refresh = function(self, event, target, player, data)
-    local mark = player:getMark("cihuang-round")
-    if mark == 0 then mark = {} end
-    table.insertIfNeed(mark, data.card.name)
-    player.room:setPlayerMark(player, "cihuang-round", mark)
+    local room = player.room
+    if event == fk.AfterCardUseDeclared then
+      local mark = U.getMark(player, "cihuang-round")
+      table.insertIfNeed(mark, data.card.name)
+      room:setPlayerMark(player, "cihuang-round", mark)
+    else
+      local mark = {}
+      room.logic:getEventsOfScope(GameEvent.UseCard, 1, function(e)
+        local use = e.data[1]
+        if use.from == player.id then
+          table.insertIfNeed(mark, use.card.name)
+        end
+        return false
+      end, Player.HistoryRound)
+      room:setPlayerMark(player, "cihuang-round", mark)
+    end
   end,
 }
 local sanku = fk.CreateTriggerSkill{
   name = "sanku",
   anim_type = "defensive",
   frequency = Skill.Compulsory,
-  events = {fk.EnterDying, fk.MaxHpChanged},
+  events = {fk.EnterDying, fk.BeforeMaxHpChanged},
   can_trigger = function(self, event, target, player, data)
     if target == player and player:hasSkill(self) then
-      return event == fk.EnterDying or (event == fk.MaxHpChanged and data.num > 0)
+      return event == fk.EnterDying or (event == fk.BeforeMaxHpChanged and data.num > 0)
     end
   end,
   on_use = function(self, event, target, player, data)
@@ -3337,8 +3343,7 @@ local sanku = fk.CreateTriggerSkill{
         })
       end
     else
-      player.maxHp = player.maxHp - data.num
-      room:broadcastProperty(player, "maxHp")  --FIXME: 没有相关时机，此法会触发相关技能（eg威重）
+      return true
     end
   end,
 }
