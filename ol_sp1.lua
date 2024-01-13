@@ -2425,7 +2425,9 @@ local xianfu_delay = fk.CreateTriggerSkill{
   mute = true,
   can_trigger = function(self, event, target, player, data)
     local mark = U.getMark(player, "xianfu")
-    return not player.dead and not target.dead and #mark > 0 and table.contains(mark[1], target.id)
+    if not player.dead and not target.dead and #mark > 0 and table.contains(mark[1], target.id) then
+      return event == fk.Damaged or player:isWounded()
+    end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
