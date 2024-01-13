@@ -1837,28 +1837,22 @@ local tianhou = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local piles = room:askForExchange(player, {room:getNCards(1), player:getCardIds{Player.Hand, Player.Equip}},
+    local top_cards = room:getNCards(1)
+    local piles = room:askForExchange(player, {top_cards, player:getCardIds{Player.Hand, Player.Equip}},
       {"Top", player.general}, self.name)
     if room:getCardOwner(piles[1][1]) == player then
-      local cards1, cards2 = {piles[1][1]}, {}
-      for _, id in ipairs(piles[2]) do
-        if room:getCardArea(id) ~= Player.Hand then
-          table.insert(cards2, id)
-          break
-        end
-      end
       local move1 = {
-        ids = cards1,
+        ids = piles[1],
         from = player.id,
         toArea = Card.DrawPile,
-        moveReason = fk.ReasonJustMove,
+        moveReason = fk.ReasonExchange,
         skillName = self.name,
       }
       local move2 = {
-        ids = cards2,
+        ids = top_cards,
         to = player.id,
         toArea = Card.PlayerHand,
-        moveReason = fk.ReasonJustMove,
+        moveReason = fk.ReasonExchange,
         skillName = self.name,
       }
       room:moveCards(move1, move2)
@@ -1867,6 +1861,7 @@ local tianhou = fk.CreateTriggerSkill{
     end
     local card = room:getNCards(1)[1]
     table.insert(room.draw_pile, 1, card)
+    room:doBroadcastNotify("UpdateDrawPile", tostring(#room.draw_pile))
     player:showCards(card)
     local suit = Fk:getCardById(card, true).suit
     if suit == Card.NoSuit then return end
