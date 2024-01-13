@@ -3489,12 +3489,13 @@ local qiaoli = fk.CreateViewAsSkill{
     end
     return UI.ComboBox { choices = choices }
   end,
-  prompt = function (self, selected, selected_cards)
+  prompt = function (self)
     if self.interaction.data == "qiaoli1-phase" then
       return "#qiaoli1"
     elseif self.interaction.data == "qiaoli2-phase" then
       return "#qiaoli2"
     end
+    return ""
   end,
   card_filter = function(self, to_select, selected)
     if #selected == 0 then
@@ -3527,8 +3528,8 @@ local qiaoli = fk.CreateViewAsSkill{
     return player:getMark("qiaoli1-phase") == 0 or player:getMark("qiaoli2-phase") == 0
   end,
 }
-local qiaoli_trigger = fk.CreateTriggerSkill{
-  name = "#qiaoli_trigger",
+local qiaoli_delay = fk.CreateTriggerSkill{
+  name = "#qiaoli_delay",
   mute = true,
   events = {fk.Damage, fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
@@ -3556,18 +3557,11 @@ local qiaoli_trigger = fk.CreateTriggerSkill{
       local e = room.logic:getCurrentEvent():findParent(GameEvent.UseCard)
       if e then
         local use = e.data[1]
-        local cards = player:drawCards(use.extra_data.qiaoli[3], "qiaoli")
-        for _, id in ipairs(cards) do
-          if room:getCardOwner(id) == player and room:getCardArea(id) == Card.PlayerHand then
-            room:setCardMark(Fk:getCardById(id), "qiaoli", 1)
-          end
-        end
-        while table.find(player:getCardIds("h"), function(id) return Fk:getCardById(id):getMark("qiaoli") > 0 end) do
-          if not room:askForUseActiveSkill(player, "qiaoli_active", "#qiaoli-give", true) then
-            for _, id in ipairs(player:getCardIds("h")) do
-              room:setCardMark(Fk:getCardById(id), "qiaoli", 0)
-            end
-          end
+        local cards = table.filter(player:drawCards(use.extra_data.qiaoli[3], "qiaoli"), function(id)
+          return table.contains(player:getCardIds("h"), id)
+        end)
+        if not player.dead and #cards > 0 then
+          U.askForDistribution(player, cards, room.alive_players, self.name, 0, #cards)
         end
       end
     else
@@ -3577,34 +3571,11 @@ local qiaoli_trigger = fk.CreateTriggerSkill{
           ids = cards,
           to = player.id,
           toArea = Card.PlayerHand,
-          moveReason = fk.ReasonJustMove,
+          moveReason = fk.ReasonPrey,
           proposer = player.id,
           skillName = "qiaoli",
         })
       end
-    end
-  end,
-}
-local qiaoli_active = fk.CreateActiveSkill{
-  name = "qiaoli_active",
-  mute = true,
-  min_card_num = 1,
-  target_num = 1,
-  card_filter = function(self, to_select, selected, targets)
-    return Fk:getCardById(to_select):getMark("qiaoli") > 0
-  end,
-  target_filter = function(self, to_select, selected, selected_cards)
-    return #selected == 0
-  end,
-  on_use = function(self, room, effect)
-    local target = room:getPlayerById(effect.tos[1])
-    for _, id in ipairs(effect.cards) do
-      room:setCardMark(Fk:getCardById(id), "qiaoli", 0)
-    end
-    if effect.tos[1] ~= effect.from then
-      local dummy = Fk:cloneCard("dilu")
-      dummy:addSubcards(effect.cards)
-      room:obtainCard(target, dummy, false, fk.ReasonGive)
     end
   end,
 }
@@ -3643,8 +3614,7 @@ local qingliang = fk.CreateTriggerSkill{
     end
   end,
 }
-qiaoli:addRelatedSkill(qiaoli_trigger)
-Fk:addSkill(qiaoli_active)
+qiaoli:addRelatedSkill(qiaoli_delay)
 ruiji:addSkill(qiaoli)
 ruiji:addSkill(qingliang)
 Fk:loadTranslationTable{
@@ -3659,10 +3629,10 @@ Fk:loadTranslationTable{
   ["#qiaoli2"] = "巧力：将非武器装备牌当【决斗】使用，不能被响应且结束阶段摸一张装备牌",
   ["qiaoli1-phase"] = "武器牌",
   ["qiaoli2-phase"] = "非武器装备牌",
-  ["#qiaoli-give"] = "巧力：将这些牌分配给任意角色，点“取消”自己保留",
   ["qiaoli_active"] = "巧力",
   ["#qingliang-invoke"] = "清靓：%dest 对你使用%arg，是否发动“清靓”展示所有手牌？",
   ["#qingliang-choice"] = "清靓：弃置一种花色所有手牌并取消此牌，或点“取消”双方各摸一张牌",
+  ["#qiaoli_delay"] = "巧力",
 
   ["$qiaoli1"] = "别跑，且吃我一斧！",
 	["$qiaoli2"] = "让我看看你的能耐。",

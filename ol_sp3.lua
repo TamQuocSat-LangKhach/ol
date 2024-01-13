@@ -1353,6 +1353,7 @@ local daili = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     player:turnOver()
+    if player.dead then return end
     local cards = player:drawCards(3, self.name)
     player:showCards(cards)
   end,
@@ -1367,29 +1368,27 @@ local daili = fk.CreateTriggerSkill{
   end,
   on_refresh = function(self, event, target, player, data)
     local room = player.room
-    local mark = player:getMark("@$daili")
+    local mark = U.getMark(player, "@$daili")
     if event == fk.CardShown then
-      if mark == 0 then mark = {} end
       for _, id in ipairs(data.cardIds) do
-        if Fk:getCardById(id):getMark("@@daili") == 0 then
-          table.insert(mark, Fk:getCardById(id, true).name)
+        if Fk:getCardById(id):getMark("@@daili") == 0 and table.contains(player:getCardIds("h"), id) then
+          table.insert(mark, id)
           room:setCardMark(Fk:getCardById(id, true), "@@daili", 1)
         end
       end
-      room:setPlayerMark(player, "@$daili", mark)
     else
       for _, move in ipairs(data) do
         if move.from == player.id then
           for _, info in ipairs(move.moveInfo) do
             if info.fromArea == Card.PlayerHand and Fk:getCardById(info.cardId, true):getMark("@@daili") > 0 then
-              table.removeOne(mark, Fk:getCardById(info.cardId, true).name)
+              table.removeOne(mark, info.cardId)
               room:setCardMark(Fk:getCardById(info.cardId, true), "@@daili", 0)
             end
           end
         end
       end
-      room:setPlayerMark(player, "@$daili", mark)
     end
+    room:setPlayerMark(player, "@$daili", mark)
   end,
 }
 luoxian:addSkill(daili)
@@ -1436,7 +1435,7 @@ local xianbi = fk.CreateActiveSkill{
             ids = get,
             to = player.id,
             toArea = Card.PlayerHand,
-            moveReason = fk.ReasonJustMove,
+            moveReason = fk.ReasonPrey,
             proposer = player.id,
             skillName = self.name,
           })

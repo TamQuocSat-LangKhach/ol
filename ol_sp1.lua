@@ -3395,32 +3395,28 @@ local shijian = fk.CreateTriggerSkill{
   anim_type = "support",
   events = {fk.CardUseFinished},
   can_trigger = function(self, event, target, player, data)
-    return target ~= player and player:hasSkill(self) and target.phase == Player.Play and target:getMark("shijian-phase") == 2 and not player:isNude()
+    if target ~= player and player:hasSkill(self) and target.phase == Player.Play and not player:isNude() and not target:hasSkill("yuxu",true) then
+      local events = player.room.logic:getEventsOfScope(GameEvent.UseCard, 2, function(e)
+        local use = e.data[1]
+        return use.from == target.id
+      end, Player.HistoryPhase)
+      return #events == 2 and events[2].data[1] == data
+    end
   end,
   on_cost = function(self, event, target, player, data)
-    return #player.room:askForDiscard(player, 1, 1, true, self.name, true, ".", "#shijian-invoke::"..target.id) > 0
+    local card = player.room:askForDiscard(player, 1, 1, true, self.name, true, ".", "#shijian-invoke::"..target.id, true)
+    if #card > 0 then
+      self.cost_data = card
+      return true
+    end
   end,
   on_use = function(self, event, target, player, data)
-    player.room:addPlayerMark(target, "shijian_invoke", 1)
-    player.room:handleAddLoseSkills(target, "yuxu", nil, true, false)
-  end,
-
-  refresh_events = {fk.CardUseFinished, fk.TurnEnd},
-  can_refresh = function(self, event, target, player, data)
-    if event == fk.CardUseFinished then
-      return player:hasSkill(self) and target ~= player and target.phase == Player.Play
-    else
-      return target == player and player:getMark("shijian_invoke") > 0
-    end
-  end,
-  on_refresh = function(self, event, target, player, data)
     local room = player.room
-    if event == fk.CardUseFinished then
-      room:addPlayerMark(target, "shijian-phase", 1)
-    else
-      room:setPlayerMark(player, "shijian_invoke", 0)
-      room:handleAddLoseSkills(player, "-yuxu", nil, true, false)
-    end
+    room:throwCard(self.cost_data, self.name, player, player)
+    room:handleAddLoseSkills(target, "yuxu")
+    room.logic:getCurrentEvent():findParent(GameEvent.Turn):addCleaner(function()
+      room:handleAddLoseSkills(target, "-yuxu")
+    end)
   end,
 }
 xujing:addSkill(yuxu)
@@ -3428,9 +3424,9 @@ xujing:addSkill(shijian)
 Fk:loadTranslationTable{
   ["ol__xujing"] = "许靖",
   ["yuxu"] = "誉虚",
-  [":yuxu"] = "出牌阶段，你使用一张牌后，可以摸一张牌。若如此做，你使用下一张牌后，弃置一张牌。",
+  [":yuxu"] = "当你于出牌阶段内使用牌结算结束后，若你于此阶段内发动过本技能的次数为：偶数，你可以摸一张牌；奇数，你弃置一张牌。",
   ["shijian"] = "实荐",
-  [":shijian"] = "一名其他角色的出牌阶段，该角色在本阶段使用的第二张牌结算结束后，你可以弃置一张牌，令其获得〖誉虚〗直到回合结束。",
+  [":shijian"] = "一名其他角色于其出牌阶段使用的第二张牌结算结束后，你可以弃置一张牌，令其获得〖誉虚〗直到回合结束。",
   ["#yuxu-invoke"] = "誉虚：你可以摸一张牌，然后你使用下一张牌后需弃置一张牌",
   ["#shijian-invoke"] = "实荐：你可以弃置一张牌，令%dest获得〖誉虚〗直到回合结束",
 
