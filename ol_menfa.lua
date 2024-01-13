@@ -7,6 +7,22 @@ Fk:loadTranslationTable{
   ["olz"] = "宗族",
 }
 
+--- 判断一名角色是否为某族成员
+---@param player Player
+local isFamilyMember = function (player, famaly)
+  local familyMap = {
+    ["xun"] = {"olz__xun", "xunchen", "xunyu", "xunyou"},
+    ["wu"] = {"olz__wu", "wuyi", "wuxian", "wuban"},
+    ["han"] = {"olz__han", "hanshao", "hanrong"},
+    ["wang"] = {"olz__wangyun", "wangyun", "wangling", "wangchang", "wanghun"},
+    ["zhong"] = {"olz__zhong", "zhongyao", "zhongyu", "zhonghui", "zhongyan"},
+  }
+  local names = familyMap[famaly] or {}
+  return table.find(names, function(name)
+    return string.find(player.general, name) or string.find(player.deputyGeneral, name)
+  end)
+end
+
 local olz__xunchen = General(extension, "olz__xunchen", "qun", 3)
 local sankuang = fk.CreateTriggerSkill{
   name = "sankuang",
@@ -155,9 +171,9 @@ local daojie = fk.CreateTriggerSkill{
         table.insert(skills, skill.name)
       end
     end
-    table.insert(skills, "Cancel")
-    local choice = room:askForChoice(player, skills, self.name, "#daojie-choice")
-    if choice == "Cancel" then
+    table.insert(skills, "loseHp")
+    local choice = room:askForChoice(player, skills, self.name, "#daojie-choice", true)
+    if choice == "loseHp" then
       room:loseHp(player, 1, self.name)
     else
       room:handleAddLoseSkills(player, "-"..choice, nil, true, false)
@@ -166,17 +182,15 @@ local daojie = fk.CreateTriggerSkill{
       return room:getCardArea(id) == Card.Processing
     end) then
       local targets = {}
-      for _, p in ipairs(room:getAlivePlayers()) do
-        if table.find({"olz__xun", "xunchen", "xunyu", "xunyou"}, function(name)
-            return string.find(p.general, name) or string.find(p.deputyGeneral, name) end) then
+      for _, p in ipairs(room.alive_players) do
+        if isFamilyMember(p, "xun") or player == p then
           table.insert(targets, p.id)
         end
       end
-      local to = room:askForChoosePlayers(player, targets, 1, 1, "#daojie-choose:::"..data.card:toLogString(), self.name, false)
-      if #to == 0 then
-        to = {table.random(targets)}
+      if #targets > 0 then
+        local to = room:askForChoosePlayers(player, targets, 1, 1, "#daojie-choose:::"..data.card:toLogString(), self.name, false)
+        room:obtainCard(to[1], data.card, true, fk.ReasonPrey)
       end
-      room:obtainCard(to[1], data.card, true, fk.ReasonPrey)
     end
   end,
 }
@@ -197,7 +211,7 @@ Fk:loadTranslationTable{
   ["#sankuang-give0"] = "三恇：可选择任意张牌交给 %src，然后获得其使用的 %arg",
   ["#sankuang-give"] = "三恇：你须选择至少 %arg 张牌交给 %src",
   ["@@beishi"] = "卑势",
-  ["#daojie-choice"] = "蹈节：失去一个锁定技，或点“取消”失去1点体力",
+  ["#daojie-choice"] = "蹈节：选择失去一个锁定技，或失去1点体力",
   ["#daojie-choose"] = "蹈节：令一名同族角色获得此%arg",
   ["daojie_cancel"] = "取消",
   [":daojie_cancel"] = "失去1点体力",
@@ -739,33 +753,24 @@ local muyin = fk.CreateTriggerSkill{
   can_trigger = function(self, event, target, player, data)
     if target == player and player:hasSkill(self) and player.phase == Player.Start then
       local tos = {}
-      local n = player:getMaxCards()
+      local max_num = player:getMaxCards()
       for _, p in ipairs(player.room.alive_players) do
-        if p:getMaxCards() > n then
-          n = p:getMaxCards()
-        end
+        max_num = math.max(max_num, p:getMaxCards())
       end
-      for _, p in ipairs(player.room.alive_players) do
-        if table.find({"olz__wu", "wuyi", "wuxian", "wuxian"}, function(name)
-          return string.find(p.general, name) or string.find(p.deputyGeneral, name) end) and p:getMaxCards() < n then
-          table.insert(tos, p.id)
-        end
-      end
-      return #tos > 0
+      return table.find(player.room.alive_players, function(p)
+        return (isFamilyMember(p, "wu") or player == p) and p:getMaxCards() < max_num
+      end)
     end
   end,
   on_cost = function(self, event, target, player, data)
     local room = player.room
     local targets = {}
-    local n = player:getMaxCards()
-    for _, p in ipairs(room.alive_players) do
-      if p:getMaxCards() > n then
-        n = p:getMaxCards()
-      end
+    local max_num = player:getMaxCards()
+    for _, p in ipairs(player.room.alive_players) do
+      max_num = math.max(max_num, p:getMaxCards())
     end
-    for _, p in ipairs(room.alive_players) do
-      if table.find({"olz__wu", "wuyi", "wuxian", "wuxian"}, function(name)
-        return string.find(p.general, name) or string.find(p.deputyGeneral, name) end) and p:getMaxCards() < n then
+    for _, p in ipairs(player.room.alive_players) do
+      if (isFamilyMember(p, "wu") or player == p) and p:getMaxCards() < max_num then
         table.insert(targets, p.id)
       end
     end
@@ -1760,8 +1765,7 @@ local zhongliu = fk.CreateTriggerSkill{
               local wang_family = false
               if move.from then
                 local p = room:getPlayerById(move.from)
-                if table.find({"olz__wang", "wangyun", "wangling", "wangchang", "wanghun"}, function(name)
-                  return string.find(p.general, name) or string.find(p.deputyGeneral, name) end) then
+                if isFamilyMember(p, "wang") or p == player then
                   wang_family = true
                 end
               end
@@ -2064,9 +2068,8 @@ local baozu = fk.CreateTriggerSkill{
   events = {fk.EnterDying},
   can_trigger = function(self, event, target, player, data)
     return player:hasSkill(self) and target.dying and not target.chained and
-      table.find({"olz__zhong", "zhongyao", "zhongyu", "zhonghui", "zhongyan"}, function(name)
-        return string.find(target.general, name) or string.find(target.deputyGeneral, name) end) and
-      player:usedSkillTimes(self.name, Player.HistoryGame) == 0
+    (isFamilyMember(target, "zhong") or target == player)
+    and player:usedSkillTimes(self.name, Player.HistoryGame) == 0
   end,
   on_cost = function(self, event, target, player, data)
     return player.room:askForSkillInvoke(player, self.name, nil, "#baozu-invoke::"..target.id)
@@ -2216,6 +2219,7 @@ Fk:loadTranslationTable{
   ["#yuzhi-card"] = "迂志：请展示一张手牌，摸其牌名字数的牌",
   ["@yuzhi"] = "迂志",
   ["yuzhi2"] = "失去〖保族〗",
+  [":loseHp"] = "失去1点体力",
   ["#xieshu-invoke"] = "挟术：你可以弃%arg张牌，摸%arg2张牌",
 
   ["$yuzhi1"] = "我欲行夏禹旧事，为天下人。",

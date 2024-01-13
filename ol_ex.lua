@@ -3606,7 +3606,8 @@ Fk:loadTranslationTable{
 }
 
 local ol_ex__zuoci = General(extension, "ol_ex__zuoci", "qun", 3, 3, General.Female)
-local huashen_blacklist = {"zuoci", "ol_ex__zuoci", "qyt__dianwei", "starsp__xiahoudun"}
+
+local huashen_blacklist = {"zuoci", "ol_ex__zuoci", "qyt__dianwei", "starsp__xiahoudun", "js__huangzhong"}
 local function Gethuashen(player, n)
   local room = player.room
   local generals = table.filter(room.general_pile, function (name)
@@ -3615,7 +3616,9 @@ local function Gethuashen(player, n)
   local mark = U.getMark(player, "@[private]&ol_ex__huashen")
   for _ = 1, n do
     if #generals == 0 then break end
-    table.insert(mark, table.remove(room.general_pile, math.random(#room.general_pile)))
+    local g = table.remove(generals, math.random(#generals))
+    table.insert(mark, g)
+    table.removeOne(room.general_pile, g)
   end
   room:setPlayerMark(player, "@[private]&ol_ex__huashen", mark)
 end
