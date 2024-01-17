@@ -5600,36 +5600,63 @@ Fk:loadTranslationTable{
 }
 
 local godsunquan = General(extension, "godsunquan", "god", 4)
+--[[
+  -- OL original skills
+  "ex__zhiheng", "dimeng", "anxu", "ol__bingyi", "shenxing",
+  "xingxue", "anguo", "jiexun", "xiashu", "ol__hongyuan",
+  "lanjiang", "sp__youdi", "guanwei", "diaodu", "bizheng"
+]]
 local yuheng_skills = {
   --standard
-  "keji", "xiaoji", "jieyin", "ex__zhiheng", "ex__yingzi", "ex__fanjian", "ex__guose",
+  "keji", "xiaoji", "jieyin", "ex__zhiheng", "ex__yingzi", "ex__fanjian", "ex__guose", "qixi", "ex__jieyin",
   --shzl
   "tianyi", "yinghun", "haoshi", "dimeng", "jiang", "zhijian",
   --sp
   "hongyuan", "duanbing", "fenxun", "mumu", "tanhu", "yanxiao",
   --yjcm
-  "xuanfeng", "pojun", "anxu", "gongqi", "anjian", "zhiyan", "danshou", "shenxing", "bingyi", "yanzhu", "anguo", "jishe",
+  "xuanfeng", "pojun", "anxu", "gongqi", "anjian", "zhiyan", "danshou", "shenxing", "bingyi", "yanzhu", "anguo", "jishe", "ganlu",
+  "kuangbi", "zenhui", "lihuo",
   --ol
   "duwu", "canshi", "shanxi", "xiashu", "lianpian", "bizheng", "yidian", "lanjiang", "yuanchou", "ol__hongyuan", "ol__bingyi", "ol__mumu",
-  "xianbi",
+  "xianbi", "ol__duanbing", "ol__fenxun", "hongde", "ol_ex__zhijian", "dingpan", "jinzhi", "qiaoli",
   --mobile
-  "yingjian", "dujin", "chongjian", "mobile__shangyi", "mobile__diaodu", "yanji", "mou__kurou", "mou__guose", "mou__fanjian", "m_ex__pojun",
+  "yingjian", "dujin", "chongjian", "mobile__shangyi", "mobile__diaodu", "yanji","m_ex__pojun", "m_ex__ganlu", "fenyin", "qinzheng",
+  "m_ex__anjian", "m_ex__zenhui", "m_ex__xuanfeng",
+  --mougong
+  "mou__kurou", "mou__guose", "mou__fanjian", "mou__qixi", "mou__zhaxiang", "mou__jiang", "mou__keji",
+  --mini
+  "mini__keji",
   --tenyear
-  "xunxian", "guolun", "duanfa", "sp__youdi", "qinguo", "zhukou", "jinjian", "jingzao", "xinyou", "zhiren", "sibian", "boyan", "niji",
+  "xunxian", "guolun", "duanfa", "sp__youdi", "qinguo", "zhukou", "jinjian", "jingzao", "xinyou", "zhiren", "sibian", "boyan",
+  "guolun", "ty_ex__ganlu", "ty_ex__kuangbi", "ty_ex__gongqi", "m_ex__anjian", "ty_ex__bingyi","ty_ex__shenxing", "ty_ex__zhiyan",
+  "zigu", "zuowei", "ty__fenyin", "ty__canshi", "wanglu", "jiqiaos", "tongli", "shezang", "xiecui", "mingshil", "shuojian",
+  "ty_ex__zenhui", "ty_ex__xuanfeng", "ty_ex__lihuo",
   --overseas
-  "os__yilie", "os__fenming", "os__shangyi",
+  "os__yilie", "os__fenming", "os__shangyi", "os_ex__gongqi", "os_ex__lihuo",
   --offline
   "miaojian",
   --wandian
   "wd__kangyin", "wd__kenjian",
+  --jsrg
+  "duxing", "js__youjin", "js__dailao", "yaoyan",
 }
-
---[[
-  "ex__zhiheng", "dimeng", "anxu", "ol__bingyi", "shenxing",
-  "xingxue", "anguo", "jiexun", "xiashu", "ol__hongyuan",
-  "lanjiang", "sp__youdi", "guanwei", "diaodu", "bizheng"
-]]
-
+---@param room Room
+local getYuhengSkills = function(room)
+  local mark = room:getTag("YuhengSkills")
+  if mark then
+    return mark
+  else
+    local all_skills = {}
+    for _, g in ipairs(room.general_pile) do
+      for _, s in ipairs(Fk.generals[g]:getSkillNameList()) do
+        table.insert(all_skills, s)
+      end
+    end
+    local skills = table.filter(yuheng_skills, function(s) return table.contains(all_skills, s) end)
+    room:setTag("YuhengSkills", skills)
+    return skills
+  end
+end
 local yuheng = fk.CreateTriggerSkill{
   name = "yuheng",
   anim_type = "special",
@@ -5658,11 +5685,12 @@ local yuheng = fk.CreateTriggerSkill{
       end
       room:throwCard(cards, self.name, player, player)
       if player.dead then return end
-      local skills = table.random(table.filter(yuheng_skills, function (skill_name)
+      local skills = table.filter(getYuhengSkills(room), function (skill_name)
         return not player:hasSkill(skill_name, true)
-      end), #cards)
+      end)
       if #skills == 0 then return false end
-      local mark = type(player:getMark("yuheng")) == "table" and player:getMark("yuheng") or {}
+      skills = table.random(skills, #cards)
+      local mark = U.getMark(player, "yuheng")
       table.insertTableIfNeed(mark, skills)
       room:setPlayerMark(player, "yuheng", mark)
       room:handleAddLoseSkills(player, table.concat(skills, "|"), nil, true, false)
@@ -5846,7 +5874,8 @@ godsunquan:addRelatedSkill(yuanlv)
 Fk:loadTranslationTable{
   ["godsunquan"] = "神孙权",
   ["yuheng"] = "驭衡",
-  [":yuheng"] = "锁定技，回合开始时，你弃置任意张花色不同的牌，随机获得等量吴势力武将的技能。回合结束时，你失去以此法获得的技能，摸等量张牌。",
+  [":yuheng"] = "锁定技，回合开始时，你弃置任意张花色不同的牌，随机获得等量吴势力武将的技能。回合结束时，你失去以此法获得的技能，摸等量张牌。"..
+  "<br><font color='red'>村：“驭衡”技能池为多服扩充版，且不会出现房间禁卡",
   ["dili"] = "帝力",
   [":dili"] = "觉醒技，当你的技能数超过体力上限后，你减少1点体力上限，失去任意个其他技能并获得〖圣质〗〖权道〗〖持纲〗中的前等量个。",
   ["shengzhi"] = "圣质",
