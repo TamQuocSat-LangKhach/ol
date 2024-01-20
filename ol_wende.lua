@@ -2389,28 +2389,54 @@ local bolan_skills = {
   --ol official skills
   "quhu", "qiangxi", "qice", "daoshu", "ol_ex__tiaoxin", "qiangwu", "tianyi", "ex__zhiheng", "ex__jieyin", "ex__guose",
   "lijian", "qingnang", "lihun", "mingce", "mizhao", "sanchen", "gongxin", "ex__chuli",
+  --standard
+  "ex__kurou", "ex__yijue", "fanjian", "ex__fanjian", "dimeng", "jijie", "poxi",
   --sp
-  "quji", "dahe", "tanhu",
+  "quji", "dahe", "tanhu", "fenxun",
   --yjcm
-  "nos__xuanhuo", "xinzhan", "nos__jujian", "ganlu", "xianzhen", "anxu", "gongqi", "huaiyi", "zhige",
+  "nos__xuanhuo", "xinzhan", "nos__jujian", "ganlu", "xianzhen", "anxu", "gongqi", "huaiyi", "zhige", "anguo", "mingjian", "mieji",
   --ol
-  "ziyuan", "lianzhu", "shanxi", "lianji", "jianji", "liehou", "xianbi", "shidu", "yanxi", "xuanbei", "yushen", "bolong", "fuxun", "qiuxin",
+  "ziyuan", "lianzhu", "shanxi", "lianji", "jianji", "liehou", "xianbi", "shidu", "yanxi", "xuanbei", "yushen", "bolong", "fuxun", "qiuxin", "ol_ex__dimeng", "juguan", "ol__xuehen", "ol__fenxun", "weikui", "ol__caozhao", "ol_ex__changbiao",
   --mobile
   "wuyuan", "zhujian", "duansuo", "poxiang", "hannan", "shihe", "wisdom__qiai", "shameng", "zundi", "mobile__shangyi", "yangjie",
+  "m_ex__anxu", "beizhu", "mobile__zhouxuan", "mobile__yizheng", "guli", "m_ex__xianzhen", "m_ex__ganlu", "m_ex__mieji", "yingba",
+  "qiaosi", "pingcai",
+  --mougong
+  "mou__qixi", "mou__lijian",
   --overseas
-  "os__jimeng", "os__beini", "os__yuejian", "os__waishi", "os__weipo", "os__shangyi",
+  "os__jimeng", "os__beini", "os__yuejian", "os__waishi", "os__weipo", "os__shangyi", "os__jinglue", "os__zhanyi", "os__daoji",
+  "os_ex__gongqi", "os__gongxin", "os__zhuidu", "os__danlie",
   --tenyear
   "guolun", "kuiji", "ty__jianji", "caizhuang", "xinyou", "tanbei", "lveming", "ty__songshu", "ty__mouzhu", "libang", "nuchen",
-  "weiwu", "ty__qingcheng", "ty__jianshu", "qiangzhiz", "ty__fenglve", "boyan",
+  "weiwu", "ty__qingcheng", "ty__jianshu", "qiangzhiz", "ty__fenglve", "boyan", "jianguo", "ty_ex__mingce", "ty_ex__anxu",
+  "ty_ex__mingjian", "ty_ex__quji", "jianzheng", "ty_ex__jixu", "ty__kuangfu", "yingshui", "weimeng", "tunan", "ty_ex__ganlu",
+  "ty_ex__gongqi",
   --jsrg
-  "js__yizheng", "shelun", "lunshi",
+  "js__yizheng", "shelun", "lunshi", "chushi",
   --offline
-  "miaojian", "xuepin", "ofl__shameng",
+  "miaojian", "xuepin", "ofl__shameng", "lifengs",
   --wandian
   "wd__liangce", "wd__kenjian", "wd__zongqin", "wd__suli",
   --tuguo
   "tg__bode",
 }
+---@param room Room
+local getBolanSkills = function(room)
+  local mark = room:getTag("BolanSkills")
+  if mark then
+    return mark
+  else
+    local all_skills = {}
+    for _, g in ipairs(room.general_pile) do
+      for _, s in ipairs(Fk.generals[g]:getSkillNameList()) do
+        table.insert(all_skills, s)
+      end
+    end
+    local skills = table.filter(bolan_skills, function(s) return table.contains(all_skills, s) end)
+    room:setTag("BolanSkills", skills)
+    return skills
+  end
+end
 local bolan = fk.CreateTriggerSkill{
   name = "bolan",
   anim_type = "special",
@@ -2420,24 +2446,21 @@ local bolan = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local skills = table.simpleClone(bolan_skills)
-    for i = #skills, 1, -1 do
-      if table.find(room.players, function(p) return p:hasSkill(skills[i], true, true) end) then
-        table.removeOne(skills, skills[i])
-      end
-    end
+    local skills = table.filter(getBolanSkills(room), function (skill_name)
+      return not player:hasSkill(skill_name, true)
+    end)
     if #skills > 0 then
-      local choice = room:askForChoice(player, table.random(skills, math.min(3, #skills)), self.name, "#bolan-choice::"..player.id, true)
-      room:handleAddLoseSkills(player, choice, nil, true, false)
-      room:setPlayerMark(player, self.name, choice)
+      local choice = room:askForChoice(player, table.random(skills, 3), self.name, "#bolan-choice::"..player.id, true)
+      room:handleAddLoseSkills(player, choice)
+      room.logic:getCurrentEvent():findParent(GameEvent.Phase):addCleaner(function()
+        room:handleAddLoseSkills(player, "-"..choice)
+      end)
     end
   end,
 
-  refresh_events = {fk.EventPhaseEnd, fk.GameStart, fk.EventAcquireSkill, fk.EventLoseSkill, fk.Deathed},
+  refresh_events = {fk.GameStart, fk.EventAcquireSkill, fk.EventLoseSkill, fk.Deathed},
   can_refresh = function(self, event, target, player, data)
-    if event == fk.EventPhaseEnd then
-      return target == player and player.phase == Player.Play and player:getMark(self.name) ~= 0
-    elseif event == fk.GameStart then
+    if event == fk.GameStart then
       return player:hasSkill(self, true)
     elseif event == fk.EventAcquireSkill or event == fk.EventLoseSkill then
       return target == player and data == self and
@@ -2449,16 +2472,11 @@ local bolan = fk.CreateTriggerSkill{
   end,
   on_refresh = function(self, event, target, player, data)
     local room = player.room
-    if event == fk.EventPhaseEnd then
-      room:handleAddLoseSkills(player, "-"..player:getMark(self.name), nil, true, false)
-      room:setPlayerMark(player, self.name, 0)
-    elseif event == fk.GameStart or event == fk.EventAcquireSkill then
-      if player:hasSkill(self, true) then
-        for _, p in ipairs(room:getOtherPlayers(player)) do
-          room:handleAddLoseSkills(p, "bolan&", nil, false, true)
-        end
+    if event == fk.GameStart or event == fk.EventAcquireSkill then
+      for _, p in ipairs(room:getOtherPlayers(player)) do
+        room:handleAddLoseSkills(p, "bolan&", nil, false, true)
       end
-    elseif event == fk.EventLoseSkill or event == fk.Deathed then
+    else
       for _, p in ipairs(room:getOtherPlayers(player, true, true)) do
         room:handleAddLoseSkills(p, "-bolan&", nil, false, true)
       end
@@ -2476,28 +2494,24 @@ local bolan_active = fk.CreateActiveSkill{
   card_filter = Util.FalseFunc,
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
-    local target
-    for _, p in ipairs(room:getOtherPlayers(player)) do
-      if p:hasSkill("bolan", true) then
-        target = p
-        break
-      end
-    end
+    local target = table.find(room:getOtherPlayers(player), function(p)
+      return p:hasSkill("bolan", true)
+    end)
+    if not target then return end
     target:broadcastSkillInvoke("bolan")
     room:notifySkillInvoked(target, "bolan", "special")
     room:doIndicate(player.id, {target.id})
     room:loseHp(player, 1, "bolan")
-    if player.dead then return end
-    local skills = table.simpleClone(bolan_skills)
-    for i = #skills, 1, -1 do
-      if table.find(room.players, function(p) return p:hasSkill(skills[i], true, true) end) then
-        table.removeOne(skills, skills[i])
-      end
-    end
+    if player.dead or target.dead then return end
+    local skills = table.filter(getBolanSkills(room), function (skill_name)
+      return not player:hasSkill(skill_name, true)
+    end)
     if #skills > 0 then
-      local choice = room:askForChoice(target, table.random(skills, math.min(3, #skills)), self.name, "#bolan-choice::"..player.id, true)
-      room:handleAddLoseSkills(player, choice, nil, true, false)
-      room:setPlayerMark(player, "bolan", choice)
+      local choice = room:askForChoice(target, table.random(skills, 3), self.name, "#bolan-choice::"..player.id, true)
+      room:handleAddLoseSkills(player, choice, nil)
+      room.logic:getCurrentEvent():findParent(GameEvent.Phase):addCleaner(function()
+        room:handleAddLoseSkills(player, "-"..choice)
+      end)
     end
   end,
 }
@@ -2505,7 +2519,7 @@ local yifa = fk.CreateTriggerSkill{
   name = "yifa",
   anim_type = "defensive",
   frequency = Skill.Compulsory,
-  events ={fk.TargetSpecified},
+  events = {fk.TargetSpecified},
   can_trigger = function(self, event, target, player, data)
     return player:hasSkill(self) and target ~= player and data.firstTarget and
       table.contains(AimGroup:getAllTargets(data.tos), player.id) and (data.card.trueName == "slash" or
@@ -2513,14 +2527,16 @@ local yifa = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     player.room:addPlayerMark(target, "@yifa", 1)
+    player.room:broadcastProperty(target, "MaxCards")
   end,
 
-  refresh_events ={fk.TurnEnd},
+  refresh_events = {fk.AfterTurnEnd},
   can_refresh = function(self, event, target, player, data)
     return target == player and player:getMark("@yifa") > 0
   end,
   on_refresh = function(self, event, target, player, data)
     player.room:setPlayerMark(player, "@yifa", 0)
+    player.room:broadcastProperty(player, "MaxCards")
   end,
 }
 local yifa_maxcards = fk.CreateMaxCardsSkill{
@@ -2536,8 +2552,8 @@ zhongyan:addSkill(yifa)
 Fk:loadTranslationTable{
   ["zhongyan"] = "钟琰",
   ["bolan"] = "博览",
-  [":bolan"] = "出牌阶段开始时，你可以从随机三个“出牌阶段限一次”的技能中选择一个获得直到本阶段结束；其他角色的出牌阶段限一次，其可以失去1点体力，"..
-  "令你从随机三个“出牌阶段限一次”的技能中选择一个，其获得之直到此阶段结束。",
+  [":bolan"] = "出牌阶段开始时，你可以从随机三个“出牌阶段限一次”的技能中选择一个获得直到本阶段结束；其他角色的出牌阶段限一次，其可以失去1点体力，令你从随机三个“出牌阶段限一次”的技能中选择一个，其获得之直到此阶段结束。"..
+  "<br><font color='red'>村：“博览”技能池为多服扩充版，且不会出现房间禁卡",
   ["yifa"] = "仪法",
   [":yifa"] = "锁定技，当其他角色使用【杀】或黑色普通锦囊牌指定你为目标后，其手牌上限-1直到其回合结束。",
   ["bolan&"] = "博览",
