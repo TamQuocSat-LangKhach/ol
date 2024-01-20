@@ -1585,7 +1585,7 @@ local qin__haizhong = fk.CreateTriggerSkill{
   frequency = Skill.Compulsory,
   events = {fk.HpRecover},
   can_trigger = function(self, event, target, player, data)
-    return player:hasSkill(self) and target ~= player
+    return player:hasSkill(self) and target ~= player and player:usedSkillTimes(self.name, Player.HistoryTurn) < 20
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
@@ -1637,7 +1637,7 @@ Fk:loadTranslationTable{
   ["qin__gaizhao"] = "改诏",
   [":qin__gaizhao"] = "每回合限一次，当你成为【杀】或普通锦囊牌的目标时，你可以将此牌转移给一名不是此牌目标的角色。",
   ["qin__haizhong"] = "害忠",
-  [":qin__haizhong"] = "锁定技，其他角色回复体力后，你令其选择一项：1.弃置一张红色牌；2.你对其造成X点伤害（X为你以此法对其造成伤害次数+1）。",
+  [":qin__haizhong"] = "锁定技，每回合限二十次，其他角色回复体力后，你令其选择一项：1.弃置一张红色牌；2.你对其造成X点伤害（X为你以此法对其造成伤害次数+1）。", -- 防止死循环限20次
   ["qin__yuanli"] = "爰历",
   [":qin__yuanli"] = "锁定技，结束阶段开始时，你随机获得两张普通锦囊牌。",
   ["#qin__zhilu"] = "指鹿：你可以将一张红色手牌当【闪】/黑色手牌当【杀】使用或打出",
