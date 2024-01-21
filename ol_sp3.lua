@@ -3415,6 +3415,12 @@ Fk:loadTranslationTable{
   ["ol__fengyan_self"] = "你摸一张牌并交给%src一张牌",
   ["ol__fengyan_other"] = "%src摸一张牌并弃置两张牌",
   ["#ol__fengyan-card"] = "讽言：请交给 %dest 一张牌",
+  
+  ["$ol__fudao1"] = "冰刃入腹，使肝肠寸断。",
+  ["$ol__fudao2"] = "失子之殇，世间再无春秋。",
+  ["$ol__fengyan1"] = "何不以曹公之命，换我儿之命乎？",
+  ["$ol__fengyan2"] = "亲儿丧于宛城，曹公何颜复还？",
+  ["~ol__dingfuren"] = "今生与曹，不复相见……",
 }
 
 local liwan = General(extension, "ol__liwan", "wei", 3, 3, General.Female)

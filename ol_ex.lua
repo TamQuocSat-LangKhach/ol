@@ -2402,12 +2402,9 @@ local ol_ex__dimeng = fk.CreateActiveSkill{
     if #selected == 0 then
       return true
     else
-      local target1 = Fk:currentRoom():getPlayerById(to_select)
-      local target2 = Fk:currentRoom():getPlayerById(selected[1])
-      if target1:isKongcheng() and #target2:isKongcheng() then
-        return false
-      end
-      return math.abs(#target1.player_cards[Player.Hand] - #target2.player_cards[Player.Hand]) <= #Self:getCardIds({Player.Hand, Player.Equip})
+      local x1 = Fk:currentRoom():getPlayerById(to_select):getHandcardNum()
+      local x2 = Fk:currentRoom():getPlayerById(selected[1]):getHandcardNum()
+      return (x1 > 0 or x2 > 0) and math.abs(x1 - x2) <= #Self:getCardIds({Player.Hand, Player.Equip})
     end
   end,
   on_use = function(self, room, effect)

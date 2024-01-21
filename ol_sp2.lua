@@ -2006,10 +2006,7 @@ local juanxia = fk.CreateTriggerSkill{
       special_cards = player.special_cards,
     })
 
-    local command = "AskForUseActiveSkill"
-    room:notifyMoveFocus(player, "juanxia_active")
-    local dat = {"juanxia_active", "#juanxia-choose", true, {}}
-    local result = room:doRequest(player, command, json.encode(dat))
+    local success, dat = player.room:askForUseActiveSkill(player, "juanxia_active", "#juanxia-choose", true)
 
     player.special_cards["juanxia"] = {}
     player:doNotify("ChangeSelf", json.encode {
@@ -2018,8 +2015,7 @@ local juanxia = fk.CreateTriggerSkill{
       special_cards = player.special_cards,
     })
 
-    if result ~= "" then
-      dat = json.decode(result)
+    if success then
       self.cost_data = dat
       return true
     end
@@ -2028,9 +2024,7 @@ local juanxia = fk.CreateTriggerSkill{
     local room = player.room
     local dat = table.simpleClone(self.cost_data)
     local to = room:getPlayerById(dat.targets[1])
-    local card_data = json.decode(dat.card)
-    local selected_cards = card_data.subcards
-    local card = Fk:cloneCard(Fk:getCardById(selected_cards[1]).name)
+    local card = Fk:cloneCard(Fk:getCardById(dat.cards[1]).name)
     card.skillName = "juanxia"
     room:useCard{
       from = player.id,
@@ -2038,25 +2032,21 @@ local juanxia = fk.CreateTriggerSkill{
       card = card,
     }
     if player.dead or to.dead then return false end
-
     local x = 1
-    local command = "AskForUseActiveSkill"
-    room:notifyMoveFocus(player, "juanxia_active")
-    local dat = {"juanxia_active", "#juanxia-invoke::" .. to.id, true, {}}
-
     local mark = table.clone(player:getMark("juanxia_cards"))
-    table.removeOne(mark, selected_cards[1])
+    table.removeOne(mark, dat.cards[1])
     player.special_cards["juanxia"] = mark
     player:doNotify("ChangeSelf", json.encode {
       id = player.id,
       handcards = player:getCardIds("h"),
       special_cards = player.special_cards,
     })
-
     room:setPlayerMark(player, "juanxia_target", to.id)
-    local result = room:doRequest(player, command, json.encode(dat))
-    room:setPlayerMark(player, "juanxia_target", 0)
 
+    local success = false
+    success, dat = room:askForUseActiveSkill(player, "juanxia_active", "#juanxia-invoke::" .. to.id, true)
+
+    room:setPlayerMark(player, "juanxia_target", 0)
     player.special_cards["juanxia"] = {}
     player:doNotify("ChangeSelf", json.encode {
       id = player.id,
@@ -2064,11 +2054,8 @@ local juanxia = fk.CreateTriggerSkill{
       special_cards = player.special_cards,
     })
 
-    if result ~= "" then
-      dat = json.decode(result)
-      card_data = json.decode(dat.card)
-      selected_cards = card_data.subcards
-      card = Fk:cloneCard(Fk:getCardById(selected_cards[1]).name)
+    if success then
+      card = Fk:cloneCard(Fk:getCardById(dat.cards[1]).name)
       card.skillName = "juanxia"
       local targets = dat.targets
       table.insert(targets, 1, to.id)
@@ -5449,15 +5436,10 @@ local bixin_trigger = fk.CreateTriggerSkill{
         special_cards = player.special_cards,
       })
     end
-
-    local command = "AskForUseActiveSkill"
-    room:notifyMoveFocus(player, "bixin_viewas")
-    local dat = {"bixin_viewas", "#bixin-invoke", true, {}}
     room:setPlayerMark(player, MarkEnum.BypassTimesLimit.."-tmp", 1)
-    local result = room:doRequest(player, command, json.encode(dat))
+    local success, dat = room:askForUseActiveSkill(player, "bixin_viewas", "#bixin-invoke", true)
     room:setPlayerMark(player, MarkEnum.BypassTimesLimit.."-tmp", 0)
-    if result ~= "" then
-      dat = json.decode(result)
+    if success then
       self.cost_data = dat
       return true
     end
@@ -5466,7 +5448,7 @@ local bixin_trigger = fk.CreateTriggerSkill{
     local room = player.room
     player:broadcastSkillInvoke(bixin.name)
     local dat = table.simpleClone(self.cost_data)
-    local card_type = dat.interaction_data
+    local card_type = dat.interaction
     room:addPlayerMark(player, "bixin_" .. card_type)
     player:drawCards(3, bixin.name)
     if player.dead then return false end
@@ -5477,9 +5459,7 @@ local bixin_trigger = fk.CreateTriggerSkill{
       end
     end
     if #cards == 0 then return false end
-    local card_data = json.decode(dat.card)
-    local selected_cards = card_data.subcards
-    local card = Fk:cloneCard(Fk:getCardById(selected_cards[1]).name)
+    local card = Fk:cloneCard(Fk:getCardById(dat.cards[1]).name)
     card.skillName = "bixin"
     card:addSubcards(cards)
     if player:prohibitUse(card) then return false end

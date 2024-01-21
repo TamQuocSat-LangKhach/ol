@@ -290,10 +290,13 @@ local shenjun = fk.CreateTriggerSkill{
       end
       room:setPlayerMark(player, "@$shenjun", mark)
     else
-      local card = Fk.skills["shenjun_viewas"]:viewAs(self.cost_data.cards)
+      local dat = table.simpleClone(self.cost_data)
+      local card = Fk:cloneCard(dat.interaction)
+      card:addSubcards(dat.cards)
+      card.skillName = "shenjun"
       room:useCard{
         from = player.id,
-        tos = table.map(self.cost_data.targets, function(id) return {id} end),
+        tos = table.map(dat.targets, function(id) return {id} end),
         card = card,
       }
     end
@@ -315,7 +318,7 @@ local balong = fk.CreateTriggerSkill{
   name = "balong",
   anim_type = "drawcard",
   frequency = Skill.Compulsory,
-  events = {fk.HpChanged},
+  events = {fk.Damaged, fk.HpLost, fk.HpRecover},
   can_trigger = function(self, event, target, player, data)
     if target == player and player:hasSkill(self) and not player:isKongcheng() then
       local x = player:getMark("balong_record-turn")
@@ -331,8 +334,22 @@ local balong = fk.CreateTriggerSkill{
       if x == 0 then
         room.logic:getEventsOfScope(GameEvent.ChangeHp, 1, function (e)
           if e.data[1] == player then
-            x = e.id
-            room:setPlayerMark(player, "balong_record-turn", x)
+            local reason = e.data[3]
+            local game_event = nil
+            if reason == "damage" then
+              game_event = GameEvent.Damage
+            elseif reason == "loseHp" then
+              game_event = GameEvent.LoseHp
+            elseif reason == "recover" then
+              game_event = GameEvent.Recover
+            else
+              return true
+            end
+            local first_event = e:findParent(game_event)
+            if first_event then
+              x = first_event.id
+              room:setPlayerMark(player, "balong_record-round", x)
+            end
             return true
           end
         end, Player.HistoryTurn)
@@ -2278,9 +2295,17 @@ local fuxun = fk.CreateActiveSkill{
     if player:getHandcardNum() == target:getHandcardNum() and not player.dead then
       local events = room.logic:getEventsOfScope(GameEvent.MoveCards, 1, function(e)
         for _, move in ipairs(e.data) do
-          if move.skillName ~= self.name and
-            ((move.to == target.id and move.toArea == Card.PlayerHand) or (move.from == target.id and move.fromArea == Card.PlayerHand)) then
-            return true
+          if move.skillName ~= self.name then
+            if move.to == target.id and move.toArea == Card.PlayerHand and #move.moveInfo > 0 then
+              return true
+            end
+            if move.from == target.id then
+              for _, info in ipairs(move.moveInfo) do
+                if info.fromArea == Card.PlayerHand then
+                  return true
+                end
+              end
+            end
           end
         end
       end, Player.HistoryPhase)
@@ -2370,8 +2395,8 @@ wanghun:addSkill("zhongliu")
 Fk:loadTranslationTable{
   ["olz__wanghun"] = "族王浑",
   ["fuxun"] = "抚循",
-  [":fuxun"] = "出牌阶段限一次，你可以交给一名其他角色一张手牌或获得一名其他角色一张手牌，然后若其手牌数与你相同且本阶段未因此法以外的方式"..
-  "变化过，你可以将一张牌当任意基本牌使用。",
+  [":fuxun"] = "出牌阶段限一次，你可以交给一名其他角色一张手牌或获得一名其他角色一张手牌，"..
+  "然后若其手牌数与你相同且本阶段未因此法以外的方式变化过，你可以将一张牌当任意基本牌使用。",
   ["chenya"] = "沉雅",
   [":chenya"] = "一名角色发动“出牌阶段限一次”的技能后，你可以令其重铸任意张牌名字数为X的牌（X为其手牌数）。",
   ["#fuxun"] = "抚循：交给或获得一名角色一张手牌，然后若手牌数相同且符合一定条件，你可以将一张牌当任意基本牌使用",
@@ -2526,24 +2551,20 @@ local qiuxin_trigger = fk.CreateTriggerSkill{
           local mark = U.getMark(p, "@qiuxin")
           if table.contains(mark, "slash") then
             room:setPlayerMark(player, "qiuxin-tmp", p.id)
-            local command = "AskForUseActiveSkill"
-            room:notifyMoveFocus(player, "qiuxin_viewas")
-            local dat = {"qiuxin_viewas", "#qiuxin-trick::"..p.id, true, {}}
-            local result = room:doRequest(player, command, json.encode(dat))
+            local success, dat = room:askForUseActiveSkill(player, "qiuxin_viewas", "#qiuxin-trick::"..p.id, true)
             room:setPlayerMark(player, "qiuxin-tmp", 0)
-            if result ~= "" then
+            if success and dat then
               table.removeOne(mark, "slash")
               room:setPlayerMark(p, "@qiuxin", #mark > 0 and mark or 0)
-              dat = json.decode(result)
-              local trick = Fk:cloneCard(dat.interaction_data)
+              local trick = Fk:cloneCard(dat.interaction)
               trick.skillName = qiuxin.name
-              local tos = {{p.id}}
+              local _tos = {{p.id}}
               for _, pid in ipairs(dat.targets) do
-                table.insert(tos, {pid})
+                table.insert(_tos, {pid})
               end
               room:useCard({
                 from = player.id,
-                tos = tos,
+                tos = _tos,
                 card = trick,
                 extraUse = true,
               })
