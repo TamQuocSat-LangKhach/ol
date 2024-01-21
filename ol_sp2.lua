@@ -83,7 +83,7 @@ local shanzhuan = fk.CreateTriggerSkill{
 
   refresh_events = {fk.Damage},
   can_refresh = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name, true) and player.phase ~= Player.NotActive
+    return target == player and player:hasSkill(self, true) and player.phase ~= Player.NotActive
   end,
   on_refresh = function(self, event, target, player, data)
     player.room:addPlayerMark(player, "shanzhuan-turn", 1)
@@ -111,6 +111,28 @@ Fk:loadTranslationTable{
 }
 
 local zhangliao = General(extension, "sp__zhangliao", "qun", 4)
+Fk:addPoxiMethod{
+  name = "mubing_prey",
+  card_filter = function(to_select, selected)
+    return true
+  end,
+  feasible = function(selected, data)
+    if not data or #selected == 0 then return false end
+    local count = 0
+    for _, id in ipairs(selected) do
+      local num = Fk:getCardById(id).number
+      if table.contains(data[1][2], id) then
+        count = count - num
+      else
+        count = count + num
+      end
+    end
+    return count >= 0
+  end,
+  prompt = function ()
+    return Fk:translate("#mubing-prompt")
+  end
+}
 local mubing = fk.CreateTriggerSkill{
   name = "mubing",
   anim_type = "drawcard",
@@ -120,117 +142,56 @@ local mubing = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local card_ids = room:getNCards(player:usedSkillTimes("diaoling", Player.HistoryGame) > 0 and 4 or 3)
-    local get, throw = {}, {}
+    local cards = room:getNCards(player:usedSkillTimes("diaoling", Player.HistoryGame) > 0 and 4 or 3)
     room:moveCards({
-      ids = card_ids,
+      ids = cards,
       toArea = Card.Processing,
       moveReason = fk.ReasonPut,
     })
-    if player.dead or player:isKongcheng() then
-      room:moveCards({
-        ids = card_ids,
-        toArea = Card.DiscardPile,
-        moveReason = fk.ReasonPutIntoDiscardPile,
-      })
-      return
-    end
-    local cards = room:askForDiscard(player, 1, 999, false, self.name, true, ".", "#mubing-discard")
-    if player.dead or #cards == 0 then
-      room:moveCards({
-        ids = card_ids,
-        toArea = Card.DiscardPile,
-        moveReason = fk.ReasonPutIntoDiscardPile,
-      })
-      return
-    end
-    for _, p in ipairs(room.players) do
-      room:fillAG(p, card_ids)
-    end
-    local n = 0
-    for _, id in ipairs(cards) do
-      n = n + Fk:getCardById(id).number
-    end
-    while true do
-      local sum = 0
-      table.forEach(get, function(id)
-        sum = sum + Fk:getCardById(id).number
-      end)
-      for i = #card_ids, 1, -1 do
-        local id = card_ids[i]
-        if sum + Fk:getCardById(id).number > n then
-          room:takeAG(player, id, room.players)
+    local can_throw = table.filter(player:getCardIds("h"), function(id) return not player:prohibitDiscard(Fk:getCardById(id)) end)
+    if #can_throw > 0 then
+      local result = room:askForPoxi(player, "mubing_prey", {
+        { "mubing_to_prey", cards },
+        { "mubing_to_throw", can_throw },
+      }, nil, true)
+      local get, throw = {}, {}
+      for _, id in ipairs(result) do
+        if table.contains(cards, id) then
+          table.insert(get, id)
+        else
           table.insert(throw, id)
-          table.removeOne(card_ids, id)
         end
       end
-      if #card_ids == 0 then break end
-      local card_id = room:askForAG(player, card_ids, false, self.name)
-      --if card_id == nil then break end
-      room:takeAG(player, card_id, room.players)
-      table.insert(get, card_id)
-      table.removeOne(card_ids, card_id)
-      if #card_ids == 0 then break end
-    end
-    table.forEach(room.players, function(p)
-      room:closeAG(p)
-    end)
-    if #get > 0 then
-      if player:usedSkillTimes("diaoling", Player.HistoryGame) == 0 and player:hasSkill("diaoling", true) then
-        for _, id in ipairs(get) do
-          local card = Fk:getCardById(id)
-          if card.is_damage_card or card.sub_type == Card.SubtypeWeapon then
-            room:addPlayerMark(player, "@mubing", 1)
-          end
-        end
+      if #throw > 0 then
+        room:throwCard(throw, self.name, player, player)
       end
-      local dummy = Fk:cloneCard("dilu")
-      dummy:addSubcards(get)
-      room:obtainCard(player.id, dummy, true, fk.ReasonPrey)
-      if player:usedSkillTimes("diaoling", Player.HistoryGame) > 0 then
-        for _, id in ipairs(get) do
-          if room:getCardOwner(id) == player and room:getCardArea(id) == Card.PlayerHand then
-            room:setCardMark(Fk:getCardById(id), "mubing", 1)
-          end
-        end
-        while table.find(player:getCardIds("h"), function(id) return Fk:getCardById(id):getMark("mubing") > 0 end) do
-          if not room:askForUseActiveSkill(player, "mubing_active", "#mubing-give", true) then
-            for _, id in ipairs(player:getCardIds("h")) do
-              room:setCardMark(Fk:getCardById(id), "mubing", 0)
+      if #get > 0 and not player.dead then
+        if player:usedSkillTimes("diaoling", Player.HistoryGame)  == 0 then
+          for _, id in ipairs(get) do
+            local card = Fk:getCardById(id)
+            if card.trueName == "slash" or card.sub_type == Card.SubtypeWeapon or (card.is_damage_card and card.type == Card.TypeTrick) then
+              room:addPlayerMark(player, "@mubing")
             end
           end
         end
+        local dummy = Fk:cloneCard("dilu")
+        dummy:addSubcards(get)
+        room:obtainCard(player.id, dummy, true, fk.ReasonPrey)
+        if player:usedSkillTimes("diaoling", Player.HistoryGame) > 0 then
+          get = table.filter(get, function(id) return table.contains(player:getCardIds("h"), id) end)
+          if #get > 0 then
+            U.askForDistribution(player, get, nil, self.name, 0, 999, "#mubing-give")
+          end
+        end
       end
     end
-    if #throw > 0 then
+    cards = table.filter(cards, function(id) return room:getCardArea(id) == Card.Processing end)
+    if #cards > 0 then
       room:moveCards({
-        ids = throw,
+        ids = cards,
         toArea = Card.DiscardPile,
         moveReason = fk.ReasonPutIntoDiscardPile,
       })
-    end
-  end,
-}
-local mubing_active = fk.CreateActiveSkill{
-  name = "mubing_active",
-  mute = true,
-  min_card_num = 1,
-  target_num = 1,
-  card_filter = function(self, to_select, selected, targets)
-    return Fk:getCardById(to_select):getMark("mubing") > 0
-  end,
-  target_filter = function(self, to_select, selected, selected_cards)
-    return #selected == 0
-  end,
-  on_use = function(self, room, effect)
-    local target = room:getPlayerById(effect.tos[1])
-    for _, id in ipairs(effect.cards) do
-      room:setCardMark(Fk:getCardById(id), "mubing", 0)
-    end
-    if effect.tos[1] ~= effect.from then
-      local dummy = Fk:cloneCard("dilu")
-      dummy:addSubcards(effect.cards)
-      room:obtainCard(target, dummy, false, fk.ReasonGive)
     end
   end,
 }
@@ -300,7 +261,6 @@ local diaoling = fk.CreateTriggerSkill{
     end
   end,
 }
-Fk:addSkill(mubing_active)
 zhangliao:addSkill(mubing)
 zhangliao:addSkill(ziqu)
 zhangliao:addSkill(diaoling)
@@ -313,6 +273,10 @@ Fk:loadTranslationTable{
   ["diaoling"] = "调令",
   [":diaoling"] = "觉醒技，准备阶段，若你发动〖募兵〗累计获得了至少六张【杀】、伤害锦囊牌和武器牌，你回复1点体力或摸两张牌，并修改〖募兵〗："..
   "多亮出一张牌，且获得的牌可以任意交给其他角色。",
+  ["mubing_prey"] = "募兵",
+  ["#mubing-prompt"] = "募兵：选择你要获得和弃置的牌",
+  ["mubing_to_prey"] = "获得",
+  ["mubing_to_throw"] = "弃置",
   ["#mubing-discard"] = "募兵：你可以弃置任意张手牌，获得点数之和不大于你弃牌点数之和的牌",
   ["@mubing"] = "募兵",
   ["#mubing-give"] = "募兵：将这些牌分配给任意角色，点“取消”自己保留",
@@ -765,7 +729,7 @@ local wangong = fk.CreateTriggerSkill{
 
   refresh_events = {fk.CardUseFinished},
   can_refresh = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name, true)
+    return target == player and player:hasSkill(self, true)
   end,
   on_refresh = function(self, event, target, player, data)
     local room = player.room
@@ -1035,7 +999,7 @@ local juguan_record = fk.CreateTriggerSkill{
 
   refresh_events = {fk.Damage, fk.Damaged, fk.TurnStart, fk.DrawNCards},
   can_refresh = function(self, event, target, player, data)
-    if target == player and player:hasSkill(self.name, true) then
+    if target == player and player:hasSkill(self, true) then
       if event == fk.Damage then
         return data.card and table.contains(data.card.skillNames, "juguan")
       elseif event == fk.Damaged then
@@ -3197,15 +3161,6 @@ Fk:loadTranslationTable{
 }
 
 local tengfanglan = General(extension, "ol__tengfanglan", "wu", 3, 3, General.Female)
-local function CanLuochong(player, target, i)
-  if player:getMark("luochong"..tostring(i)) ~= "0" then return false end
-  if target ~= nil then
-    if target:getMark("luochong-round") > 0 then return false end
-    if not target:isWounded() and i == 1 then return false end
-    if target:isNude() and i == 3 then return false end
-  end
-  return true
-end
 local luochong_active = fk.CreateActiveSkill{
   name = "luochong_active",
   card_num = 0,
@@ -3222,7 +3177,7 @@ local luochong_active = fk.CreateActiveSkill{
     return UI.ComboBox {choices = choices, all_choices = all_choices}
   end,
   card_filter = Util.FalseFunc,
-  target_filter = function(self, to_select, selected, selected_cards)
+  target_filter = function(self, to_select, selected)
     local choice = self.interaction.data
     if #selected > 0 or not choice then return false end
     local target = Fk:currentRoom():getPlayerById(to_select)
@@ -3240,15 +3195,14 @@ local luochong = fk.CreateTriggerSkill{
   can_trigger = function(self, event, target, player, data)
     if target == player and player:hasSkill(self) then
       if event == fk.EventPhaseStart then
-        return player.phase == Player.Start
+        if player.phase ~= Player.Start then return false end
       else
         local _event = U.getActualDamageEvents(player.room, 1, function(e) return e.data[1].to == player end)
-        if #_event > 0 and _event[1].data[1] == data then
-          for i = 1, 4 do
-            if player:getMark("luochong"..tostring(i)) == "0" then
-              return true
-            end
-          end
+        if not (#_event > 0 and _event[1].data[1] == data) then return false end
+      end
+      for i = 1, 4 do
+        if player:getMark("luochong"..tostring(i)) == "0" then
+          return true
         end
       end
     end
@@ -3291,7 +3245,7 @@ local luochong = fk.CreateTriggerSkill{
   refresh_events = {fk.GameStart, fk.RoundStart, fk.EventAcquireSkill},
   can_refresh = function(self, event, target, player, data)
     if event == fk.EventAcquireSkill and not (target == player and data == self) then return false end
-    return player:hasSkill(self.name, true)
+    return player:hasSkill(self, true)
   end,
   on_refresh = function(self, event, target, player, data)
     local room = player.room
@@ -3314,14 +3268,22 @@ local aichen = fk.CreateTriggerSkill{
   events = {fk.EnterDying},
   can_trigger = function(self, event, target, player, data)
     if target == player and player:hasSkill(self) then
-      return #table.filter({1, 2, 3, 4}, function(i) return CanLuochong(player, nil, i) end) > 1
+      local choices = {}
+      for i = 1, 4, 1 do
+        local choice = "luochong"..tostring(i)
+        if player:getMark(choice) ~= "×" then
+          table.insert(choices, choice)
+        end
+      end
+      if #choices > 1 then
+        self.cost_data = choices
+        return true
+      end
     end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local choices = table.map(table.filter({1, 2, 3, 4}, function(i)
-      return CanLuochong(player, nil, i) end), function(n) return "luochong"..tostring(n) end)
-    local choice = room:askForChoice(player, choices, self.name, "#aichen-choice")
+    local choice = room:askForChoice(player, self.cost_data, self.name, "#aichen-choice")
     room:setPlayerMark(player, choice, "×")
     room:setPlayerMark(player, "@luochong", string.format("%s-%s-%s-%s",
     player:getMark("luochong1"),
@@ -4990,7 +4952,7 @@ local gengzhan = fk.CreateTriggerSkill{
 local gengzhan_targetmod = fk.CreateTargetModSkill{
   name = "#gengzhan_targetmod",
   residue_func = function(self, player, skill, scope)
-    if player:hasSkill(self.name, true) and skill.trueName == "slash_skill" and player:getMark("@gengzhan-phase") > 0 and scope == Player.HistoryPhase then
+    if player:hasSkill(self, true) and skill.trueName == "slash_skill" and player:getMark("@gengzhan-phase") > 0 and scope == Player.HistoryPhase then
       return player:getMark("@gengzhan-phase")
     end
   end,
@@ -5217,7 +5179,7 @@ local zeyue = fk.CreateTriggerSkill{
 
   refresh_events = {fk.Damaged, fk.TurnEnd},
   can_refresh = function(self, event, target, player, data)
-    if target == player and player:hasSkill(self.name, true) and player:usedSkillTimes(self.name, Player.HistoryGame) == 0 then
+    if target == player and player:hasSkill(self, true) and player:usedSkillTimes(self.name, Player.HistoryGame) == 0 then
       --这里本不应判断技能发动次数，但为了减少运算就不记录了
       if event == fk.Damaged then
         return data.from and data.from ~= player
