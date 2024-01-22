@@ -531,27 +531,30 @@ local lieshi = fk.CreateActiveSkill{
     end
     return UI.ComboBox { choices = choiceList  , all_choices = {"lieshi_prohibit", "lieshi_slash", "lieshi_jink"} }
   end,
-  max_card_num = 0,
-  target_num = 1,
+  card_num = 0,
+  target_num = 0,
   can_use = function(self, player)
     return not table.contains(player.sealedSlots, Player.JudgeSlot) or not table.every(player:getCardIds(Player.Hand), function (id)
       local card = Fk:getCardById(id)
       return (card.trueName ~= "slash" and card.trueName ~= "jink") or player:prohibitDiscard(card)
     end)
   end,
-  card_filter = function() return false end,
-  target_filter = function(self, to_select, selected, selected_cards)
-    return self.interaction.data ~= nil and #selected == 0 and to_select ~= Self.id
-  end,
+  card_filter = Util.FalseFunc,
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
-    local target = room:getPlayerById(effect.tos[1])
     local choice = self.interaction.data
     local to = player
     for i = 1, 2, 1 do
       if i == 2 then
-        to = target
-        if to.dead then return false end
+        if player.dead then return false end
+        local targets = {}
+        for _, p in ipairs(room.alive_players) do
+          if p ~= player then
+            table.insert(targets, p.id)
+          end
+        end
+        if #targets == 0 then return false end
+        to = room:getPlayerById(room:askForChoosePlayers(player, targets, 1, 1, "#lieshi-choose", self.name, false)[1])
         local choiceList, all_choices = {}, {"lieshi_prohibit", "lieshi_slash", "lieshi_jink"}
         if not table.contains(to.sealedSlots, Player.JudgeSlot) then
           table.insert(choiceList, "lieshi_prohibit")
@@ -703,7 +706,8 @@ Fk:loadTranslationTable{
   ["huanyin"] = "还阴",
   [":huanyin"] = "锁定技，当你进入濒死状态时，你将手牌摸至四张。",
 
-  ["#lieshi-active"] = "发动烈誓，选择你要执行的效果并选择一名其他角色，该角色选择并执行不同的一项",
+  ["#lieshi-active"] = "发动烈誓，选择你要执行的效果",
+  ["#lieshi-choose"] = "烈誓：选择一名其他角色，令其选择执行与你不同的效果",
   ["#lieshi-choice"] = "烈誓：选择：废除判定区并受到%src造成的1点火焰伤害，或弃置手牌区中所有的【杀】或【闪】",
   ["lieshi_prohibit"] = "废除判定区并受到1点火焰伤害",
   ["lieshi_slash"] = "弃置手牌区中所有的【杀】",
@@ -1033,6 +1037,7 @@ local liuju_viewas = fk.CreateViewAsSkill{
 local xumin = fk.CreateActiveSkill{
   name = "xumin",
   anim_type = "support",
+  frequency = Skill.Limited,
   card_num = 1,
   min_target_num = 1,
   prompt = "#xumin",

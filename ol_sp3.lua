@@ -2914,16 +2914,16 @@ Fk:loadTranslationTable{
 }
 
 local pengyang = General(extension, "ol__pengyang", "shu", 3)
-local qifan = fk.CreateViewAsSkill{
-  name = "qifan",
+local xiaofan = fk.CreateViewAsSkill{
+  name = "xiaofan",
   pattern = ".",
   anim_type = "special",
-  expand_pile = "qifan",
+  expand_pile = "xiaofan",
   prompt = function()
-    return "#qifan:::"..(#U.getMark(Self, "qifan") + 1)
+    return "#xiaofan:::"..(#U.getMark(Self, "xiaofan") + 1)
   end,
   card_filter = function(self, to_select, selected)
-    if #selected == 0 and Self:getPileNameOfId(to_select) == "qifan" then
+    if #selected == 0 and Self:getPileNameOfId(to_select) == "xiaofan" then
       local card = Fk:getCardById(to_select)
       if Fk.currentResponsePattern == nil then
         return Self:canUse(card) and not Self:prohibitUse(card)
@@ -2952,8 +2952,8 @@ local qifan = fk.CreateViewAsSkill{
     return not response
   end,
 }
-local qifan_trigger = fk.CreateTriggerSkill{
-  name = "#qifan_trigger",
+local xiaofan_trigger = fk.CreateTriggerSkill{
+  name = "#xiaofan_trigger",
 
   refresh_events = {fk.StartPlayCard, fk.AskForCardUse, fk.EventLoseSkill},
   can_refresh = function(self, event, target, player, data)
@@ -2961,18 +2961,18 @@ local qifan_trigger = fk.CreateTriggerSkill{
       if event == fk.EventLoseSkill then
         return data == self
       else
-        return player:hasSkill("qifan")
+        return player:hasSkill("xiaofan")
       end
     end
   end,
   on_refresh = function(self, event, target, player, data)
     local room = player.room
     if event == fk.EventLoseSkill then
-      player.special_cards["qifan"] = {}
+      player.special_cards["xiaofan"] = {}
     else
       local n = 0
-      if player:getMark("qifan") ~= 0 then
-        n = n + #player:getMark("qifan")
+      if player:getMark("xiaofan") ~= 0 then
+        n = n + #player:getMark("xiaofan")
       end
       local ids = {}
       local length = #room.draw_pile
@@ -2983,7 +2983,7 @@ local qifan_trigger = fk.CreateTriggerSkill{
           table.insert(ids, room.draw_pile[i])
         end
       end
-      player.special_cards["qifan"] = table.simpleClone(ids)
+      player.special_cards["xiaofan"] = table.simpleClone(ids)
     end
     player:doNotify("ChangeSelf", json.encode {
       id = player.id,
@@ -3017,7 +3017,7 @@ local tuoshi_prohibit = fk.CreateProhibitSkill{
   name = "#tuoshi_prohibit",
   frequency = Skill.Compulsory,
   prohibit_use = function(self, player, card)
-    return player:hasSkill("tuoshi") and card and card.trueName == "nullification"
+    return player:hasSkill(tuoshi) and card and card.trueName == "nullification"
   end,
 }
 local tuoshi_targetmod = fk.CreateTargetModSkill{
@@ -3029,20 +3029,38 @@ local tuoshi_targetmod = fk.CreateTargetModSkill{
     return player:getMark("@@tuoshi") > 0
   end,
 }
-qifan:addRelatedSkill(qifan_trigger)
+xiaofan:addRelatedSkill(xiaofan_trigger)
 tuoshi:addRelatedSkill(tuoshi_prohibit)
 tuoshi:addRelatedSkill(tuoshi_targetmod)
-pengyang:addSkill(qifan)
+pengyang:addSkill(xiaofan)
 pengyang:addSkill(tuoshi)
 pengyang:addSkill("cunmu")
+
 Fk:loadTranslationTable{
   ["ol__pengyang"] = "彭羕",
-  ["qifan"] = "器翻",
-  [":qifan"] = "当你需要使用牌时，你可以观看牌堆底X+1张牌，使用其中你需要的牌，然后依次弃置你以下前X个区域内所有牌（X为你以此法使用过的类别数）："..
+  ["xiaofan"] = "嚣翻",
+  [":xiaofan"] = "当你需要使用牌时，你可以观看牌堆底X+1张牌，使用其中你需要的牌，然后依次弃置你以下前X个区域内所有牌（X为你以此法使用过的类别数）："..
   "判定区、装备区、手牌区。",
+  --技能描述：
+  --当你需要使用牌时，你可以观看牌堆底X张牌，然后可以使用其中你需要的牌并弃置你前X区域里的牌：
+  --1.判定区；2.装备区；3.手牌区。（X为本回合你使用过牌的类别数）
+  --注：
+  --1、牌堆牌不足X张时会洗牌，感觉OL应该是进行了类似发动技能不触发log且不重置读条的处理（录像模式下能看出些许差别）。
+  --2、先进行使用结算，然后再弃置牌，X为效果处理时的实时值
+  --个人向的实现方式：
+  --1、用refresh跟踪AfterCardMove，用一个不可见的mark记录牌堆底的三张牌；
+  --2、发动技能时，用expandcards取上述mark的前X张，以转化技的形式来使用；
+  --3、afteruse处理弃牌的效果。
+
   ["tuoshi"] = "侻失",
   [":tuoshi"] = "锁定技，你不能使用【无懈可击】；当你使用点数为字母的牌后，你摸两张牌且使用下一张牌无距离次数限制。",
-  ["#qifan"] = "器翻：观看牌堆底%arg张牌，使用其中你需要的牌",
+
+  --技能描述：
+  --锁定技，你不能使用【无懈可击】。你使用点数为字母的牌无效并摸一张牌，且下次对手牌数小于你的角色使用牌无距离和次数限制。
+  --注：
+  --侻失标记跨回合保留，直到你对手牌数小于你的角色使用牌（其他情况下不会清理）。
+
+  ["#xiaofan"] = "嚣翻：观看牌堆底%arg张牌，使用其中你需要的牌",
   ["@@tuoshi"] = "侻失",
 }
 
