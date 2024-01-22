@@ -231,7 +231,10 @@ local shenjun_viewas = fk.CreateViewAsSkill{
   interaction = function()
     local names = {}
     for _, id in ipairs(Self:getMark("@$shenjun")) do
-      table.insertIfNeed(names, Fk:getCardById(id, true).name)
+      local name = Fk:getCardById(id, true).name
+      if Self:canUse(Fk:cloneCard(name)) then
+        table.insertIfNeed(names, name)
+      end
     end
     if #names == 0 then return end
     return UI.ComboBox {choices = names}
@@ -266,8 +269,10 @@ local shenjun = fk.CreateTriggerSkill{
     if event == fk.CardUsing then
       return true
     else
+      player.room:setPlayerMark(player, MarkEnum.BypassTimesLimit.."-tmp", 1)
       local success, dat = player.room:askForUseActiveSkill(player, "shenjun_viewas",
         "#shenjun-invoke:::"..#player:getMark("@$shenjun"), true)
+        player.room:setPlayerMark(player, MarkEnum.BypassTimesLimit.."-tmp", 0)
       if success then
         self.cost_data = dat
         return true
@@ -298,6 +303,7 @@ local shenjun = fk.CreateTriggerSkill{
         from = player.id,
         tos = table.map(dat.targets, function(id) return {id} end),
         card = card,
+        extraUse = true,
       }
     end
   end,
