@@ -493,13 +493,10 @@ local ol__zhuiji = fk.CreateTriggerSkill{
     local room = player.room
     room:doIndicate(player.id, {data.to})
     local to = room:getPlayerById(data.to)
-    local x = #to:getCardIds("e")
-    local cards = room:askForDiscard(to, 1, 1, true, self.name, x > 0, ".", "#ol__zhuiji-discard")
-    if #cards == 0 and x > 0 then
-      to:throwAllCards("e")
-      if not to.dead then
-        room:drawCards(to, x, self.name)
-      end
+    local equips = to:getCardIds("e")
+    local cards = room:askForDiscard(to, 1, 1, true, self.name, #equips > 0, ".", "#ol__zhuiji-discard")
+    if #cards == 0 and #equips > 0 then
+      room:recastCard(equips, to)
     end
   end,
 }
@@ -507,7 +504,7 @@ local ol__zhuiji_distance = fk.CreateDistanceSkill{
   name = "#ol__zhuiji_distance",
   frequency = Skill.Compulsory,
   fixed_func = function(self, from, to)
-    if from:hasSkill(self) and from.hp >= to.hp then
+    if from:hasSkill(ol__zhuiji) and from.hp >= to.hp then
       return 1
     end
   end,
@@ -558,11 +555,12 @@ machao:addSkill(ol__shichou)
 Fk:loadTranslationTable{
   ["ol__machao"] = "马超",
   ["ol__zhuiji"] = "追击",
-  [":ol__zhuiji"] = "锁定技，你计算与体力值不大于你的角色的距离始终为1。当你使用【杀】指定距离为1的角色为目标后，其弃置一张牌或弃置装备区里的所有牌并摸等量的牌。",
+  [":ol__zhuiji"] = "锁定技，你计算与体力值不大于你的角色的距离始终为1。"..
+  "当你使用【杀】指定距离为1的角色为目标后，其弃置一张牌或重铸装备区里的所有牌。",
   ["ol__shichou"] = "誓仇",
   [":ol__shichou"] = "你使用【杀】可以多选择至多X+1名角色为目标（X为你已损失的体力值）。",
 
-  ["#ol__zhuiji-discard"] = "追击：选择一张牌弃置，或点取消则弃置装备区里的所有牌并摸等量的牌",
+  ["#ol__zhuiji-discard"] = "追击：选择一张牌弃置，或点取消则重铸装备区里的所有牌",
   ["#ol__shichou-choose"] = "是否使用誓仇，为此【%arg】额外指定至多%arg2个目标",
 
   ["$ol__shichou1"] = "你们一个都别想跑！",
