@@ -3273,7 +3273,7 @@ local lingren = fk.CreateTriggerSkill{
     data.card.is_damage_card and player:usedSkillTimes(self.name, Player.HistoryPhase) == 0
   end,
   on_cost = function(self, event, target, player, data)
-    local to = player.room:askForChoosePlayers(player, data.tos[1], 1, 1, "#lingren-choose", self.name, true)
+    local to = player.room:askForChoosePlayers(player, AimGroup:getAllTargets(data.tos), 1, 1, "#lingren-choose", self.name, true)
     if #to > 0 then
       self.cost_data = to[1]
       return true
@@ -3329,7 +3329,7 @@ local lingren_delay = fk.CreateTriggerSkill {
   mute = true,
   events = {fk.DamageInflicted},
   can_trigger = function(self, event, target, player, data)
-    if player.dead or data.card == nil then return false end
+    if player.dead or data.card == nil or target ~= player then return false end
     local room = player.room
     local card_event = room.logic:getCurrentEvent():findParent(GameEvent.UseCard)
     if not card_event then return false end
