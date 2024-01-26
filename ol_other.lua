@@ -1138,7 +1138,7 @@ local qin__fachu = fk.CreateTriggerSkill{
   end,
 }
 local qin__changsheng = fk.CreateTargetModSkill{
-  name = "#qin__changsheng_targetmod",
+  name = "qin__changsheng",
   frequency = Skill.Compulsory,
   bypass_distances = function(self, player, skill, card, to)
     return player:hasSkill(self) and card and card.trueName == "slash"
