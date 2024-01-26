@@ -1071,7 +1071,7 @@ local qin__wuan = fk.CreateTriggerSkill{
   frequency = Skill.Compulsory,
   events = {fk.AfterCardUseDeclared},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player.kingdom == "qin" and data.card.trueName == "slash"
+    return target == player and Self:hasSkill(self) and player.kingdom == "qin" and data.card.trueName == "slash"
   end,
   on_use = function(self, event, target, player, data)
     data.additionalDamage = (data.additionalDamage or 0) + 1
@@ -1153,7 +1153,7 @@ baiqi:addSkill(qin__changsheng)
 Fk:loadTranslationTable{
   ["baiqi"] = "白起",
   ["qin__wuan"] = "武安",
-  [":qin__wuan"] = "锁定技，秦势力角色出牌阶段使用【杀】的次数上限+1，使用【杀】造成的伤害+1，。",
+  [":qin__wuan"] = "锁定技，秦势力角色出牌阶段使用【杀】的次数上限+1，使用【杀】造成的伤害+1。",
   ["qin__shashen"] = "杀神",
   [":qin__shashen"] = "你可以将一张手牌当【杀】使用或打出；当每回合你使用的第一张【杀】造成伤害后，你摸一张牌。",
   ["qin__fachu"] = "伐楚",
