@@ -2567,31 +2567,14 @@ local qianya = fk.CreateTriggerSkill{
     return target == player and player:hasSkill(self) and data.card.type == Card.TypeTrick and not player:isKongcheng()
   end,
   on_cost = function(self, event, target, player, data)
-    player.room:askForUseActiveSkill(player, "#qianya_active", "#qianya-invoke", true)
+    local tos, cards = player.room:askForChooseCardsAndPlayers(player, 1, player:getHandcardNum(), table.map(player.room:getOtherPlayers(player), Util.IdMapper), 1, 1, ".", "#qianya-invoke", self.name, true)
+    if #tos > 0 and #cards > 0 then
+      self.cost_data = {tos[1], cards}
+      return true
+    end
   end,
-}
-local qianya_active = fk.CreateActiveSkill{
-  name = "#qianya_active",
-  anim_type = "support",
-  max_card_num = function ()
-    return #Self.player_cards[Player.Hand]
-  end,
-  min_card_num = 1,
-  target_num = 1,
-  can_use = function(self, player)
-    return not player:isKongcheng()
-  end,
-  card_filter = function(self, to_select, selected, targets)
-    return Fk:currentRoom():getCardArea(to_select) ~= Player.Equip
-  end,
-  target_filter = function(self, to_select, selected, selected_cards)
-    return #selected == 0
-  end,
-  on_use = function(self, room, effect)
-    local target = room:getPlayerById(effect.tos[1])
-    local dummy = Fk:cloneCard("dilu")
-    dummy:addSubcards(effect.cards)
-    room:obtainCard(target, dummy, false, fk.ReasonGive)
+  on_use = function (self, event, target, player, data)
+    player.room:moveCardTo(self.cost_data[2], Card.PlayerHand, player.room:getPlayerById(self.cost_data[1]), fk.ReasonGive, self.name, "", true, player.id)
   end,
 }
 local shuimeng = fk.CreateTriggerSkill{
@@ -2623,17 +2606,16 @@ local shuimeng = fk.CreateTriggerSkill{
     end
   end,
 }
-Fk:addSkill(qianya_active)
 sunqian:addSkill(qianya)
 sunqian:addSkill(shuimeng)
 Fk:loadTranslationTable{
   ["sunqian"] = "孙乾",
   ["#sunqian"] = "折冲樽俎",
+  ["illustrator:sunqian"] = "Thinking",
   ["qianya"] = "谦雅",
   [":qianya"] = "当你成为锦囊牌的目标后，你可以将任意张手牌交给一名其他角色。",
   ["shuimeng"] = "说盟",
   [":shuimeng"] = "出牌阶段结束时，你可以与一名角色拼点，若你赢，视为你使用【无中生有】；若你没赢，视为其对你使用【过河拆桥】。",
-  ["#qianya_active"] = "谦雅",
   ["#qianya-invoke"] = "谦雅：你可以将任意张手牌交给一名其他角色",
   ["#shuimeng-choose"] = "说盟：你可以拼点，若赢，视为你使用【无中生有】；若没赢，视为其对你使用【过河拆桥】",
 
