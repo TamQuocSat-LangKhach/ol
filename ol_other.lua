@@ -76,6 +76,8 @@ godzhenji:addSkill(shenfu)
 godzhenji:addSkill(qixian)
 Fk:loadTranslationTable{
   ["godzhenji"] = "神甄姬",
+  ["#godzhenji"] = "洛水的女神",
+  ["illustrator:godzhenji"] = "鬼画府",
   ["shenfu"] = "神赋",
   [":shenfu"] = "结束阶段，如果你的手牌数量为：奇数，可对一名其他角色造成1点雷电伤害，若造成其死亡，你可重复此流程；偶数，可令一名角色摸一张牌或你弃置其一张手牌，若执行后该角色的手牌数等于其体力值，你可重复此流程（不能对本回合指定过的目标使用）。",
   ["qixian"] = "七弦",
@@ -162,6 +164,8 @@ godcaopi:addRelatedSkill("ol_ex__luanji")
 godcaopi:addRelatedSkill("ol_ex__fangquan")
 Fk:loadTranslationTable{
   ["godcaopi"] = "神曹丕",
+  ["#godcaopi"] = "诰天仰颂",
+  ["illustrator:godcaopi"] = "鬼画府",
   ["chuyuan"] = "储元",
   [":chuyuan"] = "当一名角色受到伤害后，若你的“储”数小于你的体力上限，你可以令其摸一张牌，然后其将一张手牌置于你的武将牌上，称为“储”。",
   ["dengji"] = "登极",
@@ -265,6 +269,7 @@ lvbu3:addRelatedSkill("ol_ex__wansha")
 
 Fk:loadTranslationTable{
   ["hulao__godlvbu3"] = "神吕布",
+  ["#hulao__godlvbu3"] = "神鬼无前",
   ["shenqu"] = "神躯",
   [":shenqu"] = "一名角色的准备阶段，若你的手牌数不大于你的体力上限，你可摸两张牌。当你受到伤害后，你可使用一张【桃】。",
   ["jiwu"] = "极武",
@@ -378,6 +383,7 @@ hanba:addRelatedSkill(xintan)
 
 Fk:loadTranslationTable{
   ["hanba"] = "旱魃",
+  ["illustrator:hanba"] = "雪君s",
   ["fentian"] = "焚天",
   [":fentian"] = "锁定技，结束阶段，若你的手牌数小于你的体力值，你将攻击范围内的一名角色的一张牌置于你的武将牌上，称为“焚”；"..
   "你的攻击范围+X（X为“焚”数）。",
@@ -888,8 +894,10 @@ shangyang:addSkill(qin__limu)
 shangyang:addSkill(qin__kencao)
 Fk:loadTranslationTable{
   ["shangyang"] = "商鞅",
+  ["#shangyang"] = "变法者",
   ["qin__bianfa"] = "变法",
-  [":qin__bianfa"] = "出牌阶段限一次，你可以将一张普通锦囊牌当【商鞅变法】使用。",
+  [":qin__bianfa"] = "出牌阶段限一次，你可以将一张普通锦囊牌当【商鞅变法】使用。"..
+  "<br><font color='grey'><b>商鞅变法</b>：出牌阶段，对一名其他角色使用，随机对其造成1~2点伤害，若其进入濒死，你判定，若为黑色，除其以外的角色不能对其使用【桃】。",
   ["qin__limu"] = "立木",
   [":qin__limu"] = "锁定技，你使用的普通锦囊牌不能被【无懈可击】响应。",
   ["qin__kencao"] = "垦草",
@@ -1041,6 +1049,7 @@ zhangyiq:addSkill(qin__xiongbian)
 zhangyiq:addSkill(qin__qiaoshe)
 Fk:loadTranslationTable{
   ["zhangyiq"] = "张仪",
+  ["#zhangyiq"] = "合纵连横",
   ["qin__lianheng"] = "连横",
   [":qin__lianheng"] = "锁定技，游戏开始时，你令随机一名非秦势力角色获得“横”标记；"..
   "你的回合开始时，弃置场上的所有“横”标记。然后若非秦势力角色数不小于2，你令随机一名非秦势力角色获得“横”标记；"..
@@ -1152,6 +1161,7 @@ baiqi:addSkill(qin__fachu)
 baiqi:addSkill(qin__changsheng)
 Fk:loadTranslationTable{
   ["baiqi"] = "白起",
+  ["#baiqi"] = "血战长平",
   ["qin__wuan"] = "武安",
   [":qin__wuan"] = "锁定技，秦势力角色出牌阶段使用【杀】的次数上限+1，使用【杀】造成的伤害+1，。",
   ["qin__shashen"] = "杀神",
@@ -1266,6 +1276,7 @@ yingzheng:addSkill(qin__zulong)
 yingzheng:addSkill(qin__fenshu)
 Fk:loadTranslationTable{
   ["yingzheng"] = "嬴政",
+  ["#yingzheng"] = "横扫六合",
   ["qin__yitong"] = "一统",
   [":qin__yitong"] = "锁定技，你使用【杀】、【过河拆桥】、【顺手牵羊】、【火攻】无距离限制且指定所有非秦势力角色为目标。",
   ["qin__shihuang"] = "始皇",
@@ -1410,6 +1421,7 @@ lvbuwei:addRelatedSkill("ex__rende")
 lvbuwei:addRelatedSkill("ex__zhiheng")
 Fk:loadTranslationTable{
   ["lvbuwei"] = "吕不韦",
+  ["#lvbuwei"] = "吕氏春秋",
   ["qin__qihuo"] = "奇货",
   [":qin__qihuo"] = "出牌阶段限一次，你可以弃置你一种类别全部的牌，摸等量的牌。",
   ["qin__chunqiu"] = "春秋",
@@ -1539,6 +1551,7 @@ zhaogao:addSkill(qin__haizhong)
 zhaogao:addSkill(qin__yuanli)
 Fk:loadTranslationTable{
   ["zhaogao"] = "赵高",
+  ["#zhaogao"] = "沙丘谋变",
   ["qin__zhilu"] = "指鹿",
   [":qin__zhilu"] = "你可以将一张红色/黑色手牌当【闪】/【杀】使用或打出。",
   ["qin__gaizhao"] = "改诏",
@@ -1695,6 +1708,7 @@ zhaoji:addSkill(qin__xianji)
 zhaoji:addSkill(qin__huoluan)
 Fk:loadTranslationTable{
   ["zhaoji"] = "赵姬",
+  ["#zhaoji"] = "祸乱宫闱",
   ["qin__shanwu"] = "善舞",
   [":qin__shanwu"] = "锁定技，当你使用【杀】指定目标后，你判定，若为黑色，此【杀】不能被【闪】抵消；"..
   "当你成为【杀】的目标后，你判定，若为红色，此【杀】无效。",
@@ -1858,6 +1872,7 @@ miyue:addSkill(qin__youmie)
 miyue:addSkill(qin__yintui)
 Fk:loadTranslationTable{
   ["miyue"] = "芈月",
+  ["#miyue"] = "始太后",
   ["qin__zhangzheng"] = "掌政",
   [":qin__zhangzheng"] = "锁定技，准备阶段，所有非秦势力角色依次选择：1.弃置一张手牌；2.失去1点体力。",
   ["qin__taihou"] = "太后",

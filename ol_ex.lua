@@ -3428,6 +3428,8 @@ sunce:addRelatedSkill("yinghun")
 
 Fk:loadTranslationTable{
   ["ol_ex__sunce"] = "界孙策",
+  ["#ol_ex__sunce"] = "江东的小霸王",
+  ["illustrator:ol_ex__sunce"] = "李敏然",
   ["ol_ex__jiang"] = "激昂",
   [":ol_ex__jiang"] = "当你使用【决斗】或红色【杀】指定目标后，或成为【决斗】或红色【杀】的目标后，你可以摸一张牌。每回合首次有包含【决斗】或红色【杀】在内的牌因弃置而置入弃牌堆后，你可以失去1点体力获得其中所有【决斗】和红色【杀】。",
   ["ol_ex__hunzi"] = "魂姿",
@@ -3583,6 +3585,8 @@ zhangzhaozhanghong:addSkill(ol_ex__zhijian)
 zhangzhaozhanghong:addSkill(ol_ex__guzheng)
 Fk:loadTranslationTable{
   ["ol_ex__zhangzhaozhanghong"] = "界张昭张纮",
+  ["#ol_ex__zhangzhaozhanghong"] = "经天纬地",
+  ["illustrator:ol_ex__zhangzhaozhanghong"] = "君桓文化",
   ["ol_ex__zhijian"] = "直谏",
   [":ol_ex__zhijian"] = "出牌阶段，你可以将一张装备牌置于其他角色装备区（替换原装备），然后摸一张牌。",
   ["ol_ex__guzheng"] = "固政",
@@ -3741,6 +3745,8 @@ ol_ex__zuoci:addSkill(ol_ex__huashen)
 ol_ex__zuoci:addSkill(ol_ex__xinsheng)
 Fk:loadTranslationTable{
   ["ol_ex__zuoci"] = "界左慈",
+  ["#ol_ex__zuoci"] = "迷之仙人",
+  ["illustrator:ol_ex__zuoci"] = "波子",
   ["ol_ex__huashen"] = "化身",
   [":ol_ex__huashen"] = "①游戏开始时，你随机获得三张武将牌作为“化身”牌，然后你选择其中一张“化身”牌的一个技能（主公技/限定技/觉醒技/转换技除外），你视为拥有此技能，且性别和势力视为与此“化身”牌相同。<br>"..
   "②回合开始或结束时，你可以选择一项：1.重新进行一次“化身”；2.移去至多两张不为亮出的“化身”牌，然后获得等量的新“化身”牌。",
@@ -3829,6 +3835,8 @@ caiwenji:addSkill("duanchang")
 
 Fk:loadTranslationTable{
   ["ol_ex__caiwenji"] = "界蔡文姬",
+  ["#ol_ex__caiwenji"] = "异乡的孤女",
+  ["illustrator:ol_ex__caiwenji"] = "罔両",
   ["ol_ex__beige"] = "悲歌",
   [":ol_ex__beige"] = "当一名角色受到【杀】造成的伤害后，若你有牌，你可以令其进行一次判定，然后你可以弃置一张牌，根据判定结果执行：红桃，其回复1点体力；方块，其摸两张牌；梅花，伤害来源弃置两张牌；黑桃，伤害来源将武将牌翻面；点数相同，你获得你弃置的牌；花色相同，你获得判定牌。",
 

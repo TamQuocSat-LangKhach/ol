@@ -28,7 +28,7 @@ local zhuri = fk.CreateTriggerSkill{
             end
           end
         end
-      end, Player.HistoryPhase) > 0 and table.find(player.room:getOtherPlayers(player), function(p) return not p:isKongcheng() end)
+      end, Player.HistoryPhase) > 0 and table.find(player.room:getOtherPlayers(player), function(p) return player:canPindian(p) end)
     end
   end,
   on_cost = function(self, event, target, player, data)
@@ -243,6 +243,8 @@ jiangwei:addRelatedSkill(ol_ex__zhaxiang)
 
 Fk:loadTranslationTable{
   ["olmou__jiangwei"] = "谋姜维",
+  ["#olmou__jiangwei"] = "炎志灼心",
+  ["illustrator:olmou__jiangwei"] = "西国红云",
   ["zhuri"] = "逐日",
   [":zhuri"] = "你的阶段结束时，若你本阶段手牌数变化过，你可以拼点：若你赢，你可以使用一张拼点牌；若你没赢，你失去1点体力或本技能直到回合结束。",
   ["ranji"] = "燃己",
