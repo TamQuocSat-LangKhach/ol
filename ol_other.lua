@@ -1080,7 +1080,7 @@ local qin__wuan = fk.CreateTriggerSkill{
   frequency = Skill.Compulsory,
   events = {fk.AfterCardUseDeclared},
   can_trigger = function(self, event, target, player, data)
-    return target == player and Self:hasSkill(self) and player.kingdom == "qin" and data.card.trueName == "slash"
+    return player:hasSkill(self) and target.kingdom == "qin" and data.card.trueName == "slash"
   end,
   on_use = function(self, event, target, player, data)
     data.additionalDamage = (data.additionalDamage or 0) + 1
@@ -1091,7 +1091,9 @@ local qin__wuan_targetmod = fk.CreateTargetModSkill{
   frequency = Skill.Compulsory,
   residue_func = function(self, player, skill, scope)
     if player.kingdom == "qin" and skill.trueName == "slash_skill" and scope == Player.HistoryPhase then
-      return 1
+      if table.find(Fk:currentRoom().alive_players, function(p) return p:hasSkill(qin__wuan) end) then
+        return 1
+      end
     end
   end,
 }
