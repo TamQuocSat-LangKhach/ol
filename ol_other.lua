@@ -1482,13 +1482,11 @@ local qin__gaizhao = fk.CreateTriggerSkill{
   events = {fk.TargetConfirming},
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(self.name) and (data.card.trueName == "slash" or data.card:isCommonTrick()) and
-      table.find(table.filter(player.room.alive_players, function (p) return p ~= player and p.kingdom == "qin" end), function(p)
-        return table.contains(U.getUseExtraTargets(player.room, data, true, true), p.id)
-      end)
+    table.find(U.getUseExtraTargets(player.room, data, true, true), function (p) return player.room:getPlayerById(p).kingdom == "qin" end)
   end,
   on_cost = function(self, event, target, player, data)
     local room = player.room
-    local targets = U.getUseExtraTargets(room, data, true, true)
+    local targets = table.filter(U.getUseExtraTargets(player.room, data, true, true), function (p) return player.room:getPlayerById(p).kingdom == "qin" end)
     local to = room:askForChoosePlayers(player, targets, 1, 1, "#qin__gaizhao-choose:::"..data.card:toLogString(), self.name, true)
     if #to > 0 then
       self.cost_data = to[1]
@@ -1507,7 +1505,7 @@ local qin__haizhong = fk.CreateTriggerSkill{
   frequency = Skill.Compulsory,
   events = {fk.HpRecover},
   can_trigger = function(self, event, target, player, data)
-    return player:hasSkill(self) and target.kingdom ~= "qin" and player:usedSkillTimes(self.name, Player.HistoryTurn) < 20
+    return player:hasSkill(self) and target.kingdom ~= "qin" and player:usedSkillTimes(self.name, Player.HistoryTurn) < 14
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
@@ -1559,7 +1557,7 @@ Fk:loadTranslationTable{
   ["qin__gaizhao"] = "改诏",
   [":qin__gaizhao"] = "当你成为【杀】或普通锦囊牌的目标时，你可以将此牌的目标转移给此牌目标以外的一名其他秦势力角色。",
   ["qin__haizhong"] = "害忠",
-  [":qin__haizhong"] = "锁定技，每回合限十四次，非秦势力角色回复体力后，其需选择一项：1.弃置一张红色牌，2.受到X点伤害（X为其拥有的“害”标记数，至少为1）。然后其获得一个“害”标记", -- 防止死循环限20次
+  [":qin__haizhong"] = "锁定技，每回合限十四次，非秦势力角色回复体力后，其需选择一项：1.弃置一张红色牌，2.受到X点伤害（X为其拥有的“害”标记数，至少为1）。然后其获得一个“害”标记", -- 限14=秦朝活了十四年，海嗣智慧
   ["qin__yuanli"] = "爰历",
   [":qin__yuanli"] = "锁定技，出牌阶段开始时，你随机获得两张普通锦囊牌。",
   ["#qin__zhilu"] = "指鹿：你可以将一张红色/黑色手牌当【闪】/【杀】使用或打出",
