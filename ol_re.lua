@@ -186,6 +186,8 @@ ol__lijun:addRelatedSkill(ol__lijun_targetmod)
 ol__sunliang:addSkill(ol__lijun)
 Fk:loadTranslationTable{
   ["ol__sunliang"] = "孙亮",
+  ["#ol__sunliang"] = "寒江枯水",
+  ["cv:ol__sunliang"] = "徐刚",
   ["ol__kuizhu"] = "溃诛",
   [":ol__kuizhu"] = "弃牌阶段结束时，你可以选择一项：1. 令至多X名角色各摸一张牌；2. 对任意名体力值之和为X的角色造成1点伤害（X为你此阶段弃置的牌数）。",
   ["ol__kuizhu_active"] = "溃诛",
@@ -1387,6 +1389,8 @@ local ol__yanhuo = fk.CreateTriggerSkill{
 ol__hejin:addSkill(ol__yanhuo)
 Fk:loadTranslationTable{
   ["ol__hejin"] = "何进",
+  ["#ol__hejin"] = "色厉内荏",
+  ["cv:ol__hejin"] = "冷泉月夜",
   ["ol__mouzhu"] = "谋诛",
   [":ol__mouzhu"] = "出牌阶段限一次，你可以令一名其他角色交给你一张手牌，若其手牌数小于你，其视为使用一张【杀】或【决斗】。",
   ["#ol__mouzhu-give"] = "谋诛：请交给 %dest 一张手牌",

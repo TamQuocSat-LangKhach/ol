@@ -647,6 +647,8 @@ mayunlu:addSkill(fengpo)
 Fk:loadTranslationTable{
   ["mayunlu"] = "马云騄",
   ["#mayunlu"] = "剑胆琴心",
+  ["cv:mayunlu"] = "水原",
+	["illustrator:mayunlu"] = "木美人",
   ["fengpo"] = "凤魄",
   [":fengpo"] = "当你每回合首次使用【杀】或【决斗】指定目标后，你可以选择一项：1.摸X张牌，此牌伤害+1；2.摸一张牌，此牌伤害+X"..
   "（X为其<font color='red'>♦</font>牌数）。",
@@ -2144,6 +2146,8 @@ liuqi:addSkill(tunjiang)
 Fk:loadTranslationTable{
   ["liuqi"] = "刘琦",
   ["#liuqi"] = "居外而安",
+  ["cv:liuqi"] = "戴超行",
+	["illustrator:liuqi"] = "NOVART",
   ["wenji"] = "问计",
   [":wenji"] = "出牌阶段开始时，你可以令一名其他角色交给你一张牌，你于本回合内使用与该牌同名的牌不能被其他角色响应。",
   ["tunjiang"] = "屯江",
@@ -2407,6 +2411,8 @@ quyi:addSkill(jiaozi)
 Fk:loadTranslationTable{
   ["quyi"] = "麴义",
   ["#quyi"] = "名门的骁将",
+  ["cv:quyi"] = "冷泉月夜",
+	["illustrator:quyi"] = "王立雄", -- 稀有皮 界桥先登
   ["fuji"] = "伏骑",
   [":fuji"] = "锁定技，当你使用【杀】或普通锦囊牌时，你令所有至你距离为1的角色不能响应此牌。",
   ["jiaozi"] = "骄恣",
@@ -2534,6 +2540,8 @@ xizhicai:addSkill(chouce)
 Fk:loadTranslationTable{
   ["xizhicai"] = "戏志才",
   ["#xizhicai"] = "负俗的天才",
+  ["cv:xizhicai"] = "曹真",
+	["illustrator:xizhicai"] = "眉毛子",
   ["xianfu"] = "先辅",
   ["@xianfu"] = "先辅",
   [":xianfu"] = "锁定技，游戏开始时，你选择一名其他角色，当其受到伤害后，你受到等量的伤害；当其回复体力后，你回复等量的体力。",
@@ -3365,6 +3373,8 @@ caoying:addRelatedSkill("xingshang")
 Fk:loadTranslationTable{
   ["caoying"] = "曹婴",
   ["#caoying"] = "龙城凤鸣",
+  ["cv:caoying"] = "水原",
+  ["illustrator:caoying"] = "花弟",
   ["lingren"] = "凌人",
   [":lingren"] = "出牌阶段限一次，当你使用【杀】或伤害类锦囊牌指定目标后，你可以猜测其中一名目标角色的手牌区中是否有基本牌、锦囊牌或装备牌。"..
   "若你猜对：至少一项，此牌对其造成的伤害+1；至少两项，你摸两张牌；三项，你获得技能〖奸雄〗和〖行殇〗直到你的下个回合开始。",
