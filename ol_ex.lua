@@ -461,7 +461,7 @@ local ol_ex__kuanggu = fk.CreateTriggerSkill{
     self.cancel_cost = false
     for i = 1, data.damage do
       self:doCost(event, target, player, data)
-      if self.cost_data == "Cancel" then break end
+      if self.cost_data == "Cancel" or player.dead then break end
     end
   end,
   on_cost = function(self, event, target, player, data)
@@ -531,8 +531,9 @@ local ol_ex__qimou = fk.CreateActiveSkill{
     local player = room:getPlayerById(effect.from)
     local tolose = self.interaction.data
     room:loseHp(player, tolose, self.name)
-    player:drawCards(tolose, self.name)
+    if player.dead then return end
     room:setPlayerMark(player, "@qimou-turn", tolose)
+    player:drawCards(tolose, self.name)
   end,
 }
 ol_ex__qimou:addRelatedSkill(ol_ex__qimou_targetmod)
@@ -541,6 +542,8 @@ weiyan:addSkill(ol_ex__kuanggu)
 weiyan:addSkill(ol_ex__qimou)
 Fk:loadTranslationTable{
   ["ol_ex__weiyan"] = "界魏延",
+  ["#ol_ex__weiyan"] = "嗜血的独狼",
+  ["illustrator:ol_ex__weiyan"] = "王强",
   ["ol_ex__kuanggu"] = "狂骨",
   [":ol_ex__kuanggu"] = "你对距离1以内的角色造成1点伤害后，你可以选择摸一张牌或回复1点体力。",
   ["ol_ex__qimou"] = "奇谋",

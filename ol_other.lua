@@ -921,9 +921,9 @@ local qin__lianheng = fk.CreateTriggerSkill{
     local room = player.room
     if player:hasSkill(self) then
       if event == fk.GameStart then
-        return true
+        return table.find(player.room.alive_players, function (p) return p.kingdom ~= "qin" end)
       else
-        return target == player and #table.filter(room.alive_players, function (p) return p.kingdom ~= "qin" end) > 1
+        return target == player
       end
     end
   end,
@@ -934,14 +934,14 @@ local qin__lianheng = fk.CreateTriggerSkill{
       room:doIndicate(player.id, {to.id})
       room:setPlayerMark(to, "@@qin__lianheng", 1)
     else
-      local to = table.filter(room.alive_players, function(p) return p:getMark("@@qin__lianheng") > 0 end)
-      local tos = table.simpleClone(table.filter(room.alive_players, function (p) return p.kingdom ~= "qin" end))
-      if #to > 0 then
-        room:setPlayerMark(to[1], "@@qin__lianheng", 0)
-        table.removeOne(tos, to[1])
+      for _, p in ipairs(room.alive_players) do
+        if p:getMark("@@qin__lianheng") > 0 then
+          room:setPlayerMark(p, "@@qin__lianheng", 0)
+        end
       end
-      if #tos > 0 then
-        to = table.random(tos)
+      local tos = table.filter(room.alive_players, function (p) return p.kingdom ~= "qin" end)
+      if #tos >= 2 then
+        local to = table.random(tos)
         room:doIndicate(player.id, {to.id})
         room:setPlayerMark(to, "@@qin__lianheng", 1)
       end

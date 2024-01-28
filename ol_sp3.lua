@@ -3386,7 +3386,8 @@ local fudao = fk.CreateTriggerSkill{
   events = {fk.GameStart, fk.TurnEnd},
   can_trigger = function(self, event, target, player, data)
     if not player:hasSkill(self) then return end
-    return event == fk.GameStart or (player:getMark("_ol__fudao") == target:getHandcardNum() and player:getMark("@ol__fudao") ~= 0)
+    return event == fk.GameStart or (not target.dead and
+      player:getMark("@ol__fudao") ~= 0 and tonumber(player:getMark("@ol__fudao")) == target:getHandcardNum())
   end,
   on_cost = function(self, event, target, player, data)
     if event == fk.GameStart then
@@ -3399,16 +3400,19 @@ local fudao = fk.CreateTriggerSkill{
     if event == fk.GameStart then
       local room = player.room
       player:drawCards(3, self.name)
-      if player.dead or player:isNude() then return end
+      if player.dead then return end
       local targets = table.map(room:getOtherPlayers(player), Util.IdMapper)
-      local tos, cards = U.askForChooseCardsAndPlayers(room, player, 1, 3, targets, 1, 1, nil, "#ol__fudao-give", self.name, false)
-      local to = room:getPlayerById(tos[1])
-      room:moveCardTo(cards, Card.PlayerHand, to, fk.ReasonGive, self.name, nil, false, player.id)
-      if player.dead then return false end
+      if not player:isKongcheng() and #targets > 0 then
+        local tos, cards = U.askForChooseCardsAndPlayers(room, player, 1, 3, targets, 1, 1, nil, "#ol__fudao-give", self.name, true)
+        if #tos > 0 then
+          local to = room:getPlayerById(tos[1])
+          room:moveCardTo(cards, Card.PlayerHand, to, fk.ReasonGive, self.name, nil, false, player.id)
+          if player.dead then return end
+        end
+      end
       room:askForDiscard(player, 1, 999, false, self.name, true, nil, "#ol__fudao-discard")
-      if player.dead then return false end
-      room:setPlayerMark(player, "@ol__fudao", tostring(player:getHandcardNum())) -- 0
-      room:setPlayerMark(player, "_ol__fudao", player:getHandcardNum())
+      if player.dead then return end
+      room:setPlayerMark(player, "@ol__fudao", tostring(player:getHandcardNum()))
     else
       target:drawCards(1, self.name)
       if not player.dead then
@@ -3467,6 +3471,8 @@ dingfuren:addSkill(fengyan)
 Fk:loadTranslationTable{
   ["ol__dingfuren"] = "丁尚涴",
   ["#ol__dingfuren"] = "我心匪席",
+  ["cv:ol__dingfuren"] = "闲踏梧桐",
+  ["designer:ol__dingfuren"] = "幽蝶化烬",
   ["ol__fudao"] = "抚悼",
   [":ol__fudao"] = "游戏开始时，你摸三张牌，交给一名其他角色至多三张牌，弃置任意张手牌，然后记录你的手牌数。每回合结束时，若当前回合角色的手牌数为此数值，你可以与其各摸一张牌。",
   ["ol__fengyan"] = "讽言",
