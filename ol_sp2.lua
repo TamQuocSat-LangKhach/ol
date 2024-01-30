@@ -2235,17 +2235,20 @@ local ol__zhouxuan = fk.CreateTriggerSkill{
   expand_pile = "zhanghe_xuan",
   events = {fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self) and player.phase == Player.Discard
+    return target == player and player:hasSkill(self) and player.phase == Player.Discard and
+    not player:isKongcheng() and #player:getPile("zhanghe_xuan") < 5
   end,
   on_cost = function(self, event, target, player, data)
-    local cards = player.room:askForCard(player, 1, 5, false, self.name, true, ".", "#ol__zhouxuan-invoke")
+    local x = 5 - #player:getPile("zhanghe_xuan")
+    local cards = player.room:askForCard(player, 1, x, false, self.name, true,
+    ".", "#ol__zhouxuan-invoke:::".. tostring(x))
     if #cards > 0 then
       self.cost_data = cards
       return true
     end
   end,
   on_use = function(self, event, target, player, data)
-    player:addToPile("zhanghe_xuan", self.cost_data, true, self.name)
+    player:addToPile("zhanghe_xuan", self.cost_data, false, self.name)
   end,
 }
 local ol__zhouxuan_trigger = fk.CreateTriggerSkill{
@@ -2304,10 +2307,11 @@ Fk:loadTranslationTable{
   ["#ol__zhanghe"] = "倾柱覆州",
   ["illustrator:ol__zhanghe"] = "君桓文化",
   ["ol__zhouxuan"] = "周旋",
-  [":ol__zhouxuan"] = "弃牌阶段开始时，你可将至多五张手牌置于武将牌上（称为“旋”），出牌阶段结束时，你移去所有“旋”。"..
-  "当你使用牌时，若你有“旋”，你摸一张牌，若你不是唯一手牌数最大的角色，则改为摸X张牌（X为“旋”的数量），然后随机移去一张“旋”。",
+  [":ol__zhouxuan"] = "弃牌阶段开始时，你可将任意张手牌扣置于武将牌上（均称为「旋」，至多五张）。"..
+  "出牌阶段结束时，你移去所有「旋」。当你使用牌时，若你有「旋」，你摸一张牌，"..
+  "若你不是唯一手牌数最大的角色，则改为摸X张牌（X为「旋」的数量），然后随机移去一张「旋」。",
   ["zhanghe_xuan"] = "旋",
-  ["#ol__zhouxuan-invoke"] = "你可以发动 周旋，将至多5张手牌置为“旋”",
+  ["#ol__zhouxuan-invoke"] = "你可以发动 周旋，将至多%arg张手牌置为「旋」",
 
   ["$ol__zhouxuan1"] = "详勘细察，洞若观火。",
   ["$ol__zhouxuan2"] = "知敌底细，方能百战百胜。",

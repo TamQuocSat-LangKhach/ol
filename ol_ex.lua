@@ -2676,18 +2676,25 @@ local ol_ex__luanwu = fk.CreateActiveSkill{
     room:doIndicate(player.id, table.map(targets, Util.IdMapper))
     for _, target in ipairs(targets) do
       if not target.dead then
-        local other_players = room:getOtherPlayers(target)
-        local luanwu_targets = table.map(table.filter(other_players, function(p2)
-          return table.every(other_players, function(p1)
-            return target:distanceTo(p1) >= target:distanceTo(p2)
-          end)
-        end), Util.IdMapper)
-        local use = room:askForUseCard(target, "slash", "slash", "#ol_ex__luanwu-use", true, { exclusive_targets = luanwu_targets})
-        if use then
-          use.extraUse = true
-          room:useCard(use)
-        else
+        if target:isRemoved() then
           room:loseHp(target, 1, self.name)
+        else
+          local other_players = table.filter(room.alive_players, function (p)
+            return p ~= target and not p:isRemoved()
+          end)
+          local luanwu_targets = table.map(table.filter(other_players, function(p2)
+            return table.every(other_players, function(p1)
+              return target:distanceTo(p1) >= target:distanceTo(p2)
+            end)
+          end), Util.IdMapper)
+          local use = room:askForUseCard(target, "slash", "slash", "#ol_ex__luanwu-use", true,
+          { exclusive_targets = luanwu_targets, bypass_times = true})
+          if use then
+            use.extraUse = true
+            room:useCard(use)
+          else
+            room:loseHp(target, 1, self.name)
+          end
         end
       end
     end
