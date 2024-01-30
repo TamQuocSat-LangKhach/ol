@@ -1,6 +1,7 @@
 local extension = Package("ol_sp2")
 extension.extensionName = "ol"
 local U = require "packages/utility/utility"
+local H = require "packages/hegemony/util"
 
 Fk:loadTranslationTable{
   ["ol_sp2"] = "OL专属2",
@@ -5617,63 +5618,12 @@ Fk:loadTranslationTable{
 }
 
 local godsunquan = General(extension, "godsunquan", "god", 4)
---[[
+local yuheng_skills = {
   -- OL original skills
   "ex__zhiheng", "dimeng", "anxu", "ol__bingyi", "shenxing",
   "xingxue", "anguo", "jiexun", "xiashu", "ol__hongyuan",
-  "lanjiang", "sp__youdi", "guanwei", "diaodu", "bizheng"
-]]
-local yuheng_skills = {
-  --standard
-  "keji", "xiaoji", "jieyin", "ex__zhiheng", "ex__yingzi", "ex__fanjian", "ex__guose", "qixi", "ex__jieyin",
-  --shzl
-  "tianyi", "yinghun", "haoshi", "dimeng", "jiang", "zhijian",
-  --sp
-  "hongyuan", "duanbing", "fenxun", "mumu", "tanhu", "yanxiao",
-  --yjcm
-  "xuanfeng", "pojun", "anxu", "gongqi", "anjian", "zhiyan", "danshou", "shenxing", "bingyi", "yanzhu", "anguo", "jishe", "ganlu",
-  "kuangbi", "zenhui", "lihuo",
-  --ol
-  "duwu", "canshi", "shanxi", "xiashu", "lianpian", "bizheng", "yidian", "lanjiang", "yuanchou", "ol__hongyuan", "ol__bingyi", "ol__mumu",
-  "xianbi", "ol__duanbing", "ol__fenxun", "hongde", "ol_ex__zhijian", "dingpan", "jinzhi", "qiaoli",
-  --mobile
-  "yingjian", "dujin", "chongjian", "mobile__shangyi", "mobile__diaodu", "yanji","m_ex__pojun", "m_ex__ganlu", "fenyin", "qinzheng",
-  "m_ex__anjian", "m_ex__zenhui", "m_ex__xuanfeng",
-  --mougong
-  "mou__kurou", "mou__guose", "mou__fanjian", "mou__qixi", "mou__zhaxiang", "mou__jiang", "mou__keji",
-  --mini
-  "mini__keji",
-  --tenyear
-  "xunxian", "guolun", "duanfa", "sp__youdi", "qinguo", "zhukou", "jinjian", "jingzao", "xinyou", "zhiren", "sibian", "boyan",
-  "guolun", "ty_ex__ganlu", "ty_ex__kuangbi", "ty_ex__gongqi", "m_ex__anjian", "ty_ex__bingyi","ty_ex__shenxing", "ty_ex__zhiyan",
-  "zigu", "zuowei", "ty__fenyin", "ty__canshi", "wanglu", "jiqiaos", "tongli", "shezang", "xiecui", "mingshil", "shuojian",
-  "ty_ex__zenhui", "ty_ex__xuanfeng", "ty_ex__lihuo",
-  --overseas
-  "os__yilie", "os__fenming", "os__shangyi", "os_ex__gongqi", "os_ex__lihuo",
-  --offline
-  "miaojian",
-  --wandian
-  "wd__kangyin", "wd__kenjian",
-  --jsrg
-  "duxing", "js__youjin", "js__dailao", "yaoyan",
+  "lanjiang", "sp__youdi", "guanwei", "ol__diaodu", "bizheng"
 }
----@param room Room
-local getYuhengSkills = function(room)
-  local mark = room:getTag("YuhengSkills")
-  if mark then
-    return mark
-  else
-    local all_skills = {}
-    for _, g in ipairs(room.general_pile) do
-      for _, s in ipairs(Fk.generals[g]:getSkillNameList()) do
-        table.insert(all_skills, s)
-      end
-    end
-    local skills = table.filter(yuheng_skills, function(s) return table.contains(all_skills, s) end)
-    room:setTag("YuhengSkills", skills)
-    return skills
-  end
-end
 local yuheng = fk.CreateTriggerSkill{
   name = "yuheng",
   anim_type = "special",
@@ -5702,7 +5652,7 @@ local yuheng = fk.CreateTriggerSkill{
       end
       room:throwCard(cards, self.name, player, player)
       if player.dead then return end
-      local skills = table.filter(getYuhengSkills(room), function (skill_name)
+      local skills = table.filter(yuheng_skills, function (skill_name)
         return not player:hasSkill(skill_name, true)
       end)
       if #skills == 0 then return false end
@@ -5738,6 +5688,63 @@ local yuheng_active = fk.CreateActiveSkill{
       return table.every(selected, function(id) return Fk:getCardById(to_select).suit ~= Fk:getCardById(id).suit end)
     end
   end,
+}
+local ol__diaodu = fk.CreateTriggerSkill{
+  name = "ol__diaodu",
+  anim_type = "drawcard",
+  events = {fk.CardUsing, fk.EventPhaseStart},
+  can_trigger = function(self, event, target, player, data)
+    if not player:hasSkill(self) then return false end
+    if event == fk.CardUsing then
+      if H.compareKingdomWith(target, player) and data.card.type == Card.TypeEquip then
+        local _event = player.room.logic:getEventsOfScope(GameEvent.UseCard, 1, function(e)
+          local use = e.data[1]
+          return use.card.type == Card.TypeEquip and H.compareKingdomWith(player.room:getPlayerById(use.from), player)
+        end, Player.HistoryTurn)
+        return #_event > 0 and _event[1].data[1] == data
+      end
+    else
+      return target == player and player.phase == Player.Play and table.find(player.room.alive_players, function(p)
+    return H.compareKingdomWith(p, player) and #p:getCardIds(Player.Equip) > 0 end) end
+  end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    if event == fk.CardUsing then
+      return room:askForSkillInvoke(target, self.name, nil, "#diaodu-invoke")
+    else
+      local targets = table.map(table.filter(room.alive_players, function(p)
+        return H.compareKingdomWith(p, player) and #p:getCardIds(Player.Equip) > 0 end), Util.IdMapper)
+      if #targets == 0 then return false end
+      local tos = room:askForChoosePlayers(player, targets, 1, 1, "#diaodu-choose", self.name, true)
+      if #tos > 0 then
+        self.cost_data = tos[1]
+        return true
+      end
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    if event == fk.CardUsing then
+      target:drawCards(1, self.name)
+    else
+      local room = player.room
+      local to = room:getPlayerById(self.cost_data)
+      local cid = room:askForCardChosen(player, to, "e", self.name)
+      room:obtainCard(player, cid, true, fk.ReasonPrey)
+      if not table.contains(player:getCardIds(Player.Hand), cid) then return end
+      local card = Fk:getCardById(cid)
+      local targets = table.filter(room.alive_players, function(p) return p ~= player and p ~= to end)
+      if #targets == 0 then return end
+      local tos = room:askForChoosePlayers(player, table.map(targets, Util.IdMapper), 1, 1, "#diaodu-give:::" .. card:toLogString(), self.name, target ~= player)
+      if #tos > 0 then
+        room:moveCardTo(card, Card.PlayerHand, room:getPlayerById(tos[1]), fk.ReasonGive, self.name, nil, true, player.id)
+      end
+    end
+  end,
+}
+Fk:addSkill(ol__diaodu)
+Fk:loadTranslationTable{
+  ["ol__diaodu"] = "调度",
+  [":ol__diaodu"] = "当每回合首次有与你势力相同的角色使用装备牌时，其可以摸一张牌。出牌阶段开始时，你可以获得与你势力相同的一名角色装备区里的一张牌，然后你可将此牌交给另一名角色。",
 }
 local dili = fk.CreateTriggerSkill{
   name = "dili",
@@ -5893,8 +5900,7 @@ Fk:loadTranslationTable{
   ["#godsunquan"] = "坐断东南",
   ["illustrator:godsunquan"] = "鬼画府",
   ["yuheng"] = "驭衡",
-  [":yuheng"] = "锁定技，回合开始时，你弃置任意张花色不同的牌，随机获得等量吴势力武将的技能。回合结束时，你失去以此法获得的技能，摸等量张牌。"..
-  "<br><font color='red'>村：“驭衡”技能池为多服扩充版，且不会出现房间禁卡",
+  [":yuheng"] = "锁定技，回合开始时，你弃置任意张花色不同的牌，随机获得等量吴势力武将的技能。回合结束时，你失去以此法获得的技能，摸等量张牌。",
   ["dili"] = "帝力",
   [":dili"] = "觉醒技，当你的技能数超过体力上限后，你减少1点体力上限，失去任意个其他技能并获得〖圣质〗〖权道〗〖持纲〗中的前等量个。",
   ["shengzhi"] = "圣质",
