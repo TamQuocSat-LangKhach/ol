@@ -2441,8 +2441,8 @@ local bolan_skills = {
   "os__jimeng", "os__beini", "os__yuejian", "os__waishi", "os__weipo", "os__shangyi", "os__jinglue", "os__zhanyi", "os__daoji",
   "os_ex__gongqi", "os__gongxin", "os__zhuidu", "os__danlie",
   --tenyear
-  "guolun", "kuiji", "ty__jianji", "caizhuang", "xinyou", "tanbei", "lveming", "ty__songshu", "ty__mouzhu", "libang", "nuchen",
-  "weiwu", "ty__qingcheng", "ty__jianshu", "qiangzhiz", "ty__fenglve", "boyan", "jianguo", "ty_ex__mingce", "ty_ex__anxu",
+  "guolun", "kuiji", "ty__jianji", "caizhuang", "xinyou", "tanbei", "lueming", "ty__songshu", "ty__mouzhu", "libang", "nuchen",
+  "weiwu", "ty__qingcheng", "ty__jianshu", "qiangzhiz", "ty__fenglue", "boyan", "jianguo", "ty_ex__mingce", "ty_ex__anxu",
   "ty_ex__mingjian", "ty_ex__quji", "jianzheng", "ty_ex__jixu", "ty__kuangfu", "yingshui", "weimeng", "tunan", "ty_ex__ganlu",
   "ty_ex__gongqi",
   --jsrg
