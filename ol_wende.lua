@@ -2701,9 +2701,13 @@ local xiongshu = fk.CreateTriggerSkill{
   end,
   on_cost = function(self, event, target, player, data)
     local n = player:usedSkillTimes(self.name, Player.HistoryRound)
-    if #player:getCardIds("he") <= n then
-      self.cost_data = nil
+    local all = table.filter(player:getCardIds("he"), function(id) return not player:prohibitDiscard(Fk:getCardById(id)) end)
+    if n == 0 then
+      self.cost_data = {}
       return player.room:askForSkillInvoke(player, self.name, nil, "#xiongshu-invoke::"..target.id)
+    elseif #all <= n then
+      self.cost_data = all
+      return player.room:askForSkillInvoke(player, self.name, nil, "#xiongshu-throwall::"..target.id)
     else
       local cards = player.room:askForDiscard(player, n, n, true, self.name, true, ".", "#xiongshu-cost::"..target.id..":"..n, true)
       if #cards == n then
@@ -2714,9 +2718,9 @@ local xiongshu = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local cards = self.cost_data or player:getCardIds("he")
+    local cards = self.cost_data
     room:throwCard(cards, self.name, player, player)
-    if player.dead then return end
+    if player.dead or target.dead or target:isKongcheng() then return end
     local id = room:askForCardChosen(player, target, "h", self.name)
     target:showCards({id})
     local name = Fk:getCardById(id).trueName
@@ -2729,19 +2733,19 @@ local xiongshu_delay = fk.CreateTriggerSkill{
   mute = true,
   events = {fk.EventPhaseEnd},
   can_trigger = function(self, event, target, player, data)
-    return not target.dead and player:getMark("xiongshu-phase") ~= 0
+    return not target.dead and type(player:getMark("xiongshu-phase")) == "table"
   end,
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     local room = player.room
     player:broadcastSkillInvoke("xiongshu")
-    local id, name, choice = table.unpack(U.getMark(player, "xiongshu-phase"))
+    local id, name, choice = table.unpack(player:getMark("xiongshu-phase"))
     local used = "no"
     if #player.room.logic:getEventsOfScope(GameEvent.UseCard, 1, function(e)
       local use = e.data[1]
       return use.from == target.id and use.card.trueName == name
     end, Player.HistoryPhase) > 0 then
-      used = "yse"
+      used = "yes"
     end
     if choice == used then
       room:damage{
@@ -2750,7 +2754,7 @@ local xiongshu_delay = fk.CreateTriggerSkill{
         damage = 1,
         skillName = "xiongshu",
       }
-    elseif table.contains(target:getCardIds("he"), id) then
+    elseif table.contains(target:getCardIds("hej"), id) or room:getCardArea(id) == Card.DiscardPile or room:getCardArea(id) == Card.DrawPile then
       room:obtainCard(player, id, true, fk.ReasonPrey)
     end
   end,
@@ -2805,8 +2809,9 @@ Fk:loadTranslationTable{
   ["jianhui"] = "奸回",
   [":jianhui"] = "锁定技，你记录上次对你造成伤害的角色。当你对其造成伤害后，你摸一张牌；当你受到其造成的伤害后，其弃置一张牌。",
   ["#xiongshu_delay"] = "凶竖",
-  ["#xiongshu-invoke"] = "凶竖：你可以弃置所有牌，展示 %dest 的一张手牌",
+  ["#xiongshu-invoke"] = "凶竖：你可以展示 %dest 的一张手牌",
   ["#xiongshu-cost"] = "凶竖：你可以弃置 %arg 张牌，展示 %dest 一张手牌",
+  ["#xiongshu-throwall"] = "凶竖：你可以弃置所有牌，展示 %dest 一张手牌",
   ["#xiongshu-choice"] = "凶竖：猜测 %dest 本阶段是否会使用 %arg",
   ["yes"] = "是",
   ["no"] = "否",
