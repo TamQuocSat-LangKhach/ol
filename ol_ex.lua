@@ -1630,7 +1630,7 @@ local hanzhan = fk.CreateTriggerSkill{
         local cardB = Fk:getCardById(data.toCard:getEffectiveId())
         local cards = {}
         if cardA.trueName == "slash" then
-          table.insert(cards, cardA.id)
+          cards = {cardA.id}
         end
         if cardB.trueName == "slash" then
           if cardA.trueName == "slash" then
@@ -1639,6 +1639,8 @@ local hanzhan = fk.CreateTriggerSkill{
             elseif cardA.number < cardB.number then
               cards = {cardB.id}
             end
+          else
+            cards = {cardB.id}
           end
         end
         cards = table.filter(cards, function (id)
