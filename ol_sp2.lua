@@ -5173,43 +5173,47 @@ local qingyix = fk.CreateActiveSkill{
     room:setPlayerMark(player, "qingyi-turn", mark)
   end,
 }
-local qingyix_record = fk.CreateTriggerSkill{
-  name = "#qingyix_record",
+local qingyix_delay = fk.CreateTriggerSkill{
+  name = "#qingyix_delay",
   anim_type = "drawcard",
   events = {fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self) and player.phase == Player.Finish
-    and table.find(U.getMark(player, "qingyi-turn"), function(id) return player.room:getCardArea(id) == Card.DiscardPile end)
+    if target == player and player:hasSkill(self) and player.phase == Player.Finish then
+      local cards = table.filter(U.getMark(player, "qingyi-turn"), function(id) return player.room:getCardArea(id) == Card.DiscardPile end)
+      local red,black = {},{}
+      for _, id in ipairs(cards) do
+        if Fk:getCardById(id).color == Card.Red then
+          table.insert(red, id)
+        elseif Fk:getCardById(id).color == Card.Black then
+          table.insert(black, id)
+        end
+      end
+      if #red > 0 and #black > 0 then
+        self.cost_data = {red,black}
+        return true
+      end
+    end
   end,
   on_cost = function (self, event, target, player, data)
     return player.room:askForSkillInvoke(player, "qingyi", nil, "#qingyi_get-invoke")
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local cards = table.filter(U.getMark(player, "qingyi-turn"), function(id) return room:getCardArea(id) == Card.DiscardPile end)
-    local cardsMap = {}
-    for _, id in ipairs(cards) do
-      local color = Fk:getCardById(id):getColorString()
-      cardsMap[color] = cardsMap[color] or {}
-      table.insert(cardsMap[color], id)
-    end
     local get = {}
-    for _, c in pairs(cardsMap) do
+    for _, c in ipairs(self.cost_data) do
       local chosen = room:askForCardChosen(player, player, { card_data = { { "$Prey", c }  } }, self.name, "#qingyi-get")
       table.insert(get, chosen)
     end
-    if #get > 0 then
-      local dummy = Fk:cloneCard("dilu")
-      dummy:addSubcards(get)
-      room:obtainCard(player.id, dummy, true, fk.ReasonPrey)
-    end
+    local dummy = Fk:cloneCard("dilu")
+    dummy:addSubcards(get)
+    room:obtainCard(player, dummy, true, fk.ReasonPrey)
   end,
 }
 local zeyue = fk.CreateTriggerSkill{
   name = "zeyue",
   anim_type = "control",
   frequency = Skill.Limited,
-  events ={fk.EventPhaseStart},
+  events = {fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(self) and player.phase == Player.Start and
       player:usedSkillTimes(self.name, Player.HistoryGame) == 0 and player.tag[self.name] and #player.tag[self.name] > 0
@@ -5309,7 +5313,7 @@ local zeyue_record = fk.CreateTriggerSkill{
     end
   end,
 }
-qingyix:addRelatedSkill(qingyix_record)
+qingyix:addRelatedSkill(qingyix_delay)
 zeyue:addRelatedSkill(zeyue_record)
 xiahouxuan:addSkill(huanfu)
 xiahouxuan:addSkill(qingyix)
@@ -5322,7 +5326,7 @@ Fk:loadTranslationTable{
   [":huanfu"] = "当你使用【杀】指定目标或成为【杀】的目标后，你可以弃置任意张牌（至多为你的体力上限），若此【杀】对目标角色造成的伤害值为弃牌数，"..
   "你摸弃牌数两倍的牌。",
   ["qingyix"] = "清议",
-  [":qingyix"] = "出牌阶段限一次，你可以与至多两名有牌的其他角色同时弃置一张牌，若类型相同，你可以重复此流程。结束阶段，你可以获得其中颜色不同的牌各一张。",
+  [":qingyix"] = "出牌阶段限一次，你可以与至多两名有牌的其他角色同时弃置一张牌，若类型相同，你可以重复此流程。若以此法弃置了两种颜色的牌，结束阶段，你可以获得其中颜色不同的牌各一张。",
   ["zeyue"] = "迮阅",
   [":zeyue"] = "限定技，准备阶段，你可以令一名你上个回合结束后（首轮为游戏开始后）对你造成过伤害的其他角色失去武将牌上一个技能（锁定技、觉醒技、限定技除外）。"..
   "每轮结束时，其视为对你使用X张【杀】（X为其已失去此技能的轮数），若此【杀】造成伤害，其获得以此法失去的技能。",
@@ -5331,7 +5335,7 @@ Fk:loadTranslationTable{
   ["#qingyi-invoke"] = "清议：是否继续发动“清议”？",
   ["#qingyi_get-invoke"] = "是否获得因“清议”弃置的牌中每颜色各一张？",
   ["#qingyi-get"] = "清议：选择一张获得",
-  ["#qingyix_record"] = "清议",
+  ["#qingyix_delay"] = "清议",
   ["#zeyue-choose"] = "迮阅：你可以令一名角色失去一个技能，其每轮视为对你使用【杀】，造成伤害后恢复失去的技能",
   ["#zeyue-choice"] = "迮阅：选择令 %dest 失去的一个技能",
   ["#zeyue_record"] = "迮阅",

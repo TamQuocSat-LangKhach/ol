@@ -62,6 +62,8 @@ local ol_ex__xuanfeng = fk.CreateTriggerSkill{
 lingtong:addSkill(ol_ex__xuanfeng)
 Fk:loadTranslationTable{
   ["ol_ex__lingtong"] = "界凌统",
+  ["#ol_ex__lingtong"] = "豪情烈胆",
+  ["illustrator:ol_ex__lingtong"] = "君桓文化",
   ["ol_ex__xuanfeng"] = "旋风",
   [":ol_ex__xuanfeng"] = "当你失去装备区里的牌后，或一次性失去至少两张牌后，你可以依次弃置至多两名其他角色共计至多两张牌。",
 
@@ -144,6 +146,8 @@ ol_ex__caozhang:addSkill(ol_ex__jiangchi)
 
 Fk:loadTranslationTable{
   ["ol_ex__caozhang"] = "界曹彰",
+  ["#ol_ex__caozhang"] = "黄须儿",
+  ["illustrator:ol_ex__caozhang"] = "枭瞳",
   ["ol_ex__jiangchi"] = "将驰",
   [":ol_ex__jiangchi"] = "摸牌阶段结束时，你可以选择一项：1.摸一张牌，本回合使用【杀】的次数上限-1，且【杀】不计入手牌上限；2.重铸一张牌，本回合使用【杀】无距离限制且次数上限+1。",
   ["#ol_ex__jiangchi-invoke"] = "1.摸一张牌，【杀】次数-1，不计入手牌上限；2.重铸一张牌，【杀】次数+1，无距离限制",

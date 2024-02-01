@@ -103,6 +103,7 @@ lvmeng:addSkill(ol_ex__botu)
 lvmeng:addRelatedSkill("gongxin")
 Fk:loadTranslationTable{
   ["ol_ex__lvmeng"] = "界吕蒙",
+  ["#ol_ex__lvmeng"] = "士别三日",
   ["ol_ex__qinxue"] = "勤学",
   [":ol_ex__qinxue"] = "觉醒技，准备阶段或结束阶段，若你的手牌数比体力值多2或更多，你减1点体力上限，回复1点体力或摸两张牌，然后获得技能〖攻心〗。",
   ["ol_ex__botu"] = "博图",
@@ -441,6 +442,8 @@ ol_ex__liegong:addRelatedSkill(ol_ex__liegong_targetmod)
 huangzhong:addSkill(ol_ex__liegong)
 Fk:loadTranslationTable{
   ["ol_ex__huangzhong"] = "界黄忠",
+  ["#ol_ex__huangzhong"] = "老当益壮",
+  ["illustrator:ol_ex__huangzhong"] = "匠人绘",
   ["ol_ex__liegong"] = "烈弓",
   [":ol_ex__liegong"] = "①你对至其距离不大于此【杀】点数的角色使用【杀】无距离关系的限制。②当你使用【杀】指定一个目标后，你可执行：1.若其手牌数不大于你，此【杀】不能被此目标抵消；2.若其体力值不小于你，此【杀】对此目标的伤害值基数+1。",
 
@@ -1223,6 +1226,7 @@ dianwei:addSkill(ol_ex__ninge)
 
 Fk:loadTranslationTable{
   ["ol_ex__dianwei"] = "界典韦",
+  ["#ol_ex__dianwei"] = "古之恶来",
   ["ol_ex__qiangxi"] = "强袭",
   [":ol_ex__qiangxi"] = "出牌阶段限两次，你可受到1点普通伤害或弃置一张武器牌并选择一名于此阶段内未选择过的其他角色，你对其造成1点普通伤害。",
   ["ol_ex__ninge"] = "狞恶",
@@ -1284,6 +1288,8 @@ xunyu:addSkill("quhu")
 xunyu:addSkill(ol_ex__jieming)
 Fk:loadTranslationTable{
   ["ol_ex__xunyu"] = "界荀彧",
+  ["#ol_ex__xunyu"] = "王佐之才",
+  ["illustrator:ol_ex__xunyu"] = "罔両",
   ["ol_ex__jieming"] = "节命",
   [":ol_ex__jieming"] = "当你受到1点伤害后或当你死亡时，你可令一名角色摸X张牌，其将手牌弃置至X张。（X为其体力上限且至多为5）",
   ["#ol_ex__jieming-choose"] = "节命：你可以令一名角色摸X张牌并将手牌弃至X张（X为其体力上限且至多为5）",
@@ -1450,6 +1456,8 @@ wolong:addSkill(cangzhuo)
 
 Fk:loadTranslationTable{
   ["ol_ex__wolong"] = "界卧龙诸葛亮",
+  ["#ol_ex__wolong"] = "卧龙",
+  ["illustrator:ol_ex__wolong"] = "李秀森",
   ["ol_ex__huoji"] = "火计",
   [":ol_ex__huoji"] = "①你可以将一张红色牌转化为【火攻】使用。"..
   "②你使用的【火攻】的作用效果改为：目标角色随机展示一张手牌，然后你可以弃置一张与此牌颜色相同的手牌对其造成1点火焰伤害。",
@@ -1573,6 +1581,8 @@ pangtong:addRelatedSkill("ol_ex__kanpo")
 
 Fk:loadTranslationTable{
   ["ol_ex__pangtong"] = "界庞统",
+  ["#ol_ex__pangtong"] = "凤雏",
+  ["illustrator:ol_ex__pangtong"] = "MUMU",
   ["ol_ex__lianhuan"] = "连环",
   [":ol_ex__lianhuan"] = "①出牌阶段，你可选择：1.将一张♣牌转化为【铁索连环】使用；2.重铸一张♣牌。"..
   "②当【铁索连环】选择目标后，若使用者为你，你可令一名角色也成为此牌的目标。",
@@ -1666,6 +1676,8 @@ taishici:addSkill(hanzhan)
 
 Fk:loadTranslationTable{
   ["ol_ex__taishici"] = "界太史慈",
+  ["#ol_ex__taishici"] = "笃烈之士",
+  ["illustrator:ol_ex__taishici"] = "biou09",
   ["hanzhan"] = "酣战",
   [":hanzhan"] = "当你与其他角色拼点，或其他角色与你拼点时，你可令其改为用随机一张手牌拼点，你拼点后，你可获得其中点数最大的【杀】。",
 
@@ -1711,6 +1723,8 @@ pangde:addSkill("mashu")
 pangde:addSkill(ol_ex__jianchu)
 Fk:loadTranslationTable{
   ["ol_ex__pangde"] = "界庞德",
+  ["#ol_ex__pangde"] = "人马一体",
+  ["illustrator:ol_ex__pangde"] = "YanBai",
   ["ol_ex__jianchu"] = "鞬出",
   [":ol_ex__jianchu"] = "当你使用【杀】指定一个目标后，你可弃置其一张牌，若此牌：为基本牌，其获得此【杀】；不为基本牌，此【杀】不能被此目标抵消，你于此阶段内使用【杀】的次数上限+1。",
 
@@ -1827,6 +1841,8 @@ local yanliangwenchou = General(extension, "ol_ex__yanliangwenchou", "qun", 4)
 yanliangwenchou:addSkill(ol_ex__shuangxiong)
 Fk:loadTranslationTable{
   ["ol_ex__yanliangwenchou"] = "界颜良文丑",
+  ["#ol_ex__yanliangwenchou"] = "虎狼兄弟",
+  ["illustrator:ol_ex__yanliangwenchou"] = "梦回唐朝",
   ["ol_ex__shuangxiong"] = "双雄",
   ["#ol_ex__shuangxiong_trigger"] = "双雄",
   [":ol_ex__shuangxiong"] = "①摸牌阶段结束时，你可弃置一张牌，你于此回合内可以将一张与此牌颜色不同的牌转化为【决斗】使用。②（你记录所有于回合内对你造成过伤害的牌直到回合结束）结束阶段，你获得弃牌堆中你记录的牌。",
@@ -1938,6 +1954,8 @@ yuanshao:addSkill(ol_ex__luanji)
 yuanshao:addSkill(ol_ex__xueyi)
 Fk:loadTranslationTable{
   ["ol_ex__yuanshao"] = "界袁绍",
+  ["#ol_ex__yuanshao"] = "高贵的名门",
+  ["illustrator:ol_ex__yuanshao"] = "罔両",
   ["ol_ex__luanji"] = "乱击",
   [":ol_ex__luanji"] = "①你可以将两张花色相同的手牌转化为【万箭齐发】使用。②当你使用【万箭齐发】选择目标后，你可取消其中一个目标。",
   ["ol_ex__xueyi"] = "血裔",
