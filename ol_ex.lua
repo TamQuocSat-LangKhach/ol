@@ -167,6 +167,9 @@ huaxiong:addSkill(ol_ex__yaowu)
 huaxiong:addSkill(ol_ex__shizhan)
 Fk:loadTranslationTable{
   ["ol_ex__huaxiong"] = "界华雄",
+  ["#ol_ex__huaxiong"] = "飞扬跋扈",
+  ["designer:ol_ex__huaxiong"] = "玄蝶既白",
+  ["illustrator:ol_ex__huaxiong"] = "秋呆呆",
   ["ol_ex__yaowu"] = "耀武",
   [":ol_ex__yaowu"] = "锁定技，当你受到牌造成的伤害时，若造成伤害的牌：为红色，伤害来源摸一张牌；不为红色，你摸一张牌。",
   ["ol_ex__shizhan"] = "势斩",
@@ -267,6 +270,8 @@ xiahouyuan:addSkill(ol_ex__shensu)
 xiahouyuan:addSkill(ol_ex__shebian)
 Fk:loadTranslationTable{
   ["ol_ex__xiahouyuan"] = "界夏侯渊",
+  ["#ol_ex__xiahouyuan"] = "疾行的猎豹",
+  ["illustrator:ol_ex__xiahouyuan"] = "李秀森",
   ["ol_ex__shensu"] = "神速",
   [":ol_ex__shensu"] = "①判定阶段开始前，你可跳过此阶段和摸牌阶段来视为使用普【杀】。②出牌阶段开始前，你可跳过此阶段并弃置一张装备牌来视为使用普【杀】。③弃牌阶段开始前，你可跳过此阶段并翻面来视为使用普【杀】。",
   ["ol_ex__shebian"] = "设变",
@@ -3156,6 +3161,57 @@ local ol_ex__ruoyu = fk.CreateTriggerSkill{
     room:handleAddLoseSkills(player, "jijiang|ol_ex__sishu", nil, true, false)
   end,
 }
+local indulgenceSkill = fk.CreateActiveSkill{
+  name = "trans__indulgence_skill",
+  mod_target_filter = function(self, to_select, selected, user, card)
+    return user ~= to_select
+  end,
+  target_filter = function(self, to_select, selected, _, card)
+    return #selected == 0 and self:modTargetFilter(to_select, selected, Self.id, card)
+  end,
+  target_num = 1,
+  on_effect = function(self, room, effect)
+    local to = room:getPlayerById(effect.to)
+    local judge = {
+      who = to,
+      reason = "indulgence",
+      pattern = ".|.|heart",
+    }
+    room:judge(judge)
+    local result = judge.card
+    if result.suit == Card.Heart then
+      to:skip(Player.Play)
+    end
+    self:onNullified(room, effect)
+  end,
+  on_nullified = function(self, room, effect)
+    room:moveCards{
+      ids = room:getSubcardsByRule(effect.card, { Card.Processing }),
+      toArea = Card.DiscardPile,
+      moveReason = fk.ReasonUse
+    }
+  end,
+}
+Fk:addSkill(indulgenceSkill)
+local ol_ex__sishu_buff = fk.CreateTriggerSkill{
+  name = "#ol_ex__sishu_buff",
+  events = {fk.CardEffecting},
+  mute = true,
+  can_trigger = function(self, event, target, player, data)
+    return player:getMark("@@ol_ex__sishu_effect") > 0 and target == player and data.card.trueName == "indulgence"
+  end,
+  on_cost = Util.TrueFunc,
+  on_use = function(self, event, target, player, data)
+    local card = data.card:clone()
+    local c = table.simpleClone(data.card)
+    for k, v in pairs(c) do
+      card[k] = v
+    end
+    local ogri_skill = Fk.skills["indulgence_skill"]
+    card.skill = (card.skill == ogri_skill) and indulgenceSkill or ogri_skill
+    data.card = card
+  end,
+}
 local ol_ex__sishu = fk.CreateTriggerSkill{
   name = "ol_ex__sishu",
   events = {fk.EventPhaseStart},
@@ -3183,20 +3239,25 @@ liushan:addSkill("xiangle")
 liushan:addSkill(ol_ex__fangquan)
 liushan:addSkill(ol_ex__ruoyu)
 liushan:addRelatedSkill("jijiang")
+ol_ex__sishu:addRelatedSkill(ol_ex__sishu_buff)
 liushan:addRelatedSkill(ol_ex__sishu)
 Fk:loadTranslationTable{
   ["ol_ex__liushan"] = "界刘禅",
+  ["#ol_ex__liushan"] = "无为的真命主",
+  ["illustrator:ol_ex__liushan"] = "拉布拉卡",
   ["ol_ex__fangquan"] = "放权",
   ["#ol_ex__fangquan_delay"] = "放权",
   [":ol_ex__fangquan"] = "出牌阶段开始前，你可跳过此阶段，然后弃牌阶段开始时，你可弃置一张手牌并选择一名其他角色，其获得一个额外回合。",
   ["ol_ex__ruoyu"] = "若愚",
   [":ol_ex__ruoyu"] = "主公技，觉醒技，准备阶段，若你是体力值最小的角色，你加1点体力上限，回复体力至3点，获得〖激将〗（暂时为标准版）和〖思蜀〗（暂时无法正常适用）。",
   ["ol_ex__sishu"] = "思蜀",
-  [":ol_ex__sishu"] = "出牌阶段开始时，你可选择一名角色，其本局游戏【乐不思蜀】的判定结果反转（暂时无法正常适用）。",
+  [":ol_ex__sishu"] = "出牌阶段开始时，你可选择一名角色，其本局游戏【乐不思蜀】的判定结果反转。",
 
   ["#ol_ex__fangquan-choose"] = "放权：弃置一张手牌，令一名角色获得一个额外回合",
   ["#ol_ex__sishu-choose"] = "思蜀：选择一名角色，令其本局游戏【乐不思蜀】的判定结果反转",
   ["@@ol_ex__sishu_effect"] = "思蜀",
+  ["#ol_ex__sishu_buff"] = "思蜀",
+  ["trans__indulgence_skill"] = "乐不思蜀",
 
   ["$xiangle_ol_ex__liushan1"] = "美好的日子，应该好好享受。",
   ["$xiangle_ol_ex__liushan2"] = "嘿嘿嘿，还是玩耍快乐。",
