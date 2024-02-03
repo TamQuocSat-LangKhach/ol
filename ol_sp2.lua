@@ -5761,7 +5761,7 @@ local dili = fk.CreateTriggerSkill{
   frequency = Skill.Wake,
   can_trigger = function(self, event, target, player, data)
     return player:hasSkill(self) and player:usedSkillTimes(self.name, Player.HistoryGame) == 0 and
-      player.room.logic:getCurrentEvent() ~= nil
+    player.room:getTag("RoundCount")
   end,
   can_wake = function(self, event, target, player, data)
     local n = 0
@@ -5806,8 +5806,11 @@ local shengzhi = fk.CreateTriggerSkill{
   frequency = Skill.Compulsory,
   events = {fk.AfterSkillEffect},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self) and not data.cardSkill and data.frequency ~= Skill.Compulsory and
-      data.frequency ~= Skill.Wake and not data.attached_equip and data.name[#data.name] ~= "&"
+    return target == player and player:hasSkill(self) and not data.cardSkill and
+    data.frequency ~= Skill.Compulsory and data.frequency ~= Skill.Wake and
+    not data.attached_equip and data.name[#data.name] ~= "&"
+    --FIXME："&"后缀技需要能区分规则技和其他角色发动的主动技
+    --FIXME：重量级发动技能后的技能，转化类的技能根本没有办法判定
   end,
   on_use = function(self, event, target, player, data)
     player.room:setPlayerMark(player, "@@shengzhi-turn", 1)
