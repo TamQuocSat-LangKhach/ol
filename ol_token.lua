@@ -925,14 +925,13 @@ local py_mirror_skill = fk.CreateTriggerSkill{
     local card = Fk:cloneCard(Fk:getCardById(show).name)
     card.skillName = self.name
     local canUse = false
-    room:addPlayerMark(player, "BypassTimesLimit")
-    if player:canUse(card) and not player:prohibitUse(card) then canUse = true end
+    local extra_data = { bypass_times = true }
+    if player:canUse(card, extra_data) and not player:prohibitUse(card) then canUse = true end
     local dat
     if canUse then
       room:setPlayerMark(player, "py_mirror_name",card.name)
-      _, dat = player.room:askForUseViewAsSkill(player, "py_mirror_viewas", "#py_mirror-use:::"..card.name, true)
+      _, dat = player.room:askForUseViewAsSkill(player, "py_mirror_viewas", "#py_mirror-use:::"..card.name, true, extra_data)
     end
-    room:removePlayerMark(player, "BypassTimesLimit")
     if dat then
       room:useCard{
         from = player.id,

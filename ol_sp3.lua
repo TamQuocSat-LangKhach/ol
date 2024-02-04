@@ -158,26 +158,20 @@ local xiaosi = fk.CreateActiveSkill{
         player:drawCards(1, self.name)
       end
     end
+    local extra_data = {bypass_times = true, bypass_distances = true}
     while not player.dead do
       local ids = {}
-      room:setPlayerMark(player, MarkEnum.BypassTimesLimit.."-tmp", 1)
-      room:setPlayerMark(player, MarkEnum.BypassDistancesLimit.."-tmp", 1)
       for _, id in ipairs(cards) do
         local card = Fk:getCardById(id)
-        if room:getCardArea(card) == Card.DiscardPile and not player:prohibitUse(card) and player:canUse(card) then
+        if room:getCardArea(card) == Card.DiscardPile and
+        not player:prohibitUse(card) and player:canUse(card, extra_data) then
           table.insertIfNeed(ids, id)
         end
       end
-      if #ids == 0 then
-        room:setPlayerMark(player, MarkEnum.BypassTimesLimit.."-tmp", 0)
-        room:setPlayerMark(player, MarkEnum.BypassDistancesLimit.."-tmp", 0)
-        return false
-      end
+      if #ids == 0 then return false end
       room:setPlayerMark(player, "xiaosi_cards", ids)
-      local success, dat = room:askForUseActiveSkill(player, "xiaosi_viewas", "#xiaosi-use", true)
+      local success, dat = room:askForUseActiveSkill(player, "xiaosi_viewas", "#xiaosi-use", true, extra_data)
       room:setPlayerMark(player, "xiaosi_cards", 0)
-      room:setPlayerMark(player, MarkEnum.BypassTimesLimit.."-tmp", 0)
-      room:setPlayerMark(player, MarkEnum.BypassDistancesLimit.."-tmp", 0)
 
       if success then
         table.removeOne(cards, dat.cards[1])
@@ -2587,26 +2581,20 @@ Fk:loadTranslationTable{
 local duanjiong = General(extension, "duanjiong", "qun", 4)
 local function DoSaogu(player, cards)
   local room = player.room
+  local extra_data = { bypass_times = true }
   while not player.dead do
-    room:setPlayerMark(player, MarkEnum.BypassTimesLimit .. "-tmp", 1)
     local ids = {}
     for _, id in ipairs(cards) do
       local card = Fk:getCardById(id)
       if card.trueName == "slash" and room:getCardArea(card) == Card.DiscardPile and
-        not player:prohibitUse(card) and player:canUse(card) then
+        not player:prohibitUse(card) and player:canUse(card, extra_data) then
         table.insertIfNeed(ids, id)
       end
     end
-    if #ids == 0 then
-      room:setPlayerMark(player, MarkEnum.BypassTimesLimit .. "-tmp", 0)
-      return
-    end
-
+    if #ids == 0 then return end
     room:setPlayerMark(player, "saogu_cards", ids)
-    local success, dat = room:askForUseActiveSkill(player, "saogu_viewas", "#saogu-use", true)
+    local success, dat = room:askForUseActiveSkill(player, "saogu_viewas", "#saogu-use", true, extra_data)
     room:setPlayerMark(player, "saogu_cards", 0)
-    room:setPlayerMark(player, MarkEnum.BypassTimesLimit .. "-tmp", 0)
-
     if success then
       table.removeOne(cards, dat.cards[1])
       room:useCard{
@@ -4177,60 +4165,10 @@ local hezhong_trigger = fk.CreateTriggerSkill{
       room:setPlayerMark(player, "hezhong2used-turn", 1)
     end
     updataHezhongMark(player)
-    data.extra_data = data.extra_data or {}
-    data.extra_data.hezhong = (data.extra_data.hezhong or 0) + n
-  end,
-}
-local hezhong_delay = fk.CreateTriggerSkill{
-  name = "#hezhong_delay",
-  mute = true,
-  events = {fk.CardUseFinished},
-  can_trigger = function(self, event, target, player, data)
-    return target == player and data.extra_data and data.extra_data.hezhong and
-      data.extra_data.hezhong > 0
-  end,
-  on_cost = Util.TrueFunc,
-  on_use = function(self, event, target, player, data)
-    local room = player.room
-    local num = data.extra_data.hezhong
-    for _ = 1, num do
-      if data.card.name == "amazing_grace" then --- FIXME: stupid amazing_grace
-        local tos = table.filter(TargetGroup:getRealTargets(data.tos), function(pid)
-          return not room:getPlayerById(pid).dead
-        end)
-        if #tos == 0 then return end
-        local toDisplay = room:getNCards(#tos)
-        room:moveCards({
-          ids = toDisplay,
-          toArea = Card.Processing,
-          moveReason = fk.ReasonPut,
-        })
-        table.forEach(room.players, function(p) room:fillAG(p, toDisplay) end)
-        data.extra_data = data.extra_data or {}
-        data.extra_data.AGFilled = toDisplay
-
-        room:doCardUseEffect(data)
-
-        table.forEach(room.players, function(p) room:closeAG(p) end)
-        if data.extra_data and data.extra_data.AGFilled then
-          local toDiscard = table.filter(data.extra_data.AGFilled, function(id) return room:getCardArea(id) == Card.Processing end)
-          if #toDiscard > 0 then
-            room:moveCards({
-              ids = toDiscard,
-              toArea = Card.DiscardPile,
-              moveReason = fk.ReasonPutIntoDiscardPile,
-            })
-          end
-        end
-        data.extra_data.AGFilled = nil
-      else
-        room:doCardUseEffect(data)
-      end
-    end
+    data.additionalEffect = (data.additionalEffect or 0) + n
   end,
 }
 hezhong:addRelatedSkill(hezhong_trigger)
-hezhong:addRelatedSkill(hezhong_delay)
 feiyi:addSkill(yanru)
 feiyi:addSkill(hezhong)
 Fk:loadTranslationTable{
@@ -4241,7 +4179,7 @@ Fk:loadTranslationTable{
   [":yanru"] = "出牌阶段各限一次，若你的手牌数为：奇数，你可以摸三张牌，然后弃置至少半数手牌；偶数，你可以弃置至少半数手牌，然后摸三张牌。",
   ["hezhong"] = "和衷",
   [":hezhong"] = "每回合各限一次，当你的手牌数变为1后，你可以展示之并摸一张牌，然后本回合你使用的下一张点数大于/小于此牌点数的普通锦囊牌多结算一次。",
-  --FIXME: 真是服了这nt蝶描述，心变佬有兴趣就改叭
+
   ["#yanru1"] = "晏如：你可以摸三张牌，然后弃置至少半数手牌",
   ["#yanru2"] = "晏如：你可以弃置至少%arg张手牌，然后摸三张牌",
   ["#yanru-discard"] = "晏如：请弃置至少%arg张手牌",
@@ -4249,7 +4187,6 @@ Fk:loadTranslationTable{
   ["hezhong1"] = "大于",
   ["hezhong2"] = "小于",
   ["@hezhong-turn"] = "和衷",
-  ["#hezhong_delay"] = "和衷",
   
   ["$yanru1"] = "国有宁日，民有丰年，大同也。",
   ["$yanru2"] = "及臻厥成，天下晏如也。",

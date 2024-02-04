@@ -234,7 +234,7 @@ local shenjun_viewas = fk.CreateViewAsSkill{
     local names = {}
     for _, id in ipairs(Self:getMark("@$shenjun")) do
       local name = Fk:getCardById(id, true).name
-      if Self:canUse(Fk:cloneCard(name)) then
+      if Self:canUse(Fk:cloneCard(name), { bypass_times = true }) then
         table.insertIfNeed(names, name)
       end
     end
@@ -272,10 +272,8 @@ local shenjun = fk.CreateTriggerSkill{
       return true
     else
       local room = player.room
-      room:setPlayerMark(player, MarkEnum.BypassTimesLimit.."-tmp", 1)
       local success, dat = room:askForUseActiveSkill(player, "shenjun_viewas",
-      "#shenjun-invoke:::"..#player:getMark("@$shenjun"), true)
-      room:setPlayerMark(player, MarkEnum.BypassTimesLimit.."-tmp", 0)
+      "#shenjun-invoke:::"..#player:getMark("@$shenjun"), true, { bypass_times = true })
       if success then
         self.cost_data = dat
         return true
@@ -1050,21 +1048,18 @@ local liuju = fk.CreateTriggerSkill{
     local ids = {}
     table.insert(ids, pindian.fromCard:getEffectiveId())
     table.insert(ids, pindian.results[to.id].toCard:getEffectiveId())
+    local extra_data = { bypass_times = true }
     while true do
-      room:setPlayerMark(loser, MarkEnum.BypassTimesLimit .. "-tmp", 1)
       local to_use = table.filter(ids, function (id)
         local card = Fk:getCardById(id)
         return card.type ~= Card.TypeBasic and room:getCardArea(card) == Card.DiscardPile and
-          not loser:prohibitUse(card) and loser:canUse(card)
+          not loser:prohibitUse(card) and loser:canUse(card, extra_data)
       end)
-      if #to_use == 0 then
-        room:setPlayerMark(loser, MarkEnum.BypassTimesLimit .. "-tmp", 0)
-        break
-      end
+      if #to_use == 0 then break end
       room:setPlayerMark(loser, "liuju_cards", to_use)
-      local success, dat = room:askForUseActiveSkill(loser, "liuju_viewas", "#liuju-use", true)
+      local success, dat = room:askForUseActiveSkill(loser, "liuju_viewas", "#liuju-use", true, extra_data)
       room:setPlayerMark(loser, "liuju_cards", 0)
-      room:setPlayerMark(loser, MarkEnum.BypassTimesLimit .. "-tmp", 0)
+
       if not success then break end
       table.removeOne(ids, dat.cards[1])
       local card = Fk:getCardById(dat.cards[1])
@@ -1297,20 +1292,17 @@ local huanjia = fk.CreateTriggerSkill{
     local ids = {}
     table.insert(ids, pindian.fromCard:getEffectiveId())
     table.insert(ids, pindian.results[to.id].toCard:getEffectiveId())
-    room:setPlayerMark(winner, MarkEnum.BypassTimesLimit .. "-tmp", 1)
+    local extra_data = { bypass_times = true }
     local to_use = table.filter(ids, function (id)
       local card = Fk:getCardById(id)
       return room:getCardArea(id) == Card.DiscardPile and
-        not winner:prohibitUse(card) and winner:canUse(card)
+        not winner:prohibitUse(card) and winner:canUse(card, extra_data)
     end)
-    if #to_use == 0 then
-      room:setPlayerMark(winner, MarkEnum.BypassTimesLimit .. "-tmp", 0)
-      return false
-    end
+    if #to_use == 0 then return false end
     room:setPlayerMark(winner, "huanjia_cards", to_use)
-    local success, dat = room:askForUseActiveSkill(winner, "huanjia_viewas", "#huanjia-use:"..player.id, true)
+    local success, dat = room:askForUseActiveSkill(winner, "huanjia_viewas",
+    "#huanjia-use:"..player.id, true, extra_data)
     room:setPlayerMark(winner, "huanjia_cards", 0)
-    room:setPlayerMark(winner, MarkEnum.BypassTimesLimit .. "-tmp", 0)
     if success then
       local card = Fk:getCardById(dat.cards[1])
       table.removeOne(ids, dat.cards[1])
@@ -2070,20 +2062,18 @@ local guangu = fk.CreateActiveSkill{
       room:setPlayerMark(player, "guangu_view", table.simpleClone(ids))
     end
 
-    room:setPlayerMark(player, MarkEnum.BypassTimesLimit .. "-tmp", 1)
+    local extra_data = {bypass_times = true}
     local availableCards = {}
     for _, id in ipairs(ids) do
       local card = Fk:getCardById(id)
-      if not player:prohibitUse(card) and player:canUse(card) then
+      if not player:prohibitUse(card) and player:canUse(card, extra_data) then
         table.insertIfNeed(availableCards, id)
       end
     end
     room:setPlayerMark(player, "guangu_cards", availableCards)
-    local success, dat = room:askForUseActiveSkill(player, "guangu_viewas", "#guangu-use", true)
+    local success, dat = room:askForUseActiveSkill(player, "guangu_viewas", "#guangu-use", true, extra_data)
     room:setPlayerMark(player, "guangu_view", 0)
     room:setPlayerMark(player, "guangu_cards", 0)
-
-    room:setPlayerMark(player, MarkEnum.BypassTimesLimit .. "-tmp", 0)
 
     if status == "yang" then
       for i = #ids, 1, -1 do

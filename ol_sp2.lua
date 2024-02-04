@@ -5420,9 +5420,7 @@ local bixin_trigger = fk.CreateTriggerSkill{
       mark = U.getUniversalCards(room, "b")
       room:setPlayerMark(player, "bixin_cards", mark)
     end
-    room:setPlayerMark(player, MarkEnum.BypassTimesLimit.."-tmp", 1)
     local success, dat = room:askForUseActiveSkill(player, "bixin_viewas", "#bixin-invoke", true)
-    room:setPlayerMark(player, MarkEnum.BypassTimesLimit.."-tmp", 0)
     if success then
       self.cost_data = dat
       return true

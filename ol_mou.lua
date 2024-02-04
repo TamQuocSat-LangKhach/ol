@@ -53,18 +53,14 @@ local zhuri = fk.CreateTriggerSkill{
             table.insertIfNeed(ids, card:getEffectiveId())
           end
         end
-        room:setPlayerMark(player, MarkEnum.BypassTimesLimit .. "-tmp", 1)
+        local extra_data = { bypass_times = true }
         ids = table.filter(ids, function (id)
           local card = Fk:getCardById(id)
-          return not player:prohibitUse(card) and player:canUse(card)
+          return not player:prohibitUse(card) and player:canUse(card, extra_data)
         end)
-        if #ids == 0 then
-          room:setPlayerMark(player, MarkEnum.BypassTimesLimit .. "-tmp", 0)
-          return false
-        end
+        if #ids == 0 then return false end
         room:setPlayerMark(player, "zhuri_cards", ids)
-        local success, dat = room:askForUseActiveSkill(player, "zhuri_viewas", "#zhuri-use", true)
-        room:setPlayerMark(player, MarkEnum.BypassTimesLimit .. "-tmp", 0)
+        local success, dat = room:askForUseActiveSkill(player, "zhuri_viewas", "#zhuri-use", true, extra_data)
         room:setPlayerMark(player, "zhuri_cards", 0)
         
         if success then
