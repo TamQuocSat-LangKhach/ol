@@ -1961,25 +1961,21 @@ local xiashu = fk.CreateTriggerSkill{
     local room = player.room
     local to = room:getPlayerById(self.cost_data)
     room:moveCardTo(player:getCardIds(Player.Hand), Player.Hand, to, fk.ReasonGive, self.name, nil, false, player.id)
-    if to:isKongcheng() then return false end
+    if player.dead or to.dead or to:isKongcheng() then return false end
     local cards = room:askForCard(to, 1, to:getHandcardNum(), false, self.name, false, ".", "#xiashu-card:"..player.id)
     to:showCards(cards)
     local choices = {"xiashu_show"}
-    if #cards < to:getHandcardNum() then
-      table.insert(choices, "xiashu_noshow")
+    local x = to:getHandcardNum() - #cards
+    if x > 0 then
+      table.insert(choices, "xiashu_noshow:::" .. tostring(x))
     end
-    local choice = room:askForChoice(player, choices, self.name, "#xiashu-choice::"..to.id, false, {"xiashu_show", "xiashu_noshow"})
-    local dummy2 = Fk:cloneCard("dilu")
-    if choice == "xiashu_show" then
-      dummy2:addSubcards(cards)
-    else
-      for _, id in ipairs(to.player_cards[Player.Hand]) do
-        if not table.contains(cards, id) then
-          dummy2:addSubcard(id)
-        end
-      end
+    local choice = U.askforViewCardsAndChoice(player, cards, choices, self.name, "#xiashu-choice::"..to.id)
+    if choice ~= "xiashu_show" then
+      cards = table.filter(to.player_cards[Player.Hand], function (id)
+        return not table.contains(cards, id)
+      end)
     end
-    room:obtainCard(player, dummy2, false, fk.ReasonPrey)
+    room:moveCardTo(cards, Card.PlayerHand, player, fk.ReasonPrey, self.name, nil, choice == "xiashu_show", player.id)
   end,
 }
 local kuanshi = fk.CreateTriggerSkill{
@@ -2053,7 +2049,7 @@ Fk:loadTranslationTable{
   ["#xiashu-choose"] = "下书：将所有手牌交给一名角色，其展示任意张手牌，你获得展示或未展示的牌",
   ["#xiashu-card"] = "下书：展示任意张手牌，%src 选择获得你展示的牌或未展示的牌",
   ["xiashu_show"] = "获得展示的牌",
-  ["xiashu_noshow"] = "获得未展示的牌",
+  ["xiashu_noshow"] = "获得未展示的牌[%arg张]",
   ["#xiashu-choice"] = "下书：选择获得 %dest 的牌",
   ["#kuanshi-choose"] = "宽释：你可以选择一名角色，直到你下回合开始，防止其下次受到超过1点的伤害",
   ["#kuanshi_delay"] = "宽释",
