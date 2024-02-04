@@ -407,6 +407,7 @@ ol__zhoufei:addSkill(ol__liangyin)
 ol__zhoufei:addSkill(ol__kongsheng)
 Fk:loadTranslationTable{
   ["ol__zhoufei"] = "周妃",
+  ["#ol__zhoufei"] = "软玉温香",
   ["ol__liangyin"] = "良姻",
   [":ol__liangyin"] = "当每回合首次有牌移出/移入游戏后，你可以与一名其他角色各摸/弃置一张牌，然后你可以令其中一名手牌数为X的角色回复1点体力（X为“箜”数）。",
   ["ol__kongsheng"] = "箜声",
@@ -470,6 +471,7 @@ ol__godguanyu:addSkill(ol__wushen)
 ol__godguanyu:addSkill("wuhun")
 Fk:loadTranslationTable {
   ["ol__godguanyu"] = "神关羽",
+  ["#ol__godguanyu"] = "鬼神再临",
   ["ol__wushen"] = "武神",
   [":ol__wushen"] = "锁定技，你的<font color='red'>♥</font>手牌视为【杀】；你使用<font color='red'>♥</font>【杀】无距离与次数限制、不计次数且不能被响应。",
   ["#ol__wushen_filter"] = "武神",
@@ -556,6 +558,7 @@ machao:addSkill(ol__shichou)
 
 Fk:loadTranslationTable{
   ["ol__machao"] = "马超",
+  ["#ol__machao"] = "西凉的猛狮",
   ["ol__zhuiji"] = "追击",
   [":ol__zhuiji"] = "锁定技，你计算与体力值不大于你的角色的距离始终为1。"..
   "当你使用【杀】指定距离为1的角色为目标后，其弃置一张牌或重铸装备区里的所有牌。",
@@ -664,6 +667,8 @@ ol__guanyinping:addSkill(ol__huxiao)
 ol__guanyinping:addSkill(ol__wuji)
 Fk:loadTranslationTable{
   ["ol__guanyinping"] = "关银屏",
+  ["#ol__guanyinping"] = "武姬",
+  ["illustrator:ol__guanyinping"] = "光域鹿鸣", -- 传说皮肤 虎女兔娇
   ["ol__xuehen"] = "雪恨",
   [":ol__xuehen"] = "出牌阶段限一次，你可以弃置一张红色牌并选择至多X名角色（X为你已损失的体力值且至少为1），然后你横置这些角色，并对其中一名角色造成1点火焰伤害。",
   ["#ol__xuehen-choose"] = "雪恨：对其中一名角色造成1点火焰伤害",
@@ -755,6 +760,7 @@ ol__lingju:addSkill(ol__jieyuan)
 ol__lingju:addSkill(ol__fenxin)
 Fk:loadTranslationTable{
   ["ol__lingju"] = "灵雎",
+  ["#ol__lingju"] = "情随梦逝",
   ["ol__jieyuan"] = "竭缘",
   [":ol__jieyuan"] = "当你对一名其他角色造成伤害时，若其体力值大于或等于你的体力值，你可弃置一张黑色手牌令此伤害+1；"..
   "当你受到一名其他角色造成的伤害时，若其体力值大于或等于你的体力值，你可弃置一张红色手牌令此伤害-1。",
@@ -851,6 +857,7 @@ ol__zhugejin:addSkill(ol__hongyuan)
 ol__zhugejin:addSkill(ol__mingzhe)
 Fk:loadTranslationTable{
   ["ol__zhugejin"] = "诸葛瑾",
+  ["#ol__zhugejin"] = "联盟的维系者",
   ["ol__huanshi"] = "缓释",
   [":ol__huanshi"] = "当一名角色的判定牌生效前，你可以令其观看你的牌并用其中一张牌代替判定牌。",
   ["ol__hongyuan"] = "弘援",
@@ -908,6 +915,7 @@ ol__zhugedan:addRelatedSkill("benghuai")
 ol__zhugedan:addRelatedSkill(ol__weizhong)
 Fk:loadTranslationTable{
   ["ol__zhugedan"] = "诸葛诞",
+  ["#ol__zhugedan"] = "薤露蒿里",
   ["ol__juyi"] = "举义",
   [":ol__juyi"] = "觉醒技，准备阶段，若你体力上限大于存活角色数，你摸X张牌（X为你的体力上限），然后获得技能〖崩坏〗和〖威重〗。",
   ["ol__weizhong"] = "威重",
@@ -983,6 +991,7 @@ hetaihou:addSkill(ol__zhendu)
 hetaihou:addSkill(ol__qiluan)
 Fk:loadTranslationTable{
   ["ol__hetaihou"] = "何太后",
+  ["#ol__hetaihou"] = "弄权之蛇蝎",
   ["ol__zhendu"] = "鸩毒",
   [":ol__zhendu"] = "一名角色的出牌阶段开始时，你可以弃置一张手牌。若如此做，该角色视为使用一张【酒】，然后若该角色不为你，你对其造成1点伤害。",
   ["ol__qiluan"] = "戚乱",
@@ -1189,6 +1198,7 @@ zhixi:addRelatedSkill(zhixip)
 ol__sunluyu:addRelatedSkill(zhixi)
 Fk:loadTranslationTable{
   ['ol__sunluyu'] = '孙鲁育',
+  ['#ol__sunluyu'] = '舍身饲虎',
   ['ol__meibu'] = '魅步',
   [':ol__meibu'] = '其他角色的出牌阶段开始时，若你在其攻击范围内，' ..
     '你可以弃置一张牌，令该角色于本回合内拥有〖止息〗。' ..
@@ -1323,6 +1333,8 @@ ol__fenxun:addRelatedSkill(ol__fenxun_delay)
 ol__dingfeng:addSkill(ol__fenxun)
 Fk:loadTranslationTable{
   ["ol__dingfeng"] = "丁奉",
+  ["#ol__dingfeng"] = "清侧重臣",
+  ["illustrator:ol__dingfeng"] = "枭瞳", -- 雪虐风饕
   ["ol__duanbing"] = "短兵",
   [":ol__duanbing"] = "①你使用【杀】时可以多选择一名距离为1的角色为目标；②你对距离为1的角色使用【杀】需要两张【闪】才能抵消。",
   ["ol__fenxun"] = "奋迅",
@@ -1460,6 +1472,7 @@ local ol__liewei = fk.CreateTriggerSkill{
 ol__niujin:addSkill(ol__liewei)
 Fk:loadTranslationTable{
   ["ol__niujin"] = "牛金",
+  ["#ol__niujin"] = "独进的兵胆",
   ["ol__cuorui"] = "挫锐",
   [":ol__cuorui"] = "锁定技，游戏开始时，你将手牌数摸至X张（X为场上角色数）。当你成为延时锦囊牌的目标后，你跳过下个判定阶段。",
   ["@@ol__cuorui"] = "挫锐",
@@ -1527,6 +1540,7 @@ hansui:addSkill(niluan)
 hansui:addSkill(xiaoxi)
 Fk:loadTranslationTable{
   ["ol__hansui"] = "韩遂",
+  ["#ol__hansui"] = "雄踞北疆",
   ["ol__niluan"] = "逆乱",
   [":ol__niluan"] = "体力值大于你的角色的结束阶段，若其此回合使用过【杀】，你可以将一张黑色牌当【杀】对其使用。",
   ["ol__xiaoxi"] = "骁袭",
@@ -1614,8 +1628,9 @@ local ol__xingluan = fk.CreateTriggerSkill{
 ol__fanchou:addSkill(ol__xingluan)
 Fk:loadTranslationTable{
   ["ol__fanchou"] = "樊稠",
+  ["#ol__fanchou"] = "庸生变难",
   ["ol__xingluan"] = "兴乱",
-  [":ol__xingluan"] = "每阶段限一次，当你于出牌阶段使用一张牌后，你可以选择一项：1.获得场上一张点数为6的牌；2.从牌堆里的两张点数为6的牌中选择一张获得（没有则你摸一张牌）；3.令一名其他角色选择弃置一张点数为6的牌或交给你一张牌。",
+  [":ol__xingluan"] = "出牌阶段限一次，当你使用一张牌结算结束后，你可以选择一项：1.获得场上一张点数为6的牌；2.从牌堆里的两张点数为6的牌中选择一张获得（没有则你摸一张牌）；3.令一名其他角色选择弃置一张点数为6的牌或交给你一张牌。",
   ["ol__xingluan_get"] = "获得场上一张点数为6的牌",
   ["ol__xingluan_draw"] = "牌堆里的两张点数为6的牌获得一张",
   ["ol__xingluan_give"] = "令一名其他角色弃一张点数为6或交给你一张牌",
@@ -1726,6 +1741,7 @@ ol__zhangbao:addSkill(ol__zhoufu)
 ol__zhangbao:addSkill(ol__yingbing)
 Fk:loadTranslationTable{
   ["ol__zhangbao"] = "张宝",
+  ["#ol__zhangbao"] = "地公将军",
   ["ol__zhoufu"] = "咒缚",
   [":ol__zhoufu"] = "①出牌阶段限一次，你可以将一张牌置于一名武将牌旁没有“咒”的其他角色的武将牌旁，称为“咒”；②当有“咒”的角色判定时，将“咒”作为判定牌；③一名角色的回合结束时，你令本回合移除过“咒”的角色各失去1点体力。",
   ["ol__yingbing"] = "影兵",
@@ -1844,6 +1860,7 @@ ol__yuhua:addRelatedSkill(ol__yuhua_maxcards)
 ol__zhugeguo:addSkill(ol__yuhua)
 Fk:loadTranslationTable{
   ["ol__zhugeguo"] = "诸葛果",
+  ["#ol__zhugeguo"] = "凤阁乘烟",
   ["ol__qirang"] = "祈禳",
   [":ol__qirang"] = "当你使用装备牌结算结束后，你可以获得牌堆中的一张锦囊牌，若此牌：为普通锦囊牌，你使用此牌仅指定一个目标时，可以额外指定一个目标；不为普通锦囊牌，你的下个回合发动〖羽化〗时观看的牌数的值+1（至多加至5）。",
   ["@@ol__qirang"] = "祈禳",
@@ -1934,6 +1951,7 @@ ol_sp__caoren:addSkill(lizhan)
 Fk:loadTranslationTable{
   ["ol_sp"] = "OLSP",
   ["ol_sp__caoren"] = "曹仁",
+  ["#ol_sp__caoren"] = "鬼神之勇",
   ["weikui"] = "伪溃",
   [":weikui"] = "出牌阶段限一次，你可以失去1点体力并选择一名有手牌的其他角色观看其手牌：若其手牌中有【闪】，则视为你对其使用一张不计入次数限制的【杀】，且本回合你计算与其的距离视为1；若其手牌中没有【闪】，你弃置其中一张牌。",
   ["lizhan"] = "励战",
@@ -1994,6 +2012,7 @@ masu:addSkill(ol__sanyao)
 masu:addSkill("ty_ex__zhiman")
 Fk:loadTranslationTable{
   ["ol__masu"] = "马谡",
+  ["#ol__masu"] = "军略之才器",
   ["ol__sanyao"] = "散谣",
   [":ol__sanyao"] = "出牌阶段每项各限一次，你可以弃置一张牌并选择一项，1.对全场体力值最大的一名角色造成1点伤害；2.对手牌数最多的一名角色造成1点伤害。",
   ["ol__sanyao_hp-phase"] = "体力值最大",
@@ -2052,6 +2071,7 @@ ol__guyong:addSkill("shenxing")
 ol__guyong:addSkill(ol__bingyi)
 Fk:loadTranslationTable{
   ["ol__guyong"] = "顾雍",
+  ["#ol__guyong"] = "庙堂的玉磐",
   ["ol__bingyi"] = "秉壹",
   [":ol__bingyi"] = "每阶段限一次，当你的牌被弃置后，你可以展示所有手牌，若颜色均相同，你令你与至多X名角色各摸一张牌（X为你的手牌数）。",
   ["#ol__bingyi-choose"] = "秉壹：你可以与至多%arg名其他角色各摸一张牌，点取消则仅你摸牌",
@@ -2243,6 +2263,7 @@ local ol__hexian = fk.CreateTriggerSkill{
 ol__jikang:addRelatedSkill(ol__hexian)
 Fk:loadTranslationTable{
   ["ol__jikang"] = "嵇康",
+  ["#ol__jikang"] = "峻峰孤松",
   ["ol__qingxian"] = "清弦",
   [":ol__qingxian"] = "当你受到伤害/回复体力后，若没有角色处于濒死状态，你可以选一项令伤害来源/一名其他角色执行：1.失去1点体力并随机使用牌堆一张装备牌；2.回复1点体力并弃置一张装备牌。若其使用或弃置的牌的花色为♣，你摸一张牌。",
   ["ol__qingxian_losehp"] = "失去1点体力并随机使用牌堆一张装备牌",

@@ -3695,7 +3695,7 @@ local suji = fk.CreateTriggerSkill{
     return player:hasSkill(self) and target.phase == Player.Play and target:isWounded()
   end,
   on_cost = function (self, event, target, player, data)
-    local success, dat = player.room:askForUseViewAsSkill(player, "suji_viewas", "#suji:"..target.id, true)
+    local success, dat = player.room:askForUseViewAsSkill(player, "suji_viewas", "#suji:"..target.id, true, {bypass_times = true})
     if success then
       self.cost_data = dat
       return true
@@ -3705,8 +3705,7 @@ local suji = fk.CreateTriggerSkill{
     local room = player.room
     local dat = self.cost_data
     local card = Fk.skills["suji_viewas"]:viewAs(dat.cards)
-    local use = {from = player.id, tos = table.map(dat.targets, function(p) return {p} end), card = card}
-    if target ~= player then use.extraUse = true end
+    local use = {from = player.id, tos = table.map(dat.targets, function(p) return {p} end), card = card, extraUse = true}
     room:useCard(use)
     if use.damageDealt and use.damageDealt[target.id] and not player.dead and not target:isNude() then
       local id = room:askForCardChosen(player, target, "he", self.name)
@@ -3827,7 +3826,7 @@ Fk:loadTranslationTable{
   ["suji"] = "肃疾",
   [":suji"] = "已受伤角色的出牌阶段开始时，你可以将一张黑色牌当【杀】使用，若其受到此【杀】伤害，你获得其一张牌。",
   ["suji_viewas"] = "肃疾",
-  ["#suji"] = "肃疾：你可以将一张黑色牌当【杀】使用，若%src受到此【杀】伤害，你获得其一张牌",
+  ["#suji"] = "肃疾：可以将黑色牌当【杀】使用，若%src受到此【杀】伤害，你获得其一张牌",
   ["langdao"] = "狼蹈",
   [":langdao"] = "当你使用【杀】指定唯一目标时，你可以与其同时选择一项，令此【杀】：伤害值+1/目标数+1/不能被响应。若未杀死角色，你移除此次被选择的项。",
   ["#langdao-invoke"] = "是否对%src发动“狼蹈”",

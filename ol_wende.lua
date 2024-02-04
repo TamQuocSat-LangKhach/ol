@@ -447,8 +447,10 @@ local caiwang = fk.CreateViewAsSkill{
     if Fk.currentResponsePattern and Exppattern:Parse(Fk.currentResponsePattern):matchExp(self.pattern) then
       if Exppattern:Parse(Fk.currentResponsePattern):match(Fk:cloneCard("nullification")) then
         return #player.player_cards[Player.Equip] == 1
+      elseif Exppattern:Parse(Fk.currentResponsePattern):match(Fk:cloneCard("jink")) then
+        return player:getHandcardNum() == 1
       else
-        return player:getHandcardNum() == 1 or #player.player_cards[Player.Judge] == 1
+        return #player.player_cards[Player.Judge] == 1
       end
     end
   end,
@@ -461,13 +463,13 @@ local caiwang_trigger = fk.CreateTriggerSkill{
     if player:hasSkill(self) and data.responseToEvent then
       if (event == fk.CardUseFinished and data.toCard and data.toCard.color == data.card.color) or
         (event == fk.CardRespondFinished and data.responseToEvent.card and data.responseToEvent.card.color == data.card.color) then
-        local id
+        local to
         if data.responseToEvent.from == player.id then
-          id = data.responseToEvent.to
-        else
-          id = data.responseToEvent.from
+          to = target.id
+        elseif target == player then
+          to = data.responseToEvent.from
         end
-        return id and id ~= player.id and not player.room:getPlayerById(id):isNude()
+        return to and to ~= player.id and not player.room:getPlayerById(to):isNude()
       end
     end
   end,
@@ -475,8 +477,8 @@ local caiwang_trigger = fk.CreateTriggerSkill{
     local prompt = "#caiwang-discard"
     local to
     if data.responseToEvent.from == player.id then
-      to = data.responseToEvent.to
-    else
+      to = target.id
+    elseif target == player then
       to = data.responseToEvent.from
     end
     if player:getMark("naxiang") ~= 0 and table.contains(player:getMark("naxiang"), to) then
