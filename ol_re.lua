@@ -1061,10 +1061,10 @@ ol__sunluyu:addSkill(ol__meibu)
 local ol__mumu_pro = fk.CreateProhibitSkill{
   name = '#ol__mumu_prohibit',
   prohibit_response = function(self, player, card)
-    return card.trueName == 'slash' and player:getMark('@ol__mumu-turn') > 0
+    return card.trueName == 'slash' and player:getMark('@@ol__mumu-turn') > 0
   end,
   prohibit_use = function(self, player, card)
-    return card.trueName == 'slash' and player:getMark('@ol__mumu-turn') > 0
+    return card.trueName == 'slash' and player:getMark('@@ol__mumu-turn') > 0
   end,
 }
 local ol__mumu = fk.CreateTriggerSkill{
@@ -1114,7 +1114,7 @@ local ol__mumu = fk.CreateTriggerSkill{
 
       local to = room:getPlayerById(pid)
       local id = to:getEquipment(Card.SubtypeArmor)
-      room:setPlayerMark(player, '@ol__mumu-turn', 1)
+      room:setPlayerMark(player, '@@ol__mumu-turn', 1)
       room:obtainCard(player, id)
     end
   end,
@@ -1210,7 +1210,7 @@ Fk:loadTranslationTable{
   ['ol__mumu_discard'] = '弃置一名其他角色装备区里的一张牌',
   ['#ol__mumu-discard'] = '穆穆：请选择一名其他角色，弃置其装备区里的一张牌',
   ['#ol__mumu-get'] = '穆穆：请选择一名角色，获得其防具',
-  ['@ol__mumu-turn'] = '穆穆不能出杀',
+  ['@@ol__mumu-turn'] = '穆穆不能出杀',
   ['ol__zhixi'] = '止息',
   [':ol__zhixi'] = '锁定技，出牌阶段你可至多使用X张牌，你使用锦囊牌后，不能再使用牌（X为你的体力值）。',
   ['@ol__zhixi-phase'] = '止息',

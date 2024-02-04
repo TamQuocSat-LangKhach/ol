@@ -2322,15 +2322,31 @@ local dongzhao = General(extension, "ol__dongzhao", "wei", 3)
 local xianlue = fk.CreateTriggerSkill{
   name = "xianlue",
   anim_type = "control",
-  events = {fk.TurnStart},
+  events = {fk.TurnStart, fk.CardUsing},
   can_trigger = function(self, event, target, player, data)
-    return target.role == "lord" and player:hasSkill(self)
+    if not player:hasSkill(self) then return false end
+    if event == fk.TurnStart then
+      return target.role == "lord"
+    else
+      return target ~= player and player:getMark("xianlue-turn") == 0 and
+      table.contains(U.getPrivateMark(player, "xianlue"), data.card.trueName)
+    end
   end,
   on_cost = function(self, event, target, player, data)
-    return player.room:askForSkillInvoke(player, self.name, data, "#xianlue-invoke")
+    return event == fk.CardUsing or player.room:askForSkillInvoke(player, self.name, data, "#xianlue-invoke")
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
+    if event == fk.CardUsing then
+      room:addPlayerMark(player, "xianlue-turn")
+      local cards = player:drawCards(2, "xianlue")
+      if player.dead then return false end
+      cards = table.filter(cards, function(id) return table.contains(player:getCardIds("h"), id) end)
+      if #cards > 0 then
+        U.askForDistribution(player, cards, room.alive_players, self.name, 0, #cards, "#xianlue-give")
+        if player.dead then return false end
+      end
+    end
     local cards = player:getMark("xianlue_cards")
     if type(cards) ~= "table" then
       cards = U.getUniversalCards(room, "t", true)
@@ -2338,30 +2354,15 @@ local xianlue = fk.CreateTriggerSkill{
     end
     if #cards == 0 then return false end
     local result = U.askforChooseCardsAndChoice(player, cards, {"OK"}, self.name, "#xianlue-choice")
-    room:setPlayerMark(player, "@[private]xianlue", Fk:getCardById(result[1]).name)
+    U.setPrivateMark(player, "xianlue", {Fk:getCardById(result[1]).name})
   end,
-}
-local xianlue_trigger = fk.CreateTriggerSkill{
-  name = "#xianlue_trigger",
-  mute = true,
-  events = {fk.CardUsing},
-  can_trigger = function(self, event, target, player, data)
-    return player:hasSkill(xianlue) and target ~= player and player:usedSkillTimes(self.name, Player.HistoryTurn) == 0
-    and player:getMark("@[private]xianlue") == data.card.trueName
+
+  refresh_events = {fk.EventLoseSkill},
+  can_refresh = function(self, event, target, player, data)
+    return player == target and data == self and player:getMark("@[private]xianlue") ~= 0
   end,
-  on_cost = Util.TrueFunc,
-  on_use = function(self, event, target, player, data)
-    local room = player.room
-    player:broadcastSkillInvoke("xianlue")
-    room:notifySkillInvoked(player, "xianlue", "drawcard")
-    local cards = player:drawCards(2, "xianlue")
-    cards = table.filter(cards, function(id) return table.contains(player:getCardIds("h"), id) end)
-    if #cards > 0 then
-      U.askForDistribution(player, cards, room.alive_players, self.name, 0, #cards, "#xianlue-give")
-    end
-    if player.dead then return end
-    local skill = Fk.skills["xianlue"]
-    skill:use(event, target, player, data)
+  on_refresh = function(self, event, target, player, data)
+    player.room:setPlayerMark(player, "@[private]xianlue", 0)
   end,
 }
 local zaowang = fk.CreateActiveSkill{
@@ -2419,7 +2420,6 @@ local zaowang_trigger = fk.CreateTriggerSkill{
     end
   end,
 }
-xianlue:addRelatedSkill(xianlue_trigger)
 zaowang:addRelatedSkill(zaowang_trigger)
 dongzhao:addSkill(xianlue)
 dongzhao:addSkill(zaowang)

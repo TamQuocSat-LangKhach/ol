@@ -3705,18 +3705,18 @@ local function Gethuashen(player, n)
   local generals = table.filter(room.general_pile, function (name)
     return not table.contains(huashen_blacklist, name)
   end)
-  local mark = U.getMark(player, "@[private]&ol_ex__huashen")
+  local mark = U.getPrivateMark(player, "&ol_ex__huashen")
   for _ = 1, n do
     if #generals == 0 then break end
     local g = table.remove(generals, math.random(#generals))
     table.insert(mark, g)
     table.removeOne(room.general_pile, g)
   end
-  room:setPlayerMark(player, "@[private]&ol_ex__huashen", mark)
+  U.setPrivateMark(player, "&ol_ex__huashen", mark)
 end
 local function Dohuashen(player)
   local room = player.room
-  local mark = U.getMark(player, "@[private]&ol_ex__huashen")
+  local mark = U.getPrivateMark(player, "&ol_ex__huashen")
   if #mark == 0 then return end
   local name = room:askForGeneral(player, mark, 1, true)
   local general = Fk.generals[name]
@@ -3754,7 +3754,7 @@ local function Dohuashen(player)
 end
 local function Recasthuashen(player)
   local room = player.room
-  local generals = U.getMark(player, "@[private]&ol_ex__huashen")
+  local generals = U.getPrivateMark(player, "&ol_ex__huashen")
   if #generals < 2 then return end
   local current_general = type(player:getMark("ol_ex__huashen_general")) == "string" and player:getMark("ol_ex__huashen_general") or ""
   local result = player.room:askForCustomDialog(player, "ol_ex__huashen",
@@ -3774,7 +3774,7 @@ local function Recasthuashen(player)
   for _, g in ipairs(removed) do
     table.removeOne(generals, g)
   end
-  room:setPlayerMark(player, "@[private]&ol_ex__huashen", generals)
+  U.setPrivateMark(player, "&ol_ex__huashen", generals)
   Gethuashen(player, #removed)
   room:returnToGeneralPile(removed)
 end
@@ -3785,7 +3785,7 @@ local ol_ex__huashen = fk.CreateTriggerSkill{
     if event == fk.GamePrepared then
       return player:hasSkill(self)
     else
-      return player:hasSkill(self) and target == player and player:getMark("@[private]&ol_ex__huashen") ~= 0
+      return player:hasSkill(self) and target == player and #U.getPrivateMark(player, "&ol_ex__huashen") > 0
     end
   end,
   on_cost = function(self, event, target, player, data)

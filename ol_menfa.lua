@@ -271,10 +271,11 @@ local shenjun = fk.CreateTriggerSkill{
     if event == fk.CardUsing then
       return true
     else
-      player.room:setPlayerMark(player, MarkEnum.BypassTimesLimit.."-tmp", 1)
-      local success, dat = player.room:askForUseActiveSkill(player, "shenjun_viewas",
-        "#shenjun-invoke:::"..#player:getMark("@$shenjun"), true)
-        player.room:setPlayerMark(player, MarkEnum.BypassTimesLimit.."-tmp", 0)
+      local room = player.room
+      room:setPlayerMark(player, MarkEnum.BypassTimesLimit.."-tmp", 1)
+      local success, dat = room:askForUseActiveSkill(player, "shenjun_viewas",
+      "#shenjun-invoke:::"..#player:getMark("@$shenjun"), true)
+      room:setPlayerMark(player, MarkEnum.BypassTimesLimit.."-tmp", 0)
       if success then
         self.cost_data = dat
         return true
