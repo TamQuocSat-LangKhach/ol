@@ -4389,4 +4389,62 @@ Fk:loadTranslationTable{
   ["~caoyu"] = "满园秋霜落，一人叹奈何……",
 }
 
+local tianchou = General(extension, "tianchou", "qun", 4)
+local shandao = fk.CreateActiveSkill{
+  name = "shandao",
+  anim_type = "offensive",
+  card_num = 0,
+  min_target_num = 1,
+  prompt = "#shandao-active",
+  can_use = function(self, player)
+    return player:usedSkillTimes(self.name, Player.HistoryPhase) == 0
+  end,
+  card_filter = Util.FalseFunc,
+  target_filter = function(self, to_select, selected)
+    return not Fk:currentRoom():getPlayerById(to_select):isKongcheng()
+  end,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    local targets = table.simpleClone(effect.tos)
+    room:sortPlayersByAction(targets)
+    local tos = {}
+    for _, id in ipairs(targets) do
+      local target = room:getPlayerById(id)
+      table.insert(tos, target)
+      if not target:isNude() then
+        local card = room:askForCardChosen(player, target, "he", self.name)
+        room:moveCards({
+          ids = {card},
+          from = target.id,
+          toArea = Card.DrawPile,
+          moveReason = fk.ReasonPut,
+          skillName = self.name,
+        })
+        if player.dead then return false end
+      end
+    end
+    room:useVirtualCard("amazing_grace", {}, player, tos, self.name)
+    if player.dead then return false end
+    local others = table.filter(room.alive_players, function (p)
+      return not table.contains(targets, p.id) and p ~= player.id
+    end)
+    if #others > 0 then
+      room:useVirtualCard("archery_attack", {}, player, others, self.name)
+    end
+  end,
+}
+tianchou:addSkill(shandao)
+
+Fk:loadTranslationTable{
+  ["tianchou"] = "田畴",
+  ["shandao"] = "善刀",
+  [":shandao"] = "出牌阶段限一次，你可以将任意名角色的各一张牌置于牌堆顶，视为对这些角色使用一张【五谷丰登】，"..
+  "然后视为对除这些角色外的其他角色使用一张【万箭齐发】。",
+  ["#shandao-active"] = "发动 善刀，选择任意数量有牌的角色",
+
+  ["$shandao1"] = "君子藏器，待天时而动。",
+  ["$shandao2"] = "善刀而藏之，可解充栋之牛。",
+  ["~tianchou"] = "吾罪大矣，何堪封侯之荣……",
+}
+
 return extension

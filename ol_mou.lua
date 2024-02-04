@@ -271,4 +271,103 @@ Fk:loadTranslationTable{
   ["~olmou__jiangwei"] = "姜维姜维……又将何为？",
 }
 
+local taishici = General(extension, "olmou__taishici", "wu", 4)
+local ol__dulie = fk.CreateTriggerSkill{
+  name = "ol__dulie",
+  events = {fk.TargetConfirming},
+  anim_type = "drawcard",
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self) and player:usedSkillTimes(self.name) == 0 and
+    (data.card.trueName == "slash" or data.card:isCommonTrick()) and
+    data.from ~= player.id and U.isOnlyTarget(player, data, event)
+  end,
+  on_cost = function(self, event, target, player, data)
+    return player.room:askForSkillInvoke(player, self.name, nil,
+    "#ol__dulie-invoke:" .. data.from .. "::" .. data.card:toLogString())
+  end,
+  on_use = function(self, event, target, player, data)
+    data.additionalEffect = 1
+    data.extra_data = data.extra_data or {}
+    data.extra_data.ol__dulie = data.extra_data.ol__dulie or {}
+    table.insert(data.extra_data.ol__dulie, player.id)
+  end,
+}
+local ol__dulie_delay = fk.CreateTriggerSkill{
+  name = "#ol__dulie_delay",
+  mute = true,
+  events = {fk.CardUseFinished},
+  can_trigger = function(self, event, target, player, data)
+    return not player.dead and player:getAttackRange() > 0 and
+    data.extra_data and data.extra_data.ol__dulie and table.contains(data.extra_data.ol__dulie, player.id)
+  end,
+  on_cost = Util.TrueFunc,
+  on_use = function(self, event, target, player, data)
+    local x = player:getAttackRange()
+    if x > 0 then
+      player:drawCards(math.min(5, x), ol__dulie.name)
+    end
+  end,
+}
+local douchan = fk.CreateTriggerSkill{
+  name = "douchan",
+  anim_type = "drawcard",
+  events = {fk.EventPhaseStart},
+  frequency = Skill.Compulsory,
+  can_trigger = function(self, event, target, player, data)
+    if target == player and player:hasSkill(self) and player.phase == Player.Start then
+      local room = player.room
+      return player:getMark("@douchan") < #room.players or table.find(room.draw_pile, function (id)
+        return Fk:getCardById(id).trueName == "duel"
+      end)
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local cards = room:getCardsFromPileByRule("duel")
+    if #cards > 0 then
+      room:obtainCard(player, cards[1], true, fk.ReasonPrey)
+    else
+      local x = player:getMark("@douchan")
+      if x < #room.players then
+        room:setPlayerMark(player, "@douchan", x + 1)
+        room:addPlayerMark(player, MarkEnum.SlashResidue)
+      end
+    end
+  end,
+}
+local douchan_attackrange = fk.CreateAttackRangeSkill{
+  name = "#douchan_attackrange",
+  correct_func = function (self, from, to)
+    return from:getMark("@douchan")
+  end,
+}
+ol__dulie:addRelatedSkill(ol__dulie_delay)
+douchan:addRelatedSkill(douchan_attackrange)
+taishici:addSkill(ol__dulie)
+taishici:addSkill(douchan)
+
+Fk:loadTranslationTable{
+  ["olmou__taishici"] = "谋太史慈",
+  --["#olmou__taishici"] = "",
+  --["illustrator:olmou__taishici"] = "",
+  ["ol__dulie"] = "笃烈",
+  [":ol__dulie"] = "每回合限一次，当你成为其他角色使用基本牌或普通锦囊牌的唯一目标时，"..
+  "你可以令此牌的效果结算两次，然后此牌结算结束后，你摸X张牌（X为你的攻击范围且至多为5）。",
+  ["douchan"] = "斗缠",
+  [":douchan"] = "锁定技，准备阶段，若牌堆中：有【决斗】，你从牌堆中获得一张【决斗】；"..
+  "没有【决斗】，你的攻击范围和出牌阶段使用【杀】的次数上限+1（增加次数至多为游戏人数）。",
+
+  ["#ol__dulie-invoke"] = "是否发动 笃烈，令%src对你使用的%arg结算两次",
+  ["#ol__dulie_delay"] = "笃烈",
+  ["@douchan"] = "斗缠",
+
+  ["$ol__dulie1"] = "秉同难共患之义，莫敢辞也。",
+  ["$ol__dulie2"] = "慈赴府君之急，死又何惧尔？",
+  ["$douchan1"] = "此时不捉孙策，更待何时！",
+  ["$douchan2"] = "有胆气者，都随我来！",
+  ["~olmou__taishici"] = "人生得遇知己，死又何憾……",
+}
+
+
+
 return extension
