@@ -53,22 +53,20 @@ local zhuri = fk.CreateTriggerSkill{
             table.insertIfNeed(ids, card:getEffectiveId())
           end
         end
-        if #ids == 0 then return end
-        player.special_cards["zhuri"] = table.simpleClone(ids)
-        player:doNotify("ChangeSelf", json.encode {
-          id = player.id,
-          handcards = player:getCardIds("h"),
-          special_cards = player.special_cards,
-        })
         room:setPlayerMark(player, MarkEnum.BypassTimesLimit .. "-tmp", 1)
+        ids = table.filter(ids, function (id)
+          local card = Fk:getCardById(id)
+          return not player:prohibitUse(card) and player:canUse(card)
+        end)
+        if #ids == 0 then
+          room:setPlayerMark(player, MarkEnum.BypassTimesLimit .. "-tmp", 0)
+          return false
+        end
+        room:setPlayerMark(player, "zhuri_cards", ids)
         local success, dat = room:askForUseActiveSkill(player, "zhuri_viewas", "#zhuri-use", true)
         room:setPlayerMark(player, MarkEnum.BypassTimesLimit .. "-tmp", 0)
-        player.special_cards["zhuri"] = {}
-        player:doNotify("ChangeSelf", json.encode {
-          id = player.id,
-          handcards = player:getCardIds("h"),
-          special_cards = player.special_cards,
-        })
+        room:setPlayerMark(player, "zhuri_cards", 0)
+        
         if success then
           local card = Fk:getCardById(dat.cards[1])
           local use = {
@@ -97,9 +95,11 @@ local zhuri = fk.CreateTriggerSkill{
 }
 local zhuri_viewas = fk.CreateViewAsSkill{
   name = "zhuri_viewas",
-  expand_pile = "zhuri",
+  expand_pile = function (self)
+    return U.getMark(Self, "zhuri_cards")
+  end,
   card_filter = function(self, to_select, selected)
-    return #selected == 0 and Self:getPileNameOfId(to_select) == "zhuri" and Self:canUse(Fk:getCardById(to_select))
+    return #selected == 0 and table.contains(U.getMark(Self, "zhuri_cards"), to_select)
   end,
   view_as = function(self, cards)
     if #cards ~= 1 then return end

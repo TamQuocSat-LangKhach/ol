@@ -2715,8 +2715,8 @@ Fk:loadTranslationTable{
 }
 
 local xunchen = General(extension, "ol__xunchen", "qun", 3)
-local fenglve = fk.CreateTriggerSkill{
-  name = "fenglve",
+local fenglue = fk.CreateTriggerSkill{
+  name = "fenglue",
   anim_type = "control",
   events = {fk.EventPhaseStart, fk.PindianResultConfirmed},
   can_trigger = function(self, event, target, player, data)
@@ -2738,7 +2738,7 @@ local fenglve = fk.CreateTriggerSkill{
     if event == fk.EventPhaseStart then
       local to = room:askForChoosePlayers(player, table.map(table.filter(room:getOtherPlayers(player), function(p)
         return player:canPindian(p) end), Util.IdMapper),
-        1, 1, "#fenglve-choose", self.name, true)
+        1, 1, "#fenglue-choose", self.name, true)
       if #to > 0 then
         self.cost_data = to[1]
         return true
@@ -2747,7 +2747,7 @@ local fenglve = fk.CreateTriggerSkill{
       self.cost_data = data.from == player
         and {data.to, room:getSubcardsByRule(data.fromCard, { Card.Processing })}
         or {data.from, room:getSubcardsByRule(data.toCard, { Card.Processing })}
-      return room:askForSkillInvoke(player, self.name, data, "#fenglve-give::"..self.cost_data[1].id)
+      return room:askForSkillInvoke(player, self.name, data, "#fenglue-give::"..self.cost_data[1].id)
     end
   end,
   on_use = function(self, event, target, player, data)
@@ -2824,21 +2824,21 @@ local moushi_record = fk.CreateTriggerSkill{
   end,
 }
 moushi:addRelatedSkill(moushi_record)
-xunchen:addSkill(fenglve)
+xunchen:addSkill(fenglue)
 xunchen:addSkill(moushi)
 Fk:loadTranslationTable{
   ["ol__xunchen"] = "荀谌",
   ["#ol__xunchen"] = "单锋谋孤城",
-  ["fenglve"] = "锋略",
-  [":fenglve"] = "出牌阶段开始时，你可以与一名角色拼点：若你赢，该角色将每个区域内各一张牌交给你；若你没赢，你交给其一张牌。"..
+  ["fenglue"] = "锋略",
+  [":fenglue"] = "出牌阶段开始时，你可以与一名角色拼点：若你赢，该角色将每个区域内各一张牌交给你；若你没赢，你交给其一张牌。"..
   "你与其他角色的拼点结果确定后，你可以将你的拼点牌交给该角色。",
   ["moushi"] = "谋识",
   [":moushi"] = "出牌阶段限一次，你可以将一张手牌交给一名其他角色。若如此做，当该角色于其下个出牌阶段对每名角色第一次造成伤害后，你摸一张牌。",
-  ["#fenglve-choose"] = "锋略：你可以拼点，若赢，其交给你每个区域各一张牌；没赢，你交给其一张牌",
-  ["#fenglve-give"] = "锋略：你可以将你的拼点牌交给%dest",
+  ["#fenglue-choose"] = "锋略：你可以拼点，若赢，其交给你每个区域各一张牌；没赢，你交给其一张牌",
+  ["#fenglue-give"] = "锋略：你可以将你的拼点牌交给%dest",
 
-  ["$fenglve1"] = "汝能比得上我家主公吗？",
-  ["$fenglve2"] = "将军有让贤之名而身安于泰山也，实乃上策。",
+  ["$fenglue1"] = "汝能比得上我家主公吗？",
+  ["$fenglue2"] = "将军有让贤之名而身安于泰山也，实乃上策。",
   ["$moushi1"] = "官渡决战，袁公必胜而曹氏必败。",
   ["$moushi2"] = "吾既辅佐袁公，定不会使其覆巢。",
   ["~ol__xunchen"] = "吾欲赴死，断不做背主之事……",

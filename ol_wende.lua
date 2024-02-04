@@ -594,24 +594,26 @@ local chexuan = fk.CreateActiveSkill{
       return room:getCardArea(id) == Card.Void
     end)
     if #carts == 0 then return end
-    player.special_cards["chexuan"] = table.simpleClone(carts)
-    player:doNotify("ChangeSelf", json.encode {
-      id = player.id,
-      handcards = player:getCardIds("h"),
-      special_cards = player.special_cards,
-    })
-    local card = room:askForCard(player, 1, 1, false, self.name, false, ".|.|.|chexuan", "#chexuan-put", "chexuan")
-    player.special_cards["chexuan"] = {}
-    player:doNotify("ChangeSelf", json.encode {
-      id = player.id,
-      handcards = player:getCardIds("h"),
-      special_cards = player.special_cards,
-    })
-    local cardId = #card > 0 and card[1] or table.random(carts)
+    room:setPlayerMark(player, "chexuan_cards", carts)
+    local success, dat = room:askForUseActiveSkill(player, "chexuan_select", "#chexuan-put", false, Util.DummyTable, true)
+    room:setPlayerMark(player, "chexuan_cards", 0)
+    local cardId = success and dat.cards[1] or table.random(carts)
     room:setCardMark(Fk:getCardById(cardId), MarkEnum.DestructOutMyEquip, 1)
     U.moveCardIntoEquip(room, player, cardId, self.name, true, player)
   end,
 }
+local chexuan_select = fk.CreateActiveSkill{
+  name = "chexuan_select",
+  card_num = 1,
+  target_num = 0,
+  expand_pile = function (self)
+    return U.getMark(Self, "chexuan_cards")
+  end,
+  card_filter = function(self, to_select, selected)
+    return #selected == 0 and table.contains(U.getMark(Self, "chexuan_cards"), to_select)
+  end,
+}
+Fk:addSkill(chexuan_select)
 local chexuan_trigger = fk.CreateTriggerSkill{
   name = "#chexuan_trigger",
   mute = true,
@@ -670,6 +672,7 @@ Fk:loadTranslationTable{
   ["chexuan"] = "车悬",
   [":chexuan"] = "①出牌阶段，若你的装备区里没有宝物牌，你可以弃置一张黑色牌，选择一张“舆”置入你的装备区（此牌离开装备区时销毁）。②当你不因使用装备牌失去装备区里的宝物牌后，你可以判定，若结果为黑色，将一张随机的“舆”置入你的装备区。",
   ["#chexuan_trigger"] = "车悬",
+  ["chexuan_select"] = "车悬",
   ["#chexuan-put"] = "车悬：选择一种“舆”置入你的装备区",
   ["#chexuan-invoke"] = "车悬：你可以判定，若结果为黑色，将一张随机的“舆”置入你的装备区",
   ["qiangshou"] = "羌首",
@@ -1404,8 +1407,8 @@ local tairan = fk.CreateTriggerSkill{
     end
   end,
 }
-local ruilve = fk.CreateTriggerSkill{
-  name = "ruilve$",
+local ruilue = fk.CreateTriggerSkill{
+  name = "ruilue$",
 
   refresh_events = {fk.GameStart, fk.EventAcquireSkill, fk.EventLoseSkill, fk.Deathed},
   can_refresh = function(self, event, target, player, data)
@@ -1423,25 +1426,25 @@ local ruilve = fk.CreateTriggerSkill{
     if event == fk.GameStart or event == fk.EventAcquireSkill then
       if player:hasSkill(self, true) then
         for _, p in ipairs(room:getOtherPlayers(player)) do
-          room:handleAddLoseSkills(p, "ruilve&", nil, false, true)
+          room:handleAddLoseSkills(p, "ruilue&", nil, false, true)
         end
       end
     elseif event == fk.EventLoseSkill or event == fk.Deathed then
       for _, p in ipairs(room:getOtherPlayers(player)) do
-        room:handleAddLoseSkills(p, "-ruilve&", nil, false, true)
+        room:handleAddLoseSkills(p, "-ruilue&", nil, false, true)
       end
     end
   end,
 }
-local ruilve_active = fk.CreateActiveSkill{
-  name = "ruilve&",
+local ruilue_active = fk.CreateActiveSkill{
+  name = "ruilue&",
   mute = true,
   card_num = 1,
   target_num = 0,
-  prompt = "#ruilve",
+  prompt = "#ruilue",
   can_use = function(self, player)
     if player:usedSkillTimes(self.name, Player.HistoryPhase) == 0 and player.kingdom == "jin" then
-      return table.find(Fk:currentRoom().alive_players, function(p) return p:hasSkill("ruilve") and p ~= player end)
+      return table.find(Fk:currentRoom().alive_players, function(p) return p:hasSkill("ruilue") and p ~= player end)
     end
   end,
   card_filter = function(self, to_select, selected)
@@ -1449,7 +1452,7 @@ local ruilve_active = fk.CreateActiveSkill{
   end,
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
-    local targets = table.filter(room.alive_players, function(p) return p:hasSkill("ruilve") and p ~= player end)
+    local targets = table.filter(room.alive_players, function(p) return p:hasSkill("ruilue") and p ~= player end)
     local target
     if #targets == 1 then
       target = targets[1]
@@ -1457,18 +1460,18 @@ local ruilve_active = fk.CreateActiveSkill{
       target = room:getPlayerById(room:askForChoosePlayers(player, table.map(targets, Util.IdMapper), 1, 1, nil, self.name, false)[1])
     end
     if not target then return false end
-    target:broadcastSkillInvoke("ruilve")
-    room:notifySkillInvoked(target, "ruilve", "support")
+    target:broadcastSkillInvoke("ruilue")
+    room:notifySkillInvoked(target, "ruilue", "support")
     room:doIndicate(effect.from, {target.id})
     room:moveCardTo(effect.cards, Player.Hand, target, fk.ReasonGive, self.name, nil, true)
   end,
 }
-Fk:addSkill(ruilve_active)
+Fk:addSkill(ruilue_active)
 yimie:addRelatedSkill(yimie_delay)
 simashi:addSkill(taoyin)
 simashi:addSkill(yimie)
 simashi:addSkill(tairan)
-simashi:addSkill(ruilve)
+simashi:addSkill(ruilue)
 Fk:loadTranslationTable{
   ["ol__simashi"] = "司马师",
   ["#ol__simashi"] = "晋景王",
@@ -1479,11 +1482,11 @@ Fk:loadTranslationTable{
   [":yimie"] = "每回合限一次，当你对一名其他角色造成伤害时，你可失去1点体力，令此伤害值+X（X为其体力值减去伤害值）。伤害结算后，其回复X点体力。",
   ["tairan"] = "泰然",
   [":tairan"] = "锁定技，回合结束时，你回复体力至体力上限，将手牌摸至体力上限；出牌阶段开始时，你失去上次以此法回复的体力值，弃置以此法获得的手牌。",
-  ["ruilve"] = "睿略",
-  [":ruilve"] = "主公技，其他晋势力角色的出牌阶段限一次，该角色可以将一张【杀】或伤害锦囊牌交给你。",
-  ["ruilve&"] = "睿略",
-  [":ruilve&"] = "出牌阶段限一次，你可以将一张【杀】或伤害锦囊牌交给司马师。",
-  ["#ruilve"] = "睿略：你可以将一张伤害牌交给司马师",
+  ["ruilue"] = "睿略",
+  [":ruilue"] = "主公技，其他晋势力角色的出牌阶段限一次，该角色可以将一张【杀】或伤害锦囊牌交给你。",
+  ["ruilue&"] = "睿略",
+  [":ruilue&"] = "出牌阶段限一次，你可以将一张【杀】或伤害锦囊牌交给司马师。",
+  ["#ruilue"] = "睿略：你可以将一张伤害牌交给司马师",
   ["#yimie_delay"] = "夷灭",
   ["#yimie-invoke"] = "夷灭：你可以失去1点体力，令你对 %arg 造成的伤害增加至其体力值！",
   ["@@tairan-inhand"] = "泰然",
@@ -1494,8 +1497,8 @@ Fk:loadTranslationTable{
   ["$yimie2"] = "斩草除根，灭其退路！",
   ["$tairan1"] = "撼山易，撼我司马氏难。",
   ["$tairan2"] = "云卷云舒，处之泰然。",
-  ["$ruilve1"] = "司马当兴，其兴在吾。",
-  ["$ruilve2"] = "吾承父志，故知军事通谋略。",
+  ["$ruilue1"] = "司马当兴，其兴在吾。",
+  ["$ruilue2"] = "吾承父志，故知军事通谋略。",
   ["~ol__simashi"] = "子上，这是为兄给你打下的江山……",
 }
 

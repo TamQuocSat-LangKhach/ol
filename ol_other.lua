@@ -645,12 +645,12 @@ Fk:loadTranslationTable{
 }
 
 local zhanghe = General(extension, "guandu__zhanghe", "qun", 4)
-local yuanlve = fk.CreateActiveSkill{
-  name = "yuanlve",
+local yuanlue = fk.CreateActiveSkill{
+  name = "yuanlue",
   anim_type = "support",
   card_num = 1,
   target_num = 1,
-  prompt = "#yuanlve",
+  prompt = "#yuanlue",
   can_use = function(self, player)
     return player:usedSkillTimes(self.name, Player.HistoryPhase) == 0 and not player:isKongcheng()
   end,
@@ -668,7 +668,7 @@ local yuanlve = fk.CreateActiveSkill{
     if room:getCardOwner(id) == target and room:getCardArea(id) == Card.PlayerHand then
       local card = Fk:getCardById(id)
       if not target:prohibitUse(card) and target:canUse(card) then
-        local use = room:askForUseCard(target,card.name, ".|.|.|.|.|.|"..id, "#yuanlve-invoke:"..player.id, true)
+        local use = room:askForUseCard(target,card.name, ".|.|.|.|.|.|"..id, "#yuanlue-invoke:"..player.id, true)
         if use then
           room:useCard(use)
           if not player.dead then
@@ -679,16 +679,16 @@ local yuanlve = fk.CreateActiveSkill{
     end
   end,
 }
-zhanghe:addSkill(yuanlve)
+zhanghe:addSkill(yuanlue)
 Fk:loadTranslationTable{
   ["guandu__zhanghe"] = "张郃",
-  ["yuanlve"] = "远略",
-  [":yuanlve"] = "出牌阶段限一次，你可以交给一名其他角色一张非装备牌，然后其可以使用此牌，令你摸一张牌。",
-  ["#yuanlve"] = "远略：交给一名其他角色一张非装备牌，其可以使用此牌，令你摸一张牌",
-  ["#yuanlve-invoke"] = "远略：你可以使用这张牌，令 %src 摸一张牌",
+  ["yuanlue"] = "远略",
+  [":yuanlue"] = "出牌阶段限一次，你可以交给一名其他角色一张非装备牌，然后其可以使用此牌，令你摸一张牌。",
+  ["#yuanlue"] = "远略：交给一名其他角色一张非装备牌，其可以使用此牌，令你摸一张牌",
+  ["#yuanlue-invoke"] = "远略：你可以使用这张牌，令 %src 摸一张牌",
 
-  ["$yuanlve1"] = "若不引兵救乌巢，则主公危矣！",
-  ["$yuanlve2"] = "此番攻之不破，吾属尽成俘虏。",
+  ["$yuanlue1"] = "若不引兵救乌巢，则主公危矣！",
+  ["$yuanlue2"] = "此番攻之不破，吾属尽成俘虏。",
   ["~guandu__zhanghe"] = "袁公不听吾之言，乃至今日。",
 }
 

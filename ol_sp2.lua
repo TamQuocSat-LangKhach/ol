@@ -1713,15 +1713,13 @@ Fk:loadTranslationTable{
 local fengfangnv = General(extension, "ol__fengfangnv", "qun", 3, 3, General.Female)
 local zhuangshu_select = fk.CreateActiveSkill{
   name = "zhuangshu_select",
-  expand_pile = "zhuangshu",
-  can_use = Util.FalseFunc,
-  target_num = 0,
   card_num = 1,
+  target_num = 0,
+  expand_pile = function (self)
+    return U.getMark(Self, "zhuangshu_cards")
+  end,
   card_filter = function(self, to_select, selected)
-    if #selected == 0 then
-      local ids = Self:getMark("zhuangshu_cards")
-      return type(ids) == "table" and table.contains(ids, to_select)
-    end
+    return #selected == 0 and table.contains(U.getMark(Self, "zhuangshu_cards"), to_select)
   end,
 }
 Fk:addSkill(zhuangshu_select)
@@ -1750,22 +1748,9 @@ local zhuangshu = fk.CreateTriggerSkill{
         return room:getCardArea(id) == Card.Void
       end)
       if #combs == 0 then return false end
-      player.special_cards["zhuangshu"] = table.simpleClone(combs)
-      player:doNotify("ChangeSelf", json.encode {
-        id = player.id,
-        handcards = player:getCardIds("h"),
-        special_cards = player.special_cards,
-      })
       room:setPlayerMark(player, "zhuangshu_cards", combs)
       local success, dat = room:askForUseActiveSkill(player, "zhuangshu_select", "#zhuangshu-choose", true, Util.DummyTable, true)
       room:setPlayerMark(player, "zhuangshu_cards", 0)
-      player.special_cards["zhuangshu"] = {}
-      player:doNotify("ChangeSelf", json.encode {
-        id = player.id,
-        handcards = player:getCardIds("h"),
-        special_cards = player.special_cards,
-      })
-      
       if success then
         self.cost_data = dat.cards
         return true
@@ -1805,7 +1790,7 @@ local zhuangshu = fk.CreateTriggerSkill{
         return room:getCardArea(id) == Card.Void and Fk:getCardById(id).name == comb_name
       end)
       if comb_id == nil then
-        for _, p in ipairs(room:getOtherPlayers(target)) do
+        for _, p in ipairs(room:getOtherPlayers(target, false)) do
           local new = table.find(p:getCardIds("e"), function (id)
             return Fk:getCardById(id).name == comb_name
           end)
@@ -1824,12 +1809,11 @@ local zhuangshu = fk.CreateTriggerSkill{
 }
 local chuiti_viewas = fk.CreateViewAsSkill{
   name = "chuiti_viewas",
-  expand_pile = "chuiti",
+  expand_pile = function (self)
+    return U.getMark(Self, "chuiti_cards")
+  end,
   card_filter = function(self, to_select, selected)
-    if #selected == 0 then
-      local ids = Self:getMark("chuiti_cards")
-      return type(ids) == "table" and table.contains(ids, to_select)
-    end
+    return #selected == 0 and table.contains(U.getMark(Self, "chuiti_cards"), to_select)
   end,
   view_as = function(self, cards)
     if #cards == 1 then
@@ -1873,29 +1857,17 @@ local chuiti = fk.CreateTriggerSkill{
   end,
   on_cost = function(self, event, target, player, data)
     local room = player.room
-    local ids = self.cost_data
-    player.special_cards["chuiti"] = table.simpleClone(ids)
-    player:doNotify("ChangeSelf", json.encode {
-      id = player.id,
-      handcards = player:getCardIds("h"),
-      special_cards = player.special_cards,
-    })
+    local ids = table.simpleClone(self.cost_data)
     room:setPlayerMark(player, "chuiti_cards", ids)
     local success, dat = room:askForUseActiveSkill(player, "chuiti_viewas", "#chuiti-invoke", true, Util.DummyTable, true)
     room:setPlayerMark(player, "chuiti_cards", 0)
-    player.special_cards["chuiti"] = {}
-    player:doNotify("ChangeSelf", json.encode {
-      id = player.id,
-      handcards = player:getCardIds("h"),
-      special_cards = player.special_cards,
-    })
     if success then
       self.cost_data = dat
       return true
     end
   end,
   on_use = function(self, event, target, player, data)
-    local card = Fk.skills["chuiti_viewas"]:viewAs(self.cost_data.cards)
+    local card = Fk:getCardById(self.cost_data.cards[1])
     player.room:useCard{
       from = player.id,
       tos = table.map(self.cost_data.targets, function(id) return {id} end),
@@ -1910,11 +1882,12 @@ Fk:loadTranslationTable{
   ["#ol__fengfangnv"] = "为君梳妆浓",
   ["illustrator:ol__fengfangnv"] = "君桓文化",
   ["zhuangshu"] = "妆梳",
-  [":zhuangshu"] = "游戏开始时，你可以将一张“宝梳”置入你的装备区。一名角色的回合开始时，你可以弃置一张牌，将一张“宝梳”置入其宝物区"..
+  [":zhuangshu"] = "游戏开始时，你可以将一张“宝梳”置入你的装备区。"..
+  "一名角色的回合开始时，你可以弃置一张牌，将一张“宝梳”置入其宝物区"..
   "（牌的类别决定“宝梳”种类：基本牌-【琼梳】、锦囊牌-【犀梳】、装备牌-【金梳】，若场上已有则改为移至其装备区）。"..
   "当“宝梳”进入非装备区时，销毁之。",
   ["chuiti"] = "垂涕",
-  [":chuiti"] = "每回合限一次，当你或装备区有“宝梳”的角色的一张牌因弃置而置入弃牌堆后，若你能使用此牌，你可以使用之（有次数限制）。",
+  [":chuiti"] = "每回合限一次，当你或装备区有“宝梳”的角色的一张牌因弃置而置入弃牌堆后，你可以使用之（有次数限制）。",
 
   ["#zhuangshu-choose"] = "是否使用 妆梳，选择一张“宝梳”置入你的装备区",
   ["zhuangshu_select"] = "妆梳",
@@ -1934,14 +1907,15 @@ Fk:loadTranslationTable{
 }
 
 local yangyi = General(extension, "ol__yangyi", "shu", 3)
-
 local juanxia_active = fk.CreateActiveSkill{
   name = "juanxia_active",
-  expand_pile = "juanxia",
+  expand_pile = function(self)
+    return U.getMark(Self, "juanxia_names")
+  end,
   card_num = 1,
   card_filter = function(self, to_select, selected)
     if #selected > 0 then return false end
-    local mark = U.getMark(Self, "juanxia_cards")
+    local mark = U.getMark(Self, "juanxia_names")
     if table.contains(mark, to_select) then
       local name = Fk:getCardById(to_select).name
       local card = Fk:cloneCard(name)
@@ -1999,23 +1973,9 @@ local juanxia = fk.CreateTriggerSkill{
       end)
       room:setPlayerMark(player, "juanxia_cards", mark)
     end
-
-    player.special_cards["juanxia"] = table.clone(mark)
-    player:doNotify("ChangeSelf", json.encode {
-      id = player.id,
-      handcards = player:getCardIds("h"),
-      special_cards = player.special_cards,
-    })
-
+    room:setPlayerMark(player, "juanxia_names", mark)
     local success, dat = player.room:askForUseActiveSkill(player, "juanxia_active", "#juanxia-choose", true)
-
-    player.special_cards["juanxia"] = {}
-    player:doNotify("ChangeSelf", json.encode {
-      id = player.id,
-      handcards = player:getCardIds("h"),
-      special_cards = player.special_cards,
-    })
-
+    room:setPlayerMark(player, "juanxia_names", 0)
     if success then
       self.cost_data = dat
       return true
@@ -2036,24 +1996,14 @@ local juanxia = fk.CreateTriggerSkill{
     local x = 1
     local mark = table.clone(player:getMark("juanxia_cards"))
     table.removeOne(mark, dat.cards[1])
-    player.special_cards["juanxia"] = mark
-    player:doNotify("ChangeSelf", json.encode {
-      id = player.id,
-      handcards = player:getCardIds("h"),
-      special_cards = player.special_cards,
-    })
+    room:setPlayerMark(player, "juanxia_names", mark)
     room:setPlayerMark(player, "juanxia_target", to.id)
 
     local success = false
     success, dat = room:askForUseActiveSkill(player, "juanxia_active", "#juanxia-invoke::" .. to.id, true)
 
+    room:setPlayerMark(player, "juanxia_names", 0)
     room:setPlayerMark(player, "juanxia_target", 0)
-    player.special_cards["juanxia"] = {}
-    player:doNotify("ChangeSelf", json.encode {
-      id = player.id,
-      handcards = player:getCardIds("h"),
-      special_cards = player.special_cards,
-    })
 
     if success then
       card = Fk:cloneCard(Fk:getCardById(dat.cards[1]).name)
@@ -3745,19 +3695,9 @@ local shengong = fk.CreateActiveSkill{
     end
     room:sendLog{ type = "#shengongResult", from = player.id, arg = good, arg2 = bad, arg3 = result }
     local list = table.random(cards, choose_num)
-    player.special_cards["shengong"] = table.simpleClone(list)
-    player:doNotify("ChangeSelf", json.encode {
-      id = player.id,
-      handcards = player:getCardIds("h"),
-      special_cards = player.special_cards,
-    })
+    room:setPlayerMark(player, "shengong_cards", list)
     local success, dat = room:askForUseActiveSkill(player, "shengong_active", "#shengong-choose", true)
-    player.special_cards["shengong"] = {}
-    player:doNotify("ChangeSelf", json.encode {
-      id = player.id,
-      handcards = player:getCardIds("h"),
-      special_cards = player.special_cards,
-    })
+    room:setPlayerMark(player, "shengong_cards", 0)
     local cardId = success and dat.cards[1] or table.random(list)
     local to = success and room:getPlayerById(dat.targets[1]) or
     table.find(room.alive_players, function (p) return U.canMoveCardIntoEquip(p, cardId, true) end)
@@ -3769,9 +3709,11 @@ local shengong_active = fk.CreateActiveSkill{
   name = "shengong_active",
   card_num = 1,
   target_num = 1,
-  expand_pile = "shengong",
+  expand_pile = function (self)
+    return U.getMark(Self, "shengong_cards")
+  end,
   card_filter = function(self, to_select, selected)
-    return #selected == 0 and Self:getPileNameOfId(to_select) == "shengong"
+    return #selected == 0 and table.contains(U.getMark(Self, "shengong_cards"), to_select)
   end,
   target_filter = function(self, to_select, selected, selected_cards)
     return #selected == 0 and #selected_cards == 1
@@ -5352,7 +5294,9 @@ Fk:loadTranslationTable{
 local zhangzhi = General(extension, "zhangzhi", "qun", 3)
 local bixin_viewas = fk.CreateViewAsSkill{
   name = "bixin_viewas",
-  expand_pile = "bixin",
+  expand_pile = function(self)
+    return U.getMark(Self, "bixin_cards")
+  end,
   interaction = function()
     local all_choices = {"basic", "trick", "equip"}
     local choices = table.filter(all_choices, function (card_type)
@@ -5385,7 +5329,9 @@ local bixin_viewas = fk.CreateViewAsSkill{
 local bixin = fk.CreateViewAsSkill{
   name = "bixin",
   pattern = ".|.|.|.|.|basic",
-  expand_pile = "bixin",
+  expand_pile = function(self)
+    return U.getMark(Self, "bixin_cards")
+  end,
   prompt = "#bixin-viewas",
   interaction = function()
     local types, choices, all_choices = {"basic", "trick", "equip"}, {}, {}
@@ -5473,12 +5419,6 @@ local bixin_trigger = fk.CreateTriggerSkill{
     if type(mark) ~= "table" then
       mark = U.getUniversalCards(room, "b")
       room:setPlayerMark(player, "bixin_cards", mark)
-      player.special_cards["bixin"] = mark
-      player:doNotify("ChangeSelf", json.encode {
-        id = player.id,
-        handcards = player:getCardIds("h"),
-        special_cards = player.special_cards,
-      })
     end
     room:setPlayerMark(player, MarkEnum.BypassTimesLimit.."-tmp", 1)
     local success, dat = room:askForUseActiveSkill(player, "bixin_viewas", "#bixin-invoke", true)
