@@ -2962,9 +2962,14 @@ local xiaofan = fk.CreateViewAsSkill{
     if #cards ~= 1 then return end
     return Fk:getCardById(cards[1])
   end,
-  before_use = function (self, player, useData)
-    useData.extra_data = useData.extra_data or {}
-    useData.extra_data.xiaofanUser = player.id
+  after_use = function (self, player, useData)
+    local x = #U.getMark(player, "xiaofan_types-turn")
+    local areas = {"j", "e", "h"}
+    local to_throw = ""
+    for i = 1, x, 1 do
+      to_throw = to_throw .. areas[i]
+    end
+    player:throwAllCards(to_throw)
   end,
   enabled_at_play = function(self, player)
     return #U.getMark(player, "xiaofan_types-turn") > 0
@@ -2976,20 +2981,6 @@ local xiaofan = fk.CreateViewAsSkill{
 local xiaofan_trigger = fk.CreateTriggerSkill{
   name = "#xiaofan_trigger",
   mute = true,
-  events = {fk.CardUseFinished},
-  can_trigger = function(self, event, target, player, data)
-    return not player.dead and data.extra_data and data.extra_data.xiaofanUser == player.id
-  end,
-  on_cost = Util.TrueFunc,
-  on_use = function(self, event, target, player, data)
-    local x = #U.getMark(player, "xiaofan_types-turn")
-    local areas = {"j", "e", "h"}
-    local to_throw = ""
-    for i = 1, x, 1 do
-      to_throw = to_throw .. areas[i]
-    end
-    player:throwAllCards(to_throw)
-  end,
 
   refresh_events = {fk.AfterCardsMove, fk.AfterDrawPileShuffle, fk.PreCardUse, fk.EventAcquireSkill, fk.EventLoseSkill},
   can_refresh = function(self, event, target, player, data)
@@ -3052,7 +3043,6 @@ local xiaofan_trigger = fk.CreateTriggerSkill{
     end
   end,
 }
-
 local tuoshi = fk.CreateTriggerSkill{
   name = "tuoshi",
   anim_type = "drawcard",
