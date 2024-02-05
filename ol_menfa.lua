@@ -12,9 +12,9 @@ Fk:loadTranslationTable{
 local isFamilyMember = function (player, famaly)
   local familyMap = {
     ["xun"] = {"olz__xun", "xunchen", "xunyu", "xunyou"},
-    ["wu"] = {"olz__wu", "wuyi", "wuxian", "wuban"},
+    ["wu"] = {"olz__wu", "wuyi", "wuxian", "wuban", "wuqiao"},
     ["han"] = {"olz__han", "hanshao", "hanrong"},
-    ["wang"] = {"olz__wangyun", "wangyun", "wangling", "wangchang", "wanghun"},
+    ["wang"] = {"olz__wang", "wangyun", "wangling", "wangchang", "wanghun"},
     ["zhong"] = {"olz__zhong", "zhongyao", "zhongyu", "zhonghui", "zhongyan"},
   }
   local names = familyMap[famaly] or {}
@@ -2871,6 +2871,28 @@ Fk:loadTranslationTable{
   ["$qice_olz__xunyou1"] = "二袁相争，此曹公得利之时。",
   ["$qice_olz__xunyou2"] = "穷寇宜追，需防死蛇之不僵。",
   ["~olz__xunyou"] = "吾知命之寿，明知命之节……",
+}
+
+--[[
+local wuqiao = General(extension, "olz__wuqiao", "qun", 3)
+
+
+wuqiao:addSkill("muyin")
+]]
+
+Fk:loadTranslationTable{
+  ["olz__wuqiao"] = "族吴乔",
+  ["#olz__wuqiao"] = "孤节卅岁",
+  --["illustrator:olz__wuqiao"] = "",
+  ["qiajue"] = "跒倔",
+  [":qiajue"] = "摸牌阶段开始时，你可以弃置一张黑色牌并于本阶段结束时展示所有手牌，若点数和大于30，你的手牌上限-2，"..
+  "否则你执行一个额外的摸牌阶段。",
+
+  ["$qiajue1"] = "",
+  ["$qiajue2"] = "",
+  ["$muyin_olz__wuqiao1"] = "",
+  ["$muyin_olz__wuqiao2"] = "",
+  ["~olz__wuqiao"] = "",
 }
 
 return extension

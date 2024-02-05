@@ -4426,7 +4426,7 @@ local shandao = fk.CreateActiveSkill{
     room:useVirtualCard("amazing_grace", {}, player, tos, self.name)
     if player.dead then return false end
     local others = table.filter(room.alive_players, function (p)
-      return not table.contains(targets, p.id) and p ~= player.id
+      return not table.contains(targets, p.id) and p ~= player
     end)
     if #others > 0 then
       room:useVirtualCard("archery_attack", {}, player, others, self.name)

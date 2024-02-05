@@ -271,6 +271,23 @@ Fk:loadTranslationTable{
   ["~olmou__jiangwei"] = "姜维姜维……又将何为？",
 }
 
+Fk:loadTranslationTable{
+  ["olmou__guanyu"] = "谋关羽",
+  ["#olmou__guanyu"] = "威震华夏",
+  --["illustrator:olmou__guanyu"] = "",
+  ["weilingy"] = "威临",
+  [":weilingy"] = "每回合限一次，你可以将一张牌当任意【杀】或【酒】使用。"..
+  "以此法使用的牌指定目标后，你令其与此牌颜色相同的手牌均视为【杀】直到回合结束。",
+  ["duoshou"] = "夺首",--三首（雾）
+  [":duoshou"] = "锁定技，每回合你使用的首张红色牌无距离关系的限制；首张基本牌不计入限制的次数；首次造成伤害后摸一张牌。",
+
+  ["$weilingy1"] = "",
+  ["$weilingy2"] = "",
+  ["$duoshou1"] = "",
+  ["$duoshou2"] = "",
+  ["~olmou__guanyu"] = "",
+}
+
 local taishici = General(extension, "olmou__taishici", "wu", 4)
 local ol__dulie = fk.CreateTriggerSkill{
   name = "ol__dulie",
@@ -348,7 +365,7 @@ taishici:addSkill(douchan)
 
 Fk:loadTranslationTable{
   ["olmou__taishici"] = "谋太史慈",
-  --["#olmou__taishici"] = "",
+  ["#olmou__taishici"] = "矢志全忠孝",
   --["illustrator:olmou__taishici"] = "",
   ["ol__dulie"] = "笃烈",
   [":ol__dulie"] = "每回合限一次，当你成为其他角色使用基本牌或普通锦囊牌的唯一目标时，"..
