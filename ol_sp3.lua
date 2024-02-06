@@ -4447,4 +4447,161 @@ Fk:loadTranslationTable{
   ["~tianchou"] = "吾罪大矣，何堪封侯之荣……",
 }
 
+local hujinding = General(extension, "ol__hujinding", "shu", 3, 3, General.Female)
+local qingyuan = fk.CreateTriggerSkill{
+  name = "qingyuan",
+  anim_type = "control",
+  frequency = Skill.Compulsory,
+  events = {fk.GameStart, fk.Damaged, fk.AfterCardsMove},
+  can_trigger = function(self, event, target, player, data)
+    if player:hasSkill(self) then
+      if event == fk.AfterCardsMove then
+        if player:getMark("qingyuan-turn") > 0 then return false end
+        local mark = U.getMark(player, "qingyuan_target")
+        local targets = {}
+        local room = player.room
+        for _, move in ipairs(data) do
+          if move.to and table.contains(mark, move.to) and move.toArea == Card.PlayerHand then
+            local p = room:getPlayerById(move.to)
+            if not (p.dead or p:isNude()) then
+              table.insertIfNeed(targets, p.id)
+            end
+          end
+        end
+        if #targets > 0 then
+          self.cost_data = targets
+          return true
+        end
+      elseif event == fk.Damaged then
+        local room = player.room
+        local mark = player:getMark("qingyuan_damage")
+        if mark == 0 then
+          U.getActualDamageEvents(room, 1, function (e)
+            local damage = e.data[1]
+            if damage.to == player then
+              mark = e.id
+              room:setPlayerMark(player, "qingyuan_damage", mark)
+              return true
+            end
+          end, Player.HistoryGame)
+        end
+        return room.logic:getCurrentEvent().id == mark
+      elseif event == fk.GameStart then
+        return true
+      end
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    if event == fk.AfterCardsMove then
+      room:addPlayerMark(player, "qingyuan-turn")
+      local to = table.random(self.cost_data)
+      room:doIndicate(player.id, {to})
+      local cards = room:getPlayerById(to):getCardIds{Player.Hand, Player.Equip}
+      if #cards == 0 then return false end
+      room:obtainCard(player.id, table.random(cards), false, fk.ReasonPrey)
+    else
+      local mark = U.getMark(player, "qingyuan_target")
+      local tos = table.map(table.filter(room.alive_players, function(p)
+        return p ~= player and not table.contains(mark, p.id)
+      end), Util.IdMapper)
+      if #tos == 0 then return false end
+      local tos = room:askForChoosePlayers(player, tos, 1, 1, "#qingyuan-choose", self.name, false)
+      table.insert(mark, tos[1])
+      room:setPlayerMark(player, "qingyuan_target", mark)
+      room:setPlayerMark(room:getPlayerById(tos[1]), "@@qingyuan", 1)
+    end
+  end,
+
+  refresh_events = {fk.BuryVictim},
+  can_refresh = function(self, event, target, player, data)
+    return player:getMark("@@qingyuan") > 0 and table.every(player.room.alive_players, function(p)
+      return not table.contains(U.getMark(p, "qingyuan_target"), player.id)
+    end)
+  end,
+  on_refresh = function(self, event, target, player, data)
+    player.room:setPlayerMark(player, "@@qingyuan", 0)
+  end,
+}
+local chongshen = fk.CreateViewAsSkill{
+  name = "chongshen",
+  anim_type = "defensive",
+  prompt = "#chongshen-viewas",
+  pattern = "jink",
+  card_filter = function(self, to_select, selected)
+    return #selected == 0 and Fk:getCardById(to_select):getMark("@@chongshen-inhand") > 0
+  end,
+  view_as = function(self, cards)
+    if #cards ~= 1 then
+      return nil
+    end
+    local c = Fk:cloneCard("jink")
+    c.skillName = self.name
+    c:addSubcard(cards[1])
+    return c
+  end,
+  enabled_at_response = function(self, player, response)
+    return not response
+  end,
+}
+local chongshen_record = fk.CreateTriggerSkill{
+  name = "#chongshen_record",
+
+  refresh_events = {fk.AfterCardsMove, fk.RoundEnd},
+  can_refresh = function(self, event, target, player, data)
+    if event == fk.AfterCardsMove then
+      return player:hasSkill(chongshen, true)
+    end
+    return true
+  end,
+  on_refresh = function(self, event, target, player, data)
+    local room = player.room
+    if event == fk.AfterCardsMove then
+      for _, move in ipairs(data) do
+        if move.to == player.id and move.toArea == Player.Hand then
+          for _, info in ipairs(move.moveInfo) do
+            local id = info.cardId
+            if room:getCardArea(id) == Card.PlayerHand and room:getCardOwner(id) == player then
+              room:setCardMark(Fk:getCardById(id), "@@chongshen-inhand", 1)
+            end
+          end
+        end
+      end
+    elseif event == fk.RoundEnd then
+      U.clearHandMark(player, "@@chongshen-inhand")
+    end
+  end,
+}
+local chongshen_maxcards = fk.CreateMaxCardsSkill{
+  name = "#chongshen_maxcards",
+  exclude_from = function(self, player, card)
+    return player:hasSkill(chongshen) and card:getMark("@@chongshen-inhand") > 0
+  end,
+}
+
+chongshen:addRelatedSkill(chongshen_record)
+chongshen:addRelatedSkill(chongshen_maxcards)
+hujinding:addSkill(qingyuan)
+hujinding:addSkill(chongshen)
+
+Fk:loadTranslationTable{
+  ["ol__hujinding"] = "胡金定",
+  ["qingyuan"] = "轻缘",
+  [":qingyuan"] = "锁定技，游戏开始时，你选择一名其他角色；当你首次受到伤害后，你再选择一名其他角色。"..
+  "每回合限一次，当以此法选择的角色获得牌后，你获得其中随机一名角色一张牌。",
+  ["chongshen"] = "重身",
+  [":chongshen"] = "你于本轮内获得的牌可以当【闪】使用且不计入手牌上限。",
+
+  ["#qingyuan-choose"] = "轻缘：选择一名其他角色",
+  ["@@qingyuan"] = "轻缘",
+  ["#chongshen-viewas"] = "发动 重身，将一张本轮获得的牌当做【闪】使用",
+  ["@@chongshen-inhand"] = "重身",
+
+  ["$qingyuan1"] = "男儿重义气，自古轻别离。",
+  ["$qingyuan2"] = "缘轻义重，倚东篱而叹长生。",
+  ["$chongshen1"] = "妾死则矣，腹中稚婴何辜？",
+  ["$chongshen2"] = "身怀六甲，君忘好生之德乎？",
+  ["~ol__hujinding"] = "君无愧于天下，可有悔于妻儿？",
+}
+
 return extension
