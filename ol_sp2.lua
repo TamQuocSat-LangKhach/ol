@@ -2082,7 +2082,9 @@ yangyi:addSkill(dingcuo)
 Fk:loadTranslationTable{
   ["ol__yangyi"] = "杨仪",
   ["#ol__yangyi"] = "武侯长史",
+  ["designer:ol__yangyi"] = "步穗",
   ["illustrator:ol__yangyi"] = "游漫美绘",
+
   ["juanxia"] = "狷狭",
   [":juanxia"] = "结束阶段，你可以选择一名其他角色，依次视为对其使用至多两张仅指定唯一目标的普通锦囊牌。"..
   "若如此做，该角色的下回合结束时，其可依次视为对你使用等量的【杀】。",
@@ -2376,7 +2378,9 @@ dongzhao:addSkill(zaowang)
 Fk:loadTranslationTable{
   ["ol__dongzhao"] = "董昭",
   ["#ol__dongzhao"] = "乐平侯",
+  ["designer:ol__dongzhao"] = "GENTOVA",
   ["illustrator:ol__dongzhao"] = "游漫美绘",
+
   ["xianlue"] = "先略",
   [":xianlue"] = "①主公的回合开始时，你可以记录一个普通锦囊牌的牌名（覆盖原记录）；"..
   "②每回合限一次，当其他角色使用与记录的牌牌名相同的牌结算后，你摸两张牌并分配给任意角色，"..
@@ -2773,7 +2777,9 @@ fanjiangzhangda:addSkill(juesheng)
 Fk:loadTranslationTable{
   ["fanjiangzhangda"] = "范疆张达",
   ["#fanjiangzhangda"] = "你死我亡",
+  ["designer:fanjiangzhangda"] = "七哀",
   ["illustrator:fanjiangzhangda"] = "游漫美绘",
+
   ["yuanchou"] = "怨仇",
   [":yuanchou"] = "锁定技，你使用的黑色【杀】无视目标角色防具，其他角色对你使用的黑色【杀】无视你的防具。",
   ["juesheng"] = "决生",
@@ -3308,7 +3314,9 @@ tengfanglan:addSkill(aichen)
 Fk:loadTranslationTable{
   ["ol__tengfanglan"] = "滕芳兰",
   ["#ol__tengfanglan"] = "铃兰凋落",
+  ["designer:ol__tengfanglan"] = "步穗",
   ["illustrator:ol__tengfanglan"] = "DH",
+
   ["luochong"] = "落宠",
   [":luochong"] = "准备阶段或当你每回合首次受到伤害后，你可以选择一项，令一名角色：1.回复1点体力；2.失去1点体力；3.弃置两张牌；4.摸两张牌。"..
   "每轮每项限一次，每轮对每名角色限一次。",
@@ -3423,7 +3431,9 @@ menghuo:addRelatedSkill(panqin)
 Fk:loadTranslationTable{
   ["sp__menghuo"] = "孟获",
   ["#sp__menghuo"] = "夷汉并服",
+  ["designer:sp__menghuo"] = "玄蝶既白",
   ["illustrator:sp__menghuo"] = "君桓文化",
+
   ["manwang"] = "蛮王",
   [":manwang"] = "出牌阶段，你可以弃置任意张牌依次执行前等量项：1.获得〖叛侵〗；2.摸一张牌；3.回复1点体力；4.摸两张牌并失去〖叛侵〗。",
   ["panqin"] = "叛侵",
@@ -5937,6 +5947,7 @@ ahuinan:addSkill(jueman)
 Fk:loadTranslationTable{
   ["ahuinan"] = "阿会喃",
   ["#ahuinan"] = "维绳握雾",
+  ["designer:ahuinan"] = "大宝",
   ["illustrator:ahuinan"] = "monkey",
   ["jueman"] = "蟨蛮",
   [":jueman"] = "锁定技，每回合结束时，若本回合前两张基本牌的使用者：均不为你，你视为使用本回合第三张使用的基本牌；仅其中之一为你，你摸一张牌。",

@@ -1034,7 +1034,9 @@ chengjichengcui:addSkill(chuming)
 Fk:loadTranslationTable{
   ["chengjichengcui"] = "成济成倅",
   ["#chengjichengcui"] = "袒忿半瓦",
+  ["designer:chengjichengcui"] = "玄蝶既白",
   ["illustrator:chengjichengcui"] = "君桓文化",
+
   ["tousui"] = "透髓",
   [":tousui"] = "你可以将任意张牌置于牌堆底，视为使用一张需要等量张【闪】抵消的【杀】。",
   ["chuming"] = "畜鸣",

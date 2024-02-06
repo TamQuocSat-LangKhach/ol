@@ -108,6 +108,8 @@ huban:addSkill(huiyun)
 Fk:loadTranslationTable{
   ["ol__huban"] = "胡班",
   ["#ol__huban"] = "险误忠良",
+  ["designer:ol__huban"] = "cyc",
+
   ["huiyun"] = "晖云",
   [":huiyun"] = "你可以将一张牌当【火攻】使用，然后你于此牌结算结束后，对每个目标依次选择一项（每个选项每轮限一次），令其选择是否执行：1.使用展示牌，然后重铸所有手牌；2.使用一张手牌，然后重铸展示牌；3.摸一张牌。",
   ["#huiyun-choice"] = "晖云：选择一项令 %dest 角色选择是否执行",
@@ -554,6 +556,7 @@ macheng:addSkill(chenglie)
 Fk:loadTranslationTable{
   ["macheng"] = "马承",
   ["#macheng"] = "孤蹄踏乱",
+  ["designer:macheng"] = "cyc",
   ["illustrator:macheng"] = "君桓文化",
   ["chenglie"] = "骋烈",
   [":chenglie"] = "你使用【杀】可以多指定至多两个目标，然后展示牌堆顶与目标数等量张牌，秘密将一张手牌与其中一张牌交换，将之分别暗置于"..
@@ -988,6 +991,7 @@ dongtuna:addSkill(jianman)
 Fk:loadTranslationTable{
   ["dongtuna"] = "董荼那",
   ["#dongtuna"] = "铅刀拿云",
+  ["designer:dongtuna"] = "大宝",
   ["illustrator:dongtuna"] = "monkey",
   ["jianman"] = "鹣蛮",
   [":jianman"] = "锁定技，每回合结束时，若本回合前两张基本牌的使用者：均为你，你视为使用其中的一张牌；仅其中之一为你，你弃置另一名使用者一张牌。",
@@ -1080,6 +1084,7 @@ zhangyi:addSkill(kangrui)
 Fk:loadTranslationTable{
   ["ol__zhangyiy"] = "张翼",
   ["#ol__zhangyiy"] = "奉公弗怠",
+  ["designer:ol__zhangyiy"] = "朔方的雪",
   ["illustrator:ol__zhangyiy"] = "君桓文化",
   ["dianjun"] = "殿军",
   [":dianjun"] = "锁定技，结束阶段结束时，你受到1点伤害并执行一个额外的出牌阶段。",
@@ -1319,7 +1324,9 @@ wangguan:addSkill(shilu)
 Fk:loadTranslationTable{
   ["wangguan"] = "王瓘",
   ["#wangguan"] = "假降误撞",
+  ["designer:wangguan"] = "zzccll朱古力",
   ["illustrator:wangguan"] = "匠人绘",
+
   ["miuyan"] = "谬焰",
   [":miuyan"] = "转换技，阳：你可以将一张黑色牌当【火攻】使用，若此牌造成伤害，你获得本阶段展示过的所有手牌；"..
   "阴：你可以将一张黑色牌当【火攻】使用，若此牌未造成伤害，本轮本技能失效。",
@@ -1482,7 +1489,9 @@ sunhong:addSkill(zenrun)
 Fk:loadTranslationTable{
   ["sunhong"] = "孙弘",
   ["#sunhong"] = "谮诉构争",
+  ["designer:sunhong"] = "zzccll朱古力",
   ["illustrator:sunhong"] = "匠人绘",
+
   ["xianbi"] = "险诐",
   [":xianbi"] = "出牌阶段限一次，你可以将手牌调整至与一名角色装备区里的牌数相同，然后每因此弃置一张牌，你随机获得弃牌堆中另一张类型相同的牌。",
   ["zenrun"] = "谮润",
@@ -2184,6 +2193,7 @@ haopu:addSkill(zhenying)
 Fk:loadTranslationTable{
   ["haopu"] = "郝普",
   ["#haopu"] = "惭恨入地",
+  ["designer:haopu"] = "何如",
   ["illustrator:haopu"] = "匠人绘",
   ["zhenying"] = "镇荧",
   [":zhenying"] = "出牌阶段限两次，你可以与一名手牌数不大于你的其他角色同时摸或弃置手牌至至多两张，然后手牌数较少的角色视为对另一名角色使用【决斗】。",
@@ -2767,7 +2777,9 @@ duanjiong:addSkill(saogu)
 Fk:loadTranslationTable{
   ["duanjiong"] = "段颎",
   ["#duanjiong"] = "束马县锋",
+  ["designer:duanjiong"] = "绯红的波罗",
   ["illustrator:duanjiong"] = "黯荧岛工作室",
+
   ["saogu"] = "扫谷",
   [":saogu"] = "转换技，出牌阶段，你可以：阳，弃置两张牌（不能包含你本阶段弃置过的花色），使用其中的【杀】；阴，摸一张牌。"..
   "结束阶段，你可以弃置一张牌，令一名其他角色执行当前项。",
@@ -3242,6 +3254,7 @@ qianzhao:addSkill(kuansai)
 Fk:loadTranslationTable{
   ["ol__qianzhao"] = "牵招",
   ["#ol__qianzhao"] = "雁门无烟",
+  ["designer:ol__qianzhao"] = "cyc",
   ["illustrator:ol__qianzhao"] = "匠人绘",
   ["weifu"] = "威抚",
   [":weifu"] = "出牌阶段，你可以弃置一张牌并判定，你本回合下次使用与判定牌类别相同的牌无距离限制且可以多指定一个目标；若弃置牌与判定牌类别相同，你摸一张牌。",
@@ -3364,6 +3377,8 @@ luyusheng:addSkill(runwei)
 Fk:loadTranslationTable{
   ["ol__luyusheng"] = "陆郁生",
   ["#ol__luyusheng"] = "义姑",
+  ["designer:ol__luyusheng"] = "zzccll朱古力",
+
   ["cangxin"] = "藏心",
   [":cangxin"] = "锁定技，摸牌阶段开始时，你展示牌堆底三张牌并摸与其中<font color='red'>♥</font>牌数等量张牌。"..
   "当你受到伤害时，你展示牌堆底三张牌并弃置其中任意张牌，若弃置了<font color='red'>♥</font>牌，防止此伤害。",
@@ -3669,6 +3684,8 @@ liwan:addSkill(silv)
 
 Fk:loadTranslationTable{
   ["ol__liwan"] = "李婉",
+  ["designer:ol__liwan"] = "对勾对勾w",
+
   ["lianju"] = "联句",
   [":lianju"] = "结束阶段，你可以令一名其他角色获得弃牌堆中你本回合最后使用的牌并记录之，"..
   "然后其下个结束阶段可以令你获得弃牌堆中其此回合最后使用的牌，若两者牌名相同，你失去1点体力；牌名不同，你视为使用之。",
@@ -3824,7 +3841,9 @@ zhangyan:addSkill(langdao)
 Fk:loadTranslationTable{
   ["zhangyan"] = "张燕",
   ["#zhangyan"] = "飞燕",
+  ["designer:zhangyan"] = "廷玉",
   ["illustrator:zhangyan"] = "君桓文化",
+
   ["suji"] = "肃疾",
   [":suji"] = "已受伤角色的出牌阶段开始时，你可以将一张黑色牌当【杀】使用，若其受到此【杀】伤害，你获得其一张牌。",
   ["suji_viewas"] = "肃疾",
@@ -4164,7 +4183,9 @@ feiyi:addSkill(hezhong)
 Fk:loadTranslationTable{
   ["ol__feiyi"] = "费祎",
   ["#ol__feiyi"] = "中才之相",
+  ["designer:ol__feiyi"] = "廷玉",
   ["illustrator:ol__feiyi"] = "君桓文化",
+
   ["yanru"] = "晏如",
   [":yanru"] = "出牌阶段各限一次，若你的手牌数为：奇数，你可以摸三张牌，然后弃置至少半数手牌；偶数，你可以弃置至少半数手牌，然后摸三张牌。",
   ["hezhong"] = "和衷",
@@ -4366,6 +4387,8 @@ caoyu:addSkill(xiangzuo)
 
 Fk:loadTranslationTable{
   ["caoyu"] = "曹宇",
+  ["designer:caoyu"] = "廷玉",
+
   ["gongjie"] = "恭节",
   [":gongjie"] = "每轮的第一个回合开始后，你可以令任意名角色各获得你一张牌，然后你摸X张牌（X为被获得牌的花色数）。",
   ["xiangxu"] = "相胥",

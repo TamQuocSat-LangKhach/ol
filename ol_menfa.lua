@@ -824,6 +824,7 @@ olz__wuban:addSkill(muyin)
 Fk:loadTranslationTable{
   ["olz__wuban"] = "族吴班",
   ["#olz__wuban"] = "豪侠督进",
+  ["designer:olz__wuban"] = "大宝",
   ["illustrator:olz__wuban"] = "匠人绘",
   ["zhanding"] = "斩钉",
   [":zhanding"] = "你可以将任意张牌当【杀】使用并令你手牌上限-1，若此【杀】：造成伤害，你将手牌数调整至手牌上限；未造成伤害，此【杀】不计入次数。",
@@ -2883,6 +2884,7 @@ wuqiao:addSkill("muyin")
 Fk:loadTranslationTable{
   ["olz__wuqiao"] = "族吴乔",
   ["#olz__wuqiao"] = "孤节卅岁",
+  ["designer:olz__wuqiao"] = "玄蝶既白",
   --["illustrator:olz__wuqiao"] = "",
   ["qiajue"] = "跒倔",
   [":qiajue"] = "摸牌阶段开始时，你可以弃置一张黑色牌并于本阶段结束时展示所有手牌，若点数和大于30，你的手牌上限-2，"..

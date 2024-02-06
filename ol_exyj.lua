@@ -147,6 +147,7 @@ ol_ex__caozhang:addSkill(ol_ex__jiangchi)
 Fk:loadTranslationTable{
   ["ol_ex__caozhang"] = "界曹彰",
   ["#ol_ex__caozhang"] = "黄须儿",
+  ["designer:ol_ex__caozhang"] = "玄蝶既白",
   ["illustrator:ol_ex__caozhang"] = "枭瞳",
   ["ol_ex__jiangchi"] = "将驰",
   [":ol_ex__jiangchi"] = "摸牌阶段结束时，你可以选择一项：1.摸一张牌，本回合使用【杀】的次数上限-1，且【杀】不计入手牌上限；2.重铸一张牌，本回合使用【杀】无距离限制且次数上限+1。",

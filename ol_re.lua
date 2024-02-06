@@ -858,6 +858,8 @@ ol__zhugejin:addSkill(ol__mingzhe)
 Fk:loadTranslationTable{
   ["ol__zhugejin"] = "诸葛瑾",
   ["#ol__zhugejin"] = "联盟的维系者",
+  ["designer:ol__zhugejin"] = "玄蝶既白",
+
   ["ol__huanshi"] = "缓释",
   [":ol__huanshi"] = "当一名角色的判定牌生效前，你可以令其观看你的牌并用其中一张牌代替判定牌。",
   ["ol__hongyuan"] = "弘援",
@@ -2013,6 +2015,8 @@ masu:addSkill("ty_ex__zhiman")
 Fk:loadTranslationTable{
   ["ol__masu"] = "马谡",
   ["#ol__masu"] = "军略之才器",
+  ["designer:ol__masu"] = "豌豆帮帮主",
+
   ["ol__sanyao"] = "散谣",
   [":ol__sanyao"] = "出牌阶段每项各限一次，你可以弃置一张牌并选择一项，1.对全场体力值最大的一名角色造成1点伤害；2.对手牌数最多的一名角色造成1点伤害。",
   ["ol__sanyao_hp-phase"] = "体力值最大",

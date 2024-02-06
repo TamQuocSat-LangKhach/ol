@@ -3249,7 +3249,7 @@ Fk:loadTranslationTable{
   ["#ol_ex__fangquan_delay"] = "放权",
   [":ol_ex__fangquan"] = "出牌阶段开始前，你可跳过此阶段，然后弃牌阶段开始时，你可弃置一张手牌并选择一名其他角色，其获得一个额外回合。",
   ["ol_ex__ruoyu"] = "若愚",
-  [":ol_ex__ruoyu"] = "主公技，觉醒技，准备阶段，若你是体力值最小的角色，你加1点体力上限，回复体力至3点，获得〖激将〗（暂时为标准版）和〖思蜀〗（暂时无法正常适用）。",
+  [":ol_ex__ruoyu"] = "主公技，觉醒技，准备阶段，若你是体力值最小的角色，你加1点体力上限，回复体力至3点，获得〖激将〗（暂时为标准版）和〖思蜀〗。",
   ["ol_ex__sishu"] = "思蜀",
   [":ol_ex__sishu"] = "出牌阶段开始时，你可选择一名角色，其本局游戏【乐不思蜀】的判定结果反转。",
 
@@ -3699,7 +3699,11 @@ Fk:loadTranslationTable{
 
 local ol_ex__zuoci = General(extension, "ol_ex__zuoci", "qun", 3, 3, General.Female)
 
-local huashen_blacklist = {"zuoci", "ol_ex__zuoci", "qyt__dianwei", "starsp__xiahoudun", "js__huangzhong"}
+local huashen_blacklist = {
+  "zuoci", "ol_ex__zuoci", "qyt__dianwei", "starsp__xiahoudun",
+  -- haven't available skill
+  "js__huangzhong", "liyixiejing", "olz__wangyun", "yanyan", "duanjiong", "wolongfengchu", "wuanguo", "os__wangling",
+}
 local function Gethuashen(player, n)
   local room = player.room
   local generals = table.filter(room.general_pile, function (name)
@@ -3745,7 +3749,6 @@ local function Dohuashen(player)
     room:setPlayerMark(player, "@ol_ex__huashen_skill", choice)
     room:handleAddLoseSkills(player, choice)
   else
-    room:sendLog{ type = "#OLExHuanshenFailed", from = player.id, arg = name }
     room:setPlayerMark(player, "@ol_ex__huashen_skill", 0)
   end
   room:delay(500)
@@ -3846,7 +3849,6 @@ Fk:loadTranslationTable{
   ["ol_ex__huashen_re"] = "进行一次“化身”",
   ["ol_ex__huashen_recast"] = "移去至多两张“化身”，获得等量新“化身”",
   ["#ol_ex__huashen-recast"] = "移去至多两张“化身”，获得等量新“化身”",
-  ["#OLExHuanshenFailed"] = "%from “化身”失败，因为 %arg 没有可选的技能",
   ["#ol_ex__huashen-skill"] = "化身：选择获得的技能",
   ["ol_ex__xinsheng"] = "新生",
   [":ol_ex__xinsheng"] = "当你受到1点伤害后，若你有技能“化身”，你可以随机获得一张新的“化身”牌。",
