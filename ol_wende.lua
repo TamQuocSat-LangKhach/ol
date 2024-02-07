@@ -3445,7 +3445,9 @@ wangyan:addSkill(sanku)
 Fk:loadTranslationTable{
   ["wangyan"] = "王衍",
   ["#wangyan"] = "玄虚陆沉",
+  ["designer:wangyan"] = "玄蝶既白",
   ["illustrator:wangyan"] = "匠人绘",
+
   ["yangkuang"] = "阳狂",
   [":yangkuang"] = "当你回复体力至上限后，你可以视为使用一张【酒】并与当前回合角色各摸一张牌。",
   ["cihuang"] = "雌黄",

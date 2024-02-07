@@ -63,7 +63,9 @@ lingtong:addSkill(ol_ex__xuanfeng)
 Fk:loadTranslationTable{
   ["ol_ex__lingtong"] = "界凌统",
   ["#ol_ex__lingtong"] = "豪情烈胆",
+  ["designer:ol_ex__lingtong"] = "玄蝶既白",
   ["illustrator:ol_ex__lingtong"] = "君桓文化",
+  
   ["ol_ex__xuanfeng"] = "旋风",
   [":ol_ex__xuanfeng"] = "当你失去装备区里的牌后，或一次性失去至少两张牌后，你可以依次弃置至多两名其他角色共计至多两张牌。",
 

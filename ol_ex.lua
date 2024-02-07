@@ -3677,6 +3677,7 @@ zhangzhaozhanghong:addSkill(ol_ex__guzheng)
 Fk:loadTranslationTable{
   ["ol_ex__zhangzhaozhanghong"] = "界张昭张纮",
   ["#ol_ex__zhangzhaozhanghong"] = "经天纬地",
+  ["designer:ol_ex__zhangzhaozhanghong"] = "玄蝶既白",
   ["illustrator:ol_ex__zhangzhaozhanghong"] = "君桓文化",
   ["ol_ex__zhijian"] = "直谏",
   [":ol_ex__zhijian"] = "出牌阶段，你可以将一张装备牌置于其他角色装备区（替换原装备），然后摸一张牌。",

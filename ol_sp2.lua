@@ -2257,7 +2257,9 @@ zhanghe:addSkill(ol__zhouxuan)
 Fk:loadTranslationTable{
   ["ol__zhanghe"] = "张郃",
   ["#ol__zhanghe"] = "倾柱覆州",
+  ["designer:ol__zhanghe"] = "七哀",
   ["illustrator:ol__zhanghe"] = "君桓文化",
+
   ["ol__zhouxuan"] = "周旋",
   [":ol__zhouxuan"] = "弃牌阶段开始时，你可将任意张手牌扣置于武将牌上（均称为「旋」，至多五张）。"..
   "出牌阶段结束时，你移去所有「旋」。当你使用牌时，若你有「旋」，你摸一张牌，"..
@@ -2455,7 +2457,9 @@ wuyan:addSkill(lanjiang)
 Fk:loadTranslationTable{
   ["wuyanw"] = "吾彦",
   ["#wuyanw"] = "断浪南竹",
+  ["designer:wuyanw"] = "七哀",
   ["illustrator:wuyanw"] = "匠人绘",
+
   ["lanjiang"] = "澜江",
   [":lanjiang"] = "结束阶段，你可以令所有手牌数不小于你的角色依次选择是否令你摸一张牌。选择完成后，你可以对手牌数等于你的其中一名角色造成1点伤害，"..
   "然后令手牌数小于你的其中一名角色摸一张牌。",
@@ -4711,6 +4715,7 @@ caoxiancaohua:addSkill(jisi)
 Fk:loadTranslationTable{
   ["caoxiancaohua"] = "曹宪曹华",
   ["#caoxiancaohua"] = "与君化木",
+  ["designer:caoxiancaohua"] = "玄蝶既白",
   ["illustrator:caoxiancaohua"] = "匠人绘",
   ["huamu"] = "化木",
   [":huamu"] = "当你使用与本回合上一张使用的牌颜色不同的手牌后，你可以将之置于你的武将牌上，黑色牌称为「灵杉」，红色牌称为「玉树」。",
@@ -5543,6 +5548,7 @@ zhangzhi:addRelatedSkill(feibai)
 Fk:loadTranslationTable{
   ["zhangzhi"] = "张芝",
   ["#zhangzhi"] = "草圣",
+  ["designer:zhangzhi"] = "玄蝶既白",
   ["illustrator:zhangzhi"] = "君桓文化",
   ["bixin"] = "笔心",
   [":bixin"] = "『每名角色的』『准备阶段和』『结束阶段，』你可以声明一种牌的类型并摸3张牌（每种类型限1次），将所有此类型手牌当你本轮未使用过的基本牌使用。",
@@ -5857,6 +5863,7 @@ godsunquan:addRelatedSkill(yuanlv)
 Fk:loadTranslationTable{
   ["godsunquan"] = "神孙权",
   ["#godsunquan"] = "坐断东南",
+  ["designer:godsunquan"] = "玄蝶既白",
   ["illustrator:godsunquan"] = "鬼画府",
   ["yuheng"] = "驭衡",
   [":yuheng"] = "锁定技，回合开始时，你弃置任意张花色不同的牌，随机获得等量吴势力武将的技能。回合结束时，你失去以此法获得的技能，摸等量张牌。",

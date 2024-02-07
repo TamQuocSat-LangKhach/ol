@@ -208,6 +208,9 @@ Fk:addSkill(xiaosi_viewas)
 furong:addSkill(xiaosi)
 Fk:loadTranslationTable{
   ["ol__furong"] = "傅肜",
+  ["#ol__furong"] = "矢忠不二",
+  ["illustrator:ol__furong"] = "君桓文化",
+
   ["xiaosi"] = "效死",
   [":xiaosi"] = "出牌阶段限一次，你可以弃置一张基本牌并选择一名有手牌的其他角色，其弃置一张基本牌"..
   "（若其不能弃置则你摸一张牌），然后你可以使用这些牌（无距离和次数限制）。",
@@ -889,6 +892,7 @@ zhanghua:addSkill(chuanwu)
 Fk:loadTranslationTable{
   ["zhanghua"] = "张华",
   ["#zhanghua"] = "双剑化龙",
+  ["designer:zhanghua"] = "玄蝶既白",
   ["illustrator:zhanghua"] = "匠人绘",
   ["bihun"] = "弼昏",
   [":bihun"] = "锁定技，当你使用牌指定其他角色为目标时，若你的手牌数大于手牌上限，你取消之并令唯一目标获得此牌。",
@@ -1397,7 +1401,9 @@ luoxian:addSkill(daili)
 Fk:loadTranslationTable{
   ["luoxian"] = "罗宪",
   ["#luoxian"] = "介然毕命",
+  ["designer:luoxian"] = "玄蝶既白",
   ["illustrator:luoxian"] = "匠人绘",
+
   ["daili"] = "带砺",
   [":daili"] = "每回合结束时，若你有偶数张展示过的手牌，你可以翻面，摸三张牌并展示之。",
   ["@$daili"] = "带砺",
@@ -2371,6 +2377,7 @@ mengda:addSkill(goude)
 Fk:loadTranslationTable{
   ["ol__mengda"] = "孟达",
   ["#ol__mengda"] = "腾挪反复",
+  ["designer:ol__mengda"] = "玄蝶既白",
   ["illustrator:ol__mengda"] = "匠人绘",
   ["goude"] = "苟得",
   [":goude"] = "每回合结束时，若有势力相同的角色此回合执行过以下效果，你可以执行另一项：1.摸一张牌；2.弃置一名角色一张手牌；"..
@@ -2563,6 +2570,7 @@ wenqin:addRelatedSkill(xieju)
 Fk:loadTranslationTable{
   ["ol__wenqin"] = "文钦",
   ["#ol__wenqin"] = "困兽鸱张",
+  ["designer:ol__wenqin"] = "玄蝶既白",
   ["illustrator:ol__wenqin"] = "匠人绘",
   ["guangao"] = "犷骜",
   [":guangao"] = "你使用【杀】可以额外指定一个目标；其他角色使用【杀】可以额外指定你为目标（均有距离限制）。以此法使用的【杀】指定目标后，"..
@@ -2930,6 +2938,7 @@ caoxi:addSkill(jianxuan)
 Fk:loadTranslationTable{
   ["caoxi"] = "曹羲",
   ["#caoxi"] = "魁立倾厦",
+  ["designer:caoxi"] = "玄蝶既白",
   ["illustrator:caoxi"] = "匠人绘",
   ["gangshu"] = "刚述",
   [":gangshu"] = "当你使用非基本牌后，你可以令你以下一项数值+1直到你抵消牌（至多增加至5）：攻击范围；下个摸牌阶段摸牌数；出牌阶段使用【杀】次数上限。",
@@ -3788,19 +3797,13 @@ local langdao = fk.CreateTriggerSkill{
       end
     end
     if target_num > 0 then
-      local targets = {}
-      local current_targets = TargetGroup:getRealTargets(data.tos)
-      for _, p in ipairs(room.alive_players) do
-        if not table.contains(current_targets, p.id) and not player:isProhibited(p, data.card) then
-          if data.card.skill:modTargetFilter(p.id, {}, player.id, data.card, true) then
-            table.insert(targets, p.id)
-          end
-        end
-      end
+      local targets = U.getUseExtraTargets(room, data, false, true)
       if #targets > 0 then
         local tos = room:askForChoosePlayers(player, targets, 1, target_num, "#langdao-AddTarget:::"..target_num, self.name, true)
         if #tos > 0 then
-          TargetGroup:pushTargets(data.targetGroup, tos)
+          for _, pid in ipairs(tos) do
+            AimGroup:addTargets(room, data, pid)
+          end
           room:sendLog{
             type = "#AddTargetsBySkill",
             from = player.id,
@@ -4021,6 +4024,7 @@ Fk:loadTranslationTable{
   ["lvboshe"] = "吕伯奢",
   ["#lvboshe"] = "醉乡路稳",
   ["illustrator:lvboshe"] = "匠人绘",
+
   ["fushi"] = "缚豕",
   [":fushi"] = "当一名角色使用【杀】后，若你至其距离小于2，你将之置于你的武将牌上。"..
   "你可以重铸任意张「缚豕」牌，视为使用一张具有以下等量项效果的【杀】"..
