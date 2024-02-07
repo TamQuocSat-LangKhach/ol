@@ -533,7 +533,7 @@ local ol_ex__qimou = fk.CreateActiveSkill{
     }
   end,
   can_use = function(self, player)
-    return player:usedSkillTimes(self.name, Player.HistoryGame) == 0
+    return player:usedSkillTimes(self.name, Player.HistoryGame) == 0 and player.hp > 0
   end,
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
@@ -718,6 +718,7 @@ local zhoutai = General(extension, "ol_ex__zhoutai", "wu", 4)
 local ol_ex__buqu = fk.CreateTriggerSkill{
   name = "ol_ex__buqu",
   anim_type = "defensive",
+  derived_piles = "ol_ex__buqu_scar",
   events = {fk.AskForPeaches},
   frequency = Skill.Compulsory,
   can_trigger = function(self, event, target, player, data)
@@ -2898,6 +2899,7 @@ Fk:loadTranslationTable{
 local ol_ex__tuntian = fk.CreateTriggerSkill{
   name = "ol_ex__tuntian",
   anim_type = "special",
+  derived_piles = "ol_ex__dengai_field",
   events = {fk.AfterCardsMove},
   can_trigger = function(self, event, target, player, data)
     if player:hasSkill(self) then
@@ -3812,13 +3814,21 @@ local ol_ex__huashen = fk.CreateTriggerSkill{
       end
     end
   end,
+
+  refresh_events = {fk.EventLoseSkill},
+  can_refresh = function(self, event, target, player, data)
+    return player == target and data == self
+  end,
+  on_refresh = function(self, event, target, player, data)
+    player.room:setPlayerMark(player, "@[private]&ol_ex__huashen", 0)
+  end,
 }
 local ol_ex__xinsheng = fk.CreateTriggerSkill{
   name = "ol_ex__xinsheng",
   anim_type = "masochism",
   events = {fk.Damaged},
   can_trigger = function(self, event, target, player, data)
-    return player:hasSkill(self) and target == player and player:hasSkill(ol_ex__huashen,true)
+    return player:hasSkill(self) and target == player and player:hasSkill(ol_ex__huashen, true)
   end,
   on_trigger = function(self, event, target, player, data)
     self.cancel_cost = false

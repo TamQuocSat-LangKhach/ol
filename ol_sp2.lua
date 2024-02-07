@@ -2184,7 +2184,7 @@ local zhanghe = General(extension, "ol__zhanghe", "qun", 4)
 local ol__zhouxuan = fk.CreateTriggerSkill{
   name = "ol__zhouxuan",
   anim_type = "drawcard",
-  expand_pile = "zhanghe_xuan",
+  derived_piles = "zhanghe_xuan",
   events = {fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(self) and player.phase == Player.Discard and
@@ -3188,10 +3188,14 @@ local luochong_active = fk.CreateActiveSkill{
   target_num = 1,
   interaction = function()
     local choices, all_choices = {}, {}
+    local mark = U.getMark(Self, "@luochong")
+    if #mark < 4 then
+      mark = {1, 1, 1, 1}
+    end
     for i = 1, 4 do
       local choice = "luochong"..tostring(i)
       table.insert(all_choices, choice)
-      if Self:getMark(choice) == "0" then
+      if mark[i] == 1 then
         table.insert(choices, choice)
       end
     end
@@ -3200,9 +3204,10 @@ local luochong_active = fk.CreateActiveSkill{
   card_filter = Util.FalseFunc,
   target_filter = function(self, to_select, selected)
     local choice = self.interaction.data
-    if #selected > 0 or not choice then return false end
+    if #selected > 0 or not choice or table.contains(U.getMark(Self, "luochong_target-round"), to_select) then
+      return false
+    end
     local target = Fk:currentRoom():getPlayerById(to_select)
-    if target:getMark("luochong-round") > 0 then return false end
     if not target:isWounded() and choice == "luochong1" then return false end
     if target:isNude() and choice == "luochong3" then return false end
     return true
@@ -3214,23 +3219,28 @@ local luochong = fk.CreateTriggerSkill{
   anim_type = "masochism",
   events = {fk.EventPhaseStart, fk.Damaged},
   can_trigger = function(self, event, target, player, data)
-    if target == player and player:hasSkill(self) then
+    if target == player and player:hasSkill(self) and table.contains(U.getMark(player, "@luochong"), 1) then
       if event == fk.EventPhaseStart then
-        if player.phase ~= Player.Start then return false end
+        return player.phase == Player.Start
       else
-        local _event = U.getActualDamageEvents(player.room, 1, function(e) return e.data[1].to == player end)
-        if not (#_event > 0 and _event[1].data[1] == data) then return false end
-      end
-      for i = 1, 4 do
-        if player:getMark("luochong"..tostring(i)) == "0" then
-          return true
+        local room = player.room
+        local record_id = player:getMark("luochong_damage-turn")
+        if record_id == 0 then
+          local _event = U.getActualDamageEvents(player.room, 1, function(e)
+            if e.data[1].to == player then
+              record_id = e.id
+              room:setPlayerMark(player, "luochong_damage-turn", record_id)
+              return true
+            end
+          end)
         end
+        return room.logic:getCurrentEvent().id == record_id
       end
     end
   end,
   on_cost = function(self, event, target, player, data)
     local room = player.room
-    local _, dat = room:askForUseActiveSkill(player, "luochong_active", "#luochong-active", true)
+    local _, dat = room:askForUseActiveSkill(player, "luochong_active", "#luochong-active", true, nil, false)
     if dat then
       self.cost_data = {dat.targets[1], dat.interaction}
       return true
@@ -3240,13 +3250,15 @@ local luochong = fk.CreateTriggerSkill{
     local room = player.room
     local to = room:getPlayerById(self.cost_data[1])
     local choice = self.cost_data[2]
-    room:setPlayerMark(to, "luochong-round", 1)
-    room:setPlayerMark(player, choice, "✓")
-    room:setPlayerMark(player, "@luochong", string.format("%s-%s-%s-%s",
-    player:getMark("luochong1"),
-    player:getMark("luochong2"),
-    player:getMark("luochong3"),
-    player:getMark("luochong4")))
+
+    local mark = U.getMark(player, "luochong_target-round")
+    table.insertIfNeed(mark, to.id)
+    room:setPlayerMark(player, "luochong_target-round", mark)
+
+    mark = U.getMark(player, "@luochong")
+    mark[tonumber(string.sub(choice, 9))] = 0
+    room:setPlayerMark(player, "@luochong", mark)
+
     if choice == "luochong1" then
       room:recover{
         who = to,
@@ -3263,23 +3275,30 @@ local luochong = fk.CreateTriggerSkill{
     end
   end,
 
-  refresh_events = {fk.GameStart, fk.RoundStart, fk.EventAcquireSkill},
+  refresh_events = {fk.RoundStart, fk.EventAcquireSkill, fk.EventLoseSkill},
   can_refresh = function(self, event, target, player, data)
-    if event == fk.EventAcquireSkill and not (target == player and data == self) then return false end
+    if event == fk.EventAcquireSkill or event == fk.EventLoseSkill then
+      return player == target and data == self
+    end
     return player:hasSkill(self, true)
   end,
   on_refresh = function(self, event, target, player, data)
     local room = player.room
-    for i = 1, 4, 1 do
-      if player:getMark("luochong"..tostring(i)) ~= "×" then
-        room:setPlayerMark(player, "luochong"..tostring(i), "0")
+    if event == fk.EventAcquireSkill then
+      room:setPlayerMark(player, "@luochong", {1, 1, 1, 1})
+    elseif event == fk.RoundStart then
+      local mark = U.getMark(player, "@luochong")
+      if #mark ~= 4 then
+        room:setPlayerMark(player, "@luochong", {1, 1, 1, 1})
+      else
+        room:setPlayerMark(player, "@luochong", table.map(mark, function (i)
+          return i == 0 and 1 or i
+        end))
       end
+    elseif event == fk.EventLoseSkill then
+      room:setPlayerMark(player, "@luochong", 0)
+      room:setPlayerMark(player, "luochong_target-round", 0)
     end
-    room:setPlayerMark(player, "@luochong", string.format("%s-%s-%s-%s",
-    player:getMark("luochong1"),
-    player:getMark("luochong2"),
-    player:getMark("luochong3"),
-    player:getMark("luochong4")))
   end,
 }
 local aichen = fk.CreateTriggerSkill{
@@ -3288,11 +3307,16 @@ local aichen = fk.CreateTriggerSkill{
   frequency = Skill.Compulsory,
   events = {fk.EnterDying},
   can_trigger = function(self, event, target, player, data)
-    if target == player and player:hasSkill(self) then
+    if target == player and player:hasSkill(self) and player:hasSkill(luochong, true) then
+      local mark = U.getMark(player, "@luochong")
+      if #mark ~= 4 then
+        mark = {1, 1, 1, 1}
+        player.room:setPlayerMark(player, "@luochong", mark)
+      end
       local choices = {}
       for i = 1, 4, 1 do
         local choice = "luochong"..tostring(i)
-        if player:getMark(choice) ~= "×" then
+        if type(mark[i]) == "number" then
           table.insert(choices, choice)
         end
       end
@@ -3305,12 +3329,9 @@ local aichen = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     local choice = room:askForChoice(player, self.cost_data, self.name, "#aichen-choice")
-    room:setPlayerMark(player, choice, "×")
-    room:setPlayerMark(player, "@luochong", string.format("%s-%s-%s-%s",
-    player:getMark("luochong1"),
-    player:getMark("luochong2"),
-    player:getMark("luochong3"),
-    player:getMark("luochong4")))
+    local mark = U.getMark(player, "@luochong")
+    mark[tonumber(string.sub(choice, 9))] = "<font color='grey'>-</font>"
+    room:setPlayerMark(player, "@luochong", mark)
   end,
 }
 tengfanglan:addSkill(luochong)
@@ -3337,8 +3358,8 @@ Fk:loadTranslationTable{
 
   ["$luochong1"] = "宠至莫言非，思移难恃貌。",
   ["$luochong2"] = "君王一时情，安有恩长久。",
-  ["$aichen1"] = "泪干红落面，心结发垂头。",
-  ["$aichen2"] = "思君应叹息，苦泪无言垂。",
+  ["$aichen1"] = "泪干红落面，心结发垂头。",  --泪干红落脸，心尽白垂头。
+  ["$aichen2"] = "思君一叹息，苦泪无言垂。",  --思君一叹息，苦泪应言垂。
   ["~ol__tengfanglan"] = "封侯归命，夫妻同归……",
 }
 
@@ -4283,11 +4304,10 @@ local shanduan = fk.CreateTriggerSkill{
 }
 local shanduan_attackrange = fk.CreateAttackRangeSkill{
   name = "#shanduan_attackrange",
-  correct_func = function(self, from, to)
+  fixed_func = function (self, from)
     if from:getMark("shanduan2-turn") > 0 then
-      return from:getMark("shanduan2-turn") - 1
+      return from:getMark("shanduan2-turn")
     end
-    return 0
   end,
 }
 local shanduan_targetmod = fk.CreateTargetModSkill{
@@ -4382,6 +4402,7 @@ local caoxiancaohua = General(extension, "caoxiancaohua", "qun", 3, 3, General.F
 local huamu = fk.CreateTriggerSkill{
   name = "huamu",
   events = {fk.CardUseFinished},
+  derived_piles = {"huamu_YuShu", "huamu_LingShan"},
   mute = true,
   can_trigger = function(self, event, target, player, data)
     if player ~= target or not player:hasSkill(self) then return false end

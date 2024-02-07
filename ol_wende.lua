@@ -315,6 +315,7 @@ local lisu = General(extension, "ol__lisu", "qun", 3)
 local qiaoyan = fk.CreateTriggerSkill{
   name = "qiaoyan",
   anim_type = "defensive",
+  derived_piles = "ol__lisu_zhu",
   frequency = Skill.Compulsory,
   events = {fk.DamageInflicted},
   can_trigger = function(self, event, target, player, data)
@@ -1087,6 +1088,14 @@ local xijue = fk.CreateTriggerSkill{
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     player.room:addPlayerMark(player, "@zhanghuyuechen_jue", self.cost_data)
+  end,
+
+  refresh_events = {fk.EventLoseSkill},
+  can_refresh = function(self, event, target, player, data)
+    return player == target and data == self
+  end,
+  on_refresh = function(self, event, target, player, data)
+    player.room:setPlayerMark(player, "@zhanghuyuechen_jue", 0)
   end,
 }
 local xijue_tuxi = fk.CreateTriggerSkill{
@@ -3122,6 +3131,7 @@ Fk:addSkill(wanyi_select)
 local wanyi = fk.CreateTriggerSkill{
   name = "wanyi",
   anim_type = "control",
+  derived_piles = "wanyi",
   events = {fk.TargetSpecified, fk.EventPhaseStart, fk.Damaged},
   can_trigger = function(self, event, target, player, data)
     if target == player and player:hasSkill(self) then
@@ -3165,28 +3175,22 @@ local wanyi = fk.CreateTriggerSkill{
   end,
 }
 
---FIXME：本来这个效果是不会被无效的，但是因为失去技能不清牌，故暂时采用hasskill来判定
 local wanyi_prohibit = fk.CreateProhibitSkill{
   name = "#wanyi_prohibit",
   prohibit_use = function(self, player, card)
-    if player:hasSkill(wanyi, true) and #player:getPile("wanyi") > 0 then
-      return table.find(player:getPile("wanyi"), function(id) return Fk:getCardById(id).suit == card.suit end)
-    end
+    return table.find(player:getPile("wanyi"), function(id) return Fk:getCardById(id).suit == card.suit end)
   end,
   prohibit_response = function(self, player, card)
-    if player:hasSkill(wanyi, true) and #player:getPile("wanyi") > 0 then
-      return table.find(player:getPile("wanyi"), function(id) return Fk:getCardById(id).suit == card.suit end)
-    end
+    return table.find(player:getPile("wanyi"), function(id) return Fk:getCardById(id).suit == card.suit end)
   end,
   prohibit_discard = function(self, player, card)
-    if player:hasSkill(wanyi, true) and #player:getPile("wanyi") > 0 then
-      return table.find(player:getPile("wanyi"), function(id) return Fk:getCardById(id).suit == card.suit end)
-    end
+    return table.find(player:getPile("wanyi"), function(id) return Fk:getCardById(id).suit == card.suit end)
   end,
 }
 local maihuo = fk.CreateTriggerSkill{
   name = "maihuo",
   anim_type = "defensive",
+  derived_piles = "yangzhi_huo",
   events = {fk.TargetConfirmed, fk.Damage},
   can_trigger = function(self, event, target, player, data)
     if player ~= target or not player:hasSkill(self) then return false end

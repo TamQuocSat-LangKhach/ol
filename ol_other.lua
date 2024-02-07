@@ -96,6 +96,7 @@ local godcaopi = General(extension, "godcaopi", "god", 5)
 local chuyuan = fk.CreateTriggerSkill{
   name = "chuyuan",
   anim_type = "masochism",
+  derived_piles = "caopi_chu",
   events = {fk.Damaged},
   can_trigger = function(self, event, target, player, data)
     return player:hasSkill(self) and #player:getPile("caopi_chu") < player.maxHp and not target.dead
@@ -300,6 +301,7 @@ local hanba = General(extension, "hanba", "qun", 4, 4, General.Female)
 local fentian = fk.CreateTriggerSkill{
   name = "fentian",
   anim_type = "control",
+  derived_piles = "fentian_burn",
   events = {fk.EventPhaseStart},
   frequency = Skill.Compulsory,
   can_trigger = function(self, event, target, player, data)

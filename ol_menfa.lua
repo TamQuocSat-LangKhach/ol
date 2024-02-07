@@ -11,16 +11,15 @@ Fk:loadTranslationTable{
 ---@param player Player
 local isFamilyMember = function (player, famaly)
   local familyMap = {
-    ["xun"] = {"olz__xun", "xunchen", "xunyu", "xunyou"},
-    ["wu"] = {"olz__wu", "wuyi", "wuxian", "wuban", "wuqiao"},
-    ["han"] = {"olz__han", "hanshao", "hanrong"},
-    ["wang"] = {"olz__wang", "wangyun", "wangling", "wangchang", "wanghun"},
-    ["zhong"] = {"olz__zhong", "zhongyao", "zhongyu", "zhonghui", "zhongyan"},
+    ["xun"] = {"xunshu", "xunchen", "xuncai", "xuncan", "xunyu", "xunyou"},
+    ["wu"] = {"wuxian", "wuyi", "wuban", "wukuang", "wuqiao"},
+    ["han"] = {"hanshao", "hanrong"},
+    ["wang"] = {"wangyun", "wangling", "wangchang", "wanghun", "wanglun"},
+    ["zhong"] = {"zhongyao", "zhongyu", "zhonghui", "zhongyan"},
   }
   local names = familyMap[famaly] or {}
-  return table.find(names, function(name)
-    return string.find(player.general, name) or string.find(player.deputyGeneral, name)
-  end)
+  return table.contains(names, Fk.generals[player.general].trueName) or
+  (player.deputyGeneral ~= "" and table.contains(names, Fk.generals[player.deputyGeneral].trueName))
 end
 
 local olz__xunchen = General(extension, "olz__xunchen", "qun", 3)

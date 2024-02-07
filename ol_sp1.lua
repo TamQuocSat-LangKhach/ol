@@ -154,6 +154,7 @@ local chengyu = General(extension, "chengyu", "wei", 3)
 local shefu = fk.CreateTriggerSkill{
   name = "shefu",
   anim_type = "control",
+  derived_piles = "shefu",
   events ={fk.EventPhaseStart, fk.CardUsing},
   can_trigger = function(self, event, target, player, data)
     if player:hasSkill(self) then
@@ -474,6 +475,7 @@ local zhanglu = General(extension, "zhanglu", "qun", 3)
 local yishe = fk.CreateTriggerSkill{
   name = "yishe",
   anim_type = "support",
+  derived_piles = "zhanglu_mi",
   events = {fk.EventPhaseStart, fk.AfterCardsMove},
   can_trigger = function(self, event, target, player, data)
     if player:hasSkill(self) then
@@ -1083,6 +1085,7 @@ local litong = General(extension, "litong", "wei", 4)
 local tuifeng = fk.CreateTriggerSkill{
   name = "tuifeng",
   anim_type = "masochism",
+  derived_piles = "tuifeng",
   events = {fk.Damaged},
   on_trigger = function(self, event, target, player, data)
     self.cancel_cost = false

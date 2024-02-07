@@ -342,6 +342,7 @@ local ol__liangyin = fk.CreateTriggerSkill{
 local ol__kongsheng = fk.CreateTriggerSkill{
   name = "ol__kongsheng",
   anim_type = "defensive",
+  derived_piles = "ol__kongsheng_harp",
   events = {fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(self) and (player.phase == Player.Start or
