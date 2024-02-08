@@ -5735,7 +5735,9 @@ local dili = fk.CreateTriggerSkill{
   events = {fk.EventAcquireSkill, fk.MaxHpChanged},
   frequency = Skill.Wake,
   can_trigger = function(self, event, target, player, data)
-    return player:hasSkill(self) and player:usedSkillTimes(self.name, Player.HistoryGame) == 0 and
+    return player:hasSkill(self) and player == target and
+    player:usedSkillTimes(self.name, Player.HistoryGame) == 0 and
+    (event == fk.EventAcquireSkill or data.num < 0) and
     player.room:getTag("RoundCount")
   end,
   can_wake = function(self, event, target, player, data)
@@ -5797,6 +5799,7 @@ local shengzhi = fk.CreateTriggerSkill{
   end,
   on_refresh = function(self, event, target, player, data)
     player.room:setPlayerMark(player, "@@shengzhi-turn", 0)
+    data.extraUse = true
   end,
 }
 local shengzhi_targetmod = fk.CreateTargetModSkill{
