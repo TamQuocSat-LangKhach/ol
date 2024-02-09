@@ -3882,72 +3882,58 @@ local fushi = fk.CreateViewAsSkill{
     if #cards == 0 then return end
     local card = Fk:cloneCard("slash")
     card.skillName = self.name
-    card:addSubcards(cards)  --FIXME: 为增强体验用的坏方法
+    card:setMark("fushi_subcards", cards)
     return card
   end,
   before_use = function(self, player, use)
     local room = player.room
-    local cards = table.simpleClone(use.card.subcards)
-    local n = math.min(#cards, 3)
-    use.card:clearSubcards()
+    local cards = use.card:getMark("fushi_subcards")
     room:recastCard(cards, player, self.name)
-    if not player.dead then
-      local all_choices = {"fushi1", "fushi2", "fushi3", "Cancel"}
-      local choices = table.simpleClone(all_choices)
-      local chosen = {}
-      while #chosen < n do
-        if #U.getUseExtraTargets(room, use, false) == 0 then
-          table.removeOne(choices, "fushi1")
-        end
-        local choice = room:askForChoice(player, choices, self.name, "#fushi-choice:::"..n, false, all_choices)
-        if choice == "Cancel" then
-          break
-        else
-          table.insert(chosen, choice)
-          table.removeOne(choices, choice)
-          if choice == "fushi1" then
-            local to = room:askForChoosePlayers(player, U.getUseExtraTargets(room, use, false), 1, 1, "#fushi1-choose", self.name, false)
-            if #to > 0 then
-              to = to[1]
-            else
-              to = table.random(U.getUseExtraTargets(room, use, false))
-            end
-            TargetGroup:pushTargets(use.tos, to)
-          elseif choice == "fushi2" then
-            local to = room:askForChoosePlayers(player, TargetGroup:getRealTargets(use.tos), 1, 1, "#fushi2-choose", self.name, false)
-            if #to > 0 then
-              to = to[1]
-            else
-              to = table.random(TargetGroup:getRealTargets(use.tos))
-            end
-            use.extra_data = use.extra_data or {}
-            use.extra_data.fushi2 = to
-          elseif choice == "fushi3" then
-            local to = room:askForChoosePlayers(player, TargetGroup:getRealTargets(use.tos), 1, 1, "#fushi3-choose", self.name, false)
-            if #to > 0 then
-              to = to[1]
-            else
-              to = table.random(TargetGroup:getRealTargets(use.tos))
-            end
-            use.extra_data = use.extra_data or {}
-            use.extra_data.fushi3 = to
-          end
-        end
-        if #chosen > 1 and table.contains(chosen, "fushi2") and #TargetGroup:getRealTargets(use.tos) > 1 then
-          room:sortPlayersByAction(TargetGroup:getRealTargets(use.tos))
-          local tos = table.simpleClone(TargetGroup:getRealTargets(use.tos))
-          local yes = true
-          for i = 1, #tos - 1, 1 do
-            if room:getPlayerById(tos[i]):getNextAlive() ~= room:getPlayerById(tos[i+1]) then
-              yes = false
-            end
-          end
-          if yes then
-            use.extraUse = true
-          end
+    if player.dead then return end
+    local all_choices = {"fushi1", "fushi2", "fushi3"}
+    local choices = table.simpleClone(all_choices)
+    if #U.getUseExtraTargets(room, use, false) == 0 then
+      table.removeOne(choices, "fushi1")
+    end
+    local n = math.min(#cards, #choices)
+    local chosen = room:askForChoices(player, choices, n, n, self.name, nil, false, false, all_choices)
+    local targets = TargetGroup:getRealTargets(use.tos)
+    if table.contains(chosen, "fushi1") then
+      local tos = room:askForChoosePlayers(player, U.getUseExtraTargets(room, use, false), 1, 1, "#fushi1-choose", self.name, false)
+      table.insert(targets, tos[1])
+      room:sortPlayersByAction(targets)
+      use.tos = table.map(targets, function(p) return {p} end)
+      room:sendLog{
+        type = "#AddTargetsBySkill",
+        from = player.id,
+        to = tos,
+        arg = self.name,
+        arg2 = use.card:toLogString()
+      }
+    end
+    use.extra_data = use.extra_data or {}
+    if table.contains(chosen, "fushi2") then
+      local tos = room:askForChoosePlayers(player, targets, 1, 1, "#fushi2-choose", self.name, false, true)
+      use.extra_data.fushi2 = tos[1]
+    end
+    if table.contains(chosen, "fushi3") then
+      local tos = room:askForChoosePlayers(player, targets, 1, 1, "#fushi3-choose", self.name, false, true)
+      use.extra_data.fushi3 = tos[1]
+    end
+    if #chosen > 1 and table.contains(chosen, "fushi2") and #targets > 1 then
+      local yes = true
+      for i = 1, #targets - 1, 1 do
+        if room:getPlayerById(targets[i]):getNextAlive() ~= room:getPlayerById(targets[i+1]) then
+          yes = false
         end
       end
+      if yes then
+        use.extraUse = true
+      end
     end
+  end,
+  enabled_at_play = function(self, player)
+    return #player:getPile(self.name) > 0
   end,
   enabled_at_response = function(self, player, response)
     return not response and #player:getPile(self.name) > 0
@@ -3958,7 +3944,7 @@ local fushi_trigger = fk.CreateTriggerSkill{
   mute = true,
   events = {fk.CardUseFinished},
   can_trigger = function(self, event, target, player, data)
-    if player:hasSkill(self) and data.card.trueName == "slash" and player:distanceTo(target) <= 1 then
+    if player:hasSkill(self) and data.card.trueName == "slash" and (player == target or player:distanceTo(target) == 1) then
       local room = player.room
       local subcards = data.card:isVirtual() and data.card.subcards or {data.card.id}
       return #subcards > 0 and table.every(subcards, function(id) return room:getCardArea(id) == Card.Processing end)
@@ -3977,17 +3963,19 @@ local fushi_trigger = fk.CreateTriggerSkill{
   refresh_events = {fk.DamageCaused},
   can_refresh = function(self, event, target, player, data)
     if target == player and data.card and table.contains(data.card.skillNames, "fushi") then
-      local e = player.room.logic:getCurrentEvent():findParent(GameEvent.UseCard)
+      local e = player.room.logic:getCurrentEvent():findParent(GameEvent.CardEffect)
       return e and e.data[1].extra_data and (e.data[1].extra_data.fushi2 or e.data[1].extra_data.fushi3)
     end
   end,
   on_refresh = function(self, event, target, player, data)
-    local e = player.room.logic:getCurrentEvent():findParent(GameEvent.UseCard)
+    player.room.logic:dumpEventStack()
+    local e = player.room.logic:getCurrentEvent():findParent(GameEvent.CardEffect)
+    if not e then return end
     local use = e.data[1]
-    if use.extra_data.fushi2 and use.extra_data.fushi2 == data.to.id then
+    if use.extra_data.fushi2 == data.to.id then
       data.damage = data.damage - 1
     end
-    if use.extra_data.fushi3 and use.extra_data.fushi3 == data.to.id then
+    if use.extra_data.fushi3 == data.to.id then
       data.damage = data.damage + 1
     end
   end,
@@ -4036,7 +4024,6 @@ Fk:loadTranslationTable{
   [":dongdao"] = "转换技，阳：农民回合结束后，你可以令地主执行一个额外回合；"..
   "阴：农民回合结束后，其可以执行一个额外回合。（仅斗地主模式生效）",
   ["#fushi"] = "缚豕：重铸任意张「缚豕」牌，视为使用一张附加等量效果的【杀】",
-  ["#fushi-choice"] = "缚豕：为此【杀】选择%arg项效果",
   ["fushi1"] = "目标+1",
   ["fushi2"] = "对一个目标伤害-1",
   ["fushi3"] = "对一个目标伤害+1",

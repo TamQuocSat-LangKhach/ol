@@ -1177,7 +1177,9 @@ zhanghuyuechen:addRelatedSkill("xiaoguo")
 Fk:loadTranslationTable{
   ["zhanghuyuechen"] = "张虎乐綝",
   ["#zhanghuyuechen"] = "不辱门庭",
+  ["designer:zhanghuyuechen"] = "张浩",
   ["illustrator:zhanghuyuechen"] = "凝聚永恒",
+
   ["xijue"] = "袭爵",
   [":xijue"] = "游戏开始时，你获得4个“爵”标记；回合结束时，你获得X个“爵”标记（X为你本回合造成的伤害值）。你可以移去1个“爵”标记发动〖突袭〗或〖骁果〗。",
   ["@zhanghuyuechen_jue"] = "爵",
@@ -2279,7 +2281,9 @@ duyu:addRelatedSkill(pozhu)
 Fk:loadTranslationTable{
   ["ol__duyu"] = "杜预",
   ["#ol__duyu"] = "文成武德",
+  ["designer:ol__duyu"] = "张浩",
   ["illustrator:ol__duyu"] = "君桓文化",
+
   ["sanchen"] = "三陈",
   [":sanchen"] = "出牌阶段限一次，你可令一名角色摸三张牌然后弃置三张牌。若其未因此次〖三陈〗的效果而弃置至少两张类别相同的牌，则其摸一张牌，且本技能视为未发动过（本回合不能再指定其为目标）。",
   ["zhaotao"] = "昭讨",

@@ -530,7 +530,9 @@ longfeng:addSkill(luanfeng)
 Fk:loadTranslationTable{
   ['wolongfengchu'] = '卧龙凤雏',
   ['#wolongfengchu'] = '一匡天下',
+  ["designer:wolongfengchu"] = "张浩",
   ["illustrator:wolongfengchu"] = "铁杵文化",
+
   ['youlong'] = '游龙',
   [':youlong'] = '转换技，每轮各限一次，你可以废除一个装备栏并视为使用一张未以此法使用过的' ..
     '{阳：普通锦囊牌；阴：基本牌。}',
@@ -3583,7 +3585,7 @@ local qingliang = fk.CreateTriggerSkill{
   anim_type = "defensive",
   events = {fk.TargetConfirming},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self) and data.from ~= player.id and
+    return target == player and player:hasSkill(self) and data.from ~= player.id and data.card.is_damage_card and
       (data.card.trueName == "slash" or data.card:isCommonTrick()) and
       U.isOnlyTarget(player, data, event) and not player:isKongcheng() and
       player:usedSkillTimes(self.name, Player.HistoryTurn) == 0
@@ -3597,7 +3599,7 @@ local qingliang = fk.CreateTriggerSkill{
     if player.dead then return end
     local suits = {"Cancel"}
     for _, id in ipairs(player:getCardIds("h")) do
-      table.insertIfNeed(suits, Fk:getCardById(id):getSuitString())
+      table.insertIfNeed(suits, Fk:getCardById(id):getSuitString(true))
     end
     local choice = room:askForChoice(player, suits, self.name, "#qingliang-choice")
     if choice == "Cancel" then
@@ -3606,8 +3608,12 @@ local qingliang = fk.CreateTriggerSkill{
         room:getPlayerById(data.from):drawCards(1, self.name)
       end
     else
-      local cards = table.filter(player:getCardIds("h"), function(id) return Fk:getCardById(id):getSuitString() == choice end)
-      room:throwCard(cards, self.name, player, player)
+      local cards = table.filter(player:getCardIds("h"), function(id) return 
+        not player:prohibitDiscard(Fk:getCardById(id)) and Fk:getCardById(id):getSuitString(true) == choice
+      end)
+      if #cards > 0 then
+        room:throwCard(cards, self.name, player, player)
+      end
       AimGroup:cancelTarget(data, player.id)
       return true
     end
@@ -3620,6 +3626,7 @@ Fk:loadTranslationTable{
   ["ruiji"] = "芮姬",
   ["#ruiji"] = "伶形俐影",
   ["illustrator:ruiji"] = "君桓文化",
+  
   ["qiaoli"] = "巧力",
   [":qiaoli"] = "出牌阶段各限一次，1.你可以将一张武器牌当【决斗】使用，此牌对目标角色造成伤害后，你摸与之攻击范围等量张牌，然后可以分配其中任意张牌；"..
   "2.你可以将一张非武器装备牌当【决斗】使用且不能被响应，然后于结束阶段随机获得一张装备牌。",

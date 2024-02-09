@@ -199,7 +199,9 @@ olz__xunchen:addSkill(daojie)
 Fk:loadTranslationTable{
   ["olz__xunchen"] = "族荀谌",
   ["#olz__xunchen"] = "挈怯恇恇",
+  ["designer:olz__xunchen"] = "玄蝶既白",
   ["illustrator:olz__xunchen"] = "凡果",
+
   ["sankuang"] = "三恇",
   [":sankuang"] = "锁定技，当你每轮首次使用一种类别的牌后，你令一名其他角色交给你至少X张牌并获得你使用的牌（X为其满足的项数：1.场上有牌；2.已受伤；"..
   "3.体力值小于手牌数）。",
@@ -378,7 +380,9 @@ xunshu:addSkill("daojie")
 Fk:loadTranslationTable{
   ["olz__xunshu"] = "族荀淑",
   ["#olz__xunshu"] = "长儒赡宗",
+  ["designer:olz__xunshu"] = "玄蝶既白",
   ["illustrator:olz__xunshu"] = "凡果",
+
   ["shenjun"] = "神君",
   [":shenjun"] = "当一名角色使用【杀】或普通锦囊牌时，你展示所有同名手牌记为“神君”，本阶段结束时，你可以将X张牌当任意“神君”牌使用（X为“神君”牌数）。",
   ["balong"] = "八龙",
@@ -494,7 +498,9 @@ xuncan:addSkill("daojie")
 Fk:loadTranslationTable{
   ["olz__xuncan"] = "族荀粲",
   ["#olz__xuncan"] = "分钗断带",
+  ["designer:olz__xuncan"] = "玄蝶既白",
   ["illustrator:olz__xuncan"] = "凡果",
+
   ["yushen"] = "熨身",
   [":yushen"] = "出牌阶段限一次，你可以选择一名其他角色并令其回复1点体力，然后选择一项：1.视为其对你使用一张冰【杀】；2.视为你对其使用一张冰【杀】。",
   ["shangshen"] = "伤神",
@@ -710,7 +716,9 @@ xuncai:addSkill("daojie")
 Fk:loadTranslationTable{
   ["olz__xuncai"] = "族荀采",
   ["#olz__xuncai"] = "怀刃自誓",
+  ["designer:olz__xuncai"] = "玄蝶既白",
   ["illustrator:olz__xuncai"] = "凡果",
+
   ["lieshi"] = "烈誓",
   [":lieshi"] = "出牌阶段，你可以选择一项：1.废除判定区并受到你的1点火焰伤害；2.弃置所有【闪】；3.弃置所有【杀】。然后令一名其他角色选择其他两项中的一项。",
   ["dianzhan"] = "点盏",
@@ -919,7 +927,9 @@ olz__wuxian:addSkill("muyin")
 Fk:loadTranslationTable{
   ["olz__wuxian"] = "族吴苋",
   ["#olz__wuxian"] = "庄姝晏晏",
+  ["designer:olz__wuxian"] = "玄蝶既白",
   ["illustrator:olz__wuxian"] = "君桓文化",
+
   ["yirong"] = "移荣",
   [":yirong"] = "出牌阶段限两次，你可以将手牌摸/弃至手牌上限并令你手牌上限-1/+1。",
   ["guixiang"] = "贵相",
@@ -1134,7 +1144,9 @@ hanshao:addSkill(xumin)
 Fk:loadTranslationTable{
   ["olz__hanshao"] = "族韩韶",
   ["#olz__hanshao"] = "分投急所",
+  ["designer:olz__hanshao"] = "玄蝶既白",
   ["illustrator:olz__hanshao"] = "鬼画府",
+
   ["fangzhen"] = "放赈",
   [":fangzhen"] = "出牌阶段开始时，你可以横置一名角色，然后选择：1.摸两张牌并交给其两张牌；2.令其回复1点体力。第X轮开始时（X为其座次），你失去此技能。",
   ["liuju"] = "留驹",
@@ -1373,7 +1385,9 @@ hanrong:addSkill("xumin")
 Fk:loadTranslationTable{
   ["olz__hanrong"] = "族韩融",
   ["#olz__hanrong"] = "虎口扳渡",
+  ["designer:olz__hanrong"] = "玄蝶既白",
   ["illustrator:olz__hanrong"] = "鬼画府",
+
   ["lianhe"] = "连和",
   [":lianhe"] = "出牌阶段开始时，你可以横置两名角色，这些角色的下个出牌阶段的阶段结束时，若其于此阶段内未摸过牌，其选择："..
   "1.令你摸X+1张牌；2.交给你X-1张牌（X为其于此阶段内得到过的牌数且至多为3）。",
@@ -1612,7 +1626,9 @@ wukuang:addSkill("muyin")
 Fk:loadTranslationTable{
   ["olz__wukuang"] = "族吴匡",
   ["#olz__wukuang"] = "诛绝宦竖",
+  ["designer:olz__wukuang"] = "玄蝶既白",
   ["illustrator:olz__wukuang"] = "匠人绘",
+
   ["lianzhuw"] = "联诛",
   [":lianzhuw"] = "转换技，每名角色出牌阶段限一次，阳：其可以与你各重铸一张牌，若颜色相同，你的手牌上限+1；"..
   "阴：你选择一名在你或其攻击范围内的角色，其可以与你各对目标使用一张【杀】，若颜色不同，你的手牌上限-1。",
@@ -1926,7 +1942,9 @@ wangyun:addSkill(zhongliu)
 Fk:loadTranslationTable{
   ["olz__wangyun"] = "族王允",
   ["#olz__wangyun"] = "曷丧偕亡",
+  ["designer:olz__wangyun"] = "玄蝶既白",
   ["illustrator:olz__wangyun"] = "君桓文化",
+
   ["jiexuan"] = "解悬",
   [":jiexuan"] = "转换技，限定技，阳：你可以将一张红色牌当【顺手牵羊】使用；阴：你可以将一张黑色牌当【过河拆桥】使用。",
   ["mingjiew"] = "铭戒",
@@ -1993,7 +2011,9 @@ wangling:addSkill("zhongliu")
 Fk:loadTranslationTable{
   ["olz__wangling"] = "族王淩",
   ["#olz__wangling"] = "荧惑守斗",
+  ["designer:olz__wangling"] = "玄蝶既白",
   ["illustrator:olz__wangling"] = "君桓文化",
+
   ["bolong"] = "驳龙",
   [":bolong"] = "出牌阶段限一次，你可以令一名其他角色选择一项：1.你交给其一张牌，视为对其使用一张雷【杀】；"..
   "2.交给你与你手牌数等量张牌，视为对你使用一张【酒】。",
@@ -2175,7 +2195,9 @@ zhongyan:addSkill(baozu)
 Fk:loadTranslationTable{
   ["olz__zhongyan"] = "族钟琰",
   ["#olz__zhongyan"] = "紫闼飞莺",
+  ["designer:olz__zhongyan"] = "玄蝶既白",
   ["illustrator:olz__zhongyan"] = "凡果",
+
   ["guangu"] = "观骨",
   [":guangu"] = "转换技，出牌阶段限一次，阳：你可以观看牌堆顶至多四张牌；阴：你可以观看一名角色至多四张手牌。然后你可以使用其中一张牌。",
   ["xiaoyong"] = "啸咏",
@@ -2292,6 +2314,8 @@ zhonghui:addSkill("baozu")
 Fk:loadTranslationTable{
   ["olz__zhonghui"] = "族钟会",
   ["#olz__zhonghui"] = "百巧惎",
+  ["designer:olz__zhonghui"] = "玄蝶既白",
+
   ["yuzhi"] = "迂志",
   [":yuzhi"] = "锁定技，每轮开始时，你展示一张手牌，摸X张牌（X为此牌牌名字数）。每轮结束时，若你本轮使用牌数或上轮以此法摸牌数小于X，"..
   "你失去1点体力或失去〖保族〗。",
@@ -2459,7 +2483,9 @@ wanghun:addSkill("zhongliu")
 Fk:loadTranslationTable{
   ["olz__wanghun"] = "族王浑",
   ["#olz__wanghun"] = "献捷横江",
+  ["designer:olz__wanghun"] = "扬林",
   ["illustrator:olz__wanghun"] = "匠人绘",
+
   ["fuxun"] = "抚循",
   [":fuxun"] = "出牌阶段限一次，你可以交给一名其他角色一张手牌或获得一名其他角色一张手牌，"..
   "然后若其手牌数与你相同且本阶段未因此法以外的方式变化过，你可以将一张牌当任意基本牌使用。",
@@ -2547,7 +2573,9 @@ zhongyu:addSkill("baozu")
 Fk:loadTranslationTable{
   ["olz__zhongyu"] = "族钟毓",
   ["#olz__zhongyu"] = "础润殷忧",
+  ["designer:olz__zhongyu"] = "玄蝶既白",
   ["illustrator:olz__zhongyu"] = "匠人绘",
+
   ["jiejian"] = "捷谏",
   [":jiejian"] = "当你每回合使用第X张牌指定目标后，若此牌不为装备牌，你可以令其中一个目标摸X张牌（X为此牌牌名字数）。",
   ["huanghan"] = "惶汗",
@@ -2748,7 +2776,9 @@ wanglun:addSkill("zhongliu")
 Fk:loadTranslationTable{
   ["olz__wanglun"] = "族王沦",
   ["#olz__wanglun"] = "半缘修道",
+  ["designer:olz__wanglun"] = "玄蝶既白",
   ["illustrator:olz__wanglun"] = "君桓文化",
+
   ["qiuxin"] = "求心",
   [":qiuxin"] = "出牌阶段限一次，你可以令一名其他角色声明一项：1.你对其使用一张【杀】；2.你对其使用一张普通锦囊牌。你下次执行此项后，"..
   "可以视为执行另一项的效果。",
@@ -2853,7 +2883,9 @@ xunyou:addRelatedSkill("qice")
 Fk:loadTranslationTable{
   ["olz__xunyou"] = "族荀攸",
   ["#olz__xunyou"] = "慨然入幕",
+  ["designer:olz__xunyou"] = "玄蝶既白",
   ["illustrator:olz__xunyou"] = "错落宇宙",
+
   ["baichu"] = "百出",
   [":baichu"] = "锁定技，当你使用牌后，若此牌：花色-类型组合为你首次使用，你记录一张普通锦囊牌，否则你本轮获得〖奇策〗；"..
   "以此法记录过，你摸一张牌或回复1点体力。",
