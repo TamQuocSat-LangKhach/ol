@@ -2701,7 +2701,7 @@ local qiuxin_viewas = fk.CreateActiveSkill{
       local trick = Fk:cloneCard(card_name)
       trick.skillName = qiuxin.name
       return not (Self:prohibitUse(trick) or Self:isProhibited(to, trick)) and
-      trick.skill:modTargetFilter(mark, {}, Self.id, trick, false)
+      trick.skill:modTargetFilter(mark, {}, Self.id, trick, true)
     end)
     if #names == 0 then return end
     return UI.ComboBox {choices = names, all_choices = all_names}
@@ -2780,8 +2780,7 @@ Fk:loadTranslationTable{
   ["illustrator:olz__wanglun"] = "君桓文化",
 
   ["qiuxin"] = "求心",
-  [":qiuxin"] = "出牌阶段限一次，你可以令一名其他角色声明一项：1.你对其使用一张【杀】；2.你对其使用一张普通锦囊牌。你下次执行此项后，"..
-  "可以视为执行另一项的效果。",
+  [":qiuxin"] = "出牌阶段限一次，你可以令一名其他角色声明一项：1.当你对其使用一张【杀】后，你可以视为对其使用一张普通锦囊牌；2.当你对其使用一张普通锦囊牌后，你可以视为对其使用一张无距离限制的【杀】。",
   ["jianyuan"] = "简远",
   [":jianyuan"] = "当一名角色发动“出牌阶段限一次”的技能后，你可以令其重铸任意张牌名字数为X的牌（X为其本阶段使用牌数）。",
   ["@qiuxin"] = "求心",
