@@ -13,12 +13,12 @@ local aocai = fk.CreateViewAsSkill{
   name = "aocai",
   pattern = ".|.|.|.|.|basic",
   anim_type = "special",
-  expand_pile = "aocai",
+  expand_pile = function() return U.getMark(Self, "aocai") end,
   prompt = function()
     return "#aocai"
   end,
   card_filter = function(self, to_select, selected)
-    if #selected == 0 and Self:getPileNameOfId(to_select) == "aocai" then
+    if #selected == 0 and table.contains(U.getMark(Self, "aocai"), to_select) then
       local card = Fk:getCardById(to_select)
       if card.type == Card.TypeBasic then
         if Fk.currentResponsePattern == nil then
@@ -43,38 +43,19 @@ local aocai = fk.CreateViewAsSkill{
 local aocai_trigger = fk.CreateTriggerSkill{
   name = "#aocai_trigger",
 
-  refresh_events = {fk.AskForCardUse, fk.AskForCardResponse, fk.EventLoseSkill},
+  refresh_events = {fk.AskForCardUse, fk.AskForCardResponse},
   can_refresh = function(self, event, target, player, data)
-    if target == player then
-      if event == fk.EventLoseSkill then
-        return data == self
-      else
-        return player:hasSkill("aocai")
-      end
-    end
+    return target == player and player:hasSkill(aocai) and player ~= player.room.current
   end,
   on_refresh = function(self, event, target, player, data)
     local room = player.room
-    if event == fk.EventLoseSkill then
-      player.special_cards["aocai"] = {}
-    else
-      local n = player:isKongcheng() and 4 or 2
-      local ids = {}
-      local length = #room.draw_pile
-      if length <= n then
-        ids = table.simpleClone(room.draw_pile)
-      else
-        for i = 1, n, 1 do
-          table.insert(ids, room.draw_pile[i])
-        end
-      end
-      player.special_cards["aocai"] = table.simpleClone(ids)
+    local n = player:isKongcheng() and 4 or 2
+    local ids = {}
+    for i = 1, n, 1 do
+      if i > #room.draw_pile then break end
+      table.insert(ids, room.draw_pile[i])
     end
-    player:doNotify("ChangeSelf", json.encode {
-      id = player.id,
-      handcards = player:getCardIds("h"),
-      special_cards = player.special_cards,
-    })
+    player.room:setPlayerMark(player, "aocai", ids)
   end,
 }
 local duwu = fk.CreateActiveSkill{
@@ -142,6 +123,7 @@ Fk:loadTranslationTable{
   "若其因此进入濒死状态且被救回，则濒死状态结算后你失去1点体力，且本回合不能再发动〖黩武〗。",
   ["#aocai"] = "傲才：你可以使用或打出其中你需要的基本牌",
   ["@@duwu-turn"] = "黩武失效",
+  ["#duwu_trigger"] = "黩武",
 
   ["$aocai1"] = "哼，易如反掌。",
   ["$aocai2"] = "吾主圣明，泽披臣属。",
@@ -2992,14 +2974,8 @@ local jianji = fk.CreateActiveSkill{
   on_use = function(self, room, effect)
     local target = room:getPlayerById(effect.tos[1])
     local id = target:drawCards(1, self.name)[1]
-    if room:getCardOwner(id) == target and room:getCardArea(id) == Card.PlayerHand then
-      local card = Fk:getCardById(id)
-      if not target:prohibitUse(card) and target:canUse(card) then
-        local use = room:askForUseCard(target,card.name, ".|.|.|.|.|.|"..tostring(id), "#jianji-invoke", true)
-        if use then
-          room:useCard(use)
-        end
-      end
+    if not target.dead and table.contains(target.player_cards[Player.Hand], id) then
+      U.askForUseRealCard(room, target, {id}, ".", self.name)
     end
   end,
 }
@@ -3009,6 +2985,8 @@ huangquan:addSkill(jianji)
 Fk:loadTranslationTable{
   ["ol__huangquan"] = "黄权",
   ["#ol__huangquan"] = "道绝殊途",
+  ["illustrator:ol__huangquan"] = "兴游",
+
   ["dianhu"] = "点虎",
   [":dianhu"] = "锁定技，游戏开始时，你指定一名其他角色；当你对该角色造成伤害后或该角色回复体力后，你摸一张牌。",
   ["jianji"] = "谏计",
@@ -3139,19 +3117,13 @@ local ol__wuniang = fk.CreateTriggerSkill{
       local use = room:askForUseCard(to, "slash", "slash", "#ol__wuniang-use:"..player.id, true, {exclusive_targets
       = {player.id}})
       if use then
+        use.extraUse = true
         room:useCard(use)
       end
     end
     if not player.dead then
       player:drawCards(1, self.name)
-    end
-  end,
-}
-local ol__wuniang_targetmod = fk.CreateTargetModSkill{
-  name = "#ol__wuniang_targetmod",
-  residue_func = function(self, player, skill, scope)
-    if player:usedSkillTimes("ol__wuniang", Player.HistoryPhase) > 0 and skill.trueName == "slash_skill" and scope == Player.HistoryPhase then
-      return 1
+      room:addPlayerMark(player, MarkEnum.SlashResidue.."-phase")
     end
   end,
 }
@@ -3222,7 +3194,6 @@ local ol__zhennan_trigger = fk.CreateTriggerSkill{
   on_cost = Util.TrueFunc,
   on_use = Util.TrueFunc,
 }
-ol__wuniang:addRelatedSkill(ol__wuniang_targetmod)
 ol__zhennan:addRelatedSkill(ol__zhennan_trigger)
 baosanniang:addSkill(ol__wuniang)
 baosanniang:addSkill(ol__xushen)
@@ -3230,6 +3201,8 @@ baosanniang:addRelatedSkill(ol__zhennan)
 Fk:loadTranslationTable{
   ["ol__baosanniang"] = "鲍三娘",
   ["#ol__baosanniang"] = "平南之巾帼",
+  ["illustrator:ol__baosanniang"] = "DH",
+
   ["ol__wuniang"] = "武娘",
   [":ol__wuniang"] = "你的出牌阶段内限一次，当你使用指定唯一目标的【杀】结算后，你可以令其选择是否对你使用一张【杀】，"..
   "然后你摸一张牌并令你本阶段使用【杀】次数上限+1。",
