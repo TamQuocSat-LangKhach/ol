@@ -2732,6 +2732,7 @@ local juesheng = fk.CreateViewAsSkill{
   pattern = "duel",
   frequency = Skill.Limited,
   card_filter = Util.FalseFunc,
+  prompt = "#juesheng-prompt",
   view_as = function(self, cards)
     local c = Fk:cloneCard("duel")
     c.skillName = self.name
@@ -2740,7 +2741,10 @@ local juesheng = fk.CreateViewAsSkill{
   before_use = function(self, player, use)
     local room = player.room
     local to = room:getPlayerById(TargetGroup:getRealTargets(use.tos)[1])
-    use.additionalDamage = (use.additionalDamage or 0) + math.max(to:usedCardTimes("slash", Player.HistoryGame), 1) - 1
+    local num = #room.logic:getEventsOfScope(GameEvent.UseCard, 999, function(e)
+      return e.data[1].from == to.id and e.data[1].card.trueName == "slash"
+    end, Player.HistoryGame)
+    use.additionalDamage = (use.additionalDamage or 0) + math.max(num, 1) - 1
   end,
   enabled_at_play = function(self, player)
     return player:usedSkillTimes(self.name, Player.HistoryGame) == 0
@@ -2788,7 +2792,8 @@ Fk:loadTranslationTable{
   ["yuanchou"] = "怨仇",
   [":yuanchou"] = "锁定技，你使用的黑色【杀】无视目标角色防具，其他角色对你使用的黑色【杀】无视你的防具。",
   ["juesheng"] = "决生",
-  [":juesheng"] = "限定技，你可以视为使用一张伤害为X的【决斗】（X为目标角色本局使用【杀】的数量且至少为1），然后其获得本技能直到其下回合结束。",
+  [":juesheng"] = "限定技，你可以视为使用一张伤害为X的【决斗】（X为第一个目标角色本局使用【杀】的数量且至少为1），然后其获得本技能直到其下回合结束。",
+  ["#juesheng-prompt"] = "视为使用【决斗】，伤害值为目标本局使用【杀】的数量！",
 
   ["$yuanchou1"] = "鞭挞之仇，不共戴天！",
   ["$yuanchou2"] = "三将军怎可如此对待我二人！",

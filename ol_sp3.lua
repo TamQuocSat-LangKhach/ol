@@ -816,33 +816,25 @@ local jianhe = fk.CreateActiveSkill{
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
     local target = room:getPlayerById(effect.tos[1])
-    room:addPlayerMark(target, "jianhe-turn", 1)
+    room:setPlayerMark(target, "jianhe-turn", 1)
     local n = #effect.cards
     room:recastCard(effect.cards, player, self.name)
-    if #target:getCardIds{Player.Hand, Player.Equip} < n then
-      room:damage{
-        from = player,
-        to = target,
-        damage = 1,
-        damageType = fk.ThunderDamage,
-        skillName = self.name,
-      }
-    else
+    if #target:getCardIds("he") >= n then
       local type_name = Fk:getCardById(effect.cards[1]):getTypeString()
       local cards = room:askForCard(target, n, n, true, self.name, true,
       ".|.|.|.|.|"..type_name, "#jianhe-choose:::"..n..":"..type_name)
       if #cards > 0 then
         room:recastCard(cards, target, self.name)
-      else
-        room:damage{
-          from = player,
-          to = target,
-          damage = 1,
-          damageType = fk.ThunderDamage,
-          skillName = self.name,
-        }
+        return
       end
     end
+    room:damage{
+      from = player,
+      to = target,
+      damage = 1,
+      damageType = fk.ThunderDamage,
+      skillName = self.name,
+    }
   end
 }
 local chuanwu = fk.CreateTriggerSkill{
@@ -854,23 +846,25 @@ local chuanwu = fk.CreateTriggerSkill{
     return target == player and player:hasSkill(self)
   end,
   on_use = function(self, event, target, player, data)
-    local skills = table.map(Fk.generals[player.general].skills, function(s) return s.name end)
-    for i = #skills, 1, -1 do
-      if not player:hasSkill(skills[i], true) then
-        table.removeOne(skills, skills[i])
-      end
+    local skills = Fk.generals[player.general]:getSkillNameList(true)
+    if player.deputyGeneral ~= "" then
+      table.insertTableIfNeed(skills, Fk.generals[player.deputyGeneral]:getSkillNameList(true))
     end
-    local to_lose = {}
-    player.tag[self.name] = player.tag[self.name] or {}
     local n = math.min(player:getAttackRange(), #skills)
+    if n == 0 then return end
+    local to_lose = {}
     for i = 1, n, 1 do
       if player:hasSkill(skills[i], true) then
         table.insert(to_lose, skills[i])
-        table.insert(player.tag[self.name], skills[i])
       end
     end
-    player.room:handleAddLoseSkills(player, "-"..table.concat(to_lose, "|-"), nil, true, false)
-    player:drawCards(n, self.name)
+    if #to_lose > 0 then
+      local mark = U.getMark(player, "chuanwu")
+      table.insertTable(mark, to_lose)
+      player.room:setPlayerMark(player, "chuanwu", mark)
+      player.room:handleAddLoseSkills(player, "-"..table.concat(to_lose, "|-"), nil, true, false)
+      player:drawCards(n, self.name)
+    end
   end,
 }
 local chuanwu_record = fk.CreateTriggerSkill{
@@ -878,11 +872,11 @@ local chuanwu_record = fk.CreateTriggerSkill{
 
   refresh_events = {fk.TurnEnd},
   can_refresh = function(self, event, target, player, data)
-    return player.tag["chuanwu"]
+    return player:getMark("chuanwu") ~= 0
   end,
   on_refresh = function(self, event, target, player, data)
-    player.room:handleAddLoseSkills(player, table.concat(player.tag["chuanwu"], "|"), nil, true, false)
-    player.tag["chuanwu"] = {}
+    player.room:handleAddLoseSkills(player, table.concat(player:getMark("chuanwu"), "|"), nil, true, false)
+    player.room:setPlayerMark(player, "chuanwu", 0)
   end,
 }
 chuanwu:addRelatedSkill(chuanwu_record)
@@ -894,6 +888,7 @@ Fk:loadTranslationTable{
   ["#zhanghua"] = "双剑化龙",
   ["designer:zhanghua"] = "玄蝶既白",
   ["illustrator:zhanghua"] = "匠人绘",
+
   ["bihun"] = "弼昏",
   [":bihun"] = "锁定技，当你使用牌指定其他角色为目标时，若你的手牌数大于手牌上限，你取消之并令唯一目标获得此牌。",
   ["jianhe"] = "剑合",
