@@ -12,17 +12,23 @@ local caoshuang = General(extension, "caoshuang", "wei", 4)
 local tuogu = fk.CreateTriggerSkill{
   name = "tuogu",
   anim_type = "special",
-  events ={fk.Deathed},
+  events = {fk.Deathed},
   can_trigger = function(self, event, target, player, data)
     return player:hasSkill(self)
   end,
   on_cost = function(self, event, target, player, data)
-    self.cost_data = {}
-    local skills = table.map(Fk.generals[target.general].skills, function(s) return s.name end)
-    for _, skill in ipairs(skills) do
-      if target:hasSkill(skill, true, true) and Fk.skills[skill].frequency ~= Skill.Limited and Fk.skills[skill].frequency ~= Skill.Wake and
-        string.sub(skill, #skill, #skill) ~= "$" and not player:hasSkill(skill, true) then  --TODO: 隐匿技
-        table.insertIfNeed(self.cost_data, skill)
+    local skills = Fk.generals[target.general]:getSkillNameList()
+    if target.deputyGeneral and target.deputyGeneral ~= "" then
+      table.insertTableIfNeed(skills, Fk.generals[target.deputyGeneral]:getSkillNameList())
+    end
+    self.cost_data = table.filter(skills, function(s)
+      return not player:hasSkill(s, true) and Fk.skills[s].frequency < 4
+    end)
+    local ban_types = {Skill.Limited, Skill.Wake, Skill.Quest}
+    for _, skill_name in ipairs(Fk.generals[target.general]:getSkillNameList()) do
+      local skill = Fk.skills[skill_name]
+      if not (skill.lordSkill or table.contains(ban_types, skill.frequency)) then
+        table.insertIfNeed(skills, skill_name)
       end
     end
     return #self.cost_data > 0 and player.room:askForSkillInvoke(player, self.name, nil, "#tuogu-invoke::"..target.id)
@@ -49,7 +55,7 @@ local shanzhuan = fk.CreateTriggerSkill{
       if event == fk.Damage then
         return data.to ~= player and not data.to.dead and not data.to:isNude() and #data.to.player_cards[Player.Judge] == 0
       else
-        return player.phase == Player.Finish and player:getMark("shanzhuan-turn") == 0
+        return player.phase == Player.Finish and #U.getActualDamageEvents(player.room, 1, function(e) return e.data[1].from == player end) == 0
       end
     end
   end,
@@ -81,14 +87,6 @@ local shanzhuan = fk.CreateTriggerSkill{
       player:drawCards(1, self.name)
     end
   end,
-
-  refresh_events = {fk.Damage},
-  can_refresh = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self, true) and player.phase ~= Player.NotActive
-  end,
-  on_refresh = function(self, event, target, player, data)
-    player.room:addPlayerMark(player, "shanzhuan-turn", 1)
-  end,
 }
 caoshuang:addSkill(tuogu)
 caoshuang:addSkill(shanzhuan)
@@ -96,6 +94,7 @@ Fk:loadTranslationTable{
   ["caoshuang"] = "曹爽",
   ["#caoshuang"] = "托孤辅政",
   ["illustrator:caoshuang"] = "明暗交界",
+
   ["tuogu"] = "托孤",
   [":tuogu"] = "当一名角色死亡时，你可以令其选择其武将牌上的一个技能（限定技、觉醒技、主公技、隐匿技除外），你失去上次以此法获得的技能，然后获得此技能。",
   ["shanzhuan"] = "擅专",
