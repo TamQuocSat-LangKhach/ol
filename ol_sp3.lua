@@ -850,21 +850,18 @@ local chuanwu = fk.CreateTriggerSkill{
     if player.deputyGeneral ~= "" then
       table.insertTableIfNeed(skills, Fk.generals[player.deputyGeneral]:getSkillNameList(true))
     end
+    skills = table.filter(skills, function(s) return player:hasSkill(s, true) end)
     local n = math.min(player:getAttackRange(), #skills)
     if n == 0 then return end
     local to_lose = {}
     for i = 1, n, 1 do
-      if player:hasSkill(skills[i], true) then
-        table.insert(to_lose, skills[i])
-      end
+      table.insert(to_lose, skills[i])
     end
-    if #to_lose > 0 then
-      local mark = U.getMark(player, "chuanwu")
-      table.insertTable(mark, to_lose)
-      player.room:setPlayerMark(player, "chuanwu", mark)
-      player.room:handleAddLoseSkills(player, "-"..table.concat(to_lose, "|-"), nil, true, false)
-      player:drawCards(n, self.name)
-    end
+    local mark = U.getMark(player, "chuanwu")
+    table.insertTable(mark, to_lose)
+    player.room:setPlayerMark(player, "chuanwu", mark)
+    player.room:handleAddLoseSkills(player, "-"..table.concat(to_lose, "|-"), nil, true, false)
+    player:drawCards(n, self.name)
   end,
 }
 local chuanwu_record = fk.CreateTriggerSkill{
