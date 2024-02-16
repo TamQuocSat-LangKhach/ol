@@ -843,40 +843,48 @@ local chuanwu = fk.CreateTriggerSkill{
   frequency = Skill.Compulsory,
   events = {fk.Damage, fk.Damaged},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self)
+    if target == player and player:hasSkill(self) and player:getAttackRange() > 0 then
+      local skills = Fk.generals[player.general]:getSkillNameList(true)
+      if player.deputyGeneral ~= "" then
+        table.insertTableIfNeed(skills, Fk.generals[player.deputyGeneral]:getSkillNameList(true))
+      end
+      skills = table.filter(skills, function(s) return player:hasSkill(s, true) end)
+      if #skills > 0 then
+        self.cost_data = skills
+        return true
+      end
+    end
   end,
   on_use = function(self, event, target, player, data)
-    local skills = Fk.generals[player.general]:getSkillNameList(true)
-    if player.deputyGeneral ~= "" then
-      table.insertTableIfNeed(skills, Fk.generals[player.deputyGeneral]:getSkillNameList(true))
-    end
-    skills = table.filter(skills, function(s) return player:hasSkill(s, true) end)
+    local skills = table.simpleClone(self.cost_data)
     local n = math.min(player:getAttackRange(), #skills)
-    if n == 0 then return end
-    local to_lose = {}
-    for i = 1, n, 1 do
-      table.insert(to_lose, skills[i])
-    end
+    if n == 0 then return false end
+    skills = table.slice(skills, 1, n + 1)
     local mark = U.getMark(player, "chuanwu")
-    table.insertTable(mark, to_lose)
+    table.insertTable(mark, skills)
     player.room:setPlayerMark(player, "chuanwu", mark)
-    player.room:handleAddLoseSkills(player, "-"..table.concat(to_lose, "|-"), nil, true, false)
+    player.room:handleAddLoseSkills(player, "-"..table.concat(skills, "|-"), nil, true, false)
     player:drawCards(n, self.name)
   end,
 }
-local chuanwu_record = fk.CreateTriggerSkill{
-  name = "#chuanwu_record",
-
-  refresh_events = {fk.TurnEnd},
-  can_refresh = function(self, event, target, player, data)
-    return player:getMark("chuanwu") ~= 0
+local chuanwu_delay = fk.CreateTriggerSkill{
+  name = "#chuanwu_delay",
+  events = {fk.TurnEnd},
+  mute = true,
+  can_trigger = function(self, event, target, player, data)
+    return not player.dead and player:getMark("chuanwu") ~= 0
   end,
-  on_refresh = function(self, event, target, player, data)
-    player.room:handleAddLoseSkills(player, table.concat(player:getMark("chuanwu"), "|"), nil, true, false)
-    player.room:setPlayerMark(player, "chuanwu", 0)
+  on_cost = Util.TrueFunc,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    player:broadcastSkillInvoke("chuanwu")
+    room:notifySkillInvoked(player, "chuanwu")
+    local skills = U.getMark(player, "chuanwu")
+    room:setPlayerMark(player, "chuanwu", 0)
+    room:handleAddLoseSkills(player, table.concat(skills, "|"), nil, true, false)
   end,
 }
-chuanwu:addRelatedSkill(chuanwu_record)
+chuanwu:addRelatedSkill(chuanwu_delay)
 zhanghua:addSkill(bihun)
 zhanghua:addSkill(jianhe)
 zhanghua:addSkill(chuanwu)
@@ -894,6 +902,7 @@ Fk:loadTranslationTable{
   [":chuanwu"] = "锁定技，当你造成或受到伤害后，你失去你武将牌上前X个技能直到回合结束（X为你的攻击范围），然后摸等同失去技能数张牌。",
   ["#jianhe-active"] = "发动 剑合，选择至少两张同名牌重铸，并选择一名角色",
   ["#jianhe-choose"] = "剑合：你需重铸%arg张%arg2，否则受到1点雷电伤害",
+  ["#chuanwu_delay"] = "穿屋",
 
   ["$bihun1"] = "辅弼天家，以扶朝纲。",
   ["$bihun2"] = "为国治政，尽忠匡辅。",
@@ -4481,7 +4490,7 @@ local chanshuang_trigger = fk.CreateTriggerSkill{
     player:broadcastSkillInvoke("chanshuang")
     local x = self.cost_data
     if not player:isNude() then
-      local card = room:askForCard(player, 1, 1, true, self.name, false, ".", "#chanshuang-card")
+      local card = room:askForCard(player, 1, 1, true, "chanshuang", false, ".", "#chanshuang-card")
       room:recastCard(card, player)
       if player.dead then return false end
     end
@@ -4495,7 +4504,7 @@ local chanshuang_trigger = fk.CreateTriggerSkill{
       if player.dead then return false end
     end
     if x > 2 then
-      room:askForDiscard(player, 2, 2, true, self.name, false, ".")
+      room:askForDiscard(player, 2, 2, true, "chanshuang", false, ".")
     end
   end,
 }
@@ -4503,8 +4512,9 @@ local zhanjin = fk.CreateTriggerSkill{
   name = "zhanjin",
   events = {fk.CardEffectCancelledOut},
   can_trigger = function(self, event, target, player, data)
-    return player:hasSkill(self) and data.from == player.id and data.card.trueName == "slash" and
-    not player.room:getPlayerById(data.to).dead
+    return player:hasSkill(self) and player:getEquipment(Card.SubtypeWeapon) == nil and
+    #player:getAvailableEquipSlots(Card.SubtypeWeapon) > 0 and data.from == player.id
+    and data.card.trueName == "slash" and not player.room:getPlayerById(data.to).dead
   end,
   on_cost = function(self, event, target, player, data)
     local room = player.room
@@ -4518,6 +4528,7 @@ local zhanjin = fk.CreateTriggerSkill{
     local room = player.room
     room:throwCard(self.cost_data, "axe", player, player)
     return true
+    --FIXME：在这里return true其实是错误的做法
   end,
 }
 local zhanjin_attackrange = fk.CreateAttackRangeSkill{
@@ -4550,6 +4561,7 @@ Fk:loadTranslationTable{
   ["chanshuang_discard"] = "弃置两张牌",
   ["#chanshuang-card"] = "缠双：选择一张牌重铸",
   ["#chanshuang-useslash"] = "缠双：你可以使用一张【杀】",
+  ["#chanshuang_trigger"] = "缠双",
 
   ["$chanshuang1"] = "武艺精熟，勇冠三军。",
   ["$chanshuang2"] = "以一敌二，易如反掌。",

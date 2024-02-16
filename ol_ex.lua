@@ -2168,8 +2168,10 @@ local ol_ex__zaiqi = fk.CreateTriggerSkill{
   can_trigger = function(self, event, target, player, data)
     if target == player and player:hasSkill(self) and player.phase == Player.Discard then
       local ids = {}
-      local logic = player.room.logic
-      logic:getEventsOfScope(GameEvent.MoveCards, 1, function (e)
+      local room = player.room
+      local turn_event = room.logic:getCurrentEvent():findParent(GameEvent.Turn)
+      if turn_event == nil then return false end
+      U.getEventsByRule(room, GameEvent.MoveCards, 1, function (e)
         for _, move in ipairs(e.data) do
           if move.toArea == Card.DiscardPile then
             for _, info in ipairs(move.moveInfo) do
@@ -2178,32 +2180,21 @@ local ol_ex__zaiqi = fk.CreateTriggerSkill{
           end
         end
         return false
-      end, Player.HistoryTurn)
-      for _, id in ipairs(ids) do
-        if player.room:getCardArea(id) == Card.DiscardPile and Fk:getCardById(id).color == Card.Red then
-          return true
-        end
+      end, turn_event.id)
+      local x = #table.filter(ids, function (id)
+        return room:getCardArea(id) == Card.DiscardPile and Fk:getCardById(id).color == Card.Red
+      end)
+      if x > 0 then
+        self.cost_data = x
+        return true
       end
     end
   end,
   on_cost = function(self, event, target, player, data)
-    local ids = {}
     local room = player.room
-    room.logic:getEventsOfScope(GameEvent.MoveCards, 1, function (e)
-      for _, move in ipairs(e.data) do
-        if move.toArea == Card.DiscardPile then
-          for _, info in ipairs(move.moveInfo) do
-            table.insertIfNeed(ids, info.cardId)
-          end
-        end
-      end
-      return false
-    end, Player.HistoryTurn)
-    local x = #table.filter(ids, function (id)
-      return room:getCardArea(id) == Card.DiscardPile and Fk:getCardById(id).color == Card.Red
-    end)
-    if x < 1 then return false end
-    local result = room:askForChoosePlayers(player, table.map(room.alive_players, Util.IdMapper), 1, x, "#ol_ex__zaiqi-choose:::"..x, self.name, true)
+    local x = self.cost_data
+    local result = room:askForChoosePlayers(player, table.map(room.alive_players, Util.IdMapper), 1, x,
+    "#ol_ex__zaiqi-choose:::"..x, self.name, true)
     if #result > 0 then
       self.cost_data = result
       return true
@@ -2214,7 +2205,6 @@ local ol_ex__zaiqi = fk.CreateTriggerSkill{
     room:sortPlayersByAction(self.cost_data)
     local targets = table.map(self.cost_data, function(id)
       return room:getPlayerById(id) end)
-
     for _, p in ipairs(targets) do
       if not p.dead then
         local choices = {"ol_ex__zaiqi_draw"}

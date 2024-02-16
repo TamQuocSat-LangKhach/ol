@@ -326,7 +326,7 @@ local fentian = fk.CreateTriggerSkill{
 local fentian_attackrange = fk.CreateAttackRangeSkill{
   name = "#fentian_attackrange",
   correct_func = function (self, from, to)
-    return from:hasSkill(fentian.name) and #from:getPile("fentian_burn") or 0
+    return from:hasSkill(fentian) and #from:getPile("fentian_burn") or 0
   end,
 }
 local zhiri = fk.CreateTriggerSkill{

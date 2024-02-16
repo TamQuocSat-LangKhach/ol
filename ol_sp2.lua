@@ -5050,10 +5050,12 @@ local huanfu = fk.CreateTriggerSkill{
   anim_type = "drawcard",
   events ={fk.TargetSpecified, fk.TargetConfirmed},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self) and data.card.trueName == "slash" and not player:isNude()
+    return target == player and player:hasSkill(self) and data.card.trueName == "slash" and
+    not player:isNude() and (event == fk.TargetConfirmed or data.firstTarget)
   end,
   on_cost = function(self, event, target, player, data)
-    local cards = player.room:askForDiscard(player, 1, player.maxHp, true, self.name, true, ".", "#huanfu-invoke:::"..player.maxHp)
+    local cards = player.room:askForDiscard(player, 1, player.maxHp, true, self.name, true, ".",
+    "#huanfu-invoke:::"..player.maxHp)
     if #cards > 0 then
       self.cost_data = #cards
       return true
@@ -5064,23 +5066,33 @@ local huanfu = fk.CreateTriggerSkill{
     data.extra_data.huanfu = data.extra_data.huanfu or {}
     data.extra_data.huanfu[player.id] = self.cost_data
   end,
-
-  refresh_events = {fk.CardUseFinished},
-  can_refresh = function(self, event, target, player, data)
-    return data.extra_data and data.extra_data.huanfu and data.extra_data.huanfu[player.id] and not player.dead
-  end,
-  on_refresh = function(self, event, target, player, data)
-    if data.damageDealt then
-      local n = 0
-      for _, id in ipairs(TargetGroup:getRealTargets(data.tos)) do
-        if data.damageDealt[id] then
-          n = n + data.damageDealt[id]
+}
+local huanfu_delay = fk.CreateTriggerSkill{
+  name = "#huanfu_delay",
+  events = {fk.CardUseFinished},
+  mute = true,
+  can_trigger = function(self, event, target, player, data)
+    if not player.dead and data.damageDealt and data.extra_data and data.extra_data.huanfu then
+      local x = data.extra_data.huanfu[player.id]
+      if x then
+        local y = 0
+        for _, id in ipairs(TargetGroup:getRealTargets(data.tos)) do
+          if data.damageDealt[id] then
+            y = y + data.damageDealt[id]
+          end
+        end
+        if x == y then
+          self.cost_data = 2*x
+          return true
         end
       end
-      if n == data.extra_data.huanfu[player.id] then
-        player:drawCards(2 * n, self.name)
-      end
     end
+  end,
+  on_cost = Util.TrueFunc,
+  on_use = function(self, event, target, player, data)
+    player:broadcastSkillInvoke("huanfu")
+    player.room:notifySkillInvoked(player, "huanfu")
+    player:drawCards(self.cost_data, "huanfu")
   end,
 }
 local qingyix = fk.CreateActiveSkill{
@@ -5302,6 +5314,7 @@ local zeyue_record = fk.CreateTriggerSkill{
     end
   end,
 }
+huanfu:addRelatedSkill(huanfu_delay)
 qingyix:addRelatedSkill(qingyix_delay)
 zeyue:addRelatedSkill(zeyue_record)
 xiahouxuan:addSkill(huanfu)
@@ -5312,14 +5325,15 @@ Fk:loadTranslationTable{
   ["#xiahouxuan"] = "朗朗日月",
   ["illustrator:xiahouxuan"] = "君桓文化",
   ["huanfu"] = "宦浮",
-  [":huanfu"] = "当你使用【杀】指定目标或成为【杀】的目标后，你可以弃置任意张牌（至多为你的体力上限），若此【杀】对目标角色造成的伤害值为弃牌数，"..
-  "你摸弃牌数两倍的牌。",
+  [":huanfu"] = "当你使用【杀】指定第一个目标后或成为【杀】的目标后，你可以弃置任意张牌（至多为你的体力上限），"..
+  "此牌结算结束后，若此【杀】对目标角色造成的伤害值为弃牌数，你摸弃牌数两倍的牌。",
   ["qingyix"] = "清议",
   [":qingyix"] = "出牌阶段限一次，你可以与至多两名有牌的其他角色同时弃置一张牌，若类型相同，你可以重复此流程。若以此法弃置了两种颜色的牌，结束阶段，你可以获得其中颜色不同的牌各一张。",
   ["zeyue"] = "迮阅",
   [":zeyue"] = "限定技，准备阶段，你可以令一名你上个回合结束后（首轮为游戏开始后）对你造成过伤害的其他角色失去武将牌上一个技能（锁定技、觉醒技、限定技除外）。"..
   "每轮结束时，其视为对你使用X张【杀】（X为其已失去此技能的轮数），若此【杀】造成伤害，其获得以此法失去的技能。",
   ["#huanfu-invoke"] = "宦浮：你可以弃置至多%arg张牌，若此【杀】造成伤害值等于弃牌数，你摸两倍的牌",
+  ["#huanfu_delay"] = "宦浮",
   ["#qingyi-discard"] = "清议：弃置一张牌",
   ["#qingyi-invoke"] = "清议：是否继续发动“清议”？",
   ["#qingyi_get-invoke"] = "是否获得因“清议”弃置的牌中每颜色各一张？",
