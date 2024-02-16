@@ -5728,7 +5728,7 @@ local ol__diaodu = fk.CreateTriggerSkill{
       local card = Fk:getCardById(cid)
       local targets = table.filter(room.alive_players, function(p) return p ~= player and p ~= to end)
       if #targets == 0 then return end
-      local tos = room:askForChoosePlayers(player, table.map(targets, Util.IdMapper), 1, 1, "#diaodu-give:::" .. card:toLogString(), self.name, target ~= player)
+      local tos = room:askForChoosePlayers(player, table.map(targets, Util.IdMapper), 1, 1, "#diaodu-give:::" .. card:toLogString(), self.name, true)
       if #tos > 0 then
         room:moveCardTo(card, Card.PlayerHand, room:getPlayerById(tos[1]), fk.ReasonGive, self.name, nil, true, player.id)
       end
@@ -5790,6 +5790,7 @@ local dili = fk.CreateTriggerSkill{
 }
 local shengzhi = fk.CreateTriggerSkill{
   name = "shengzhi",
+  mute = true,
   anim_type = "offensive",
   frequency = Skill.Compulsory,
   events = {fk.AfterSkillEffect},
@@ -5801,6 +5802,7 @@ local shengzhi = fk.CreateTriggerSkill{
     --FIXME：重量级发动技能后的技能，转化类的技能根本没有办法判定
   end,
   on_use = function(self, event, target, player, data)
+    player.room:notifySkillInvoked(player, self.name)
     player.room:setPlayerMark(player, "@@shengzhi-turn", 1)
   end,
 
@@ -5810,7 +5812,11 @@ local shengzhi = fk.CreateTriggerSkill{
   end,
   on_refresh = function(self, event, target, player, data)
     player.room:setPlayerMark(player, "@@shengzhi-turn", 0)
-    data.extraUse = true
+    player:broadcastSkillInvoke(self.name)
+    if not data.extraUse then
+      target:addCardUseHistory(data.card.trueName, -1)
+      data.extraUse = true
+    end
   end,
 }
 local shengzhi_targetmod = fk.CreateTargetModSkill{

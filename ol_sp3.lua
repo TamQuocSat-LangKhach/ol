@@ -907,80 +907,49 @@ Fk:loadTranslationTable{
 local dongtuna = General(extension, "dongtuna", "qun", 4)
 local jianman = fk.CreateTriggerSkill{
   name = "jianman",
-  anim_type = "special",
   frequency = Skill.Compulsory,
   events = {fk.TurnEnd},
   can_trigger = function(self, event, target, player, data)
     if player:hasSkill(self) then
-      player.tag[self.name] = player.tag[self.name] or {}
-      if #player.tag[self.name] < 2 then
-        player.tag[self.name] = {}
-        return
-      end
+      local users, names, to = {}, {}, nil
+      player.room.logic:getEventsOfScope(GameEvent.UseCard, 2, function(e)
+        local use = e.data[1]
+        if use.card.type == Card.TypeBasic then
+          table.insert(users, use.from)
+          table.insertIfNeed(names, use.card.name)
+          return true
+        end
+      end, Player.HistoryTurn)
+      if #users < 2 then return false end
       local n = 0
-      if player.tag[self.name][1][1] == player.id then
+      if users[1] == player.id then
         n = n + 1
+        to = users[2]
       end
-      if player.tag[self.name][2][1] == player.id then
+      if users[2] == player.id then
         n = n + 1
+        to = users[1]
       end
-      self.cost_data = {}
+      self.cost_data = nil
       if n == 2 then
-        for i = 1, 2, 1 do
-          if player.tag[self.name][i][2].name ~= "jink" then
-            table.insertIfNeed(self.cost_data, player.tag[self.name][i][2].name)
-          end
-        end
+        self.cost_data = names
       elseif n == 1 then
-        if player.tag[self.name][1][1] == player.id then
-          self.cost_data = player.tag[self.name][2][1]
-        else
-          self.cost_data = player.tag[self.name][1][1]
-        end
-      else
-        player.tag[self.name] = {}
-        return
+        self.cost_data = to
       end
-      player.tag[self.name] = {}
-      return self.cost_data
+      return n > 0
     end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    if type(self.cost_data) == "number" then
-      room:doIndicate(player.id, {self.cost_data})
-      local to = room:getPlayerById(self.cost_data)
-      if to:isNude() then return end
-      local card = room:askForCardChosen(player, to, "he", self.name)
-      room:throwCard(card, self.name, to, player)
+    if type(self.cost_data) == "table" then
+      U.askForUseVirtualCard(room, player, self.cost_data, nil, self.name, nil, false, true, false, true)
     else
-      local name = room:askForChoice(player, self.cost_data, self.name, "#jianman-choice")
-      local targets = {}
-      if string.find(name, "slash") then
-        targets = table.map(table.filter(room:getOtherPlayers(player), function(p)
-          return not player:isProhibited(p, Fk:cloneCard(name)) end), Util.IdMapper)
-      else
-        targets = {player.id}
-      end
-      if #targets > 0 then
-        local to = room:askForChoosePlayers(player, targets, 1, 1, "#jianman-choose:::"..name, self.name, false)
-        if #to > 0 then
-          to = to[1]
-        else
-          to = table.random(targets)
-        end
-        room:useVirtualCard(name, nil, player, room:getPlayerById(to), self.name, true)
+      local to = room:getPlayerById(self.cost_data)
+      if not to.dead and not to:isNude() then
+        local id = room:askForCardChosen(player, to, "he", self.name)
+        room:throwCard({id}, self.name, to, player)
       end
     end
-  end,
-
-  refresh_events = {fk.CardUsing},
-  can_refresh = function(self, event, target, player, data)
-    return player:hasSkill(self) and data.card.type == Card.TypeBasic and not table.contains(data.card.skillNames, self.name)
-  end,
-  on_refresh = function(self, event, target, player, data)
-    player.tag[self.name] = player.tag[self.name] or {}
-    table.insert(player.tag[self.name], {target.id, data.card})
   end,
 }
 dongtuna:addSkill(jianman)
@@ -991,8 +960,6 @@ Fk:loadTranslationTable{
   ["illustrator:dongtuna"] = "monkey",
   ["jianman"] = "鹣蛮",
   [":jianman"] = "锁定技，每回合结束时，若本回合前两张基本牌的使用者：均为你，你视为使用其中的一张牌；仅其中之一为你，你弃置另一名使用者一张牌。",
-  ["#jianman-choice"] = "选择视为使用的牌名",
-  ["#jianman-choose"] = "鹣蛮：选择视为使用【%arg】的目标",
 
   ["$jianman1"] = "鹄巡山野，见腐羝而聒鸣！",
   ["$jianman2"] = "我蛮夷也，进退可无矩。",

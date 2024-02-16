@@ -15,34 +15,31 @@ local buchen = fk.CreateTriggerSkill{
 }
 local yingshis = fk.CreateActiveSkill{
   name = "yingshis",
-  anim_type = "special",
   frequency = Skill.Compulsory,  --锁定主动技（
-  card_num = 0,
+  card_num = 999,
   target_num = 0,
   prompt = "#yingshis",
-  can_use = function(self, player)
-    return player:getMark("yingshis-phase") == 0
+  expand_pile = function() return U.getMark(Self, "yingshis") end,
+  card_filter = function (self, to_select)
+    return table.contains(U.getMark(Self, "yingshis"), to_select)
   end,
-  on_use = function(self, room, effect)
-    local player = room:getPlayerById(effect.from)
-    room:setPlayerMark(player, "yingshis-phase", 1)
-    if #room.draw_pile == 0 then return end
-    local cards = room:getNCards(math.min(player.maxHp, #room.draw_pile))
-    U.viewCards(player, cards, self.name, "Top")
-    for i = #cards, 1, -1 do
-      table.insert(room.draw_pile, 1, cards[i])
-    end
-  end,
+  can_use = Util.TrueFunc,
 }
 local yingshis_trigger = fk.CreateTriggerSkill{
   name = "#yingshis_trigger",
 
-  refresh_events = {fk.PreCardUse},
-  can_refresh = function(self, event, target, player, data)
-    return target == player and player:getMark("yingshis-phase") > 0
+  refresh_events = {fk.StartPlayCard},
+  can_refresh = function (self, event, target, player, data)
+    return target == player and player:hasSkill(yingshis)
   end,
-  on_refresh = function(self, event, target, player, data)
-    player.room:setPlayerMark(player, "yingshis-phase", 0)
+  on_refresh = function (self, event, target, player, data)
+    local room = player.room
+    local ids = {}
+    for i = 1, player.maxHp, 1 do
+      if i > #room.draw_pile then break end
+      table.insert(ids, room.draw_pile[i])
+    end
+    player.room:setPlayerMark(player, "yingshis", ids)
   end,
 }
 local xiongzhi = fk.CreateActiveSkill{
