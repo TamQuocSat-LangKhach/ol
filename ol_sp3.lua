@@ -4582,7 +4582,7 @@ local shandao = fk.CreateActiveSkill{
   end,
   card_filter = Util.FalseFunc,
   target_filter = function(self, to_select, selected)
-    return not Fk:currentRoom():getPlayerById(to_select):isKongcheng()
+    return not Fk:currentRoom():getPlayerById(to_select):isNude()
   end,
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
@@ -4592,7 +4592,7 @@ local shandao = fk.CreateActiveSkill{
     for _, id in ipairs(targets) do
       local target = room:getPlayerById(id)
       table.insert(tos, target)
-      if not target:isNude() then
+      if not (target.dead or target:isNude()) then
         local card = room:askForCardChosen(player, target, "he", self.name)
         room:moveCards({
           ids = {card},
@@ -4604,14 +4604,15 @@ local shandao = fk.CreateActiveSkill{
         if player.dead then return false end
       end
     end
+    tos = table.filter(tos, function (p)
+      return not p.dead
+    end)
     room:useVirtualCard("amazing_grace", {}, player, tos, self.name)
     if player.dead then return false end
     local others = table.filter(room.alive_players, function (p)
       return not table.contains(targets, p.id) and p ~= player
     end)
-    if #others > 0 then
-      room:useVirtualCard("archery_attack", {}, player, others, self.name)
-    end
+    room:useVirtualCard("archery_attack", {}, player, others, self.name)
   end,
 }
 tianchou:addSkill(shandao)
