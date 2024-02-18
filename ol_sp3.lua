@@ -4648,7 +4648,7 @@ local qingyuan = fk.CreateTriggerSkill{
             if not p.dead then
               local targets = table.filter(mark, function (pid)
                 p = room:getPlayerById(pid)
-                return not (p.dead or p:isNude())
+                return not (p.dead or p:isKongcheng())
               end)
               if #targets > 0 then
                 self.cost_data = targets
@@ -4682,7 +4682,7 @@ local qingyuan = fk.CreateTriggerSkill{
       room:addPlayerMark(player, "qingyuan-turn")
       local to = table.random(self.cost_data)
       room:doIndicate(player.id, {to})
-      local cards = room:getPlayerById(to):getCardIds{Player.Hand, Player.Equip}
+      local cards = room:getPlayerById(to):getCardIds{Player.Hand}
       if #cards == 0 then return false end
       room:obtainCard(player.id, table.random(cards), false, fk.ReasonPrey)
     else
@@ -4714,12 +4714,12 @@ local chongshen = fk.CreateViewAsSkill{
   prompt = "#chongshen-viewas",
   pattern = "jink",
   card_filter = function(self, to_select, selected)
-    return #selected == 0 and Fk:getCardById(to_select):getMark("@@chongshen-inhand") > 0
+    if #selected ~= 0 then return false end
+    local card = Fk:getCardById(to_select)
+    return card.color == Card.Red and card:getMark("@@chongshen-inhand") > 0
   end,
   view_as = function(self, cards)
-    if #cards ~= 1 then
-      return nil
-    end
+    if #cards ~= 1 then return nil end
     local c = Fk:cloneCard("jink")
     c.skillName = self.name
     c:addSubcard(cards[1])
@@ -4757,15 +4757,8 @@ local chongshen_record = fk.CreateTriggerSkill{
     end
   end,
 }
-local chongshen_maxcards = fk.CreateMaxCardsSkill{
-  name = "#chongshen_maxcards",
-  exclude_from = function(self, player, card)
-    return player:hasSkill(chongshen) and card:getMark("@@chongshen-inhand") > 0
-  end,
-}
 
 chongshen:addRelatedSkill(chongshen_record)
-chongshen:addRelatedSkill(chongshen_maxcards)
 hujinding:addSkill(qingyuan)
 hujinding:addSkill(chongshen)
 
@@ -4773,13 +4766,13 @@ Fk:loadTranslationTable{
   ["ol__hujinding"] = "胡金定",
   ["qingyuan"] = "轻缘",
   [":qingyuan"] = "锁定技，游戏开始时，你选择一名其他角色；当你首次受到伤害后，你再选择一名其他角色。"..
-  "每回合限一次，当以此法选择的角色获得牌后，你获得其中随机一名角色的随机一张牌。",
+  "每回合限一次，当以此法选择的角色获得牌后，你获得其中随机一名角色的随机一张手牌。",
   ["chongshen"] = "重身",
-  [":chongshen"] = "你于本轮内获得的牌可以当【闪】使用且不计入手牌上限。",
+  [":chongshen"] = "你可以将一张你于当前轮次内得到的红色牌当【闪】使用。",
 
   ["#qingyuan-choose"] = "轻缘：选择一名其他角色",
   ["@@qingyuan"] = "轻缘",
-  ["#chongshen-viewas"] = "发动 重身，将一张本轮获得的牌当做【闪】使用",
+  ["#chongshen-viewas"] = "发动 重身，将一张本轮获得的红色牌当做【闪】使用",
   ["@@chongshen-inhand"] = "重身",
 
   ["$qingyuan1"] = "男儿重义气，自古轻别离。",
