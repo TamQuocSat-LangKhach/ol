@@ -3321,20 +3321,20 @@ local fujian = fk.CreateTriggerSkill {
   events = {fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(self) and player.phase == Player.Finish and
-      not table.find(player.room.alive_players, function(p) return p:isKongcheng() and p ~= player end)
+      not table.find(player.room.alive_players, function(p) return p:isKongcheng() end)
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
     local n = player:getHandcardNum()
-    for _, p in ipairs(player.room:getOtherPlayers(player)) do
+    local targets = room:getOtherPlayers(player, false)
+    for _, p in ipairs(targets) do
       if p:getHandcardNum() < n then
         n = p:getHandcardNum()
       end
     end
-    local to = table.random(room:getOtherPlayers(player))
+    local to = table.random(targets)
     room:doIndicate(player.id, {to.id})
-    local cards = table.random(to.player_cards[Player.Hand], n)
-    U.viewCards(player, cards, self.name)
+    U.viewCards(player, table.random(to.player_cards[Player.Hand], n), self.name)
   end,
 }
 lingren:addRelatedSkill(lingren_delay)
