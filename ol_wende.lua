@@ -47,6 +47,7 @@ local xiongzhi = fk.CreateActiveSkill{
   anim_type = "offensive",
   frequency = Skill.Limited,
   card_num = 0,
+  card_filter = Util.FalseFunc,
   target_num = 0,
   prompt = "#xiongzhi",
   can_use = function(self, player)
@@ -55,30 +56,10 @@ local xiongzhi = fk.CreateActiveSkill{
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
     while not player.dead do
-      local card = room:getNCards(1)[1]
-      room:moveCards({
-        ids = {card},
-        toArea = Card.Processing,
-        skillName = self.name,
-        moveReason = fk.ReasonJustMove,
-      })
-      room:setPlayerMark(player, "xiongzhi-tmp", {card})
-      local success, dat = room:askForUseViewAsSkill(player, "xiongzhi_viewas", "#xiongzhi-use:::"..Fk:getCardById(card):toLogString(), true)
-      room:setPlayerMark(player, "xiongzhi-tmp", 0)
-      if dat then
-        local use = {
-          from = player.id,
-          tos = table.map(dat.targets, function(e) return{e} end),
-          card = Fk:getCardById(card),
-        }
-        room:useCard(use)
-      else
-        room:moveCards({
-          ids = {card},
-          toArea = Card.DiscardPile,
-          moveReason = fk.ReasonPutIntoDiscardPile,
-          skillName = self.name,
-        })
+      local cards = room:getNCards(1)
+      player:showCards(cards)
+      if not U.askForUseRealCard(room, player, cards, ".", self.name, "#xiongzhi-use:::"..Fk:getCardById(cards[1]):toLogString(), {expand_pile = cards, bypass_times = false, extraUse = false}) then
+        table.insert(room.draw_pile, 1, cards[1])
         break
       end
     end
@@ -193,7 +174,7 @@ Fk:loadTranslationTable{
   [":quanbian"] = "当你于出牌阶段首次使用或打出一种花色的手牌时，你可从牌堆顶X张牌中获得一张与此牌花色不同的牌，将其余牌以任意顺序置于牌堆顶。"..
   "出牌阶段，你至多使用X张非装备手牌。（X为你的体力上限）",
   ["#yingshis"] = "鹰视：你可以观看牌堆顶牌",
-  ["#xiongzhi"] = "雄志：你可以重复亮出牌堆顶牌并使用之！",
+  ["#xiongzhi"] = "雄志：你可以重复展示牌堆顶牌并使用之(有次数限制)",
   ["xiongzhi_viewas"] = "雄志",
   ["#xiongzhi-use"] = "雄志：是否使用%arg？",
   ["@quanbian-phase"] = "权变",
