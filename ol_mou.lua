@@ -327,6 +327,7 @@ local weilingy_trigger = fk.CreateTriggerSkill{
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(weilingy)
     and table.contains(data.card.skillNames, "weilingy") and data.card.color ~= Card.NoColor
+    and not player.room:getPlayerById(data.to).dead
   end,
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
@@ -335,6 +336,7 @@ local weilingy_trigger = fk.CreateTriggerSkill{
     local mark = U.getMark(to, "@weilingy-turn")
     table.insertIfNeed(mark, data.card:getColorString())
     room:setPlayerMark(to, "@weilingy-turn", mark)
+    to:filterHandcards()
   end,
 }
 local weilingy_filter = fk.CreateFilterSkill{

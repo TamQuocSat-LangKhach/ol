@@ -1277,6 +1277,7 @@ local shilu = fk.CreateTriggerSkill{
     to:showCards(id)
     if room:getCardArea(id) == Card.PlayerHand then
       room:setCardMark(Fk:getCardById(id), "@@shilu-inhand", 1)
+      to:filterHandcards()
     end
   end,
 }
@@ -3858,26 +3859,25 @@ local fushi = fk.CreateViewAsSkill{
     local cards = use.card:getMark("fushi_subcards")
     room:recastCard(cards, player, self.name)
     if player.dead then return end
-    local all_choices = {"fushi1", "fushi2", "fushi3"}
-    local choices = table.simpleClone(all_choices)
-    if #U.getUseExtraTargets(room, use, false) == 0 then
-      table.removeOne(choices, "fushi1")
-    end
-    local n = math.min(#cards, #choices)
-    local chosen = room:askForChoices(player, choices, n, n, self.name, nil, false, false, all_choices)
+    local choices = {"fushi1", "fushi2", "fushi3"}
+    local n = math.min(#cards, 3)
+    local chosen = room:askForChoices(player, choices, n, n, self.name, nil, false, false)
     local targets = TargetGroup:getRealTargets(use.tos)
     if table.contains(chosen, "fushi1") then
-      local tos = room:askForChoosePlayers(player, U.getUseExtraTargets(room, use, false), 1, 1, "#fushi1-choose", self.name, false)
-      table.insert(targets, tos[1])
-      room:sortPlayersByAction(targets)
-      use.tos = table.map(targets, function(p) return {p} end)
-      room:sendLog{
-        type = "#AddTargetsBySkill",
-        from = player.id,
-        to = tos,
-        arg = self.name,
-        arg2 = use.card:toLogString()
-      }
+      local tos = U.getUseExtraTargets(room, use, false)
+      if #tos > 0 then
+        tos = room:askForChoosePlayers(player, tos, 1, 1, "#fushi1-choose", self.name, false, true)
+        table.insert(targets, tos[1])
+        room:sortPlayersByAction(targets)
+        use.tos = table.map(targets, function(p) return {p} end)
+        room:sendLog{
+          type = "#AddTargetsBySkill",
+          from = player.id,
+          to = tos,
+          arg = self.name,
+          arg2 = use.card:toLogString()
+        }
+      end
     end
     use.extra_data = use.extra_data or {}
     if table.contains(chosen, "fushi2") then
@@ -3918,9 +3918,7 @@ local fushi_trigger = fk.CreateTriggerSkill{
       return #subcards > 0 and table.every(subcards, function(id) return room:getCardArea(id) == Card.Processing end)
     end
   end,
-  on_cost = function(self, event, target, player, data)
-    return player.room:askForSkillInvoke(player, "fushi", nil)
-  end,
+  on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     local room = player.room
     player:broadcastSkillInvoke("fushi")
@@ -3997,6 +3995,7 @@ Fk:loadTranslationTable{
   ["#fushi1-choose"] = "缚豕：为此【杀】增加一个目标",
   ["#fushi2-choose"] = "缚豕：选择一个目标，此【杀】对其伤害-1",
   ["#fushi3-choose"] = "缚豕：选择一个目标，此【杀】对其伤害+1",
+  ["#fushi_trigger"] = "缚豕",
   ["#dongdao_yang-invoke"] = "东道：你可以令 %dest 执行一个额外回合",
   ["#dongdao_yin-invoke"] = "东道：你可以发动 %src 的“东道”，执行一个额外回合",
 
@@ -4618,6 +4617,8 @@ tianchou:addSkill(shandao)
 
 Fk:loadTranslationTable{
   ["tianchou"] = "田畴",
+  ["#tianchou"] = "乱世族隐",
+  --["illustrator:tianchou"] = "",
   ["shandao"] = "善刀",
   [":shandao"] = "出牌阶段限一次，你可以将任意名角色的各一张牌置于牌堆顶，视为对这些角色使用一张【五谷丰登】，"..
   "然后视为对除这些角色外的其他角色使用一张【万箭齐发】。",

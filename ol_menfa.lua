@@ -186,10 +186,11 @@ local daojie = fk.CreateTriggerSkill{
           table.insert(targets, p.id)
         end
       end
-      if #targets > 0 then
-        local to = room:askForChoosePlayers(player, targets, 1, 1, "#daojie-choose:::"..data.card:toLogString(), self.name, false)
-        room:obtainCard(to[1], data.card, true, fk.ReasonPrey)
+      --理论上不会为空（必定包含自己）
+      if #targets > 1 then
+        targets = room:askForChoosePlayers(player, targets, 1, 1, "#daojie-choose:::"..data.card:toLogString(), self.name, false)
       end
+      room:obtainCard(targets[1], data.card, true, fk.ReasonPrey)
     end
   end,
 }
