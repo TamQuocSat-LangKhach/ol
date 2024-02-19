@@ -65,12 +65,11 @@ local xiongzhi = fk.CreateActiveSkill{
       room:setPlayerMark(player, "xiongzhi-tmp", {card})
       local success, dat = room:askForUseViewAsSkill(player, "xiongzhi_viewas", "#xiongzhi-use:::"..Fk:getCardById(card):toLogString(), true)
       room:setPlayerMark(player, "xiongzhi-tmp", 0)
-      if success then
+      if dat then
         local use = {
           from = player.id,
           tos = table.map(dat.targets, function(e) return{e} end),
           card = Fk:getCardById(card),
-          extraUse = true,
         }
         room:useCard(use)
       else
@@ -164,8 +163,13 @@ local quanbian = fk.CreateTriggerSkill{
 local quanbian_prohibit = fk.CreateProhibitSkill{
   name = "#quanbian_prohibit",
   prohibit_use = function(self, player, card)
-    return player:hasSkill(self) and player.phase == Player.Play and player:getMark("quanbian-phase") >= player.maxHp and
-      card and card.type ~= Card.TypeEquip and table.contains(player:getCardIds("h"), card:getEffectiveId())
+    if player:hasSkill(quanbian) and player.phase == Player.Play and player:getMark("quanbian-phase") >= player.maxHp
+    and card and card.type ~= Card.TypeEquip then
+      local subcards = card:isVirtual() and card.subcards or {card.id}
+      return #subcards > 0 and table.every(subcards, function(id)
+        return table.contains(player:getCardIds(Player.Hand), id)
+      end)
+    end
   end,
 }
 yingshis:addRelatedSkill(yingshis_trigger)

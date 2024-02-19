@@ -3936,7 +3936,6 @@ local fushi_trigger = fk.CreateTriggerSkill{
     end
   end,
   on_refresh = function(self, event, target, player, data)
-    player.room.logic:dumpEventStack()
     local e = player.room.logic:getCurrentEvent():findParent(GameEvent.CardEffect)
     if not e then return end
     local use = e.data[1]

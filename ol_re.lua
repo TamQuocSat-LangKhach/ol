@@ -2030,6 +2030,83 @@ Fk:loadTranslationTable{
   ["~ol__masu"] = "悔不听王平之言，铸此大错。",
 }
 
+-- yj2013
+local ol__guohuai = General(extension, "ol__guohuai", "wei", 3)
+local ol__jingce = fk.CreateTriggerSkill{
+  name = "ol__jingce",
+  events = {fk.EventPhaseEnd},
+  can_trigger = function(self, event, target, player, data)
+    if target == player and player:hasSkill(self) and player.phase == Player.Play then
+      local types = {}
+      player.room.logic:getEventsOfScope(GameEvent.UseCard, 999, function(e)
+        local use = e.data[1]
+        if use.from == player.id then
+          table.insertIfNeed(types, use.card.type)
+        end
+      end, Player.HistoryTurn)
+      if #types > 0 then
+        self.cost_data = #types
+        return true
+      end
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    player:drawCards(self.cost_data, self.name)
+  end,
+
+  refresh_events = {fk.CardUsing, fk.EventAcquireSkill},
+  can_refresh = function (self, event, target, player, data)
+    if event == fk.CardUsing then
+      return player:hasSkill(self, true)
+    else
+      return data == self and target == player and player.room:getTag("RoundCount")
+    end
+  end,
+  on_refresh = function (self, event, target, player, data)
+    local room = player.room
+    if event == fk.CardUsing then
+      local mark = U.getMark(player, "@ol__jingce-turn")
+      if not table.contains(mark, data.card:getSuitString(true)) then
+        table.insert(mark, data.card:getSuitString(true))
+        room:setPlayerMark(player, "@ol__jingce-turn", mark)
+        room:broadcastProperty(player, "MaxCards")
+      end
+    else
+      local mark = {}
+      player.room.logic:getEventsOfScope(GameEvent.UseCard, 999, function(e)
+        local use = e.data[1]
+        if use.from == player.id then
+          table.insertIfNeed(mark, use.card:getSuitString(true))
+        end
+      end, Player.HistoryTurn)
+      room:setPlayerMark(player, "@ol__jingce-turn", #mark > 0 and mark or 0)
+      room:broadcastProperty(player, "MaxCards")
+    end
+  end,
+}
+local ol__jingce_maxcards = fk.CreateMaxCardsSkill{
+  name = "#ol__jingce_maxcards",
+  correct_func = function(self, player)
+    if player:hasSkill(ol__jingce) then
+      return #U.getMark(player, "@ol__jingce-turn")
+    end
+  end,
+}
+ol__jingce:addRelatedSkill(ol__jingce_maxcards)
+ol__guohuai:addSkill(ol__jingce)
+Fk:loadTranslationTable{
+  ["ol__guohuai"] = "郭淮",
+  ["#ol__guohuai"] = "垂问秦雍",
+  ["illustrator:ol__guohuai"] = "张帅", -- 御蜀屏障
+  ["ol__jingce"] = "精策",
+  [":ol__jingce"] = "①出牌阶段结束时，你可以摸等同于你本回合使用过牌的类别数张牌；②你的手牌上限+X（X为你本回合使用过牌的花色数）。",
+  ["@ol__jingce-turn"] = "精策",
+  ["$ol__jingce1"] = "良策佐君王，率征万精兵。",
+  ["$ol__jingce2"] = "得一寸，进一尺。",
+  ["~ol__guohuai"] = "穷寇莫追……",
+}
+
 -- yj2014
 local ol__guyong = General(extension, "ol__guyong", "wu", 3)
 local ol__bingyi = fk.CreateTriggerSkill{
