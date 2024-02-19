@@ -59,20 +59,7 @@ local zhuri = fk.CreateTriggerSkill{
           return not player:prohibitUse(card) and player:canUse(card, extra_data)
         end)
         if #ids == 0 then return false end
-        room:setPlayerMark(player, "zhuri_cards", ids)
-        local success, dat = room:askForUseActiveSkill(player, "zhuri_viewas", "#zhuri-use", true, extra_data)
-        room:setPlayerMark(player, "zhuri_cards", 0)
-        
-        if success then
-          local card = Fk:getCardById(dat.cards[1])
-          local use = {
-            from = player.id,
-            tos = table.map(dat.targets, function(id) return{id} end),
-            card = card,
-            extraUse = true,
-          }
-          room:useCard(use)
-        end
+        U.askForUseRealCard(room, player, ids, ".", self.name, "#zhuri-use", {expand_pile = ids})
       else
         local choice = room:askForChoice(player, {"loseHp", "lose_zhuri"}, self.name)
         if choice == "loseHp" then
@@ -87,22 +74,6 @@ local zhuri = fk.CreateTriggerSkill{
           end
         end
       end
-  end,
-}
-local zhuri_viewas = fk.CreateViewAsSkill{
-  name = "zhuri_viewas",
-  expand_pile = function (self)
-    return U.getMark(Self, "zhuri_cards")
-  end,
-  card_filter = function(self, to_select, selected)
-    return #selected == 0 and table.contains(U.getMark(Self, "zhuri_cards"), to_select)
-  end,
-  view_as = function(self, cards)
-    if #cards ~= 1 then return end
-    local card = Fk:getCardById(cards[1])
-    if Self:canUse(card) and not Self:prohibitUse(card) then
-      return card
-    end
   end,
 }
 local ranji = fk.CreateTriggerSkill{
@@ -229,7 +200,6 @@ local ol_ex__zhaxiang_targetmod = fk.CreateTargetModSkill{
   end,
 }
 
-Fk:addSkill(zhuri_viewas)
 ranji:addRelatedSkill(ranji_trigger)
 ol_ex__zhaxiang:addRelatedSkill(ol_ex__zhaxiang_targetmod)
 jiangwei:addSkill(zhuri)
@@ -252,7 +222,6 @@ Fk:loadTranslationTable{
   [":ol_ex__zhaxiang"] = "锁定技，当你失去1点体力后，你摸三张牌，若在你的出牌阶段，"..
   "你本回合你使用【杀】次数上限+1、使用红色【杀】无距离限制且不可被响应。",
   ["#zhuri-choose"] = "逐日：你可以拼点，若赢，你可以使用一张拼点牌；若没赢，你失去1点体力或本回合失去〖逐日〗",
-  ["zhuri_viewas"] = "逐日",
   ["#zhuri-use"] = "逐日：你可以使用其中一张牌",
   ["lose_zhuri"] = "失去〖逐日〗直到回合结束",
   ["#ranji1-invoke"] = "燃己：是否获得〖困奋〗？",

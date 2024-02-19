@@ -1859,21 +1859,15 @@ local chuiti = fk.CreateTriggerSkill{
   on_cost = function(self, event, target, player, data)
     local room = player.room
     local ids = table.simpleClone(self.cost_data)
-    room:setPlayerMark(player, "chuiti_cards", ids)
-    local success, dat = room:askForUseActiveSkill(player, "chuiti_viewas", "#chuiti-invoke", true, Util.DummyTable, true)
-    room:setPlayerMark(player, "chuiti_cards", 0)
-    if success then
-      self.cost_data = dat
+    local use = U.askForUseRealCard(room, player, ids, ".", self.name, "#chuiti-invoke",
+    { expand_pile = ids, bypass_times = false, extraUse = false }, true)
+    if use then
+      self.cost_data = use
       return true
     end
   end,
   on_use = function(self, event, target, player, data)
-    local card = Fk:getCardById(self.cost_data.cards[1])
-    player.room:useCard{
-      from = player.id,
-      tos = table.map(self.cost_data.targets, function(id) return {id} end),
-      card = card,
-    }
+    player.room:useCard(table.simpleClone(self.cost_data))
   end,
 }
 fengfangnv:addSkill(zhuangshu)
@@ -1895,7 +1889,6 @@ Fk:loadTranslationTable{
   ["#zhuangshu-cost"] = "是否使用妆梳，弃置一张牌，将对应种类的“宝梳”置入%dest的装备区<br>"..
     "基本牌-【琼梳】、锦囊牌-【犀梳】、装备牌-【金梳】",
   ["#chuiti-invoke"] = "是否使用 垂涕，使用其中被弃置的牌",
-  ["chuiti_viewas"] = "垂涕",
 
   ["$zhuangshu1"] = "殿前妆梳，风姿绝世。",
   ["$zhuangshu2"] = "顾影徘徊，丰容靓饰。",

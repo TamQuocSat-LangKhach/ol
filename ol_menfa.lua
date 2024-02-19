@@ -1067,38 +1067,15 @@ local liuju = fk.CreateTriggerSkill{
           not loser:prohibitUse(card) and loser:canUse(card, extra_data)
       end)
       if #to_use == 0 then break end
-      room:setPlayerMark(loser, "liuju_cards", to_use)
-      local success, dat = room:askForUseActiveSkill(loser, "liuju_viewas", "#liuju-use", true, extra_data)
-      room:setPlayerMark(loser, "liuju_cards", 0)
-
-      if not success then break end
-      table.removeOne(ids, dat.cards[1])
-      local card = Fk:getCardById(dat.cards[1])
-      room:useCard{
-        from = loser.id,
-        tos = table.map(dat.targets, function(id) return {id} end),
-        card = card,
-        extraUse = true,
-      }
-      if loser.dead then return false end
+      local use = U.askForUseRealCard(room, loser, to_use, ".", self.name, "#liuju-use", {expand_pile = to_use}, true)
+      if use == nil then break end
+      table.removeOne(ids, use.card:getEffectiveId())
+      room:useCard(use)
+      if player.dead then break end
     end
     if player:usedSkillTimes("xumin", Player.HistoryGame) > 0 and not player.dead and not to.dead and
     (player:distanceTo(to) ~= n1 or to:distanceTo(player) ~= n2) then
       player:setSkillUseHistory("xumin", 0, Player.HistoryGame)
-    end
-  end,
-}
-local liuju_viewas = fk.CreateViewAsSkill{
-  name = "liuju_viewas",
-  expand_pile = function (self)
-    return U.getMark(Self, "liuju_cards")
-  end,
-  card_filter = function(self, to_select, selected)
-    return #selected == 0 and table.contains(U.getMark(Self, "liuju_cards"), to_select)
-  end,
-  view_as = function(self, cards)
-    if #cards == 1 then
-      return Fk:getCardById(cards[1])
     end
   end,
 }
@@ -1137,7 +1114,6 @@ local xumin = fk.CreateActiveSkill{
     }
   end,
 }
-Fk:addSkill(liuju_viewas)
 fangzhen:addRelatedSkill(fangzhen_delay)
 hanshao:addSkill(fangzhen)
 hanshao:addSkill(liuju)
@@ -1163,7 +1139,6 @@ Fk:loadTranslationTable{
   ["@fangzhen"] = "放赈",
   ["#liuju-choose"] = "留驹：你可以拼点，输的角色可以使用其中的非基本牌",
   ["#liuju-use"] = "留驹：你可以使用其中的非基本牌",
-  ["liuju_viewas"] = "留驹",
   ["#xumin"] = "恤民：你可以将一张牌当【五谷丰登】对任意名其他角色使用",
 
   ["$fangzhen1"] = "百姓罹灾，当施粮以赈。",
@@ -1312,34 +1287,11 @@ local huanjia = fk.CreateTriggerSkill{
         not winner:prohibitUse(card) and winner:canUse(card, extra_data)
     end)
     if #to_use == 0 then return false end
-    room:setPlayerMark(winner, "huanjia_cards", to_use)
-    local success, dat = room:askForUseActiveSkill(winner, "huanjia_viewas",
-    "#huanjia-use:"..player.id, true, extra_data)
-    room:setPlayerMark(winner, "huanjia_cards", 0)
-    if success then
-      local card = Fk:getCardById(dat.cards[1])
-      table.removeOne(ids, dat.cards[1])
-      room:useCard{
-        from = winner.id,
-        tos = table.map(dat.targets, function(id) return {id} end),
-        card = card,
-        extraUse = true,
-        extra_data = {huanjia_source = player.id, huanjia_ids = ids},
-      }
-    end
-  end,
-}
-local huanjia_viewas = fk.CreateViewAsSkill{
-  name = "huanjia_viewas",
-  expand_pile = function (self)
-    return U.getMark(Self, "huanjia_cards")
-  end,
-  card_filter = function(self, to_select, selected)
-    return #selected == 0 and table.contains(U.getMark(Self, "huanjia_cards"), to_select)
-  end,
-  view_as = function(self, cards)
-    if #cards == 1 then
-      return Fk:getCardById(cards[1])
+    local use = U.askForUseRealCard(room, winner, to_use, ".", self.name, "#huanjia-use:" .. player.id, {expand_pile = to_use}, true)
+    if use then
+      table.removeOne(ids, use.card:getEffectiveId())
+      use.extra_data = { huanjia_source = player.id, huanjia_ids = ids }
+      room:useCard(use)
     end
   end,
 }
@@ -1379,7 +1331,6 @@ local huanjia_delay = fk.CreateTriggerSkill{
 }
 lianhe:addRelatedSkill(lianhe_delay)
 huanjia:addRelatedSkill(huanjia_delay)
-Fk:addSkill(huanjia_viewas)
 hanrong:addSkill(lianhe)
 hanrong:addSkill(huanjia)
 hanrong:addSkill("xumin")
@@ -1403,7 +1354,6 @@ Fk:loadTranslationTable{
   ["#huanjia-use"] = "缓颊：你可以使用一张拼点牌，若未造成伤害则 %src 获得另一张，若造成伤害则其失去一个技能",
   ["#huanjia_delay"] = "缓颊",
   ["#huanjia-choice"] = "缓颊：你需失去一个技能",
-  ["huanjia_viewas"] = "缓颊",
 
   ["$lianhe1"] = "枯草难存于劲风，唯抱簇得生。",
   ["$lianhe2"] = "吾所来之由，一为好，二为和。",
@@ -1787,18 +1737,10 @@ local mingjiew_delay = fk.CreateTriggerSkill{
           return room:getCardArea(id) == Card.DiscardPile and player:canUse(card) and not player:prohibitUse(card)
         end)
         if #to_use == 0 then break end
-        room:setPlayerMark(player, "mingjiew_cards", to_use)
-        local success, dat = room:askForUseActiveSkill(player, "mingjiew_viewas", "#mingjiew-use", true)
-        room:setPlayerMark(player, "mingjiew_cards", 0)
-        if success then
-          table.removeOne(ids, dat.cards[1])
-          local card = Fk:getCardById(dat.cards[1])
-          room:useCard{
-            from = player.id,
-            tos = table.map(dat.targets, function(id) return {id} end),
-            card = card,
-            extraUse = true,
-          }
+        local use = U.askForUseRealCard(room, player, to_use, ".", self.name, "#mingjiew-use", {expand_pile = to_use}, true)
+        if use then
+          table.removeOne(ids, use.card:getEffectiveId())
+          room:useCard(use)
         else
           break
         end
@@ -1815,20 +1757,6 @@ local mingjiew_delay = fk.CreateTriggerSkill{
       player.room:setPlayerMark(player, "@@mingjiew", 0)
     else
       player.room:setPlayerMark(player, "@@mingjiew", {player.id})
-    end
-  end,
-}
-local mingjiew_viewas = fk.CreateViewAsSkill{
-  name = "mingjiew_viewas",
-  expand_pile = function (self)
-    return U.getMark(Self, "mingjiew_cards")
-  end,
-  card_filter = function(self, to_select, selected)
-    return #selected == 0 and table.contains(U.getMark(Self, "mingjiew_cards"), to_select)
-  end,
-  view_as = function(self, cards)
-    if #cards == 1 then
-      return Fk:getCardById(cards[1])
     end
   end,
 }
@@ -1936,7 +1864,6 @@ local zhongliu = fk.CreateTriggerSkill{
   end,
 }
 mingjiew:addRelatedSkill(mingjiew_delay)
-Fk:addSkill(mingjiew_viewas)
 wangyun:addSkill(jiexuan)
 wangyun:addSkill(mingjiew)
 wangyun:addSkill(zhongliu)
@@ -1959,7 +1886,6 @@ Fk:loadTranslationTable{
   ["#mingjiew_delay"] = "铭戒",
   ["@@mingjiew"] = "铭戒",
   ["#mingjiew-choose"] = "铭戒：你可以为此%arg额外指定任意名“铭戒”角色为目标",
-  ["mingjiew_viewas"] = "铭戒",
   ["#mingjiew-use"] = "铭戒：你可以使用其中的牌",
 
   ["$jiexuan1"] = "允不才，愿以天下苍生为己任。",

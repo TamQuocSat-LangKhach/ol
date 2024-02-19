@@ -171,40 +171,17 @@ local xiaosi = fk.CreateActiveSkill{
         end
       end
       if #ids == 0 then return false end
-      room:setPlayerMark(player, "xiaosi_cards", ids)
-      local success, dat = room:askForUseActiveSkill(player, "xiaosi_viewas", "#xiaosi-use", true, extra_data)
-      room:setPlayerMark(player, "xiaosi_cards", 0)
-
-      if success then
-        table.removeOne(cards, dat.cards[1])
-        local card = Fk:getCardById(dat.cards[1])
-        room:useCard{
-          from = player.id,
-          tos = table.map(dat.targets, function(id) return {id} end),
-          card = card,
-          extraUse = true,
-        }
+      local use = U.askForUseRealCard(room, player, ids, ".", self.name, "#xiaosi-use",
+      {expand_pile = ids, bypass_distances = true}, true)
+      if use then
+        table.removeOne(cards, use.card:getEffectiveId())
+        room:useCard(use)
       else
         break
       end
     end
   end,
 }
-local xiaosi_viewas = fk.CreateViewAsSkill{
-  name = "xiaosi_viewas",
-  expand_pile = function (self)
-    return U.getMark(Self, "xiaosi_cards")
-  end,
-  card_filter = function(self, to_select, selected)
-    return #selected == 0 and table.contains(U.getMark(Self, "xiaosi_cards"), to_select)
-  end,
-  view_as = function(self, cards)
-    if #cards == 1 then
-      return Fk:getCardById(cards[1])
-    end
-  end,
-}
-Fk:addSkill(xiaosi_viewas)
 furong:addSkill(xiaosi)
 Fk:loadTranslationTable{
   ["ol__furong"] = "傅肜",
@@ -216,7 +193,6 @@ Fk:loadTranslationTable{
   "（若其不能弃置则你摸一张牌），然后你可以使用这些牌（无距离和次数限制）。",
   ["#xiaosi"] = "效死：弃置一张基本牌，令另一名角色弃置一张基本牌，然后你可以使用这些牌",
   ["#xiaosi-discard"] = "效死：请弃置一张基本牌，%src 可以使用之",
-  ["xiaosi_viewas"] = "效死",
   ["#xiaosi-use"] = "效死：你可以使用这些牌（无距离次数限制）",
 
   ["$xiaosi1"] = "既抱必死之心，焉存偷生之意。",
@@ -2580,37 +2556,15 @@ local function DoSaogu(player, cards)
       end
     end
     if #ids == 0 then return end
-    room:setPlayerMark(player, "saogu_cards", ids)
-    local success, dat = room:askForUseActiveSkill(player, "saogu_viewas", "#saogu-use", true, extra_data)
-    room:setPlayerMark(player, "saogu_cards", 0)
-    if success then
-      table.removeOne(cards, dat.cards[1])
-      room:useCard{
-        from = player.id,
-        tos = table.map(dat.targets, function(id) return {id} end),
-        card = Fk:getCardById(dat.cards[1]),
-        extraUse = true,
-      }
+    local use = U.askForUseRealCard(room, player, ids, ".", "saogu", "#saogu-use", {expand_pile = ids}, true)
+    if use then
+      table.removeOne(cards, use.card:getEffectiveId())
+      room:useCard(use)
     else
       break
     end
   end
 end
-local saogu_viewas = fk.CreateViewAsSkill{
-  name = "saogu_viewas",
-  expand_pile = function (self)
-    return U.getMark(Self, "saogu_cards")
-  end,
-  card_filter = function(self, to_select, selected)
-    return #selected == 0 and table.contains(U.getMark(Self, "saogu_cards"), to_select)
-  end,
-  view_as = function(self, cards)
-    if #cards == 1 then
-      return Fk:getCardById(cards[1])
-    end
-  end,
-}
-Fk:addSkill(saogu_viewas)
 local saogu = fk.CreateActiveSkill{
   name = "saogu",
   anim_type = "switch",
@@ -2766,7 +2720,6 @@ Fk:loadTranslationTable{
   ["#saogu_trigger"] = "扫谷",
   ["@[suits]saogu-phase"] = "扫谷",
   ["#saogu-choose"] = "扫谷：你可以弃置一张牌，令一名其他角色执行“扫谷”当前项",
-  ["saogu_viewas"] = "扫谷",
   ["#saogu-use"] = "扫谷：你可以使用其中的【杀】",
 
   ["$saogu1"] = "大汉铁骑，必昭卫霍遗风于当年。",
