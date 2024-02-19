@@ -1620,7 +1620,7 @@ local zhuosheng = fk.CreateTriggerSkill{
   anim_type = "special",
   events = {fk.AfterCardTargetDeclared, fk.CardUsing},
   can_trigger = function(self, event, target, player, data)
-    if target == player and player:hasSkill(self) and player.phase == Player.Play and data.card:getMark("@@zhuosheng-round") > 0 then
+    if target == player and player:hasSkill(self) and (data.extra_data or {}).zhuosheng then
       if event == fk.AfterCardTargetDeclared then
         return data.card:isCommonTrick() and data.tos
       else
@@ -1657,25 +1657,37 @@ local zhuosheng = fk.CreateTriggerSkill{
     end
   end,
 
-  refresh_events = {fk.AfterCardsMove},
+  refresh_events = {fk.AfterCardsMove, fk.RoundEnd, fk.PreCardUse},
   can_refresh = function(self, event, target, player, data)
-    return player:hasSkill(self, true)
+    if event == fk.PreCardUse then
+      return player:hasSkill(self) and player.phase == Player.Play and target == player and data.card:getMark("@@zhuosheng-inhand") > 0
+    -- 是否支持转化牌？
+    else
+      return player:hasSkill(self, true)
+    end
   end,
   on_refresh = function(self, event, target, player, data)
     local room = player.room
-    for _, move in ipairs(data) do
-      if move.toArea ~= Card.Processing then
-        for _, info in ipairs(move.moveInfo) do
-          room:setCardMark(Fk:getCardById(info.cardId), "@@zhuosheng-round", 0)
-        end
-      end
-      if move.to == player.id and move.toArea == Player.Hand and move.skillName ~= self.name then
-        for _, info in ipairs(move.moveInfo) do
-          local id = info.cardId
-          if room:getCardArea(id) == Card.PlayerHand and room:getCardOwner(id) == player then
-            room:setCardMark(Fk:getCardById(id), "@@zhuosheng-round", 1)
+    if event == fk.AfterCardsMove then
+      for _, move in ipairs(data) do
+        if move.to == player.id and move.toArea == Player.Hand and move.skillName ~= self.name then
+          for _, info in ipairs(move.moveInfo) do
+            local id = info.cardId
+            if room:getCardArea(id) == Card.PlayerHand and room:getCardOwner(id) == player then
+              room:setCardMark(Fk:getCardById(id), "@@zhuosheng-inhand", 1)
+            end
           end
         end
+      end
+    elseif event == fk.PreCardUse then
+      data.extra_data = data.extra_data or {}
+      data.extra_data.zhuosheng = true
+      if data.card.type == Card.TypeBasic then
+        data.extraUse = true
+      end
+    else
+      for _, id in ipairs(player.player_cards[Player.Hand]) do -- FIXEME : 双后缀应用后删掉此处
+        room:setCardMark(Fk:getCardById(id), "@@zhuosheng-inhand", 0)
       end
     end
   end,
@@ -1684,11 +1696,11 @@ local zhuosheng_targetmod = fk.CreateTargetModSkill{
   name = "#zhuosheng_targetmod",
   bypass_times = function(self, player, skill, scope, card, to)
     return player:hasSkill(self) and player.phase == Player.Play and card and
-      card.type == Card.TypeBasic and card:getMark("@@zhuosheng-round") > 0
+      card.type == Card.TypeBasic and card:getMark("@@zhuosheng-inhand") > 0
   end,
   bypass_distances =  function(self, player, skill, card, to)
     return player:hasSkill(self) and player.phase == Player.Play and card and
-      card.type == Card.TypeBasic and card:getMark("@@zhuosheng-round") > 0
+      card.type == Card.TypeBasic and card:getMark("@@zhuosheng-inhand") > 0
   end,
 }
 zhuosheng:addRelatedSkill(zhuosheng_targetmod)
@@ -1700,7 +1712,7 @@ Fk:loadTranslationTable{
   ["zhuosheng"] = "擢升",
   [":zhuosheng"] = "出牌阶段，当你使用本轮非以本技能获得的牌时，根据类型执行以下效果：1.基本牌，无距离和次数限制；"..
   "2.普通锦囊牌，可以令此牌目标+1或-1；3.装备牌，你可以摸一张牌。",
-  ["@@zhuosheng-round"] = "擢升",
+  ["@@zhuosheng-inhand"] = "擢升",
   ["#zhuosheng-choose"] = "擢升：你可以为此%arg增加或减少一个目标",
   ["#zhuosheng-invoke"] = "擢升：你可以摸一张牌",
 
