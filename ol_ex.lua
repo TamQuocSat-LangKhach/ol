@@ -3029,7 +3029,7 @@ local ol_ex__tiaoxin = fk.CreateActiveSkill{
       room:useCard(use)
       if player.dead then return false end
     end
-    if not (use and use.damageDealt) then
+    if not (use and use.damageDealt and use.damageDealt[player.id]) then
       room:setPlayerMark(player, "ol_ex__tiaoxin_extra-phase", 1)
       if not target:isNude() then
         local card = room:askForCardChosen(player, target, "he", self.name)

@@ -539,6 +539,250 @@ Fk:loadTranslationTable{
   ["~olmou__taishici"] = "人生得遇知己，死又何憾……",
 }
 
+local yuanshao = General(extension, "olmou__yuanshao", "qun", 4)
+
+local hetao = fk.CreateTriggerSkill{
+  name = "hetao",
+  anim_type = "control",
+  events = {fk.TargetSpecified},
+  can_trigger = function(self, event, target, player, data)
+    return player:hasSkill(self) and not player:isNude() and target ~= player and data.firstTarget and
+    data.card.color ~= Card.NoColor and #U.getActualUseTargets(player.room, data, event) > 1
+  end,
+  on_cost = function(self, event, target, player, data)
+    local to = player.room:askForChoosePlayers(player, AimGroup:getAllTargets(data.tos), 1, 1,
+    "#hetao-choose:::" .. data.card:toLogString(), self.name, true)
+    if #to > 0 then
+      self.cost_data = to[1]
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    data.additionalEffect = 1
+    local targets = AimGroup:getAllTargets(data.tos)
+    table.removeOne(targets, self.cost_data)
+    table.insertTable(data.nullifiedTargets, targets)
+  end,
+}
+local shenliy = fk.CreateTriggerSkill{
+  name = "shenliy",
+  anim_type = "offensive",
+  events = {fk.AfterCardTargetDeclared},
+  can_trigger = function(self, event, target, player, data)
+    if target == player and player:hasSkill(self) and data.card.trueName == "slash" and
+    player.phase == Player.Play and player:usedSkillTimes(self.name, Player.HistoryPhase) == 0 then
+      local targets = U.getUseExtraTargets(player.room, data, true)
+      if #targets > 0 then
+        self.cost_data = targets
+        return true
+      end
+    end
+  end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    if room:askForSkillInvoke(target, self.name, nil, "#shenliy-invoke:::"..data.card:toLogString()) then
+      room:doIndicate(player.id, self.cost_data)
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local targets = table.simpleClone(self.cost_data)
+    room:sendLog{
+      type = "#AddTargetsBySkill",
+      from = player.id,
+      to = targets,
+      arg = self.name,
+      arg2 = data.card:toLogString()
+    }
+    local tos = {}
+    for _, pid in ipairs(targets) do
+      TargetGroup:pushTargets(data.tos, pid)
+    end
+    data.extra_data = data.extra_data or {}
+    data.extra_data.shenliy = data.extra_data.shenliy or {}
+    table.insert(data.extra_data.shenliy, player.id)
+  end,
+}
+local shenliy_delay = fk.CreateTriggerSkill{
+  name = "#shenliy_delay",
+  events = {fk.CardUseFinished},
+  can_trigger = function(self, event, target, player, data)
+    if not player.dead and data.damageDealt and data.extra_data and data.extra_data.shenliy and
+    table.contains(data.extra_data.shenliy, player.id) then
+      local n = 0
+      for _, damage in pairs(data.damageDealt) do
+        n = n + damage
+      end
+      if n > player:getHandcardNum() or n > player.hp then
+        self.cost_data = n
+        return true
+      end
+    end
+  end,
+  on_cost = Util.TrueFunc,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    player:broadcastSkillInvoke("shenliy")
+    local n = self.cost_data
+    if n > player:getHandcardNum() then
+      player:drawCards(math.min(n, 5), "shenliy")
+      if player.dead then return false end
+    end
+    if n > player.hp then
+      local card = data.card
+      local cardlist = card:isVirtual() and card.subcards or {card.id}
+      if #cardlist == 0 or table.every(cardlist, function (id)
+        return room:getCardArea(id) == Card.Processing
+      end) then
+        if not U.isPureCard(data.card) then
+          card = Fk:cloneCard(data.card.name)
+          card:addSubcard(data.card)
+          card.skillName = "shenliy_delay"
+        end
+        local targets = TargetGroup:getRealTargets(data.tos)
+        targets = table.filter(targets, function (pid)
+          local p = room:getPlayerById(pid)
+          return not player:isProhibited(p, card)
+        end)
+        room:useCard{
+          from = player.id,
+          tos = table.map(targets, function (pid) return {pid} end),
+          card = card,
+          extraUse = true
+        }
+      end
+    end
+  end,
+}
+local prepareSiZhaoSword = function (room)
+  local cards = room:getTag("yufeng_derivecards")
+  if type(cards) == "table" then
+    return cards
+  end
+  local card = room:printCard("qin_dragon_sword", Card.Diamond, 6)
+  card.attack_range = 2
+  card.equip_skill = Fk.skills["#sizhao_sword_skill"]
+  room:setTag("yufeng_derivecards", {card.id})
+  return {card.id}
+end
+local yufeng = fk.CreateTriggerSkill{
+  name = "yufeng",
+  events = {fk.GameStart},
+  frequency = Skill.Compulsory,
+  can_trigger = function(self, event, target, player, data)
+    if not player:hasSkill(self) then return false end
+    if event == fk.GameStart then
+      local room = player.room
+      return player:hasEmptyEquipSlot(Card.SubtypeWeapon) and
+      room:getCardArea(prepareSiZhaoSword(room)[1]) == Card.Void
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    U.moveCardIntoEquip(room, player, prepareSiZhaoSword(room), self.name)
+  end,
+}
+local shishouyTriggerable = function (player)
+  if #player:getEquipments(Card.SubtypeWeapon) > 0 then return false end
+  local room = player.room
+  local id = prepareSiZhaoSword(room)[1]
+  return table.contains({Card.PlayerEquip, Card.DrawPile, Card.DiscardPile, Card.Void}, room:getCardArea(id))
+end
+local shishouy = fk.CreateTriggerSkill{
+  name = "shishouy$",
+  events = {fk.AfterCardsMove},
+  can_trigger = function(self, event, target, player, data)
+    if not (player:hasSkill(self) and shishouyTriggerable(player)) then return false end
+    local targets = {}
+    for _, move in ipairs(data) do
+      if move.from then
+        for _, info in ipairs(move.moveInfo) do
+          if info.fromArea == Card.PlayerEquip then
+            table.insertIfNeed(targets, move.from)
+          end
+        end
+      end
+    end
+    local room = player.room
+    for _, pid in ipairs(targets) do
+      local to = room:getPlayerById(pid)
+      if not to.dead and to ~= player and to.kingdom == "qun" then
+        self.cost_data = targets
+        return true
+      end
+    end
+  end,
+  on_trigger = function(self, event, target, player, data)
+    local targets = table.simpleClone(self.cost_data)
+    local room = player.room
+    room:sortPlayersByAction(targets)
+    for _, pid in ipairs(targets) do
+      local to = room:getPlayerById(pid)
+      if not to.dead and to ~= player and to.kingdom == "qun" then
+        self:doCost(event, to, player, data)
+      end
+      if not (player:hasSkill(self) and shishouyTriggerable(player)) then break end
+    end
+  end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    if room:askForSkillInvoke(target, self.name, nil, "#shishouy-invoke:"..player.id) then
+      room:doIndicate(target.id, {player.id})
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    U.moveCardIntoEquip(room, player, prepareSiZhaoSword(room), self.name)
+  end,
+}
+shenliy:addRelatedSkill(shenliy_delay)
+yuanshao:addSkill(hetao)
+yuanshao:addSkill(shenliy)
+yuanshao:addSkill(yufeng)
+yuanshao:addSkill(shishouy)
+Fk:loadTranslationTable{
+  ["olmou__yuanshao"] = "谋袁绍",
+  ["#olmou__yuanshao"] = "",
+  --["illustrator:olmou__yuanshao"] = "西国红云",
+
+  ["hetao"] = "合讨",
+  [":hetao"] = "当其他角色使用牌指定大于一个目标后，你可以弃置一张与此牌颜色相同的牌，令此牌对其中一个目标生效两次且对其他目标无效。",
+  ["shenliy"] = "神离",
+  [":shenliy"] = "出牌阶段限一次，当你使用【杀】指定目标后，你可以令所有其他角色均成为此【杀】的目标，"..
+  "此牌结算结束后，若此【杀】造成的伤害值：大于你的手牌数，你摸等同于伤害值数的牌（至多摸五张）；"..
+  "大于你的体力值，你对相同目标再次使用此【杀】。",
+  ["yufeng"] = "玉锋",
+  [":yufeng"] = "锁定技，游戏开始时，你将【思召剑】置入你的装备区。"..
+  "<br /><font color='grey'>【思召剑】（暂且以【真龙长剑】的卡图替代）<br />装备牌·武器<br/><b>攻击范围</b>：2<br />"..
+  "<b>武器技能</b>：锁定技，当你使用【杀】指定一名角色为目标后，该角色不能使用点数小于此【杀】的【闪】响应此【杀】。",
+  ["shishouy"] = "士首",
+  [":shishouy"] = "主公技，当其他群势力角色失去装备区里的牌后，若你的装备区里没有武器牌，其可以将【思召剑】置入你的装备区。",
+
+  ["#hetao-choose"] = "是否发动 合讨，选择一名目标角色，令%arg改为仅对其结算两次",
+  ["#shenliy-invoke"] = "是否发动 神离，选择所有其他角色成为此%arg的目标",
+  ["#shenliy_delay"] = "神离",
+  ["#shishouy-invoke"] = "是否发动%src的 士首，将【思召剑】置入其装备区",
+
+  ["$hetao1"] = "合诸侯之群力，扶大汉之将倾。",
+  ["$hetao2"] = "猛虎啸于山野，群士执戈相待。",
+  ["$shenliy1"] = "沧海之水难覆，将倾之厦难扶。",
+  ["$shenliy2"] = "诸君心怀苟且，安能并力西向？",
+  ["$yufeng"] = "梦神人授剑，怀神兵济世。	",
+  ["$shishouy1"] = "今执牛耳，当为天下之先。",
+  ["$shishouy2"] = "士者不徒手而战，况其首乎。",
+  ["~olmou__yuanshao"] = "众人合而无力，徒负大义也……",
+}
+
+
+
+
+
+
+
+
+
 
 
 return extension
