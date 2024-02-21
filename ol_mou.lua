@@ -550,17 +550,26 @@ local hetao = fk.CreateTriggerSkill{
     data.card.color ~= Card.NoColor and #U.getActualUseTargets(player.room, data, event) > 1
   end,
   on_cost = function(self, event, target, player, data)
-    local to = player.room:askForChoosePlayers(player, AimGroup:getAllTargets(data.tos), 1, 1,
-    "#hetao-choose:::" .. data.card:toLogString(), self.name, true)
+    local room = player.room
+    local ids = table.filter(player:getCardIds("he"), function(id)
+      local c = Fk:getCardById(id)
+      return data.card:compareColorWith(c) and not player:prohibitDiscard(c)
+    end)
+    local to, card = room:askForChooseCardAndPlayers(player, AimGroup:getAllTargets(data.tos), 1, 1,
+    tostring(Exppattern{ id = ids }), "#hetao-choose:::" .. data.card:toLogString(), self.name, true)
+
     if #to > 0 then
-      self.cost_data = to[1]
+      self.cost_data = {to[1], card}
       return true
     end
   end,
   on_use = function(self, event, target, player, data)
+    local dat = table.simpleClone(self.cost_data)
+    local room = player.room
+    room:throwCard({dat[2]}, self.name, player, player)
     data.additionalEffect = 1
     local targets = AimGroup:getAllTargets(data.tos)
-    table.removeOne(targets, self.cost_data)
+    table.removeOne(targets, dat[1])
     table.insertTable(data.nullifiedTargets, targets)
   end,
 }
