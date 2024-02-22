@@ -557,7 +557,6 @@ local hetao = fk.CreateTriggerSkill{
     end)
     local to, card = room:askForChooseCardAndPlayers(player, AimGroup:getAllTargets(data.tos), 1, 1,
     tostring(Exppattern{ id = ids }), "#hetao-choose:::" .. data.card:toLogString(), self.name, true)
-
     if #to > 0 then
       self.cost_data = {to[1], card}
       return true
@@ -569,8 +568,11 @@ local hetao = fk.CreateTriggerSkill{
     room:throwCard({dat[2]}, self.name, player, player)
     data.additionalEffect = 1
     local targets = AimGroup:getAllTargets(data.tos)
-    table.removeOne(targets, dat[1])
-    table.insertTable(data.nullifiedTargets, targets)
+    for _, pid in ipairs(targets) do
+      if pid ~= dat[1] then
+        table.insert(data.nullifiedTargets, pid)
+      end
+    end
   end,
 }
 local shenliy = fk.CreateTriggerSkill{
@@ -649,33 +651,34 @@ local shenliy_delay = fk.CreateTriggerSkill{
           card:addSubcard(data.card)
           card.skillName = "shenliy_delay"
         end
+        if player:prohibitUse(card) then return false end
         local targets = TargetGroup:getRealTargets(data.tos)
         targets = table.filter(targets, function (pid)
           local p = room:getPlayerById(pid)
-          return not player:isProhibited(p, card)
+          return not (p.dead or player:isProhibited(p, card))
+          --FIXME:暂不考虑对特殊目标【杀】的适配，否则则需判modtargetfilter
         end)
-        room:useCard{
-          from = player.id,
-          tos = table.map(targets, function (pid) return {pid} end),
-          card = card,
-          extraUse = true
-        }
+        if #targets > 0 then
+          room:useCard{
+            from = player.id,
+            tos = table.map(targets, function (pid) return {pid} end),
+            card = card,
+            extraUse = true
+          }
+        end
       end
     end
   end,
 }
-
 local yufeng = fk.CreateTriggerSkill{
   name = "yufeng",
   events = {fk.GameStart},
   frequency = Skill.Compulsory,
   can_trigger = function(self, event, target, player, data)
     if not player:hasSkill(self) then return false end
-    if event == fk.GameStart then
-      local room = player.room
-      return player:hasEmptyEquipSlot(Card.SubtypeWeapon) and
-      room:getCardArea(U.prepareDeriveCards(room, {{"sizhao_sword", Card.Diamond, 6}}, "yufeng_derivecards")[1]) == Card.Void
-    end
+    local room = player.room
+    return player:hasEmptyEquipSlot(Card.SubtypeWeapon) and
+    room:getCardArea(U.prepareDeriveCards(room, {{"sizhao_sword", Card.Diamond, 6}}, "yufeng_derivecards")[1]) == Card.Void
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
@@ -749,7 +752,7 @@ Fk:loadTranslationTable{
   ["hetao"] = "合讨",
   [":hetao"] = "当其他角色使用牌指定大于一个目标后，你可以弃置一张与此牌颜色相同的牌，令此牌对其中一个目标生效两次且对其他目标无效。",
   ["shenliy"] = "神离",
-  [":shenliy"] = "出牌阶段限一次，当你使用【杀】选择目标后，你可以令所有其他角色均成为此【杀】的目标，"..
+  [":shenliy"] = "当你于出牌阶段内使用【杀】选择目标后，若你于此阶段内未发动过此技能，你可以令所有其他角色均成为此【杀】的目标。"..
   "此牌结算结束后，若此【杀】造成的伤害值：大于你的手牌数，你摸等同于伤害值数的牌（至多摸五张）；"..
   "大于你的体力值，你对相同目标再次使用此【杀】。",
   --实际上时机是指定目标后，非常离谱……
@@ -757,6 +760,7 @@ Fk:loadTranslationTable{
   [":yufeng"] = "锁定技，游戏开始时，你将【思召剑】置入你的装备区。",
   ["shishouy"] = "士首",
   [":shishouy"] = "主公技，当其他群势力角色失去装备区里的牌后，若你的装备区里没有武器牌，其可以将【思召剑】置入你的装备区。",
+  --与玉锋共用，没有则印一张，判定区域暂定：摸牌堆、弃牌堆、一名角色的装备区、游戏外（府库）
 
   ["#hetao-choose"] = "是否发动 合讨，选择一名目标角色，令%arg改为仅对其结算两次",
   ["#shenliy-invoke"] = "是否发动 神离，选择所有其他角色成为此%arg的目标",
