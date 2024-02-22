@@ -10,6 +10,8 @@ local ol_ex = require "packages/ol/ol_ex"
 local ol_exyj = require "packages/ol/ol_exyj"
 local ol_token = require "packages/ol/ol_token"
 
+Fk:loadTranslationTable(require 'packages/ol/i18n/en_US', 'en_US')
+
 return {
   ol_sp1,
   ol_sp2,
