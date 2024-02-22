@@ -664,17 +664,7 @@ local shenliy_delay = fk.CreateTriggerSkill{
     end
   end,
 }
-local prepareSiZhaoSword = function (room)
-  local cards = room:getTag("yufeng_derivecards")
-  if type(cards) == "table" then
-    return cards
-  end
-  local card = room:printCard("qin_dragon_sword", Card.Diamond, 6)
-  card.attack_range = 2
-  card.equip_skill = Fk.skills["#sizhao_sword_skill"]
-  room:setTag("yufeng_derivecards", {card.id})
-  return {card.id}
-end
+
 local yufeng = fk.CreateTriggerSkill{
   name = "yufeng",
   events = {fk.GameStart},
@@ -684,18 +674,18 @@ local yufeng = fk.CreateTriggerSkill{
     if event == fk.GameStart then
       local room = player.room
       return player:hasEmptyEquipSlot(Card.SubtypeWeapon) and
-      room:getCardArea(prepareSiZhaoSword(room)[1]) == Card.Void
+      room:getCardArea(U.prepareDeriveCards(room, {{"sizhao_sword", Card.Diamond, 6}}, "yufeng_derivecards")[1]) == Card.Void
     end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    U.moveCardIntoEquip(room, player, prepareSiZhaoSword(room), self.name)
+    U.moveCardIntoEquip(room, player, U.prepareDeriveCards(room, {{"sizhao_sword", Card.Diamond, 6}}, "yufeng_derivecards"), self.name)
   end,
 }
 local shishouyTriggerable = function (player)
   if #player:getEquipments(Card.SubtypeWeapon) > 0 then return false end
   local room = player.room
-  local id = prepareSiZhaoSword(room)[1]
+  local id = U.prepareDeriveCards(room, {{"sizhao_sword", Card.Diamond, 6}}, "yufeng_derivecards")[1]
   return table.contains({Card.PlayerEquip, Card.DrawPile, Card.DiscardPile, Card.Void}, room:getCardArea(id))
 end
 local shishouy = fk.CreateTriggerSkill{
@@ -743,7 +733,7 @@ local shishouy = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    U.moveCardIntoEquip(room, player, prepareSiZhaoSword(room), self.name)
+    U.moveCardIntoEquip(room, player, U.prepareDeriveCards(room, {{"sizhao_sword", Card.Diamond, 6}}, "yufeng_derivecards"), self.name)
   end,
 }
 shenliy:addRelatedSkill(shenliy_delay)
@@ -759,13 +749,12 @@ Fk:loadTranslationTable{
   ["hetao"] = "合讨",
   [":hetao"] = "当其他角色使用牌指定大于一个目标后，你可以弃置一张与此牌颜色相同的牌，令此牌对其中一个目标生效两次且对其他目标无效。",
   ["shenliy"] = "神离",
-  [":shenliy"] = "出牌阶段限一次，当你使用【杀】指定目标后，你可以令所有其他角色均成为此【杀】的目标，"..
+  [":shenliy"] = "出牌阶段限一次，当你使用【杀】选择目标后，你可以令所有其他角色均成为此【杀】的目标，"..
   "此牌结算结束后，若此【杀】造成的伤害值：大于你的手牌数，你摸等同于伤害值数的牌（至多摸五张）；"..
   "大于你的体力值，你对相同目标再次使用此【杀】。",
+  --实际上时机是指定目标后，非常离谱……
   ["yufeng"] = "玉锋",
-  [":yufeng"] = "锁定技，游戏开始时，你将【思召剑】置入你的装备区。"..
-  "<br /><font color='grey'>【思召剑】（暂且以【真龙长剑】的卡图替代）<br />装备牌·武器<br/><b>攻击范围</b>：2<br />"..
-  "<b>武器技能</b>：锁定技，当你使用【杀】指定一名角色为目标后，该角色不能使用点数小于此【杀】的【闪】响应此【杀】。",
+  [":yufeng"] = "锁定技，游戏开始时，你将【思召剑】置入你的装备区。",
   ["shishouy"] = "士首",
   [":shishouy"] = "主公技，当其他群势力角色失去装备区里的牌后，若你的装备区里没有武器牌，其可以将【思召剑】置入你的装备区。",
 

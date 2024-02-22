@@ -1016,6 +1016,7 @@ Fk:loadTranslationTable{
   ["#sizhao_sword_prohibit"] = "思召剑",
   [":sizhao_sword"] = "装备牌·武器<br/><b>攻击范围</b>：2<br/>"..
   "<b>武器技能</b>：锁定技，当你使用【杀】指定一名角色为目标后，该角色不能使用点数小于此【杀】的【闪】响应此【杀】。",
+  --实际上时机是使用【杀】时。
 }
 
 return extension
