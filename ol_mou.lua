@@ -28,12 +28,12 @@ local zhuri = fk.CreateTriggerSkill{
             end
           end
         end
-      end, Player.HistoryPhase) > 0 and table.find(player.room:getOtherPlayers(player), function(p) return player:canPindian(p) end)
+      end, Player.HistoryPhase) > 0 and table.find(player.room.alive_players, function(p) return player:canPindian(p) end)
     end
   end,
   on_cost = function(self, event, target, player, data)
     local room = player.room
-    local to = room:askForChoosePlayers(player, table.map(table.filter(room:getOtherPlayers(player), function(p)
+    local to = room:askForChoosePlayers(player, table.map(table.filter(room.alive_players, function(p)
       return player:canPindian(p) end), Util.IdMapper),
       1, 1, "#zhuri-choose", self.name, true)
     if #to > 0 then
@@ -142,7 +142,7 @@ local ranji = fk.CreateTriggerSkill{
         skillName = self.name
       })
     end
-    room:setPlayerMark(player, self.name, 1)
+    room:setPlayerMark(player, "@@ranji", 1)
   end,
 }
 local ranji_trigger = fk.CreateTriggerSkill{
@@ -151,9 +151,9 @@ local ranji_trigger = fk.CreateTriggerSkill{
   events = {fk.PreHpRecover, fk.Death},
   can_trigger = function(self, event, target, player, data)
     if event == fk.PreHpRecover then
-      return target == player and player:getMark("ranji") > 0
+      return target == player and player:getMark("@@ranji") > 0
     elseif event == fk.Death then
-      return player:getMark("ranji") > 0 and data.damage and data.damage.from and data.damage.from == player
+      return player:getMark("@@ranji") > 0 and data.damage and data.damage.from and data.damage.from == player
     end
   end,
   on_cost = Util.TrueFunc,
@@ -161,7 +161,7 @@ local ranji_trigger = fk.CreateTriggerSkill{
     if event == fk.PreHpRecover then
       return true
     elseif event == fk.Death then
-      player.room:setPlayerMark(player, "ranji", 0)
+      player.room:setPlayerMark(player, "@@ranji", 0)
     end
   end,
 }
@@ -229,16 +229,15 @@ Fk:loadTranslationTable{
   ["#ranji3-invoke"] = "燃己：是否获得〖困奋〗和〖诈降〗？",
   ["ranji-draw"] = "将手牌摸至手牌上限",
   ["ranji-recover"] = "回复体力至体力上限",
+  ["@@ranji"] = "燃己",
   ["@@ol_ex__zhaxiang-turn"] = "诈降",
 
   ["$zhuri1"] = "效逐日之夸父，怀忠志而长存。",
   ["$zhuri2"] = "知天命而不顺，履穷途而强为。",
   ["$ranji1"] = "此身为薪，炬成灰亦昭大汉长明！",
   ["$ranji2"] = "维之一腔骨血，可驱驰来北马否？",
-  ["$kunfenEx_olmou__jiangwei1"] = "",
-  ["$kunfenEx_olmou__jiangwei2"] = "",
-  ["$ol_ex__zhaxiang_olmou__jiangwei1"] = "",
-  ["$ol_ex__zhaxiang_olmou__jiangwei2"] = "",
+  ["$kunfenEx_olmou__jiangwei"] = "虽千万人，吾往矣！",
+  ["$ol_ex__zhaxiang_olmou__jiangwei"] = "亡国之将姜维，请明公驱驰！",
   ["~olmou__jiangwei"] = "姜维姜维……又将何为？",
 }
 

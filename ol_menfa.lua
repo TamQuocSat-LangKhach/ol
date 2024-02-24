@@ -2831,12 +2831,57 @@ Fk:loadTranslationTable{
   ["~olz__xunyou"] = "吾知命之寿，明知命之节……",
 }
 
---[[
-local wuqiao = General(extension, "olz__wuqiao", "qun", 3)
-
-
+local wuqiao = General(extension, "olz__wuqiao", "qun", 4)
+local qiajue = fk.CreateTriggerSkill{
+  name = "qiajue",
+  anim_type = "drawcard",
+  events = {fk.EventPhaseStart},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self) and player.phase == Player.Draw and not player:isNude()
+  end,
+  on_cost = function(self, event, target, player, data)
+    local n = 0
+    for _, id in ipairs(player:getCardIds(Player.Hand)) do
+      n = n + Fk:getCardById(id).number
+    end
+    local card = player.room:askForDiscard(player, 1, 1, true, self.name, true, ".|.|spade,club",
+      "#qiajue-invoke:::"..tostring(n), true)
+    if #card > 0 then
+      self.cost_data = card
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    player.room:throwCard(self.cost_data, self.name, player, player)
+  end,
+}
+local qiajue_delay = fk.CreateTriggerSkill{
+  name = "#qiajue_delay",
+  events = {fk.EventPhaseEnd},
+  mute = true,
+  can_trigger = function(self, event, target, player, data)
+    return player:usedSkillTimes("qiajue", Player.HistoryPhase) > 0 and not (player.dead or player:isKongcheng())
+  end,
+  on_cost = Util.TrueFunc,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local cards = player:getCardIds(Player.Hand)
+    local n = 0
+    for _, id in ipairs(cards) do
+      n = n + Fk:getCardById(id).number
+    end
+    player:showCards(cards)
+    if n > 30 then
+      room:addPlayerMark(player, MarkEnum.MinusMaxCards, 2)
+      room:broadcastProperty(player, "MaxCards")
+    else
+      player:gainAnExtraPhase(Player.Draw)
+    end
+  end,
+}
+qiajue:addRelatedSkill(qiajue_delay)
+wuqiao:addSkill(qiajue)
 wuqiao:addSkill("muyin")
-]]
 
 Fk:loadTranslationTable{
   ["olz__wuqiao"] = "族吴乔",
@@ -2846,6 +2891,8 @@ Fk:loadTranslationTable{
   ["qiajue"] = "跒倔",
   [":qiajue"] = "摸牌阶段开始时，你可以弃置一张黑色牌并于本阶段结束时展示所有手牌，若点数和大于30，你的手牌上限-2，"..
   "否则你执行一个额外的摸牌阶段。",
+  ["#qiajue_delay"] = "跒倔",
+  ["#qiajue-invoke"] = "是否发动 跒倔，弃置一张黑色牌，摸牌后手牌点数和≤30可以继续摸牌<font color='red'>（当前为%arg）</font>",
 
   ["$qiajue1"] = "",
   ["$qiajue2"] = "",

@@ -4717,6 +4717,7 @@ hujinding:addSkill(chongshen)
 
 Fk:loadTranslationTable{
   ["ol__hujinding"] = "胡金定",
+  ["#ol__hujinding"] = "怀子求怜",
   ["qingyuan"] = "轻缘",
   [":qingyuan"] = "锁定技，游戏开始时，你选择一名其他角色；当你首次受到伤害后，你再选择一名其他角色。"..
   "每回合限一次，当以此法选择的角色获得牌后，你获得其中随机一名角色的随机一张手牌。",

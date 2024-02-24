@@ -209,7 +209,7 @@ Fk:loadTranslationTable{
   ["$ol__chezheng2"] = "只要朕还在，老贼休想稳坐一天！",
   ["$ol__lijun1"] = "能征善战，乃我东吴长久之风。",
   ["$ol__lijun2"] = "重赏之下，必有勇夫。",
-  ["~ol__sunliang"] = "君不君，臣不臣，此国之悲。",
+  ["~ol__sunliang"] = "君不君，臣不臣，此国之悲……",
 }
 
 local ol__zhoufei = General(extension, "ol__zhoufei", "wu", 3, 3, General.Female)
@@ -779,7 +779,7 @@ Fk:loadTranslationTable{
   ["@ol__fenxin"] = "焚心",
 
   ["$ol__jieyuan1"] = "心竭而出，缘竭而究。",
-  ["$ol__jieyuan2"] = "缘浅行浓，竭力而衰。",
+  ["$ol__jieyuan2"] = "缘浅情浓，竭力而衰。",
   ["$ol__fenxin1"] = "你的身份，我已为你抹去。",
   ["$ol__fenxin2"] = "伤我心神，焚汝身骨。",
   ["~ol__lingju"] = "情随梦境散，花随时节落。",
@@ -1419,7 +1419,7 @@ Fk:loadTranslationTable{
   ["$ol__mouzhu2"] = "宦官当道，当杀之以清君侧！",
   ["$ol__yanhuo1"] = "是谁，泄露了我的计划？",
   ["$ol__yanhuo2"] = "战斗还没结束呢！",
-  ["~ol__hejin"] = "阉人造反啦！护卫！呀！",
+  ["~ol__hejin"] = "阉人造反啦！护卫！呀——",
 }
 local ol__niujin = General(extension, "ol__niujin", "wei", 4)
 local ol__cuorui = fk.CreateTriggerSkill{
@@ -1488,7 +1488,7 @@ Fk:loadTranslationTable{
   ["$ol__cuorui2"] = "锐气受挫，则未敢恋战。",
   ["$ol__liewei1"] = "一息尚存，亦不容懈。",
   ["$ol__liewei2"] = "宰了你，可没有好处！",
-  ["~ol__niujin"] = "司马氏负我。",
+  ["~ol__niujin"] = "司马氏负我！",
 }
 
 local hansui = General(extension, "ol__hansui", "qun", 4)
@@ -1554,11 +1554,11 @@ Fk:loadTranslationTable{
   ["#ol__niluan-slash"] = "逆乱：你可以将一张黑色牌当【杀】对 %src 使用",
   ["#ol__xiaoxi-ask"] = "骁袭：你可以视为使用一张无距离限制的【杀】",
 
-  ["$ol__niluan1"] = "如果不能功成名就，那就干脆为祸一方！",
-  ["$ol__niluan2"] = "哈哈哈哈哈，天下之事皆无常！",
-  ["$ol__xiaoxi1"] = "打你个措手不及！",
-  ["$ol__xiaoxi2"] = "两军交战，勇者为胜！",
-  ["~ol__hansui"] = "马侄儿为何……啊！",
+  ["$ol__niluan1"] = "西凉铁骑，随我逆袭！",
+  ["$ol__niluan2"] = "吃我一记回马枪！",
+  ["$ol__xiaoxi1"] = "（拔剑声）先吃我一剑！",
+  ["$ol__xiaoxi2"] = "这是给你的下马威！",
+  ["~ol__hansui"] = "英雄一世，奈何祸起萧墙……",
 }
 
 local ol__fanchou = General(extension, "ol__fanchou", "qun", 4)
@@ -2027,7 +2027,9 @@ Fk:loadTranslationTable{
 
   ["$ol__sanyao1"] = "吾有一计，可致司马懿于死地。",
   ["$ol__sanyao2"] = "丞相勿忧，司马懿不足为患。",
-  ["~ol__masu"] = "悔不听王平之言，铸此大错。",
+  ["$ty_ex__zhiman_ol__masu1"] = "覆军杀将非良策也，当服其心以求长远。",
+  ["$ty_ex__zhiman_ol__masu2"] = "欲平南中之叛，当以攻心为上。",
+  ["~ol__masu"] = "悔不听王平之言，铸此大错……",
 }
 
 -- yj2013
@@ -2376,7 +2378,7 @@ Fk:loadTranslationTable{
   ["$ol__liexian"] = "烈火灼心，弦音刺耳。",
   ["$ol__rouxian"] = "稍安勿躁，请先听我一曲。",
   ["$ol__hexian"] = "和声悦悦，琴音悠悠。",
-  ["~ol__jikang"] = "曲终人散，空留余音。",
+  ["~ol__jikang"] = "曲终人散，空留余音……",
 }
 
 return extension
