@@ -3800,6 +3800,7 @@ shengong:addRelatedSkill(shengong_trigger)
 ol__puyuan:addSkill(shengong)
 local qisi = fk.CreateTriggerSkill{
   name = "qisi",
+  anim_type = "drawcard",
   events = {fk.GameStart, fk.DrawNCards},
   can_trigger = function(self, event, target, player, data)
     if event == fk.GameStart then
@@ -3835,7 +3836,6 @@ local qisi = fk.CreateTriggerSkill{
       end
       U.moveCardIntoEquip(room, player, put, self.name, false, player)
     else
-      data.n = data.n - 1
       local choices = {"weapon", "armor", "equip_horse", "treasure"}
       local StrToSubtypeList = {["weapon"]={Card.SubtypeWeapon},["armor"]={Card.SubtypeArmor},["treasure"]={Card.SubtypeTreasure},["equip_horse"]={Card.SubtypeOffensiveRide,Card.SubtypeDefensiveRide}}
       local choice = room:askForChoice(player, choices, self.name)
@@ -3849,7 +3849,8 @@ local qisi = fk.CreateTriggerSkill{
         end
       end
       if #cards == 0 then return end
-      room:obtainCard(player, table.random(cards), false, fk.ReasonPrey)
+      room:moveCardTo(table.random(cards), Card.PlayerHand, player, fk.ReasonPrey, self.name)
+      data.n = data.n - 1
     end
   end,
 }
@@ -3872,8 +3873,8 @@ Fk:loadTranslationTable{
   ["shengongSuccess"] = "锻造成功",
   ["shengongFail"] = "锻造失败",
   ["qisi"] = "奇思",
-  [":qisi"] = "①游戏开始时，将两张不同副类别的装备牌并置入你的装备区。②摸牌阶段，你可以少摸一张牌，声明一种武器、防具、坐骑或宝物牌并从牌堆或弃牌堆中获得之。",
-  ["#qisi-invoke"] = "你可以少摸一张牌，声明一种武器、防具、坐骑或宝物牌并从牌堆或弃牌堆中获得之",
+  [":qisi"] = "①游戏开始时，将两张不同副类别的装备牌并置入你的装备区。②摸牌阶段，你可以声明一种武器、防具、坐骑或宝物牌，若牌堆或弃牌堆中有符合的牌，你获得其中一张且本阶段少摸一张牌。",
+  ["#qisi-invoke"] = "奇思：你可以声明并获得一种武器、防具、坐骑或宝物牌",
 
   ["$shengong1"] = "技艺若神，大巧不工。",
   ["$shengong2"] = "千锤百炼，始得神兵。",

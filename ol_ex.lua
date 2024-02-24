@@ -3150,7 +3150,7 @@ local ol_ex__ruoyu = fk.CreateTriggerSkill{
         skillName = self.name,
       })
     end
-    room:handleAddLoseSkills(player, "jijiang|ol_ex__sishu", nil, true, false)
+    room:handleAddLoseSkills(player, "ol_ex__jijiang|ol_ex__sishu", nil, true, false)
   end,
 }
 local indulgenceSkill = fk.CreateActiveSkill{
@@ -3225,12 +3225,80 @@ local ol_ex__sishu = fk.CreateTriggerSkill{
     end
   end,
 }
+local jijiang = fk.CreateViewAsSkill{
+  name = "ol_ex__jijiang$",
+  anim_type = "offensive",
+  pattern = "slash",
+  card_filter = Util.FalseFunc,
+  view_as = function(self, cards)
+    if #cards ~= 0 then
+      return nil
+    end
+    local c = Fk:cloneCard("slash")
+    c.skillName = self.name
+    return c
+  end,
+  before_use = function(self, player, use)
+    local room = player.room
+    if use.tos then
+      room:doIndicate(player.id, TargetGroup:getRealTargets(use.tos))
+    end
+    for _, p in ipairs(room:getOtherPlayers(player)) do
+      if p.kingdom == "shu" then
+        local cardResponded = room:askForResponse(p, "slash", "slash", "#jijiang-ask:" .. player.id, true)
+        if cardResponded then
+          room:responseCard({
+            from = p.id,
+            card = cardResponded,
+            skipDrop = true,
+          })
+          use.card = cardResponded
+          return
+        end
+      end
+    end
+    room:setPlayerMark(player, "jijiang-failed-phase", 1)
+    return self.name
+  end,
+  enabled_at_play = function(self, player)
+    return player:getMark("jijiang-failed-phase") == 0 and table.every(Fk:currentRoom().alive_players, function(p)
+      return p == player or p.kingdom ~= "shu"
+    end)
+  end,
+  enabled_at_response = function(self, player)
+    return not table.every(Fk:currentRoom().alive_players, function(p)
+      return p == player or p.kingdom ~= "shu"
+    end)
+  end,
+}
+local jijiang_trigger = fk.CreateTriggerSkill{
+  name = "#ol_ex__jijiang_trigger",
+  mute = true,
+  frequency = Skill.Compulsory,
+  events = { fk.CardUsing, fk.CardResponding },
+  can_trigger = function(self, event, target, player, data)
+    return data.card.trueName == "slash" and target ~= player.room.current and target.kingdom == "shu"
+    and player:hasSkill(jijiang) and player:getMark("ol_ex__jijiang_draw-turn") == 0
+  end,
+  on_cost = function (self, event, target, player, data)
+    return player.room:askForSkillInvoke(target, self.name, nil, "#ol_ex__jijiang-invoke:"..player.id)
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    player:broadcastSkillInvoke("ol_ex__jijiang")
+    room:notifySkillInvoked(player, "ol_ex__jijiang", "drawcard")
+    room:setPlayerMark(player, "ol_ex__jijiang_draw-turn", 1)
+    player:drawCards(1, "ol_ex__jijiang")
+  end,
+}
+jijiang:addRelatedSkill(jijiang_trigger)
+Fk:addSkill(jijiang)
 ol_ex__fangquan:addRelatedSkill(ol_ex__fangquan_delay)
 local liushan = General(extension, "ol_ex__liushan", "shu", 3)
 liushan:addSkill("xiangle")
 liushan:addSkill(ol_ex__fangquan)
 liushan:addSkill(ol_ex__ruoyu)
-liushan:addRelatedSkill("jijiang")
+liushan:addRelatedSkill("ol_ex__jijiang")
 ol_ex__sishu:addRelatedSkill(ol_ex__sishu_buff)
 liushan:addRelatedSkill(ol_ex__sishu)
 Fk:loadTranslationTable{
@@ -3241,9 +3309,12 @@ Fk:loadTranslationTable{
   ["#ol_ex__fangquan_delay"] = "放权",
   [":ol_ex__fangquan"] = "出牌阶段开始前，你可跳过此阶段，然后弃牌阶段开始时，你可弃置一张手牌并选择一名其他角色，其获得一个额外回合。",
   ["ol_ex__ruoyu"] = "若愚",
-  [":ol_ex__ruoyu"] = "主公技，觉醒技，准备阶段，若你是体力值最小的角色，你加1点体力上限，回复体力至3点，获得〖激将〗（暂时为标准版）和〖思蜀〗。",
+  [":ol_ex__ruoyu"] = "主公技，觉醒技，准备阶段，若你是体力值最小的角色，你加1点体力上限，回复体力至3点，获得〖激将〗和〖思蜀〗。",
   ["ol_ex__sishu"] = "思蜀",
   [":ol_ex__sishu"] = "出牌阶段开始时，你可选择一名角色，其本局游戏【乐不思蜀】的判定结果反转。",
+  ["ol_ex__jijiang"] = "激将",
+  [":ol_ex__jijiang"] = "主公技，①当你需要使用或打出【杀】时，你可以令其他蜀势力角色选择是否打出一张【杀】（视为由你使用或打出）；②每回合限一次，其他蜀势力角色于其回合外使用或打出【杀】时，可令你摸一张牌。",
+  ["#ol_ex__jijiang-invoke"] = "激将：你可以令 %src 摸一张牌",
 
   ["#ol_ex__fangquan-choose"] = "放权：弃置一张手牌，令一名角色获得一个额外回合",
   ["#ol_ex__sishu-choose"] = "思蜀：选择一名角色，令其本局游戏【乐不思蜀】的判定结果反转",
@@ -3257,8 +3328,8 @@ Fk:loadTranslationTable{
   ["$ol_ex__fangquan2"] = "这些事情，你们安排就好。",
   ["$ol_ex__ruoyu1"] = "若愚故泰，巧骗众人。",
   ["$ol_ex__ruoyu2"] = "愚昧者，非真傻也。",
-  ["$jijiang_ol_ex__liushan1"] = "爱卿爱卿，快来护驾！",
-  ["$jijiang_ol_ex__liushan2"] = "将军快替我，拦下此贼！",
+  ["$ol_ex__jijiang_ol_ex__liushan1"] = "爱卿爱卿，快来护驾！",
+  ["$ol_ex__jijiang_ol_ex__liushan2"] = "将军快替我，拦下此贼！",
   ["$ol_ex__sishu1"] = "蜀乐乡土，怎不思念？",
   ["$ol_ex__sishu2"] = "思乡心切，徘徊惶惶。",
   ["~ol_ex__liushan"] = "将军英勇，我……我投降……",
