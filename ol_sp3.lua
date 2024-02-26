@@ -4736,4 +4736,163 @@ Fk:loadTranslationTable{
   ["~ol__hujinding"] = "君无愧于天下，可有悔于妻儿？",
 }
 
+local guotu = General(extension, "guotu", "qun", 3)
+local qushi = fk.CreateActiveSkill{
+  name = "qushi",
+  anim_type = "control",
+  prompt = "#qushi-active",
+  can_use = function(self, player)
+    return player:usedSkillTimes(self.name, Player.HistoryPhase) < 1
+  end,
+  card_filter = Util.FalseFunc,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    room:drawCards(player, 1, self.name)
+    if player:isKongcheng() then return false end
+    local targets = table.map(room:getOtherPlayers(player, false), Util.IdMapper)
+    if #targets == 0 then return false end
+    local target, card = room:askForChooseCardAndPlayers(player, targets, 1, 1, ".|.|.|hand", "#qushi-choose", self.name, false)
+    if #target > 0 and card then
+      target = room:getPlayerById(target[1])
+      local targetRecorded = U.getMark(target, "qushi_source")
+      if not table.contains(targetRecorded, player.id) then
+        table.insert(targetRecorded, player.id)
+        room:setPlayerMark(target, "qushi_source", targetRecorded)
+      end
+      target:addToPile("#qushi_pile", card, false, self.name)
+    end
+  end
+}
+local qushi_delay = fk.CreateTriggerSkill{
+  name = "#qushi_delay",
+  events = {fk.EventPhaseStart},
+  mute = true,
+  can_trigger = function(self, event, target, player, data)
+    return target == player and not player.dead and player.phase == Player.Finish and
+    #player:getPile("#qushi_pile") > 0
+  end,
+  on_cost = Util.TrueFunc,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local targets = U.getMark(player, "qushi_source")
+    room:setPlayerMark(player, "qushi_source", 0)
+    local cards = player:getPile("#qushi_pile")
+    local card_types = {}
+    for _, id in ipairs(cards) do
+      table.insertIfNeed(card_types, Fk:getCardById(id).type)
+    end
+    room:moveCards{
+      from = player.id,
+      ids = cards,
+      toArea = Card.DiscardPile,
+      moveReason = fk.ReasonPutIntoDiscardPile,
+      skillName = "qushi",
+      proposer = player.id,
+    }
+    local turn_event = room.logic:getCurrentEvent():findParent(GameEvent.Turn, true)
+    if turn_event == nil then return false end
+    local players = {}
+    local cant_trigger = true
+    --FIXME:可能需要根据放置此牌的角色单独判定类别，暂不作考虑
+    U.getEventsByRule(room, GameEvent.UseCard, 1, function (e)
+      local use = e.data[1]
+      if use.from == player.id then
+        if table.contains(card_types, use.card.type) then
+          cant_trigger = false
+        end
+        table.insertTableIfNeed(players, TargetGroup:getRealTargets(use.tos))
+      end
+      return false
+    end, turn_event.id)
+    local n = #players
+    if cant_trigger or n == 0 then return false end
+    room:sortPlayersByAction(targets)
+    for _, pid in ipairs(targets) do
+      local p = room:getPlayerById(pid)
+      if not p.dead then
+        p:drawCards(n, "qushi")
+      end
+    end
+  end,
+}
+local weijie = fk.CreateViewAsSkill{
+  name = "weijie",
+  anim_type = "defensive",
+  prompt = "#weijie-viewas",
+  pattern = ".|.|.|.|.|basic",
+  interaction = function()
+    local all_names = U.getAllCardNames("b")
+    local names = U.getViewAsCardNames(Self, "weijie", all_names)
+    if #names > 0 then
+      return UI.ComboBox { choices = names, all_choices = all_names }
+    end
+  end,
+  card_filter = Util.FalseFunc,
+  view_as = function(self, cards)
+    local card = Fk:cloneCard(self.interaction.data)
+    card.skillName = self.name
+    return card
+  end,
+  before_use = function(self, player)
+    local room = player.room
+    local targets = table.filter(room.alive_players, function (p)
+      return p ~= player and not p:isKongcheng() and p:distanceTo(player) == 1
+    end)
+    if #targets == 0 then return "" end
+    local name = Fk:cloneCard(self.interaction.data).trueName
+    targets = room:askForChoosePlayers(player, table.map(targets, Util.IdMapper), 1, 1,
+    "#weijie-choose:::" .. name, self.name, false)
+    local target = room:getPlayerById(targets[1])
+    local card = Fk:getCardById(room:askForCardChosen(player, target, "h", self.name))
+    room:throwCard({card.id}, self.name, target, player)
+    if card.trueName ~= name then return "" end
+  end,
+  enabled_at_play = Util.FalseFunc,
+  enabled_at_response = function(self, player, response)
+    if player:usedSkillTimes(self.name) > 0 then return false end
+    local a, b = false, false
+    for _, p in ipairs(Fk:currentRoom().alive_players) do
+      if p ~= player then
+        if p.phase ~= Player.NotActive then
+          a = true
+        end
+        if not p:isKongcheng() and p:distanceTo(player) == 1 then
+          b = true
+        end
+      end
+    end
+    return a and b
+  end,
+}
+qushi:addRelatedSkill(qushi_delay)
+guotu:addSkill(qushi)
+guotu:addSkill(weijie)
+Fk:loadTranslationTable{
+  ["guotu"] = "郭图",
+  --["#guotu"] = "",
+
+  ["qushi"] = "趋势",
+  [":qushi"] = "出牌阶段限一次，你可以摸一张牌，然后将一张手牌扣置于一名其他角色的武将牌旁（称为“趋”）。"..
+  "武将牌旁有“趋”的角色的结束阶段，其移去所有“趋”，若其于此回合内使用过与移去的“趋”类别相同的牌，"..
+  "你摸X张牌（X为于本回合内成为过其使用的牌的目标的角色数）。",
+  ["weijie"] = "诿解",
+  [":weijie"] = "当你于其他角色的回合内需要使用/打出基本牌时，若你于此回合内未发动过此技能，"..
+  "你可以弃置至你距离为1的一名角色的一张牌，若此牌与你需要使用/打出的牌牌名相同，你视为使用/打出此牌名的牌。",
+
+  ["#qushi-active"] = "发动 趋势，你可以摸一张牌，然后放置一张手牌作为“趋”",
+  ["#qushi-choose"] = "趋势：选择作为“趋”的一张手牌以及一名其他角色",
+  ["#qushi_pile"] = "趋",
+  ["#qushi_delay"] = "趋势",
+  ["#weijie-viewas"] = "发动 诿解，视为使用或打出一张基本牌",
+  ["#weijie-choose"] = "诿解：弃置与你距离为1的一名角色的一张牌，若此牌为【%arg】，视为你使用或打出之",
+
+  ["$qushi1"] = "",
+  ["$qushi2"] = "",
+  ["$weijie1"] = "",
+  ["$weijie2"] = "",
+  ["~guotu"] = "",
+}
+
+
+
 return extension

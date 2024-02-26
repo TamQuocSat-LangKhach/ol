@@ -1370,8 +1370,10 @@ local tairan = fk.CreateTriggerSkill{
         player:drawCards(player.maxHp - player:getHandcardNum(), self.name)
       end
     else
-      if player:getMark("tairan_hp") > 0 then
-        room:loseHp(player, player:getMark("tairan_hp"), self.name)
+      local n = player:getMark("tairan_hp")
+      if n > 0 then
+        room:setPlayerMark(player, "tairan_hp", 0)
+        room:loseHp(player, n, self.name)
       end
       if not player.dead then
         local card = nil

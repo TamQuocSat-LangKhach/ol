@@ -838,18 +838,18 @@ local zhangjiao = General(extension, "ol_ex__zhangjiao", "qun", 3)
 local ol_ex__leiji = fk.CreateTriggerSkill{
   name = "ol_ex__leiji",
   anim_type = "offensive",
-  events = {fk.AfterCardUseDeclared, fk.CardResponding, fk.FinishJudge},
+  events = {fk.CardUsing, fk.CardResponding, fk.FinishJudge},
   can_trigger = function(self, event, target, player, data)
     if player:hasSkill(self) and target == player then
-      if event == fk.AfterCardUseDeclared or event == fk.CardResponding then
-        return data.card.name == "jink" or data.card.name == "lightning"
+      if event == fk.CardUsing or event == fk.CardResponding then
+        return data.card.trueName == "jink" or data.card.trueName == "lightning"
       elseif event == fk.FinishJudge then
         return data.card.color == Card.Black
       end
     end
   end,
   on_cost = function(self, event, target, player, data)
-    if event == fk.AfterCardUseDeclared or event == fk.CardResponding then
+    if event == fk.CardUsing or event == fk.CardResponding then
       return player.room:askForSkillInvoke(player, self.name)
     elseif event == fk.FinishJudge then
       return true
@@ -857,7 +857,7 @@ local ol_ex__leiji = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    if event == fk.AfterCardUseDeclared or event == fk.CardResponding then
+    if event == fk.CardUsing or event == fk.CardResponding then
       local judge = {
         who = player,
         reason = self.name,
