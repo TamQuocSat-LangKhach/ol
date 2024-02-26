@@ -2438,9 +2438,9 @@ local bolan_skills = {
   "quhu", "qiangxi", "qice", "daoshu", "ol_ex__tiaoxin", "qiangwu", "tianyi", "ex__zhiheng", "ex__jieyin", "ex__guose",
   "lijian", "qingnang", "lihun", "mingce", "mizhao", "sanchen", "gongxin", "ex__chuli",
   --standard
-  "ex__kurou", "ex__yijue", "fanjian", "ex__fanjian", "dimeng", "jijie", "poxi",
+  "ex__kurou", "ex__yijue", "fanjian", "ex__fanjian", "dimeng", "jijie", "poxi", "jueyan",
   --sp
-  "quji", "dahe", "tanhu", "fenxun",
+  "quji", "dahe", "tanhu", "fenxun","xueji",
   --yjcm
   "nos__xuanhuo", "xinzhan", "nos__jujian", "ganlu", "xianzhen", "anxu", "gongqi", "huaiyi", "zhige", "anguo", "mingjian", "mieji",
   --ol
@@ -2448,7 +2448,7 @@ local bolan_skills = {
   --mobile
   "wuyuan", "zhujian", "duansuo", "poxiang", "hannan", "shihe", "wisdom__qiai", "shameng", "zundi", "mobile__shangyi", "yangjie",
   "m_ex__anxu", "beizhu", "mobile__zhouxuan", "mobile__yizheng", "guli", "m_ex__xianzhen", "m_ex__ganlu", "m_ex__mieji", "yingba",
-  "qiaosi", "pingcai",
+  "qiaosi", "pingcai","guanxu","guangu","shandao",
   --mougong
   "mou__qixi", "mou__lijian",
   --overseas
@@ -2458,15 +2458,19 @@ local bolan_skills = {
   "guolun", "kuiji", "ty__jianji", "caizhuang", "xinyou", "tanbei", "lueming", "ty__songshu", "ty__mouzhu", "libang", "nuchen",
   "weiwu", "ty__qingcheng", "ty__jianshu", "qiangzhiz", "ty__fenglue", "boyan", "jianguo", "ty_ex__mingce", "ty_ex__anxu",
   "ty_ex__mingjian", "ty_ex__quji", "jianzheng", "ty_ex__jixu", "ty__kuangfu", "yingshui", "weimeng", "tunan", "ty_ex__ganlu",
-  "ty_ex__gongqi",
+  "ty_ex__gongqi","huahuo","qiongying","jichun","xiaowu","mansi",
   --jsrg
-  "js__yizheng", "shelun", "lunshi", "chushi",
+  "js__yizheng", "shelun", "lunshi", "chushi", "pingtao","js__lianzhu","js__jinfa","duxing",
   --offline
   "miaojian", "xuepin", "ofl__shameng", "lifengs",
+  --mini,
+  "mini_yanshi","mini_jifeng","mini__jieyin","mini__qiangwu","mini_zhujiu",
   --wandian
   "wd__liangce", "wd__kenjian", "wd__zongqin", "wd__suli",
   --tuguo
   "tg__bode",
+  --brainhole
+  "n_qunzhi","n_kaoda","n_tuguo","n_subian",
 }
 ---@param room Room
 local getBolanSkills = function(room)
