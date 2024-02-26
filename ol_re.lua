@@ -590,13 +590,15 @@ local ol__xuehen = fk.CreateActiveSkill{
   end,
   card_filter = function(self, to_select, selected, targets)
     return #selected == 0 and Fk:getCardById(to_select).color == Card.Red
+    and not Self:prohibitDiscard(Fk:getCardById(to_select))
   end,
-  target_filter = function(self, to_select, selected, cards)
-    return #selected < math.max(1,Self:getLostHp())
+  target_filter = function(self, to_select, selected)
+    return #selected < math.max(1, Self:getLostHp())
   end,
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
     room:throwCard(effect.cards, self.name, player, player)
+    room:sortPlayersByAction(effect.tos)
     local tos = table.map(effect.tos, Util.Id2PlayerMapper)
     for _, p in ipairs(tos) do
       if not p.dead and not p.chained then
@@ -605,7 +607,7 @@ local ol__xuehen = fk.CreateActiveSkill{
     end
     tos = table.filter(tos, function(p) return not p.dead end)
     if #tos == 0 then return end
-    local to = #tos == 1 and tos[1] or 
+    local to = #tos == 1 and tos[1] or
     room:getPlayerById(room:askForChoosePlayers(player, effect.tos, 1, 1, "#ol__xuehen-choose", self.name, false)[1])
     room:damage{ from = player, to = to, damage = 1, skillName = self.name, damageType = fk.FireDamage}
   end,
@@ -620,13 +622,16 @@ local ol__huxiao = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     data.to:drawCards(1, self.name)
-    player.room:setPlayerMark(data.to, "@@ol__huxiao-turn", 1)
+    if data.to.dead then return end
+    local mark = U.getMark(data.to, "@@ol__huxiao-turn")
+    table.insertIfNeed(mark, player.id)
+    player.room:setPlayerMark(data.to, "@@ol__huxiao-turn", mark)
   end,
 }
 local ol__huxiao_targetmod = fk.CreateTargetModSkill{
   name = "#ol__huxiao_targetmod",
   bypass_times = function(self, player, skill, scope, card, to)
-    return player:hasSkill("ol__huxiao") and to:getMark("@@ol__huxiao-turn") > 0
+    return table.contains(U.getMark(to, "@@ol__huxiao-turn"), player.id)
   end,
 }
 ol__huxiao:addRelatedSkill(ol__huxiao_targetmod)
@@ -639,13 +644,12 @@ local ol__wuji = fk.CreateTriggerSkill{
     return target == player and player:hasSkill(self) and player.phase == Player.Finish and player:usedSkillTimes(self.name, Player.HistoryGame) == 0
   end,
   can_wake = function(self, event, target, player, data)
-    local n = 0 --TODO:伤害被防止也计数
-    player.room.logic:getEventsOfScope(GameEvent.Damage, 1, function(e)
+    local n = 0
+    U.getActualDamageEvents(player.room, 1, function(e)
       local damage = e.data[1]
-      if damage and player == damage.from then
-        n = n + damage.damage
-      end
-    end, Player.HistoryTurn)
+      n = n + damage.damage
+      if n > 2 then return true end
+    end)
     return n > 2
   end,
   on_use = function(self, event, target, player, data)
@@ -655,10 +659,11 @@ local ol__wuji = fk.CreateTriggerSkill{
       room:recover({ who = player, num = 1, recoverBy = player, skillName = self.name })
     end
     room:handleAddLoseSkills(player, "-ol__huxiao", nil)
+    if player.dead then return end
     for _, id in ipairs(Fk:getAllCardIds()) do
       if Fk:getCardById(id).name == "blade" then
-        if room:getCardArea(id) == Card.DiscardPile or room:getCardArea(id) == Card.DiscardPile or room:getCardArea(id) == Card.PlayerEquip then
-          room:obtainCard(player, id, true, fk.ReasonPrey)
+        if room:getCardArea(id) == Card.DrawPile or room:getCardArea(id) == Card.DiscardPile or room:getCardArea(id) == Card.PlayerEquip then
+          room:moveCardTo(id, Card.PlayerHand, player, fk.ReasonPrey, self.name)
           break
         end
       end
