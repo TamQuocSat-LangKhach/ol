@@ -4953,7 +4953,8 @@ local gengzhan = fk.CreateTriggerSkill{
       for _, move in ipairs(data) do
         if move.toArea == Card.DiscardPile and move.moveReason == fk.ReasonDiscard then
           for _, info in ipairs(move.moveInfo) do
-            if Fk:getCardById(info.cardId).trueName == "slash" then
+            local card = Fk:getCardById(info.cardId)
+            if card.trueName == "slash" and player.room:getCardArea(card) == Card.DiscardPile then
               table.insert(self.cost_data, info.cardId)
             end
           end
