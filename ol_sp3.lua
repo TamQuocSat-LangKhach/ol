@@ -4804,7 +4804,7 @@ local qushi_delay = fk.CreateTriggerSkill{
       end
       return false
     end, turn_event.id)
-    local n = #players
+    local n = math.min(#players, 5)
     if cant_trigger or n == 0 then return false end
     room:sortPlayersByAction(targets)
     for _, pid in ipairs(targets) do
@@ -4812,6 +4812,16 @@ local qushi_delay = fk.CreateTriggerSkill{
       if not p.dead then
         p:drawCards(n, "qushi")
       end
+    end
+  end,
+
+  refresh_events = {fk.AfterCardsMove},
+  can_refresh = Util.TrueFunc,
+  on_refresh = function(self, event, target, player, data)
+    if #player:getPile("#qushi_pile") > 0 and player:getMark("@@qushi") == 0 then
+      player.room:setPlayerMark(player, "@@qushi", 1)
+    elseif #player:getPile("#qushi_pile") == 0 and player:getMark("@@qushi") > 0 then
+      player.room:setPlayerMark(player, "@@qushi", 0)
     end
   end,
 }
@@ -4836,7 +4846,7 @@ local weijie = fk.CreateViewAsSkill{
   before_use = function(self, player)
     local room = player.room
     local targets = table.filter(room.alive_players, function (p)
-      return p ~= player and not p:isKongcheng() and p:distanceTo(player) == 1
+      return p ~= player and not p:isKongcheng() and player:distanceTo(p) == 1
     end)
     if #targets == 0 then return "" end
     local name = Fk:cloneCard(self.interaction.data).trueName
@@ -4856,7 +4866,7 @@ local weijie = fk.CreateViewAsSkill{
         if p.phase ~= Player.NotActive then
           a = true
         end
-        if not p:isKongcheng() and p:distanceTo(player) == 1 then
+        if not p:isKongcheng() and player:distanceTo(p) == 1 then
           b = true
         end
       end
@@ -4869,28 +4879,29 @@ guotu:addSkill(qushi)
 guotu:addSkill(weijie)
 Fk:loadTranslationTable{
   ["guotu"] = "郭图",
-  --["#guotu"] = "",
+  ["#guotu"] = "凶臣",
 
   ["qushi"] = "趋势",
   [":qushi"] = "出牌阶段限一次，你可以摸一张牌，然后将一张手牌扣置于一名其他角色的武将牌旁（称为“趋”）。"..
   "武将牌旁有“趋”的角色的结束阶段，其移去所有“趋”，若其于此回合内使用过与移去的“趋”类别相同的牌，"..
-  "你摸X张牌（X为于本回合内成为过其使用的牌的目标的角色数）。",
+  "你摸X张牌（X为于本回合内成为过其使用的牌的目标的角色数且至多为5）。",
   ["weijie"] = "诿解",
   [":weijie"] = "当你于其他角色的回合内需要使用/打出基本牌时，若你于此回合内未发动过此技能，"..
-  "你可以弃置至你距离为1的一名角色的一张牌，若此牌与你需要使用/打出的牌牌名相同，你视为使用/打出此牌名的牌。",
+  "你可以弃置距离为1的一名角色的一张牌，若此牌与你需要使用/打出的牌牌名相同，你视为使用/打出此牌名的牌。",
 
   ["#qushi-active"] = "发动 趋势，你可以摸一张牌，然后放置一张手牌作为“趋”",
   ["#qushi-choose"] = "趋势：选择作为“趋”的一张手牌以及一名其他角色",
   ["#qushi_pile"] = "趋",
+  ["@@qushi"] = "趋",
   ["#qushi_delay"] = "趋势",
   ["#weijie-viewas"] = "发动 诿解，视为使用或打出一张基本牌",
   ["#weijie-choose"] = "诿解：弃置与你距离为1的一名角色的一张牌，若此牌为【%arg】，视为你使用或打出之",
 
-  ["$qushi1"] = "",
-  ["$qushi2"] = "",
-  ["$weijie1"] = "",
-  ["$weijie2"] = "",
-  ["~guotu"] = "",
+  ["$qushi1"] = "将军天人之姿，可令四海归心。",
+  ["$qushi2"] = "小小锦上之花，难表一腔敬意。",
+  ["$weijie1"] = "败战之罪在你，休要多言！",
+  ["$weijie2"] = "纵汝舌灿莲花，亦难逃死罪。",
+  ["~guotu"] = "工于心计而不成事，匹夫怀其罪……",
 }
 
 

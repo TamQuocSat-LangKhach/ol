@@ -745,7 +745,7 @@ yuanshao:addSkill(yufeng)
 yuanshao:addSkill(shishouy)
 Fk:loadTranslationTable{
   ["olmou__yuanshao"] = "谋袁绍",
-  ["#olmou__yuanshao"] = "",
+  ["#olmou__yuanshao"] = "席卷八荒",
   --["illustrator:olmou__yuanshao"] = "西国红云",
 
   ["hetao"] = "合讨",
@@ -759,7 +759,6 @@ Fk:loadTranslationTable{
   [":yufeng"] = "锁定技，游戏开始时，你将【思召剑】置入你的装备区。",
   ["shishouy"] = "士首",
   [":shishouy"] = "主公技，当其他群势力角色失去装备区里的牌后，若你的装备区里没有武器牌，其可以将【思召剑】置入你的装备区。",
-  --与玉锋共用，没有则印一张，判定区域暂定：摸牌堆、弃牌堆、一名角色的装备区、游戏外（府库）
 
   ["#hetao-choose"] = "是否发动 合讨，选择一名目标角色，令%arg改为仅对其结算两次",
   ["#shenliy-invoke"] = "是否发动 神离，选择所有其他角色成为此%arg的目标",
@@ -768,12 +767,27 @@ Fk:loadTranslationTable{
 
   ["$hetao1"] = "合诸侯之群力，扶大汉之将倾。",
   ["$hetao2"] = "猛虎啸于山野，群士执戈相待。",
+  ["$hetao3"] = "合兵讨贼，其利断金！",
+  ["$hetao4"] = "众将一心，战无不胜！",
+  ["$hetao5"] = "秣马厉兵，今乃报国之时！",
+  ["$hetao6"] = "齐心协力，第三造大汉之举！",
   ["$shenliy1"] = "沧海之水难覆，将倾之厦难扶。",
   ["$shenliy2"] = "诸君心怀苟且，安能并力西向？",
-  ["$yufeng"] = "梦神人授剑，怀神兵济世。	",
+  ["$shenliy3"] = "联军离心，各逐其利。",
+  ["$shenliy4"] = "什么国恩大义，不过弊履而已！",
+  ["$shenliy5"] = "本盟主的话，你听还是不听？",
+  ["$shenliy6"] = "尔等皆为墙头草，随风而摆。",
+  ["$yufeng1"] = "梦神人授剑，怀神兵济世。	",
+  ["$yufeng2"] = "士者怎可徒手而战？",
+  ["$yufeng3"] = "哼！我剑也未尝不利！",
   ["$shishouy1"] = "今执牛耳，当为天下之先。",
   ["$shishouy2"] = "士者不徒手而战，况其首乎。",
+  ["$shishouy3"] = "吾居群士之首，可配剑履否？",
+  ["$shishouy4"] = "剑来！",
+  ["$shishouy5"] = "今秉七尺之躯，不负三尺之剑！",
+  ["$shishouy6"] = "拔剑四顾，诸位识得我袁本初？",
   ["~olmou__yuanshao"] = "众人合而无力，徒负大义也……",
+  --["~olmou__yuanshao2"] = "",
 }
 
 

@@ -3231,8 +3231,8 @@ local lingren = fk.CreateTriggerSkill{
   anim_type = "offensive",
   events = {fk.TargetSpecified},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self) and player.phase == Player.Play and data.firstTarget and
-    data.card.is_damage_card and player:usedSkillTimes(self.name, Player.HistoryPhase) == 0
+    return target == player and player:hasSkill(self) and player:usedSkillTimes(self.name) == 0 and
+    data.firstTarget and data.card.is_damage_card
   end,
   on_cost = function(self, event, target, player, data)
     local to = player.room:askForChoosePlayers(player, AimGroup:getAllTargets(data.tos), 1, 1, "#lingren-choose", self.name, true)
@@ -3302,7 +3302,7 @@ local lingren_delay = fk.CreateTriggerSkill {
   on_use = function(self, event, target, player, data)
     data.damage = data.damage + 1
   end,
-  
+
   refresh_events = {fk.TurnStart},
   can_refresh = function(self, event, target, player, data)
     return target == player and player:getMark("lingren") ~= 0
@@ -3320,21 +3320,30 @@ local fujian = fk.CreateTriggerSkill {
   frequency = Skill.Compulsory,
   events = {fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self) and player.phase == Player.Finish and
-      not table.find(player.room.alive_players, function(p) return p:isKongcheng() end)
+    if target == player and player:hasSkill(self) and (player.phase == Player.Finish or player.phase == Player.Start) then
+      local n = 0
+      local players = table.filter(player.room.alive_players, function (p)
+        if p ~= player and not p:isKongcheng() then
+          n = math.max(n, p:getHandcardNum())
+          return true
+        end
+      end)
+      if #players == 0 then return false end
+      local targets = table.filter(players, function (p)
+        return p:getHandcardNum() ~= n
+      end)
+      if #targets == 0 then
+        targets = players
+      end
+      self.cost_data = table.map(targets, Util.IdMapper)
+      return true
+    end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local n = player:getHandcardNum()
-    local targets = room:getOtherPlayers(player, false)
-    for _, p in ipairs(targets) do
-      if p:getHandcardNum() < n then
-        n = p:getHandcardNum()
-      end
-    end
-    local to = table.random(targets)
-    room:doIndicate(player.id, {to.id})
-    U.viewCards(player, table.random(to.player_cards[Player.Hand], n), self.name)
+    local to = table.random(self.cost_data)
+    room:doIndicate(player.id, {to})
+    U.viewCards(player, room:getPlayerById(to).player_cards[Player.Hand], self.name)
   end,
 }
 lingren:addRelatedSkill(lingren_delay)
@@ -3348,17 +3357,20 @@ Fk:loadTranslationTable{
   ["cv:caoying"] = "水原",
   ["illustrator:caoying"] = "花弟",
   ["lingren"] = "凌人",
-  [":lingren"] = "出牌阶段限一次，当你使用【杀】或伤害类锦囊牌指定目标后，你可以猜测其中一名目标角色的手牌区中是否有基本牌、锦囊牌或装备牌。"..
-  "若你猜对：至少一项，此牌对其造成的伤害+1；至少两项，你摸两张牌；三项，你获得技能〖奸雄〗和〖行殇〗直到你的下个回合开始。",
+  [":lingren"] = "当你使用【杀】或伤害类锦囊牌指定第一个目标后，若你于当前回合内未发动过此技能，"..
+  "你可以猜测其中一名目标角色的手牌区中是否有基本牌、锦囊牌或装备牌。"..
+  "若你猜对：至少一项，此牌对其造成的伤害+1；至少两项，你摸两张牌；三项，你获得〖奸雄〗和〖行殇〗直到你的下个回合开始。",
   ["fujian"] = "伏间",
-  [":fujian"] = "锁定技，结束阶段，你随机观看一名其他角色的X张手牌（X为全场手牌数最小的角色的手牌数）。",
+  [":fujian"] = "锁定技，准备阶段或结束阶段，你随机观看手牌数不是全场最多的一名其他角色的手牌。",
+  --实测：若有手牌的其他角色的手牌数均相同，则随机选其中一名角色，否则随机选不为这些角色中手牌数最大的角色
+
   ["#lingren-choose"] = "凌人：你可以猜测其中一名目标角色的手牌中是否有基本牌、锦囊牌或装备牌",
   ["#lingren-choice"] = "凌人：猜测%dest的手牌中是否有基本牌、锦囊牌或装备牌",
   ["lingren_basic"] = "有基本牌",
   ["lingren_trick"] = "有锦囊牌",
   ["lingren_equip"] = "有装备牌",
   ["#lingren_result"] = "%from 猜对了 %arg 项",
-  ["lingren_delay"] = "凌人",
+  ["#lingren_delay"] = "凌人",
 
   ["$lingren1"] = "敌势已缓，休要走了老贼！",
   ["$lingren2"] = "精兵如炬，困龙难飞！",
