@@ -3277,8 +3277,9 @@ local jijiang_trigger = fk.CreateTriggerSkill{
   frequency = Skill.Compulsory,
   events = { fk.CardUsing, fk.CardResponding },
   can_trigger = function(self, event, target, player, data)
-    return data.card.trueName == "slash" and target ~= player.room.current and target.kingdom == "shu"
-    and player:hasSkill(jijiang) and player:getMark("ol_ex__jijiang_draw-turn") == 0
+    return data.card.trueName == "slash" and target ~= player and player:hasSkill(jijiang)
+    and target.kingdom == "shu" and target ~= player.room.current
+    and player:getMark("ol_ex__jijiang_draw-turn") == 0
   end,
   on_cost = function (self, event, target, player, data)
     return player.room:askForSkillInvoke(target, self.name, nil, "#ol_ex__jijiang-invoke:"..player.id)
