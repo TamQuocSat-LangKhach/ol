@@ -2064,8 +2064,10 @@ local ol__jingce = fk.CreateTriggerSkill{
 
   refresh_events = {fk.CardUsing, fk.EventAcquireSkill},
   can_refresh = function (self, event, target, player, data)
+    if player ~= player.room.current then return false end
     if event == fk.CardUsing then
-      return player:hasSkill(self, true)
+      return player:hasSkill(self, true) and data.card.suit ~= Card.NoSuit
+      and not table.contains(U.getMark(player, "@ol__jingce-turn"), data.card:getSuitString(true))
     else
       return data == self and target == player and player.room:getTag("RoundCount")
     end
@@ -2074,22 +2076,19 @@ local ol__jingce = fk.CreateTriggerSkill{
     local room = player.room
     if event == fk.CardUsing then
       local mark = U.getMark(player, "@ol__jingce-turn")
-      if not table.contains(mark, data.card:getSuitString(true)) then
-        table.insert(mark, data.card:getSuitString(true))
-        room:setPlayerMark(player, "@ol__jingce-turn", mark)
-        room:broadcastProperty(player, "MaxCards")
-      end
+      table.insert(mark, data.card:getSuitString(true))
+      room:setPlayerMark(player, "@ol__jingce-turn", mark)
     else
       local mark = {}
       player.room.logic:getEventsOfScope(GameEvent.UseCard, 999, function(e)
         local use = e.data[1]
-        if use.from == player.id then
+        if use.from == player.id and use.card.suit ~= Card.NoSuit then
           table.insertIfNeed(mark, use.card:getSuitString(true))
         end
       end, Player.HistoryTurn)
       room:setPlayerMark(player, "@ol__jingce-turn", #mark > 0 and mark or 0)
-      room:broadcastProperty(player, "MaxCards")
     end
+    room:broadcastProperty(player, "MaxCards")
   end,
 }
 local ol__jingce_maxcards = fk.CreateMaxCardsSkill{
