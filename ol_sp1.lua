@@ -3235,17 +3235,29 @@ local lingren = fk.CreateTriggerSkill{
     data.firstTarget and data.card.is_damage_card
   end,
   on_cost = function(self, event, target, player, data)
-    local to = player.room:askForChoosePlayers(player, AimGroup:getAllTargets(data.tos), 1, 1, "#lingren-choose", self.name, true)
-    if #to > 0 then
-      self.cost_data = to[1]
-      return true
+    local room = player.room
+    local targets = table.filter(AimGroup:getAllTargets(data.tos), function (id)
+      return not room:getPlayerById(id).dead
+    end)
+    if #targets == 1 then
+      if room:askForSkillInvoke(player, self.name, nil, "#lingren-invoke::" .. targets[1]) then
+        room:doIndicate(player.id, targets)
+        self.cost_data = targets
+        return true
+      end
+    else
+      targets = room:askForChoosePlayers(player, targets, 1, 1, "#lingren-choose", self.name, true)
+      if #targets > 0 then
+        self.cost_data = targets
+        return true
+      end
     end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local to = room:getPlayerById(self.cost_data)
+    local to = room:getPlayerById(self.cost_data[1])
     local choices = {"lingren_basic", "lingren_trick", "lingren_equip"}
-    local yes = room:askForChoices(player, choices, 0, 3, self.name, "#lingren-choice::" .. self.cost_data, false)
+    local yes = room:askForChoices(player, choices, 0, 3, self.name, "#lingren-choice::" .. to.id, false)
     for _, value in ipairs(yes) do
       table.removeOne(choices, value)
     end
@@ -3268,7 +3280,7 @@ local lingren = fk.CreateTriggerSkill{
     if right > 0 then
       data.extra_data = data.extra_data or {}
       data.extra_data.lingren = data.extra_data.lingren or {}
-      table.insert(data.extra_data.lingren, self.cost_data)
+      table.insert(data.extra_data.lingren, to.id)
     end
     if right > 1 then
       player:drawCards(2, self.name)
@@ -3364,7 +3376,8 @@ Fk:loadTranslationTable{
   [":fujian"] = "锁定技，准备阶段或结束阶段，你随机观看手牌数不是全场最多的一名其他角色的手牌。",
   --实测：若有手牌的其他角色的手牌数均相同，则随机选其中一名角色，否则随机选不为这些角色中手牌数最大的角色
 
-  ["#lingren-choose"] = "凌人：你可以猜测其中一名目标角色的手牌中是否有基本牌、锦囊牌或装备牌",
+  ["#lingren-choose"] = "是否发动 凌人，猜测其中一名目标角色的手牌中是否有基本牌、锦囊牌或装备牌",
+  ["#lingren-invoke"] = "是否对%dest发动 凌人，猜测其中一名目标角色的手牌中是否有基本牌、锦囊牌或装备牌",
   ["#lingren-choice"] = "凌人：猜测%dest的手牌中是否有基本牌、锦囊牌或装备牌",
   ["lingren_basic"] = "有基本牌",
   ["lingren_trick"] = "有锦囊牌",
