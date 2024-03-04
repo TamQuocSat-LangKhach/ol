@@ -3352,7 +3352,7 @@ local fudao = fk.CreateTriggerSkill{
       if player.dead then return end
       local targets = table.map(room:getOtherPlayers(player), Util.IdMapper)
       if not player:isKongcheng() and #targets > 0 then
-        local tos, cards = U.askForChooseCardsAndPlayers(room, player, 1, 3, targets, 1, 1, nil, "#ol__fudao-give", self.name, true)
+        local tos, cards = room:askForChooseCardsAndPlayers(player, 1, 3, targets, 1, 1, nil, "#ol__fudao-give", self.name, true)
         if #tos > 0 then
           local to = room:getPlayerById(tos[1])
           room:moveCardTo(cards, Card.PlayerHand, to, fk.ReasonGive, self.name, nil, false, player.id)
@@ -3423,13 +3423,13 @@ Fk:loadTranslationTable{
   ["cv:ol__dingfuren"] = "闲踏梧桐",
   ["designer:ol__dingfuren"] = "幽蝶化烬",
   ["ol__fudao"] = "抚悼",
-  [":ol__fudao"] = "游戏开始时，你摸三张牌，交给一名其他角色至多三张牌，弃置任意张手牌，然后记录你的手牌数。每回合结束时，若当前回合角色的手牌数为此数值，你可以与其各摸一张牌。",
+  [":ol__fudao"] = "游戏开始时，你摸三张牌，交给一名其他角色至多三张手牌，弃置任意张手牌，然后记录你的手牌数。每回合结束时，若当前回合角色的手牌数为此数值，你可以与其各摸一张牌。",
   ["ol__fengyan"] = "讽言",
   [":ol__fengyan"] = "锁定技，当你受到其他角色造成的伤害后，或当你响应其他角色使用的牌后，你选择一项：1. 你摸一张牌并交给其一张牌；2. 其摸一张牌并弃置两张牌。",
 
   ["@ol__fudao"] = "抚悼",
-  ["#ol__fudao-give"] = "抚悼：请交给一名其他角色至多三张牌",
-  ["#ol__fudao-discard"] = "抚悼：请弃置任意张手牌",
+  ["#ol__fudao-give"] = "抚悼：可以交给一名其他角色至多三张牌",
+  ["#ol__fudao-discard"] = "抚悼：可以弃置任意张手牌",
   ["#ol__fudao-ask"] = "抚悼：你可与 %dest 各摸一张牌",
   ["ol__fengyan_self"] = "你摸一张牌并交给%src一张牌",
   ["ol__fengyan_other"] = "%src摸一张牌并弃置两张牌",
