@@ -13,33 +13,46 @@ local buchen = fk.CreateTriggerSkill{
   name = "buchen",
   can_trigger = Util.FalseFunc,
 }
-local yingshis = fk.CreateActiveSkill{
+local yingshis = fk.CreateTriggerSkill{
   name = "yingshis",
-  frequency = Skill.Compulsory,  --锁定主动技（
-  card_num = 999,
-  target_num = 0,
-  prompt = "#yingshis",
-  expand_pile = function() return U.getMark(Self, "yingshis") end,
-  card_filter = function (self, to_select)
-    return table.contains(U.getMark(Self, "yingshis"), to_select)
-  end,
-  can_use = Util.TrueFunc,
-}
-local yingshis_trigger = fk.CreateTriggerSkill{
-  name = "#yingshis_trigger",
-
-  refresh_events = {fk.StartPlayCard},
+  refresh_events = {fk.EventPhaseChanging, fk.EventPhaseStart, fk.EventAcquireSkill, fk.EventLoseSkill,
+  fk.AfterCardsMove, fk.MaxHpChanged, fk.AfterDrawPileShuffle},
   can_refresh = function (self, event, target, player, data)
-    return target == player and player:hasSkill(yingshis)
+    if event == fk.EventLoseSkill then
+      return target == player and data == self
+    elseif event == fk.EventPhaseChanging then
+      return target == player and data.from == Player.Play and player:hasSkill(self, true)
+    elseif event == fk.AfterCardsMove then
+      if player.phase == Player.Play and player:hasSkill(self, true) then
+        for _, move in ipairs(data) do
+          if move.toArea == Card.DrawPile then
+            return true
+          end
+          for _, info in ipairs(move.moveInfo) do
+            if info.fromArea == Card.DrawPile then
+              return true
+            end
+          end
+        end
+      end
+    else
+      return (target == player or not target) and player.phase == Player.Play and player:hasSkill(self, true)
+    end
   end,
   on_refresh = function (self, event, target, player, data)
     local room = player.room
-    local ids = {}
-    for i = 1, player.maxHp, 1 do
-      if i > #room.draw_pile then break end
-      table.insert(ids, room.draw_pile[i])
+    if event == fk.EventPhaseChanging or event == fk.EventLoseSkill then
+      room:setPlayerMark(player, "@[private]$yingshis", 0)
+      return
     end
-    player.room:setPlayerMark(player, "yingshis", ids)
+    local ids = {}
+    if player:hasSkill(self) then
+      for i = 1, player.maxHp, 1 do
+        if i > #room.draw_pile then break end
+        table.insert(ids, room.draw_pile[i])
+      end
+    end
+    U.setPrivateMark(player, "$yingshis", ids)
   end,
 }
 local xiongzhi = fk.CreateActiveSkill{
@@ -153,7 +166,6 @@ local quanbian_prohibit = fk.CreateProhibitSkill{
     end
   end,
 }
-yingshis:addRelatedSkill(yingshis_trigger)
 quanbian:addRelatedSkill(quanbian_prohibit)
 Fk:addSkill(xiongzhi_viewas)
 simayi:addSkill(buchen)
@@ -167,13 +179,13 @@ Fk:loadTranslationTable{
   ["buchen"] = "不臣",
   [":buchen"] = "<font color='red'>隐匿技（暂时无法生效）</font>，你于其他角色的回合登场后，你可获得其一张牌。",
   ["yingshis"] = "鹰视",
-  [":yingshis"] = "锁定技，出牌阶段，你可以观看牌堆顶X张牌（X为你的体力上限）。",
+  [":yingshis"] = "锁定技，牌堆顶的X张牌于你的出牌阶段对你可见（X为你的体力上限）。",
   ["xiongzhi"] = "雄志",
   [":xiongzhi"] = "限定技，出牌阶段，你可展示牌堆顶牌并使用之。你可重复此流程直到牌堆顶牌不能被使用。",
   ["quanbian"] = "权变",
   [":quanbian"] = "当你于出牌阶段首次使用或打出一种花色的手牌时，你可从牌堆顶X张牌中获得一张与此牌花色不同的牌，将其余牌以任意顺序置于牌堆顶。"..
   "出牌阶段，你至多使用X张非装备手牌。（X为你的体力上限）",
-  ["#yingshis"] = "鹰视：你可以观看牌堆顶牌",
+  ["@[private]$yingshis"] = "鹰视",
   ["#xiongzhi"] = "雄志：你可以重复展示牌堆顶牌并使用之(有次数限制)",
   ["xiongzhi_viewas"] = "雄志",
   ["#xiongzhi-use"] = "雄志：是否使用%arg？",

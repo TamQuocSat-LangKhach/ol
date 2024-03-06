@@ -855,6 +855,7 @@ Fk:loadTranslationTable{
 local py_threebook_skill = fk.CreateAttackRangeSkill{
   name = "#py_threebook_skill",
   frequency = Skill.Compulsory,
+  attached_equip = "py_threebook",
   correct_func = function (self, from)
     if from:hasSkill(self) then
       return 1
@@ -864,7 +865,7 @@ local py_threebook_skill = fk.CreateAttackRangeSkill{
 local py_threebook_maxcards = fk.CreateMaxCardsSkill{
   name = "#py_threebook_maxcards",
   correct_func = function(self, player)
-    if player:hasSkill(self) then
+    if player:hasSkill(py_threebook_skill) then
       return 1
     end
   end,
@@ -872,7 +873,7 @@ local py_threebook_maxcards = fk.CreateMaxCardsSkill{
 local py_threebook_targetmod = fk.CreateTargetModSkill{
   name = "#py_threebook_targetmod",
   residue_func = function(self, player, skill, scope, card)
-    if player:hasSkill(self) and skill.trueName == "slash_skill" and scope == Player.HistoryPhase then
+    if player:hasSkill(py_threebook_skill) and skill.trueName == "slash_skill" and scope == Player.HistoryPhase then
       return 1
     end
   end,
