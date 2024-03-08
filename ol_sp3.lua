@@ -400,11 +400,11 @@ local chenglie = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     table.insertTable(data.tos, table.map(self.cost_data, function(p) return {p} end))
-    data.extra_data = data.extra_data or {}
-    data.extra_data.chenglie = player.id
+
     local n = #TargetGroup:getRealTargets(data.tos)
     local ids = room:getNCards(n)
-    room:moveCardTo(ids, Card.Processing, player, fk.ReasonJustMove, self.name, nil, true, player.id)
+    --FIXME:为了后续的秘密移动，只能移动到Card.Void
+    room:moveCardTo(ids, Card.Void, player, fk.ReasonJustMove, self.name, nil, true, player.id)
     local results = U.askForExchange(player, "Top", "$Hand", ids, player:getCardIds("h"), "#chenglie-exchange", 1)
     if #results > 0 then
       local id1, id2 = results[1], results[2]
@@ -414,7 +414,7 @@ local chenglie = fk.CreateTriggerSkill{
       local move1 = {
         ids = {id1},
         from = player.id,
-        toArea = Card.Processing,
+        toArea = Card.Void,
         moveReason = fk.ReasonExchange,
         skillName = self.name,
         moveVisible = false,
@@ -431,24 +431,48 @@ local chenglie = fk.CreateTriggerSkill{
       table.insert(ids, id1)
       table.removeOne(ids, id2)
     end
-    if player.dead and #ids > 0 then
+    local targets = TargetGroup:getRealTargets(data.tos)
+
+    local chenglie_data = {}
+
+    while #ids > 0 and not player.dead do
+      room:setPlayerMark(player, "chenglie_cards", ids)
+      room:setPlayerMark(player, "chenglie_targets", targets)
+      local _, dat = room:askForUseActiveSkill(player, "chenglie_active", "#chenglie-give", false)
+      room:setPlayerMark(player, "chenglie_cards", 0)
+      room:setPlayerMark(player, "chenglie_targets", 0)
+
+
+      if dat == nil then
+        dat = {targets = {targets[1]}, cards = {ids[1]}}
+      end
+      table.removeOne(targets, dat.targets[1])
+      table.removeOne(ids, dat.cards[1])
+      --FIXME:需要背面朝上移动（或者直接隐藏），且移动的log中不显示具体信息，所以改为直接采用标记
+      --room:getPlayerById(dat.targets[1]):addToPile("#chenglie", dat.cards[1], true, self.name)
+
+      local c = Fk:getCardById(dat.cards[1])
+
+      player:doNotify("GameLog", json.encode{
+        type = "#ChenglieResult",
+        from = dat.targets[1],
+        arg = c:toLogString(),
+      })
+
+      if c.color == Card.Red then
+        table.insertIfNeed(chenglie_data, dat.targets[1])
+      end
+    end
+
+    if #chenglie_data > 0 then
+      data.extra_data = data.extra_data or {}
+      data.extra_data.chenglie_data = data.extra_data.chenglie_data or {}
+      table.insert(data.extra_data.chenglie_data, {player.id, chenglie_data})
+    end
+
+    if #ids > 0 then
       room:moveCardTo(ids, Card.DiscardPile, player, fk.ReasonJustMove, nil, nil, true, nil)
     end
-    local fakemove = {
-      toArea = Card.PlayerHand,
-      to = player.id,
-      moveInfo = table.map(ids, function(id) return {cardId = id, fromArea = Card.Processing} end),
-      moveReason = fk.ReasonJustMove,
-    }
-    room:notifyMoveCards({player}, {fakemove})
-    for _, id in ipairs(ids) do
-      room:setCardMark(Fk:getCardById(id), "chenglie", 1)
-    end
-    room:setPlayerMark(player, "chenglie-tmp", TargetGroup:getRealTargets(data.tos))
-    while table.find(ids, function(id) return Fk:getCardById(id):getMark("chenglie") > 0 end) do
-      room:askForUseActiveSkill(player, "chenglie_active", "#chenglie-give", false)
-    end
-    room:setPlayerMark(player, "chenglie-tmp", 0)
   end,
 }
 local chenglie_active = fk.CreateActiveSkill{
@@ -456,80 +480,72 @@ local chenglie_active = fk.CreateActiveSkill{
   mute = true,
   card_num = 1,
   target_num = 1,
+  expand_pile = function (self)
+    return U.getMark(Self, "chenglie_cards")
+  end,
   card_filter = function(self, to_select, selected, targets)
-    return #selected == 0 and Fk:getCardById(to_select):getMark("chenglie") > 0
+    return #selected == 0 and table.contains(U.getMark(Self, "chenglie_cards"), to_select)
   end,
   target_filter = function(self, to_select, selected, selected_cards)
-    return #selected == 0 and table.contains(Self:getMark("chenglie-tmp"), to_select)
-  end,
-  on_use = function(self, room, effect)
-    local player = room:getPlayerById(effect.from)
-    local target = room:getPlayerById(effect.tos[1])
-    room:doIndicate(player.id, {target.id})
-    local mark = player:getMark("chenglie-tmp")
-    table.removeOne(mark, target.id)
-    room:setPlayerMark(player, "chenglie-tmp", mark)
-    room:setCardMark(Fk:getCardById(effect.cards[1]), "chenglie", 0)
-    local fakemove = {
-      from = player.id,
-      toArea = Card.Void,
-      moveInfo = table.map(effect.cards, function(id) return {cardId = id, fromArea = Card.PlayerHand} end),
-      moveReason = fk.ReasonJustMove,
-    }
-    room:notifyMoveCards({player}, {fakemove})
-    target:addToPile("chenglie", effect.cards[1], false, "chenglie")
+    return #selected == 0 and table.contains(U.getMark(Self, "chenglie_targets"), to_select)
   end,
 }
-local chenglie_trigger = fk.CreateTriggerSkill{
-  name = "#chenglie_trigger",
+local chenglie_delay = fk.CreateTriggerSkill{
+  name = "#chenglie_delay",
   mute = true,
   events = {fk.CardUseFinished},
   can_trigger = function(self, event, target, player, data)
-    return target == player and data.extra_data and data.extra_data.chenglie and data.extra_data.chenglie == player.id
+    if not player.dead and data.extra_data and data.extra_data.chenglie_data then
+      for _, value in ipairs(data.extra_data.chenglie_data) do
+        if value[1] == player.id then
+          self.cost_data = table.simpleClone(value[2])
+          return true
+        end
+      end
+    end
   end,
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    for _, p in ipairs(room:getOtherPlayers(player)) do  --这要是插结完全管不了
-      if #p:getPile("chenglie") > 0 then
-        local id = p:getPile("chenglie")[1]
-        room:moveCards({
-          from = p.id,
-          ids = p:getPile("chenglie"),
-          toArea = Card.DiscardPile,
-          moveReason = fk.ReasonPutIntoDiscardPile,
-          skillName = "chenglie",
-        })
-        if Fk:getCardById(id).color == Card.Red then
-          if data.extra_data.chenglie_cancelled and data.extra_data.chenglie_cancelled[p.id] and not p:isNude() and not player.dead then
-            local card = room:askForCard(p, 1, 1, true, "chenglie", false, ".", "#chenglie-card:"..player.id)
-            room:obtainCard(player.id, card[1], false, fk.ReasonGive)
-          else
-            if p:isWounded() then
-              room:recover{
-              who = p,
+    local red_player = table.simpleClone(self.cost_data)
+    local targets = TargetGroup:getRealTargets(data.tos)
+    room:sortPlayersByAction(targets)
+    local resp_players = {}
+    local use_events = room.logic.event_recorder[GameEvent.UseCard] or Util.DummyTable
+    local cards = data.cardsResponded
+    for i = #use_events, 1, -1 do
+      local e = use_events[i]
+      local use = e.data[1]
+      if e.data[1] == data then break end
+      --FIXME:还需要更加精准的判断
+      if table.contains(cards, use.card) then
+        table.insert(resp_players, use.from)
+      end
+    end
+    for _, pid in ipairs(targets) do
+      if table.contains(red_player, pid) then
+        local to = room:getPlayerById(pid)
+        if not to.dead then
+          if table.contains(resp_players, pid) then
+            if not (to:isNude() or player.dead) then
+              local card = room:askForCard(to, 1, 1, true, "chenglie", false, ".", "#chenglie-card:"..player.id)
+              room:obtainCard(player.id, card[1], false, fk.ReasonGive, to.id)
+            end
+          elseif to:isWounded() then
+            room:recover{
+              who = to,
               num = 1,
               recoverBy = player,
-              skillName = "chenglie",
-              }
-            end
+              skillName = "chenglie"
+            }
           end
         end
       end
     end
   end,
-
-  refresh_events = {fk.CardEffectCancelledOut},
-  can_refresh = function(self, event, target, player, data)
-    return target == player and data.extra_data and data.extra_data.chenglie and data.extra_data.chenglie == player.id
-  end,
-  on_refresh = function(self, event, target, player, data)
-    data.extra_data.chenglie_cancelled = data.extra_data.chenglie_cancelled or {}
-    data.extra_data.chenglie_cancelled[data.to] = true
-  end,
 }
 Fk:addSkill(chenglie_active)
-chenglie:addRelatedSkill(chenglie_trigger)
+chenglie:addRelatedSkill(chenglie_delay)
 macheng:addSkill("mashu")
 macheng:addSkill(chenglie)
 Fk:loadTranslationTable{
@@ -538,13 +554,16 @@ Fk:loadTranslationTable{
   ["designer:macheng"] = "cyc",
   ["illustrator:macheng"] = "君桓文化",
   ["chenglie"] = "骋烈",
-  [":chenglie"] = "你使用【杀】可以多指定至多两个目标，然后展示牌堆顶与目标数等量张牌，秘密将一张手牌与其中一张牌交换，将之分别暗置于"..
-  "目标角色武将牌上直到此【杀】结算结束，其中“骋烈”牌为红色的角色若：响应了此【杀】，其交给你一张牌；未响应此【杀】，其回复1点体力。",
-  ["#chenglie-choose"] = "骋烈：你可以为%arg多指定至多两个目标，并执行后续效果",
+  [":chenglie"] = "你使用【杀】可以多指定至多两个目标，然后展示牌堆顶与目标数等量张牌，秘密将一张手牌与其中一张牌交换，<font color='red'>将之分别暗置于"..
+  "目标角色武将牌上直到此【杀】结算结束（暂时无法生效）</font>，其中“骋烈”牌为红色的角色若：响应了此【杀】，其交给你一张牌；未响应此【杀】，其回复1点体力。",
+  ["#chenglie-choose"] = "骋烈：你可以为%arg多指定1-2个目标，并执行后续效果",
   ["#chenglie-exchange"] = "骋烈：你可以用一张手牌交换其中一张牌",
   ["chenglie_active"] = "骋烈",
+  ["#chenglie"] = "骋烈",
+  ["#chenglie_delay"] = "骋烈",
   ["#chenglie-give"] = "骋烈：将这些牌置于目标角色武将牌上直到【杀】结算结束",
   ["#chenglie-card"] = "骋烈：你需交给 %src 一张牌",
+  ["#ChenglieResult"] = "%from 的「骋烈」牌为 %arg",
 
   ["$chenglie1"] = "铁蹄踏南北，烈马惊黄沙！",
   ["$chenglie2"] = "策马逐金雕，跨鞍寻天狼！",
@@ -2887,10 +2906,10 @@ local xiaofan = fk.CreateViewAsSkill{
   pattern = ".",
   anim_type = "special",
   expand_pile = function (self)
-    return table.slice(U.getMark(Self, "xiaofan_view"), 1, #U.getMark(Self, "xiaofan_types-turn") + 1)
+    return table.slice(U.getMark(Self, "xiaofan_view"), 1, #U.getMark(Self, "xiaofan_types-turn") + 2)
   end,
   prompt = function()
-    return "#xiaofan:::"..(#U.getMark(Self, "xiaofan_types-turn"))
+    return "#xiaofan:::"..(#U.getMark(Self, "xiaofan_types-turn") + 1)
   end,
   card_filter = function(self, to_select, selected)
     if #selected == 0 and table.contains(U.getMark(Self, "xiaofan_view"), to_select) then
@@ -2916,10 +2935,10 @@ local xiaofan = fk.CreateViewAsSkill{
     player:throwAllCards(to_throw)
   end,
   enabled_at_play = function(self, player)
-    return #U.getMark(player, "xiaofan_types-turn") > 0
+    return #U.getMark(player, "xiaofan_view") > 0
   end,
   enabled_at_response = function(self, player, response)
-    return not response and #U.getMark(player, "xiaofan_types-turn") > 0
+    return not response and #U.getMark(player, "xiaofan_view") > 0
   end,
 }
 local xiaofan_trigger = fk.CreateTriggerSkill{
@@ -2940,7 +2959,7 @@ local xiaofan_trigger = fk.CreateTriggerSkill{
       local mark = U.getMark(player, "xiaofan_view")
       local draw_pile = room.draw_pile
       local new_mark = {}
-      for i = 0, 2, 1 do
+      for i = 0, 3, 1 do
         if #draw_pile <= i then break end
         table.insert(new_mark, draw_pile[#draw_pile - i])
       end
@@ -3042,7 +3061,7 @@ Fk:loadTranslationTable{
   ["ol__pengyang"] = "彭羕",
   ["#ol__pengyang"] = "翻然轻举",
   ["xiaofan"] = "嚣翻",
-  [":xiaofan"] = "当你需要使用牌时，你可以观看牌堆底X张牌，然后可以使用其中你需要的牌并弃置你前X区域里的牌："..
+  [":xiaofan"] = "当你需要使用牌时，你可以观看牌堆底X+1张牌，然后可以使用其中你需要的牌并弃置你前X区域里的牌："..
   "1.判定区；2.装备区；3.手牌区。（X为本回合你使用过牌的类别数）",
   ["tuoshi"] = "侻失",
   [":tuoshi"] = "锁定技，你不能使用【无懈可击】。"..
@@ -3198,7 +3217,7 @@ Fk:loadTranslationTable{
   ["#weifu-invoke"] = "威抚：你可以为%arg额外指定至多 %arg2 个目标",
   ["#kuansai-choose"] = "款塞：你可以令其中一个目标选择交给你一张牌或令你回复体力",
   ["#kuansai-give"] = "款塞：交给 %src 一张牌，否则其回复1点体力",
-  
+
   ["$weifu1"] = "蛮人畏威，当束甲抚之。",
   ["$weifu2"] = "以威为抚，可定万世之太平。",
   ["$kuansai1"] = "君既以礼相待，我何干戈相向。",
@@ -4118,9 +4137,154 @@ Fk:loadTranslationTable{
   ["~ol__feiyi"] = "今为小人所伤，皆酒醉之误……",
 }
 
---local lukai = General(extension, "ol__lukai", "wu", 3)
+local lukai = General(extension, "ol__lukai", "wu", 3)
+local xuanzhu = fk.CreateViewAsSkill{
+  name = "xuanzhu",
+  anim_type = "switch",
+  switch_skill_name = "xuanzhu",
+  derived_piles = "xuanzhu",
+  pattern = ".",
+  interaction = function()
+    local all_names = {}
+    if Self:getSwitchSkillState("xuanzhu", false) == fk.SwitchYang then
+      all_names = U.getAllCardNames("b")
+    else
+      for _, id in ipairs(Fk:getAllCardIds()) do
+        local card = Fk:getCardById(id)
+        if card:isCommonTrick() and not (card.is_derived or card.multiple_targets or card.is_passive) then
+          table.insertIfNeed(all_names, card.name)
+        end
+      end
+    end
+    local names = U.getViewAsCardNames(Self, "xuanzhu", all_names)
+    if #names > 0 then
+      return UI.ComboBox { choices = names, all_choices = all_names }
+    end
+  end,
+  card_filter = function(self, to_select, selected)
+    return #selected == 0
+  end,
+  view_as = function(self, cards)
+    if #cards ~= 1 or not self.interaction.data then return end
+    local card = Fk:cloneCard(self.interaction.data)
+    card:setMark("xuanzhu_subcards", cards)
+    card.skillName = self.name
+    return card
+  end,
+  before_use = function(self, player, use)
+    local cards = use.card:getMark("xuanzhu_subcards")
+    if Fk:getCardById(cards[1]).type == Card.TypeEquip then
+      use.extra_data = use.extra_data or {}
+      use.extra_data.xuanzhu_equip = true
+    end
+    player:addToPile(self.name, cards, true, self.name)
+  end,
+  after_use = function(self, player, use)
+    if player.dead then return end
+    if use.extra_data and use.extra_data.xuanzhu_equip then
+      local cards = player:getPile(self.name)
+      if #cards > 0 then
+        player.room:recastCard(cards, player)
+      end
+    else
+      player.room:askForDiscard(player, 1, 1, true, self.name, false)
+    end
+  end,
+  enabled_at_play = function(self, player)
+    return player:usedSkillTimes(self.name) == 0
+  end,
+  enabled_at_response = function(self, player, response)
+    if not response and player:usedSkillTimes(self.name) == 0 and Fk.currentResponsePattern then
+      local all_names = {}
+      if player:getSwitchSkillState("xuanzhu", false) == fk.SwitchYang then
+        all_names = U.getAllCardNames("b")
+      else
+        for _, id in ipairs(Fk:getAllCardIds()) do
+          local card = Fk:getCardById(id)
+          if card:isCommonTrick() and not (card.is_derived or card.multiple_targets or card.is_passive) then
+            table.insertIfNeed(all_names, card.name)
+          end
+        end
+      end
+      return #U.getViewAsCardNames(player, "xuanzhu", all_names) > 0
+    end
+  end,
+}
+local jiane = fk.CreateTriggerSkill{
+  name = "jiane",
+  events = {fk.CardEffecting, fk.CardEffectCancelledOut},
+  frequency = Skill.Compulsory,
+  mute = true,
+  can_trigger = function(self, event, target, player, data)
+    if not player:hasSkill(self) then return false end
+    if event == fk.CardEffecting then
+      return target ~= player and not target.dead and data.from == player.id and target:getMark("@@jiane_debuff-turn") == 0
+    else
+      if target.dead or player:getMark("@@jiane_buff-turn") > 0 then return false end
+      local room = player.room
+      local use_event = room.logic:getCurrentEvent():findParent(GameEvent.UseCard, true)
+      if use_event == nil then return false end
+      local is_from = false
+      U.getEventsByRule(room, GameEvent.UseCard, 1, function (e)
+        local use = e.data[1]
+        if use.responseToEvent == data then
+          if use.from == player.id then
+            is_from = true
+          end
+          return true
+        end
+      end, use_event.id)
+      return is_from
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    if event == fk.CardEffecting then
+      room:notifySkillInvoked(player, self.name, "control")
+      player:broadcastSkillInvoke(self.name)
+      room:doIndicate(player.id, {target.id})
+      room:setPlayerMark(target, "@@jiane_debuff-turn", 1)
+    else
+      room:notifySkillInvoked(player, self.name, "defensive")
+      player:broadcastSkillInvoke(self.name)
+      room:setPlayerMark(player, "@@jiane_buff-turn", 1)
+    end
+  end,
+
+  refresh_events = {fk.PreCardUse},
+  can_refresh = function(self, event, target, player, data)
+    return true
+  end,
+  on_refresh = function(self, event, target, player, data)
+    data.unoffsetableList = data.unoffsetableList or {}
+    for _, p in ipairs(player.room.alive_players) do
+      if p:getMark("@@jiane_debuff-turn") > 0 then
+        table.insert(data.unoffsetableList, p.id)
+      end
+    end
+  end,
+}
+local jiane_prohibit = fk.CreateProhibitSkill{
+  name = "#jiane_prohibit",
+  is_prohibited = function(self, from, to, card)
+    return to:getMark("@@jiane_buff-turn") > 0
+  end,
+}
+jiane:addRelatedSkill(jiane_prohibit)
+lukai:addSkill(xuanzhu)
+lukai:addSkill(jiane)
 Fk:loadTranslationTable{
   ["ol__lukai"] = "陆凯",
+  --["#ol__lukai"] = "",
+
+  ["xuanzhu"] = "玄注",
+  [":xuanzhu"] = "转换技，每回合限一次，阳：你可以将一张牌移出游戏，视为使用任意基本牌；阴：你可以将一张牌移出游戏，视为使用仅指定唯一角色为目标的普通锦囊牌。"..
+  "若移出游戏的牌：不为装备牌，你弃置一张牌；为装备牌，你重铸以此法移出游戏的牌。",
+  ["jiane"] = "謇谔",
+  [":jiane"] = "锁定技，当你使用的牌对其他角色生效后，你令其于当前回合内不能抵消牌；当一名角色使用的牌被你抵消后，你令你于当前回合内不是牌的合法目标。",
+
+  ["@@jiane_buff-turn"] = "謇谔",
+  ["@@jiane_debuff-turn"] = "謇谔",
 }
 
 local caoyu = General(extension, "caoyu", "wei", 3)
@@ -4178,7 +4342,6 @@ local gongjie = fk.CreateTriggerSkill{
     end
   end,
 }
-
 local xiangxu = fk.CreateTriggerSkill{
   name = "xiangxu",
   events = {fk.AfterCardsMove, fk.TurnEnd},
@@ -4296,7 +4459,6 @@ local xiangzuo = fk.CreateTriggerSkill{
 caoyu:addSkill(gongjie)
 caoyu:addSkill(xiangxu)
 caoyu:addSkill(xiangzuo)
-
 Fk:loadTranslationTable{
   ["caoyu"] = "曹宇",
   ["designer:caoyu"] = "廷玉",
@@ -4567,7 +4729,6 @@ local shandao = fk.CreateActiveSkill{
   end,
 }
 tianchou:addSkill(shandao)
-
 Fk:loadTranslationTable{
   ["tianchou"] = "田畴",
   ["#tianchou"] = "乱世族隐",
@@ -4904,6 +5065,15 @@ Fk:loadTranslationTable{
   ["~guotu"] = "工于心计而不成事，匹夫怀其罪……",
 }
 
+--local liupan = General(extension, "liupan", "qun", 4)
 
+Fk:loadTranslationTable{
+  ["liupan"] = "刘磐",
+  --["#liupan"] = "",
+
+  ["pijingl"] = "披荆",
+  [":pijingl"] = "当你使用黑色【杀】或黑色锦囊牌普通锦囊牌指定唯一目标后，若你于当前回合内未发动过此技能，你可以令至多X名角色也成为此牌的目标（X为你已损失的体力值且至少为1）。"..
+  "这些角色下次使用基本牌或普通锦囊牌指定唯一目标时，可以令你也成为此牌的目标。",
+}
 
 return extension

@@ -973,7 +973,7 @@ local fangzhen = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     local to = room:getPlayerById(self.cost_data)
-    if to.seat > room:getTag("RoundCount") then
+    if to.seat > room:getTag("RoundCount") and player:getMark("@fangzhen") < to.seat then
       room:setPlayerMark(player, "@fangzhen", to.seat)
     end
     to:setChainState(true)
