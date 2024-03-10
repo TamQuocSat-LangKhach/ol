@@ -411,6 +411,9 @@ local chenglie = fk.CreateTriggerSkill{
       if room:getCardOwner(results[2]) == player then
         id1, id2 = results[2], results[1]
       end
+      --FIXME:为了修复中央区存在id为-1的牌的bug，直接修改区域，以毒攻毒
+      table.removeOne(room.void, id2)
+      room:setCardArea(id2, Card.DrawPile)
       local move1 = {
         ids = {id1},
         from = player.id,
