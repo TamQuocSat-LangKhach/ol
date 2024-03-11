@@ -1304,40 +1304,25 @@ local qin__qihuo = fk.CreateActiveSkill{
   card_num = 0,
   target_num = 0,
   prompt = "#qin__qihuo",
-  interaction = function(self)
+  interaction = function()
     local choices = {}
-    local function qihuo_insert(type, string)
-      if table.find(Self:getCardIds("h"), function(id) return Fk:getCardById(id).type == type end) then
-        table.insert(choices, string)
+    for _, t in ipairs({"basic","trick","equip"}) do
+      if table.find(Self:getCardIds("he"), function(id) return Fk:getCardById(id):getTypeString() == t
+      and not Self:prohibitDiscard(Fk:getCardById(id)) end) then
+        table.insert(choices, t)
       end
     end
-    qihuo_insert(Card.TypeBasic, "basic")
-    qihuo_insert(Card.TypeTrick, "trick")
-    qihuo_insert(Card.TypeEquip, "equip")
     return UI.ComboBox { choices = choices }
   end,
   can_use = function(self, player)
     return player:usedSkillTimes(self.name, Player.HistoryPhase) == 0 and not player:isNude()
+    and table.find(player:getCardIds("he"), function(id) return not Self:prohibitDiscard(Fk:getCardById(id)) end)
   end,
   card_filter = Util.FalseFunc,
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
-    local cards = {}
-    for _, id in ipairs(player:getCardIds("he")) do
-      if self.interaction.data == "basic" then
-        if Fk:getCardById(id).type == Card.TypeBasic then
-          table.insertIfNeed(cards, id)
-        end
-      elseif self.interaction.data == "trick" then
-        if Fk:getCardById(id).type == Card.TypeTrick then
-          table.insertIfNeed(cards, id)
-        end
-      elseif self.interaction.data == "equip" then
-        if Fk:getCardById(id).type == Card.TypeEquip then
-          table.insertIfNeed(cards, id)
-        end
-      end
-    end
+    local cards = table.filter(player:getCardIds("he"), function(id) return Fk:getCardById(id):getTypeString() == self.interaction.data
+      and not player:prohibitDiscard(Fk:getCardById(id)) end)
     room:throwCard(cards, self.name, player, player)
     if not player.dead then
       player:drawCards(#cards, self.name)

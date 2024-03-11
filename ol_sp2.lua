@@ -339,14 +339,15 @@ local shoufu = fk.CreateActiveSkill{
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
     player:drawCards(1, self.name)
+    if player:isKongcheng() then return end
     local targets = {}
-    for _, p in ipairs(room:getAlivePlayers()) do
+    for _, p in ipairs(room:getOtherPlayers(player)) do
       if #p:getPile("zhangling_lu") == 0 then
         table.insert(targets, p.id)
       end
     end
     if #targets == 0 then return end
-    local to, id = room:askForChooseCardAndPlayers(player, targets, 1, 1, ".|.|.|hand|.|.", "#shoufu-cost", self.name, false)
+    local to, id = room:askForChooseCardAndPlayers(player, targets, 1, 1, ".|.|.|hand", "#shoufu-cost", self.name, false)
     room:getPlayerById(to[1]):addToPile("zhangling_lu", id, true, self.name)
   end,
 }
@@ -363,11 +364,11 @@ local shoufu_prohibit = fk.CreateProhibitSkill{
     end
   end,
 }
-local shoufu_record = fk.CreateTriggerSkill{
-  name = "#shoufu_record",
-
-  refresh_events = {fk.Damaged, fk.AfterCardsMove},
-  can_refresh = function(self, event, target, player, data)
+local shoufu_delay = fk.CreateTriggerSkill{
+  name = "#shoufu_delay",
+  mute = true,
+  events = {fk.Damaged, fk.AfterCardsMove},
+  can_trigger = function(self, event, target, player, data)
     if #player:getPile("zhangling_lu") > 0 then
       if event == fk.Damaged then
         return target == player
@@ -377,25 +378,21 @@ local shoufu_record = fk.CreateTriggerSkill{
           for _, move in ipairs(data) do
             if move.from == player.id and move.moveReason == fk.ReasonDiscard then
               for _, info in ipairs(move.moveInfo) do
-                if Fk:getCardById(info.cardId).type == Fk:getCardById(player:getPile("zhangling_lu")[1]).type then
+                if Fk:getCardById(info.cardId).type == Fk:getCardById(player:getPile("zhangling_lu")[1]).type
+                and (info.fromArea == Card.PlayerEquip or info.fromArea == Card.PlayerHand) then
                   n = n + 1
+                  if n == 2 then return true end
                 end
               end
             end
-          end
-          if n > 0 then
-            player.room:addPlayerMark(player, "shoufu", n)
-          end
-          if player:getMark("shoufu") > 1 then
-            return true
           end
         end
       end
     end
   end,
-  on_refresh = function(self, event, target, player, data)
+  on_cost = Util.TrueFunc,
+  on_use = function(self, event, target, player, data)
     local room = player.room
-    room:setPlayerMark(player, "shoufu", 0)
     room:moveCards({
       from = player.id,
       ids = player:getPile("zhangling_lu"),
@@ -408,7 +405,7 @@ local shoufu_record = fk.CreateTriggerSkill{
 }
 huqi:addRelatedSkill(huqi_distance)
 shoufu:addRelatedSkill(shoufu_prohibit)
-shoufu:addRelatedSkill(shoufu_record)
+shoufu:addRelatedSkill(shoufu_delay)
 zhangling:addSkill(huqi)
 zhangling:addSkill(shoufu)
 Fk:loadTranslationTable{
@@ -418,10 +415,11 @@ Fk:loadTranslationTable{
   ["huqi"] = "虎骑",
   [":huqi"] = "锁定技，你计算与其他角色的距离-1；当你于回合外受到伤害后，你进行判定，若结果为红色，视为你对伤害来源使用一张【杀】（无距离限制）。",
   ["shoufu"] = "授符",
-  [":shoufu"] = "出牌阶段限一次，你可摸一张牌，然后将一张手牌置于一名没有“箓”的角色的武将牌上，称为“箓”；其不能使用和打出与“箓”同类型的牌。"..
+  [":shoufu"] = "出牌阶段限一次，你可摸一张牌，然后将一张手牌置于一名没有“箓”的其他角色的武将牌上，称为“箓”；其不能使用和打出与“箓”同类型的牌。"..
   "该角色受到伤害后，或于弃牌阶段弃置至少两张与“箓”同类型的牌后，将“箓”置入弃牌堆。",
   ["zhangling_lu"] = "箓",
   ["#shoufu-cost"] = "授符：选择角色并将一张手牌置为其“箓”，其不能使用打出“箓”同类型的牌",
+  ["#shoufu_delay"] = "授符",
 
   ["$huqi1"] = "骑虎云游，探求道法。",
   ["$huqi2"] = "求仙长生，感悟万象。",
