@@ -783,7 +783,8 @@ local zhanding_record = fk.CreateTriggerSkill{
       elseif n > 0 then
         player.room:askForDiscard(player, n, n, false, self.name, false)
       end
-    else
+    elseif not data.extraUse then
+      data.extraUse = true
       player:addCardUseHistory(data.card.trueName, -1)
     end
   end,

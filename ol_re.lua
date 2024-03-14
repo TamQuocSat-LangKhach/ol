@@ -1982,9 +1982,9 @@ local ol__sanyao = fk.CreateActiveSkill{
   name = "ol__sanyao",
   anim_type = "offensive",
   card_num = 1,
-  target_num = 1,
+  target_num = 0,
   can_use = function(self, player)
-    return not player:isNude() and (player:getMark("ol__sanyao_hp-phase") == 0 or player:getMark("ol__sanyao_hand-phase") == 0)
+    return (player:getMark("ol__sanyao_hp-phase") == 0 or player:getMark("ol__sanyao_hand-phase") == 0)
   end,
   interaction = function()
     local choices = {}
@@ -1996,26 +1996,31 @@ local ol__sanyao = fk.CreateActiveSkill{
   card_filter = function(self, to_select, selected)
     return #selected == 0 and not Self:prohibitDiscard(Fk:getCardById(to_select))
   end,
-  target_filter = function(self, to_select, selected)
-    if #selected > 0 or not self.interaction.data then return false end
-    local target = Fk:currentRoom():getPlayerById(to_select)
-    if self.interaction.data == "ol__sanyao_hp-phase" then
-      return table.every(Fk:currentRoom().alive_players, function(p) return p.hp <= target.hp end)
-    else
-      return table.every(Fk:currentRoom().alive_players, function(p) return p:getHandcardNum() <= target:getHandcardNum() end)
-    end
-  end,
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
-    local target = room:getPlayerById(effect.tos[1])
-    room:addPlayerMark(player, self.interaction.data)
+    local choice = self.interaction.data
+    room:addPlayerMark(player, choice)
     room:throwCard(effect.cards, self.name, player, player)
-    room:damage{
-      from = player,
-      to = target,
-      damage = 1,
-      skillName = self.name,
-    }
+    if player.dead then return end
+    local n = 0
+    for _, p in ipairs(room.alive_players) do
+      n = math.max(n, choice == "ol__sanyao_hp-phase" and p.hp or p:getHandcardNum())
+    end
+    local targets = {}
+    for _, p in ipairs(room.alive_players) do
+      if math.max(n, choice == "ol__sanyao_hp-phase" and p.hp or p:getHandcardNum()) == n then
+        table.insert(targets, p.id)
+      end
+    end
+    local tos = player.room:askForChoosePlayers(player, targets, 1, 1, "#ol__sanyao-choose:::"..choice, self.name, false)
+    if #tos > 0 then
+      room:damage{
+        from = player,
+        to = room:getPlayerById(tos[1]),
+        damage = 1,
+        skillName = self.name,
+      }
+    end
   end
 }
 masu:addSkill(ol__sanyao)
@@ -2029,6 +2034,7 @@ Fk:loadTranslationTable{
   [":ol__sanyao"] = "出牌阶段每项各限一次，你可以弃置一张牌并选择一项，1.对全场体力值最大的一名角色造成1点伤害；2.对手牌数最多的一名角色造成1点伤害。",
   ["ol__sanyao_hp-phase"] = "体力值最大",
   ["ol__sanyao_hand-phase"] = "手牌数最多",
+  ["#ol__sanyao-choose"] = "散谣：对全场 %arg 的一名角色造成1点伤害",
 
   ["$ol__sanyao1"] = "吾有一计，可致司马懿于死地。",
   ["$ol__sanyao2"] = "丞相勿忧，司马懿不足为患。",
