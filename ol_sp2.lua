@@ -5210,106 +5210,124 @@ local zeyue = fk.CreateTriggerSkill{
   events = {fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(self) and player.phase == Player.Start and
-      player:usedSkillTimes(self.name, Player.HistoryGame) == 0 and player.tag[self.name] and #player.tag[self.name] > 0
+      player:usedSkillTimes(self.name, Player.HistoryGame) == 0
   end,
   on_cost = function(self, event, target, player, data)
     local room = player.room
+    local end_id = 1
+    local turn_e = U.getEventsByRule (room, GameEvent.Turn, 1, function (e)
+      return e.end_id ~= -1 and e.data[1] == player
+    end, end_id)
+    if #turn_e > 0 then end_id = turn_e[1].end_id end
+    local optional = {}
+    local n = #room.alive_players - 1
+    U.getActualDamageEvents(player.room, 1, function(e)
+      local damage = e.data[1]
+      if not damage.from.dead and damage.from ~= player and damage.to == player
+      and table.insertIfNeed(optional, damage.from.id) and #optional == n then
+        return true
+      end
+    end, nil, end_id)
+    if #optional == 0 then
+      return
+    end
+    local skillsMap = {}
     local targets = {}
-    for _, id in ipairs(player.tag[self.name]) do
-      local p = room:getPlayerById(id)
-      if not p.dead and #p.player_skills > 0 then
-        local skills = table.map(Fk.generals[p.general].skills, function(s) return s.name end)
-        for _, skill in ipairs(skills) do
-          if p:hasSkill(skill, true) and skill.frequency ~= Skill.Compulsory and skill.frequency ~= Skill.Wake and
-            skill.frequency ~= Skill.Limited then
-            table.insertIfNeed(targets, id)
-            break
+    for _, pid in ipairs(optional) do
+      local p = room:getPlayerById(pid)
+      local skills = Fk.generals[p.general]:getSkillNameList()
+      if p.deputyGeneral ~= "" then table.insertTableIfNeed(skills, Fk.generals[p.deputyGeneral]:getSkillNameList()) end
+      for _, s in ipairs(skills) do
+        local skill = Fk.skills[s]
+        if p:hasSkill(skill, true) and skill.frequency ~= Skill.Compulsory and skill.frequency ~= Skill.Wake and
+          skill.frequency ~= Skill.Limited then
+          if not skillsMap[p.id] then
+            table.insert(targets, p.id)
+            skillsMap[p.id] = {}
           end
+          table.insert(skillsMap[p.id], s)
         end
       end
     end
     if #targets == 0 then return end
     local to = room:askForChoosePlayers(player, targets, 1, 1, "#zeyue-choose", self.name, true)
     if #to > 0 then
-      self.cost_data = to[1]
+      self.cost_data = {to[1], skillsMap[to[1]]}
       return true
     end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local to = room:getPlayerById(self.cost_data)
-    local skills = {}
-    for _, skill in ipairs(to.player_skills) do
-      if not skill.attached_equip and skill.frequency ~= Skill.Compulsory and skill.frequency ~= Skill.Wake and
-        skill.frequency ~= Skill.Limited then
-        table.insertIfNeed(skills, skill.name)
-      end
-    end
-    local choice = room:askForChoice(player, skills, self.name, "#zeyue-choice::"..to.id, true)
+    local to = room:getPlayerById(self.cost_data[1])
+    local choice = room:askForChoice(player, self.cost_data[2], self.name, "#zeyue-choice::"..to.id, true)
     room:handleAddLoseSkills(to, "-"..choice, nil, true, false)
-    room:setPlayerMark(to, self.name, choice)
-    to.tag["zeyue_count"] = {0, player}
-  end,
-
-  refresh_events = {fk.Damaged, fk.TurnEnd},
-  can_refresh = function(self, event, target, player, data)
-    if target == player and player:hasSkill(self, true) and player:usedSkillTimes(self.name, Player.HistoryGame) == 0 then
-      --这里本不应判断技能发动次数，但为了减少运算就不记录了
-      if event == fk.Damaged then
-        return data.from and data.from ~= player
-      else
-        return true
-      end
-    end
-  end,
-  on_refresh = function(self, event, target, player, data)
-    if event == fk.Damaged then
-      player.tag[self.name] = player.tag[self.name] or {}
-      table.insertIfNeed(player.tag[self.name], data.from.id)
-    else
-      player.tag[self.name] = {}
-    end
+    room:setPlayerMark(player, "@zeyue", choice)
+    local mark = U.getMark(player, "zeyue_record")
+    table.insert(mark, {to.id, choice, 1})
+    room:setPlayerMark(player, "zeyue_record", mark)
   end,
 }
-local zeyue_record = fk.CreateTriggerSkill{
-  name = "#zeyue_record",
-  anim_type = "special",
-  events ={fk.RoundEnd},
+local zeyue_delay = fk.CreateTriggerSkill{
+  name = "#zeyue_delay",
+  mute = true,
+  events = {fk.RoundStart, fk.Damaged},
   can_trigger = function(self, event, target, player, data)
-    return player.tag["zeyue_count"] and not player.dead and not player.tag["zeyue_count"][2].dead and player.tag["zeyue_count"][1] > 0
+    if event == fk.RoundStart then
+      return player:getMark("zeyue_record") ~= 0
+    else
+      return data.card and table.contains(data.card.skillNames, "zeyue") and target == player and not player.dead
+    end
   end,
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local to = player.tag["zeyue_count"][2]
-    for i = 1, player.tag["zeyue_count"][1], 1 do
-      if player.dead or to.dead then return end
-      room:useVirtualCard("slash", nil, player, to, "zeyue", true)
-    end
-  end,
-
-  refresh_events ={fk.RoundStart, fk.Damage},
-  can_refresh = function(self, event, target, player, data)
-    if player:getMark("zeyue") ~= 0 and player.tag["zeyue_count"] then
-      if event == fk.RoundStart then
-        return true
-      else
-        return data.card and table.contains(data.card.skillNames, "zeyue")
-      end
-    end
-  end,
-  on_refresh = function(self, event, target, player, data)
     if event == fk.RoundStart then
-      player.tag["zeyue_count"][1] = player.tag["zeyue_count"][1] + 1
+      local mark = U.getMark(player, "zeyue_record")
+      for _, dat in ipairs(mark) do
+        for i = 1, dat[3], 1 do
+          local from = room:getPlayerById(dat[1])
+          if from.dead or player.dead then break end
+          local slash = Fk:cloneCard("slash")
+          slash.skillName = "zeyue"
+          dat[4] = player.id
+          local use = {
+            from = from.id, tos = {{player.id}}, card = slash, extraUse = true, extra_data = {zeyue_data = dat}
+          }
+          room:useCard(use)
+          dat[4] = use.extra_data.zeyue_data[4]
+        end
+        if player.dead then return end
+      end
+      for i = #mark, 1, -1 do
+        local dat = mark[i]
+        if room:getPlayerById(dat[1]).dead or dat[4] == 0 then
+          table.remove(mark, i)
+        else
+          dat[3] = dat[3] + 1
+        end
+      end
+      if #mark > 0 then
+        room:setPlayerMark(player, "zeyue_record", mark)
+      else
+        room:setPlayerMark(player, "@zeyue", 0)
+        room:setPlayerMark(player, "zeyue_record", 0)
+      end
     else
-      player.room:handleAddLoseSkills(player, player:getMark("zeyue"), nil, true, false)
-      player.room:setPlayerMark(player, "zeyue", 0)
+      local e = player.room.logic:getCurrentEvent():findParent(GameEvent.UseCard)
+      if e then
+        local use = e.data[1]
+        local dat = (use.extra_data or {}).zeyue_data
+        if dat and dat[4] == player.id then
+          room:handleAddLoseSkills(room:getPlayerById(dat[1]), dat[2])
+          use.extra_data.zeyue_data[4] = 0
+        end
+      end
     end
   end,
 }
 huanfu:addRelatedSkill(huanfu_delay)
 qingyix:addRelatedSkill(qingyix_delay)
-zeyue:addRelatedSkill(zeyue_record)
+zeyue:addRelatedSkill(zeyue_delay)
 xiahouxuan:addSkill(huanfu)
 xiahouxuan:addSkill(qingyix)
 xiahouxuan:addSkill(zeyue)
@@ -5324,7 +5342,7 @@ Fk:loadTranslationTable{
   [":qingyix"] = "出牌阶段限一次，你可以与至多两名有牌的其他角色同时弃置一张牌，若类型相同，你可以重复此流程。若以此法弃置了两种颜色的牌，结束阶段，你可以获得其中颜色不同的牌各一张。",
   ["zeyue"] = "迮阅",
   [":zeyue"] = "限定技，准备阶段，你可以令一名你上个回合结束后（首轮为游戏开始后）对你造成过伤害的其他角色失去武将牌上一个技能（锁定技、觉醒技、限定技除外）。"..
-  "每轮结束时，其视为对你使用X张【杀】（X为其已失去此技能的轮数），若此【杀】造成伤害，其获得以此法失去的技能。",
+  "每轮开始时，其视为对你使用X张【杀】（X为其已失去此技能的轮数），当你受到此【杀】伤害后，其获得以此法失去的技能。",
   ["#huanfu-invoke"] = "宦浮：你可以弃置至多%arg张牌，若此【杀】造成伤害值等于弃牌数，你摸两倍的牌",
   ["#huanfu_delay"] = "宦浮",
   ["#qingyi-discard"] = "清议：弃置一张牌",
@@ -5334,7 +5352,8 @@ Fk:loadTranslationTable{
   ["#qingyix_delay"] = "清议",
   ["#zeyue-choose"] = "迮阅：你可以令一名角色失去一个技能，其每轮视为对你使用【杀】，造成伤害后恢复失去的技能",
   ["#zeyue-choice"] = "迮阅：选择令 %dest 失去的一个技能",
-  ["#zeyue_record"] = "迮阅",
+  ["#zeyue_delay"] = "迮阅",
+  ["@zeyue"] = "迮阅",
 
   ["$huanfu1"] = "宦海浮沉，莫问前路。",
   ["$huanfu2"] = "仕途险恶，吉凶难料。",
