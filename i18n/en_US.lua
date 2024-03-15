@@ -238,7 +238,6 @@ return {
 
   ["ol_ex__lusu"] = "Jie Lu Su",
   ["ol_ex__haoshi"] = "Altruism",
-  ["#ol_ex__haoshi_active"] = "Altruism",
   ["#ol_ex__haoshi_delay"] = "Altruism",
   [":ol_ex__haoshi"] = "At Draw Phase, u can draw +2 cards. Then if ur hand cards > 5, u must give half of them to another hero with the least hand cards. If do so, until ur next turn, when u become the target of Sha or normal tactic, he can give u a hand card.",
   ["ol_ex__dimeng"] = "Alliance",

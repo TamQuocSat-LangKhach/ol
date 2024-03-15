@@ -2319,24 +2319,6 @@ local ol_ex__haoshi = fk.CreateTriggerSkill{
     data.n = data.n + 2
   end,
 }
-local ol_ex__haoshi_active = fk.CreateActiveSkill{
-  name = "#ol_ex__haoshi_active",
-  anim_type = "support",
-  target_num = 1,
-  card_num = function ()
-    return Self:getHandcardNum() // 2
-  end,
-  card_filter = function(self, to_select, selected)
-    return #selected < self.card_num() and Fk:currentRoom():getCardArea(to_select) ~= Player.Equip
-  end,
-  target_filter = function(self, to_select, selected, selected_cards)
-    local room = Fk:currentRoom()
-    local target = room:getPlayerById(to_select)
-    return #selected == 0 and target ~= Self and table.every(room.alive_players, function(p)
-      return target:getHandcardNum() <= p:getHandcardNum() or p == Self
-    end)
-  end,
-}
 local ol_ex__haoshi_delay = fk.CreateTriggerSkill{
   name = "#ol_ex__haoshi_delay",
   events = {fk.EventPhaseEnd, fk.TargetConfirmed},
@@ -2344,7 +2326,7 @@ local ol_ex__haoshi_delay = fk.CreateTriggerSkill{
   can_trigger = function(self, event, target, player, data)
     if player.dead then return false end
     if event == fk.EventPhaseEnd and player:usedSkillTimes(ol_ex__haoshi.name, Player.HistoryPhase) > 0 then
-      return #player.player_cards[Player.Hand] > 5
+      return #player.player_cards[Player.Hand] > 5 and #player.room.alive_players > 1
     elseif event == fk.TargetConfirmed and player == target and type(player:getMark("ol_ex__haoshi_target")) == "table" then
       if data.card.trueName == "slash" or data.card:isCommonTrick() then
         local targetRecorded = player:getMark("ol_ex__haoshi_target")
@@ -2361,25 +2343,30 @@ local ol_ex__haoshi_delay = fk.CreateTriggerSkill{
     room:notifySkillInvoked(player, ol_ex__haoshi.name, "support")
     if event == fk.EventPhaseEnd and not player:isKongcheng() then
       local x = player:getHandcardNum() // 2
-      local to_give = table.random(player.player_cards[Player.Hand], x)
-      local other_players = room:getOtherPlayers(player)
-      local target = table.find(other_players, function (p1)
-        return table.every(other_players, function (p2)
-          return p2:getHandcardNum() >= p1:getHandcardNum()
-        end)
-      end)
-      if target and #to_give > 0 then
-        local _, ret = room:askForUseActiveSkill(player, "#ol_ex__haoshi_active",
-          "#ol_ex__haoshi-give:::" .. x, false)
-        if ret and #ret.cards == x and #ret.targets == 1 then
-          to_give = ret.cards
-          target = room:getPlayerById(ret.targets[1])
+      local targets = {}
+      local n = 0
+      for _, p in ipairs(room.alive_players) do
+        if p ~= player then
+          if #targets == 0 then
+            table.insert(targets, p.id)
+            n = p:getHandcardNum()
+          else
+            if p:getHandcardNum() < n then
+              targets = {p.id}
+              n = p:getHandcardNum()
+            elseif p:getHandcardNum() == n then
+              table.insert(targets, p.id)
+            end
+          end
         end
-        local dummy = Fk:cloneCard("dilu")
-        dummy:addSubcards(to_give)
-        room:obtainCard(target, dummy, false, fk.ReasonGive)
-        local targetRecorded = U.getMark(player, "ol_ex__haoshi_target")
-        table.insert(targetRecorded, target.id)
+      end
+      local tos, cards = U.askForChooseCardsAndPlayers(room, player, x, x, targets, 1, 1,
+      ".", "#ol_ex__haoshi-give:::" .. x, false, true)
+      local to = room:getPlayerById(tos[1])
+      room:moveCardTo(cards, Card.PlayerHand, to, fk.ReasonGive, self.name, nil, false, player.id)
+      if player.dead or to.dead then return false end
+      local targetRecorded = U.getMark(player, "ol_ex__haoshi_target")
+      if table.insertIfNeed(targetRecorded, to.id) then
         room:setPlayerMark(player, "ol_ex__haoshi_target", targetRecorded)
       end
     elseif event == fk.TargetConfirmed then
@@ -2474,7 +2461,6 @@ local ol_ex__dimeng_delay = fk.CreateTriggerSkill{
     end
   end,
 }
-ol_ex__haoshi:addRelatedSkill(ol_ex__haoshi_active)
 ol_ex__haoshi:addRelatedSkill(ol_ex__haoshi_delay)
 ol_ex__dimeng:addRelatedSkill(ol_ex__dimeng_delay)
 local lusu = General(extension, "ol_ex__lusu", "wu", 3)
@@ -2484,7 +2470,6 @@ lusu:addSkill(ol_ex__dimeng)
 Fk:loadTranslationTable{
   ["ol_ex__lusu"] = "界鲁肃",
   ["ol_ex__haoshi"] = "好施",
-  ["#ol_ex__haoshi_active"] = "好施",
   ["#ol_ex__haoshi_delay"] = "好施",
   [":ol_ex__haoshi"] = "摸牌阶段，你可令额定摸牌数+2，此阶段结束时，若你的手牌数大于5，你将一半的手牌交给除你外手牌数最少的一名角色。当你于你的下个回合开始之前成为【杀】或普通锦囊牌的目标后，你令其可将一张手牌交给你。",
   ["ol_ex__dimeng"] = "缔盟",
