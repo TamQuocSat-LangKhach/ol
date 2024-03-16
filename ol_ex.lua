@@ -72,7 +72,7 @@ local ol_ex__botu = fk.CreateTriggerSkill{
   on_refresh = function(self, event, target, player, data)
     local room = player.room
     if event == fk.TurnStart then
-      if player:hasSkill(self.name, true) then
+      if player:hasSkill(self, true) then
         player.room:setPlayerMark(player, "@ol_ex__botu-turn", {})
       elseif player:usedSkillTimes(self.name, Player.HistoryRound) > 0 then
         player:setSkillUseHistory(self.name, 0, Player.HistoryRound)
@@ -1257,7 +1257,7 @@ local ol_ex__jieming = fk.CreateTriggerSkill{
       if event == fk.Damaged then
         return player:hasSkill(self)
       elseif event == fk.Death then
-        return player:hasSkill(self.name, false, true)
+        return player:hasSkill(self, false, true)
       end
     end
   end,

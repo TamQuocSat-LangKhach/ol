@@ -859,7 +859,7 @@ local luanzhan = fk.CreateTriggerSkill{
 
   refresh_events = {fk.Damage, fk.TargetSpecified},
   can_refresh = function(self, event, target, player, data)
-    if target == player and player:hasSkill(self.name, true) then
+    if target == player and player:hasSkill(self, true) then
       if event == fk.Damage then
         return true
       else
@@ -1679,7 +1679,7 @@ local fuman_record = fk.CreateTriggerSkill{
   anim_type = "drawcard",
   events = {fk.CardUsing},
   can_trigger = function(self, event, target, player, data)
-    if player:hasSkill(self.name, true) and target:getMark("fuman") ~= 0 then
+    if player:hasSkill(self, true) and target:getMark("fuman") ~= 0 then
       if data.card:isVirtual() then
         if #data.card.subcards > 0 then
           for _, id in ipairs(data.card.subcards) do
@@ -1756,7 +1756,7 @@ local ol__fuman_trigger = fk.CreateTriggerSkill{
   mute = true,
   events = {fk.CardUseFinished},
   can_trigger = function(self, event, target, player, data)
-    if player:hasSkill(self.name, true) and data.card.trueName == "slash" then
+    if player:hasSkill(self, true) and data.card.trueName == "slash" then
       local subcards = data.card:isVirtual() and data.card.subcards or {data.card.id}
       return #subcards == 1 and Fk:getCardById(subcards[1]):getMark("@@ol__fuman") > 0
     end
@@ -3737,7 +3737,7 @@ local xiying = fk.CreateTriggerSkill{
 
   refresh_events = {fk.Damage},
   can_refresh = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name, true, true) and player:usedSkillTimes(self.name) > 0
+    return target == player and player:hasSkill(self, true, true) and player:usedSkillTimes(self.name) > 0
   end,
   on_refresh = function(self, event, target, player, data)
     player.room:addPlayerMark(player, "xiying_damage-turn", 1)
