@@ -1183,6 +1183,9 @@ local miuyan = fk.CreateViewAsSkill{
   anim_type = "switch",
   switch_skill_name = "miuyan",
   pattern = "fire_attack",
+  prompt = function ()
+    return "miuyan-prompt-".. Self:getSwitchSkillState("miuyan", false, true)
+  end,
   card_filter = function(self, to_select, selected)
     return #selected == 0 and Fk:getCardById(to_select).color == Card.Black
   end,
@@ -1202,7 +1205,7 @@ local miuyan_trigger = fk.CreateTriggerSkill{
   mute = true,
   events = {fk.CardUseFinished},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill("miuyan") and table.contains(data.card.skillNames, "miuyan")
+    return target == player and player:hasSkill(miuyan) and table.contains(data.card.skillNames, "miuyan")
   end,
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
@@ -1210,10 +1213,11 @@ local miuyan_trigger = fk.CreateTriggerSkill{
     if player:getSwitchSkillState("miuyan", true) == fk.SwitchYang and data.damageDealt then
       local moveInfos = {}
       for _, p in ipairs(room:getOtherPlayers(player)) do
+        if player.dead then break end
         if not p:isKongcheng() then
           local cards = {}
           for _, id in ipairs(p.player_cards[Player.Hand]) do
-            if Fk:getCardById(id):getMark("miuyan") > 0 then
+            if Fk:getCardById(id):getMark("miuyan-phase") > 0 then
               table.insertIfNeed(cards, id)
             end
           end
@@ -1238,19 +1242,15 @@ local miuyan_trigger = fk.CreateTriggerSkill{
     end
   end,
 
-  refresh_events = {fk.CardShown, fk.TurnEnd},
+  refresh_events = {fk.CardShown},
   can_refresh = function(self, event, target, player, data)
     return target == player
   end,
   on_refresh = function(self, event, target, player, data)
     local room = player.room
-    if event == fk.CardShown then
-      for _, id in ipairs(data.cardIds) do
-        room:setCardMark(Fk:getCardById(id), "miuyan", 1)
-      end
-    else
-      for _, id in ipairs(Fk:getAllCardIds()) do
-        room:setCardMark(Fk:getCardById(id), "miuyan", 0)
+    for _, id in ipairs(data.cardIds) do
+      if table.contains(player.player_cards[Player.Hand], id) then
+        room:setCardMark(Fk:getCardById(id), "miuyan-phase", 1)
       end
     end
   end,
@@ -1304,6 +1304,8 @@ Fk:loadTranslationTable{
   ["shilu"] = "失路",
   [":shilu"] = "锁定技，当你受到伤害后，你摸等同体力值张牌并展示攻击范围内一名其他角色的一张手牌，令此牌视为【杀】。",
   ["@@miuyan-round"] = "谬焰失效",
+  ["miuyan-prompt-yang"] = "将一张黑色牌当【火攻】使用，若造成伤害，获得本阶段展示过的所有手牌",
+  ["miuyan-prompt-yin"] = "将一张黑色牌当【火攻】使用，若未造成伤害，本轮“谬焰”失效",
   ["#shilu-choose"] = "失路：展示一名角色的一张手牌，此牌视为【杀】",
   ["@@shilu-inhand"] = "失路",
   ["#shilu_filter"] = "失路",
