@@ -1857,7 +1857,7 @@ local function QizhouChange(player, num, skill_name)
 		end
 	else
 		if table.contains(skills, skill_name) then
-      room:handleAddLoseSkills(player, "-"..skill_name, nil)
+      room:handleAddLoseSkills(player, "-"..skill_name, "qizhou")
 			table.removeOne(skills, skill_name)
 		end
 	end
@@ -1865,11 +1865,9 @@ local function QizhouChange(player, num, skill_name)
 end
 local qizhou = fk.CreateTriggerSkill{
   name = "qizhou",
-  mute = true,
-  anim_type = "special",
   frequency = Skill.Compulsory,
-  events = {fk.AfterCardsMove},
-  can_trigger = function(self, event, target, player, data)
+  refresh_events = {fk.AfterCardsMove},
+  can_refresh = function(self, event, target, player, data)
     if player:hasSkill(self) then
       for _, move in ipairs(data) do
         if move.to == player.id and move.toArea == Card.PlayerEquip then
@@ -1885,11 +1883,11 @@ local qizhou = fk.CreateTriggerSkill{
       end
     end
   end,
-  on_trigger = function(self, event, target, player, data)
-    QizhouChange(player, 1, "mashu")
+  on_refresh = function(self, event, target, player, data)
+    QizhouChange(player, 1, "ol__duanbing")
     QizhouChange(player, 2, "ex__yingzi")
-    QizhouChange(player, 3, "ol__duanbing")
-    QizhouChange(player, 4, "fenwei")
+    QizhouChange(player, 3, "fenwei")
+    QizhouChange(player, 4, "lanjiang")
   end,
 }
 Fk:addPoxiMethod{
@@ -1994,9 +1992,8 @@ local shanxi = fk.CreateActiveSkill{
 }
 heqi:addSkill(qizhou)
 heqi:addSkill(shanxi)
-heqi:addRelatedSkill("mashu")
-heqi:addRelatedSkill("ex__yingzi")
 heqi:addRelatedSkill("ol__duanbing")
+heqi:addRelatedSkill("ex__yingzi")
 heqi:addRelatedSkill("fenwei")
 heqi:addRelatedSkill("lanjiang")
 Fk:loadTranslationTable{
@@ -2005,7 +2002,7 @@ Fk:loadTranslationTable{
   ["designer:heqi"] = "千幻",
 	["illustrator:heqi"] = "DH",
   ["qizhou"] = "绮胄",
-  [":qizhou"] = "锁定技，你根据装备区里牌的花色数获得以下技能：1种以上-〖马术〗；2种以上-〖英姿〗；3种以上-〖短兵〗；4种-〖奋威〗。",
+  [":qizhou"] = "锁定技，你根据装备区里牌的花色数获得以下技能：1种以上-〖短兵〗；2种以上-〖英姿〗；3种以上-〖奋威〗；4种-〖澜疆〗。",
   ["shanxi"] = "闪袭",
   [":shanxi"] = "出牌阶段限一次，你可以展示你与一名攻击范围内不包含你的角色共计至多X张手牌（X为你的空置装备栏数），若其中有【闪】，弃置之，然后获得其一张未以此法展示的牌。",
   ["#shanxi-choose"] = "闪袭：展示你与一名攻击范围内不包含你的角色共计至多 %arg 张手牌",
@@ -2779,6 +2776,7 @@ shenpei:addSkill(beizhan)
 Fk:loadTranslationTable{
   ["ol__shenpei"] = "审配",
   ["#ol__shenpei"] = "正南义北",
+	["illustrator:ol__shenpei"] = "PCC",
   ["gangzhi"] = "刚直",
   [":gangzhi"] = "锁定技，其他角色对你造成的伤害，和你对其他角色造成的伤害均视为体力流失。",
   ["beizhan"] = "备战",
@@ -3181,6 +3179,8 @@ luzhi:addSkill(weijing)
 Fk:loadTranslationTable{
   ["luzhiw"] = "鲁芝",
   ["#luzhiw"] = "夷夏慕德",
+  ["designer:luzhiw"] = "世外高v狼",
+	["illustrator:luzhiw"] = "秋呆呆",
   ["qingzhong"] = "清忠",
   [":qingzhong"] = "出牌阶段开始时，你可以摸两张牌，然后本阶段结束时，你与一名全场手牌数最少的其他角色交换手牌。",
   ["weijing"] = "卫境",
@@ -3465,6 +3465,7 @@ Fk:loadTranslationTable{
   ["#caoying"] = "龙城凤鸣",
   ["cv:caoying"] = "水原",
   ["illustrator:caoying"] = "花弟",
+  ["designer:caoying"] = "韩旭",
   ["lingren"] = "凌人",
   [":lingren"] = "当你使用【杀】或伤害类锦囊牌指定第一个目标后，若你于当前回合内未发动过此技能，"..
   "你可以猜测其中一名目标角色的手牌区中是否有基本牌、锦囊牌或装备牌。"..
@@ -3548,6 +3549,7 @@ xujing:addSkill(shijian)
 Fk:loadTranslationTable{
   ["ol__xujing"] = "许靖",
   ["#ol__xujing"] = "品评名士",
+	["illustrator:ol__xujing"] = "君桓文化",
   ["yuxu"] = "誉虚",
   [":yuxu"] = "当你于出牌阶段内使用牌结算结束后，若你于此阶段内发动过本技能的次数为：偶数，你可以摸一张牌；奇数，你弃置一张牌。",
   ["shijian"] = "实荐",
@@ -3694,6 +3696,8 @@ yuantanyuanshang:addSkill(neifa)
 Fk:loadTranslationTable{
   ["yuantanyuanshang"] = "袁谭袁尚",
   ["#yuantanyuanshang"] = "兄弟阋墙",
+  ["designer:yuantanyuanshang"] = "笔枔",
+	["illustrator:yuantanyuanshang"] = "MUMU",
   ["neifa"] = "内伐",
   [":neifa"] = "出牌阶段开始时，你可以摸两张牌或获得场上一张牌，然后弃置一张牌。若弃置的牌：是基本牌，你本回合不能使用非基本牌，"..
   "本阶段使用【杀】次数上限+X，目标上限+1；不是基本牌，你本回合不能使用基本牌，使用普通锦囊牌的目标+1或-1，前两次使用装备牌时摸X张牌"..
@@ -3766,6 +3770,7 @@ sunshao:addSkill(yidian)
 Fk:loadTranslationTable{
   ["ol__sunshao"] = "孙邵",
   ["#ol__sunshao"] = "廊庙才",
+  ["illustrator:ol__sunshao"] = "紫剑-h",
   ["bizheng"] = "弼政",
   [":bizheng"] = "摸牌阶段结束时，你可令一名其他角色摸两张牌，然后你与其之中，手牌数大于体力上限的角色弃置两张牌。",
   ["yidian"] = "佚典",
@@ -3784,69 +3789,81 @@ local gaolan = General(extension, "ol__gaolan", "qun", 4)
 local xiying = fk.CreateTriggerSkill{
   name = "xiying",
   anim_type = "control",
-  events = {fk.EventPhaseStart, fk.EventPhaseEnd},
+  events = {fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
-    if target == player and player:hasSkill(self) then
-      if event == fk.EventPhaseStart then
-        return player.phase == Player.Play and not player:isKongcheng()
-      else
-        return player.phase == Player.Finish and player:getMark("xiying_damage-turn") > 0 and
-        player:usedSkillTimes(self.name, Player.HistoryTurn) > 0
-      end
-    end
+    return target == player and player:hasSkill(self) and player.phase == Player.Play and not player:isKongcheng()
   end,
   on_cost = function(self, event, target, player, data)
-    if event == fk.EventPhaseStart then
-      return #player.room:askForDiscard(player, 1, 1, false, self.name, true, ".|.|.|hand|.|^basic", "#xiying-invoke") > 0
-    else
+    local cards = player.room:askForDiscard(player, 1, 1, false, self.name, true, ".|.|.|hand|.|^basic", "#xiying-invoke", true)
+    if #cards > 0 then
+      self.cost_data = cards
       return true
     end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    if event == fk.EventPhaseStart then
-      for _, p in ipairs(room:getOtherPlayers(player)) do
-        if #room:askForDiscard(p, 1, 1, true, self.name, true, ".", "#xiying-discard") == 0 then
-          room:addPlayerMark(p, "xiying-turn", 1)
-        end
-      end
-    else
-      local cards = {}
-      for i = 1, #room.draw_pile, 1 do
-        local card = Fk:getCardById(room.draw_pile[i])
-        if card.is_damage_card then
-          table.insertIfNeed(cards, room.draw_pile[i])
-        end
-      end
-      if #cards > 0 then
-        local card = table.random(cards)
-        room:moveCards({
-          ids = {card},
-          to = player.id,
-          toArea = Card.PlayerHand,
-          moveReason = fk.ReasonJustMove,
-          proposer = player.id,
-          skillName = self.name,
-        })
+    room:setPlayerMark(player, "xiying_invoked-turn", 1)
+    for _, p in ipairs(room:getOtherPlayers(player)) do
+      if not p.dead and #room:askForDiscard(p, 1, 1, true, self.name, true, ".", "#xiying-discard") == 0 then
+        room:addPlayerMark(p, "@@xiying-turn", 1)
       end
     end
   end,
-
-  refresh_events = {fk.Damage},
-  can_refresh = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self, true, true) and player:usedSkillTimes(self.name) > 0
+}
+local xiying_delay = fk.CreateTriggerSkill{
+  name = "#xiying_delay",
+  mute = true,
+  events = {fk.EventPhaseEnd},
+  can_trigger = function(self, event, target, player, data)
+    if target == player and not player.dead and player.phase == Player.Finish and player:getMark("xiying_invoked-turn") > 0 then
+      local play_ids = {}
+      player.room.logic:getEventsOfScope(GameEvent.Phase, 1, function (e)
+        if e.data[2] == Player.Play and e.end_id then
+          table.insert(play_ids, {e.id, e.end_id})
+        end
+        return false
+      end, Player.HistoryTurn)
+      if #play_ids == 0 then return false end
+      local function PlayCheck (e)
+        if e.data[1].from ~= player then return false end
+        local in_play = false
+        for _, ids in ipairs(play_ids) do
+          if e.id > ids[1] and e.id < ids[2] then
+            in_play = true
+            break
+          end
+        end
+        return in_play
+      end
+      return #U.getActualDamageEvents(player.room, 1, PlayCheck) > 0
+    end
   end,
-  on_refresh = function(self, event, target, player, data)
-    player.room:addPlayerMark(player, "xiying_damage-turn", 1)
+  on_cost = Util.TrueFunc,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local cards = table.filter(room.draw_pile, function (id)
+      return Fk:getCardById(id).is_damage_card
+    end)
+    if #cards > 0 then
+      room:moveCards({
+        ids = table.random(cards, 1),
+        to = player.id,
+        toArea = Card.PlayerHand,
+        moveReason = fk.ReasonPrey,
+        proposer = player.id,
+        skillName = self.name,
+      })
+    end
   end,
 }
+xiying:addRelatedSkill(xiying_delay)
 local xiying_prohibit = fk.CreateProhibitSkill{
   name = "#xiying_prohibit",
   prohibit_use = function(self, player, card)
-    return player:getMark("xiying-turn") > 0
+    return player:getMark("@@xiying-turn") > 0
   end,
   prohibit_response = function(self, player, card)
-    return player:getMark("xiying-turn") > 0
+    return player:getMark("@@xiying-turn") > 0
   end,
 }
 xiying:addRelatedSkill(xiying_prohibit)
@@ -3854,9 +3871,13 @@ gaolan:addSkill(xiying)
 Fk:loadTranslationTable{
   ["ol__gaolan"] = "高览",
   ["#ol__gaolan"] = "名门的峦柱",
+  ["designer:ol__gaolan"] = "七哀",
+	["illustrator:ol__gaolan"] = "兴游",
   ["xiying"] = "袭营",
-  [":xiying"] = "出牌阶段开始时，你可以弃置手中一张非基本牌，令所有其他角色选择一项：1.弃置一张牌；2.本回合不能使用或打出牌。"..
+  [":xiying"] = "出牌阶段开始时，你可以弃置一张非基本手牌，令所有其他角色选择一项：1.弃置一张牌；2.本回合不能使用或打出牌。"..
   "若如此做，结束阶段，若你于本回合出牌阶段造成过伤害，你获得牌堆中一张【杀】或伤害锦囊牌。",
+  ["#xiying_delay"] = "袭营",
+  ["@@xiying-turn"] = "被袭营袭营",
   ["#xiying-invoke"] = "袭营：你可以弃置一张非基本手牌，所有其他角色需弃置一张牌，否则其本回合不能使用或打出牌",
   ["#xiying-discard"] = "袭营：你需弃置一张牌，否则本回合不能使用或打出牌",
   

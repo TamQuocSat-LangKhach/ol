@@ -2452,12 +2452,12 @@ Fk:loadTranslationTable{
   ["designer:wuyanw"] = "七哀",
   ["illustrator:wuyanw"] = "匠人绘",
 
-  ["lanjiang"] = "澜江",
+  ["lanjiang"] = "澜疆",
   [":lanjiang"] = "结束阶段，你可以令所有手牌数不小于你的角色依次选择是否令你摸一张牌。选择完成后，你可以对手牌数等于你的其中一名角色造成1点伤害，"..
   "然后令手牌数小于你的其中一名角色摸一张牌。",
-  ["#lanjiang-choose"] = "澜江：是否令 %dest 摸一张牌？",
-  ["#lanjiang-damage"] = "澜江：你可以对其中一名角色造成1点伤害",
-  ["#lanjiang-draw"] = "澜江：令其中一名角色摸一张牌",
+  ["#lanjiang-choose"] = "澜疆：是否令 %dest 摸一张牌？",
+  ["#lanjiang-damage"] = "澜疆：你可以对其中一名角色造成1点伤害",
+  ["#lanjiang-draw"] = "澜疆：令其中一名角色摸一张牌",
 
   ["$lanjiang1"] = "一人擒虎力，千军拗锋芒。",
   ["$lanjiang2"] = "勇力擎四疆，狂澜涌八荒。",
