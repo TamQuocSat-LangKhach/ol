@@ -2895,11 +2895,11 @@ Fk:loadTranslationTable{
   ["#qiajue_delay"] = "跒倔",
   ["#qiajue-invoke"] = "是否发动 跒倔，弃置一张黑色牌，摸牌后手牌点数和≤30可以继续摸牌<font color='red'>（当前为%arg）</font>",
 
-  ["$qiajue1"] = "",
-  ["$qiajue2"] = "",
-  ["$muyin_olz__wuqiao1"] = "",
-  ["$muyin_olz__wuqiao2"] = "",
-  ["~olz__wuqiao"] = "",
+  ["$qiajue1"] = "汉旗未复，此生不居檐下。",
+  ["$qiajue2"] = "蜀川大好，皆可为家。",
+  ["$muyin_olz__wuqiao1"] = "生继汉泽于身，死效忠义于行。",
+  ["$muyin_olz__wuqiao2"] = "吾祖彰汉室之荣，今子孙未敢忘。",
+  ["~olz__wuqiao"] = "蜀川万里，孤身伶仃……",
 }
 
 return extension

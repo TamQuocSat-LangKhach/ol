@@ -3402,35 +3402,31 @@ local fengyan = fk.CreateTriggerSkill{
     if event == fk.Damaged then
       return player:hasSkill(self) and target == player and data.from and data.from ~= player
     else
-      return target == player and player:hasSkill(self) and not player.dead and data.responseToEvent and data.responseToEvent.from and data.responseToEvent.from ~= player.id and not player.room:getPlayerById(data.responseToEvent.from).dead
+      return target == player and player:hasSkill(self) and not player.dead and
+      data.responseToEvent and data.responseToEvent.from and data.responseToEvent.from ~= player.id and
+      not player.room:getPlayerById(data.responseToEvent.from).dead
     end
-  end,
-  on_cost = function(self, event, target, player, data)
-    local to
-    if event == fk.Damaged then
-      to = data.from.id
-    else
-      to = data.responseToEvent.from
-    end
-    local choice = player.room:askForChoice(player, {"ol__fengyan_self:" .. to, "ol__fengyan_other:" .. to}, self.name)
-    self.cost_data = {choice, to}
-    return true
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local choice = self.cost_data[1]
-    local target = room:getPlayerById(self.cost_data[2])
+    local to
+    if event == fk.Damaged then
+      to = data.from
+    else
+      to = room:getPlayerById(data.responseToEvent.from)
+    end
+    room:doIndicate(player.id, {to.id})
+    local choice = player.room:askForChoice(player, {"ol__fengyan_self:" .. to.id, "ol__fengyan_other:" .. to.id}, self.name)
     if choice:startsWith("ol__fengyan_self") then
       player:drawCards(1, self.name)
-      if target and not target.dead and not player:isNude() then
-        local c = room:askForCard(player, 1, 1, true, self.name, false, nil, "#ol__fengyan-card::" .. target.id)[1]
-        room:moveCardTo(c, Player.Hand, target, fk.ReasonGive, self.name, nil, false, player.id)
+      if not (to.dead or player.dead or player:isNude()) then
+        local c = room:askForCard(player, 1, 1, true, self.name, false, nil, "#ol__fengyan-card::" .. to.id)
+        room:moveCardTo(c, Player.Hand, to, fk.ReasonGive, self.name, nil, false, player.id)
       end
     else
-      room:doIndicate(player.id, {target.id})
-      target:drawCards(1, self.name)
-      if not target.dead then
-        room:askForDiscard(target, 2, 2, true, self.name, false, nil)
+      room:drawCards(to, 1, self.name)
+      if not to.dead then
+        room:askForDiscard(to, 2, 2, true, self.name, false, nil)
       end
     end
   end,
@@ -3456,7 +3452,7 @@ Fk:loadTranslationTable{
   ["ol__fengyan_self"] = "你摸一张牌并交给%src一张牌",
   ["ol__fengyan_other"] = "%src摸一张牌并弃置两张牌",
   ["#ol__fengyan-card"] = "讽言：请交给 %dest 一张牌",
-  
+
   ["$ol__fudao1"] = "冰刃入腹，使肝肠寸断。",
   ["$ol__fudao2"] = "失子之殇，世间再无春秋。",
   ["$ol__fengyan1"] = "何不以曹公之命，换我儿之命乎？",
