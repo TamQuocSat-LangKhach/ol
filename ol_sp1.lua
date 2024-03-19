@@ -2013,7 +2013,7 @@ Fk:loadTranslationTable{
   ["$lanjiang_heqi"] = "大江惊澜，浪涌四极之疆！",
   ["$shanxi1"] = "敌援未到，需要速战速决！",
   ["$shanxi2"] = "快马加鞭，赶在敌人戒备之前！",
-  ["~heqi"] = "别拿走我的装备！",
+  ["~heqi"] = "别拿走……我的装备！",
 }
 
 local kanze = General(extension, "kanze", "wu", 3)

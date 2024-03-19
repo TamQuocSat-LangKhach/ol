@@ -5077,4 +5077,15 @@ Fk:loadTranslationTable{
   "这些角色下次使用基本牌或普通锦囊牌指定唯一目标时，可以令你也成为此牌的目标。",
 }
 
+--local liupi = General(extension, "ol__liupi", "qun", 4)
+
+Fk:loadTranslationTable{
+  ["ol__liupi"] = "刘辟",
+  --["#ol__liupi"] = "",
+
+  ["yichengl"] = "易城",
+  [":yichengl"] = "出牌阶段限一次，你可以观看牌堆顶三张牌，然后可以用任意张手牌交换其中等量张，"..
+  "若展示牌点数之和因此增加，你可以用所有手牌交换展示牌。",
+}
+
 return extension

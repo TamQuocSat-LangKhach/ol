@@ -2722,7 +2722,7 @@ local ol_ex__weimu = fk.CreateTriggerSkill{
   events = {fk.DamageInflicted},
   frequency = Skill.Compulsory,
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self) and player.phase ~= Player.NotActive
+    return target == player and player:hasSkill(self) and player.room.current == player
   end,
   on_use = function(self, event, target, player, data)
     player:drawCards(data.damage*2, self.name)
@@ -2753,8 +2753,7 @@ Fk:loadTranslationTable{
   [":ol_ex__luanwu"] = "限定技，出牌阶段，你可选择所有其他角色，这些角色各需对包括距离最小的另一名角色在内的角色使用【杀】，否则失去1点体力。最后你可视为使用普【杀】。",
   ["ol_ex__weimu"] = "帷幕",
   ["#ol_ex__weimu_trigger"] = "帷幕",
-  [":ol_ex__weimu"] = "锁定技，①你不是黑色锦囊牌的合法目标。②当你于回合内受到伤害时，你防止此伤害，摸2X张牌（X为伤害值）。"..
-  '<br /><font color="red">（村：在装备【藤甲】的场合火攻自己只能摸两张牌）</font>',
+  [":ol_ex__weimu"] = "锁定技，①你不是黑色锦囊牌的合法目标。②当你于回合内受到伤害时，你防止此伤害，摸2X张牌（X为伤害值）。",
 
   ["#ol_ex__luanwu-active"] = "发动 乱武，所有其他角色需要对距离最近的角色出杀，否则失去1点体力",
   ["#ol_ex__luanwu-use"] = "乱武：你需要对距离最近的一名角色使用一张【杀】，否则失去1点体力",

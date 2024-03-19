@@ -162,4 +162,96 @@ Fk:loadTranslationTable{
   ["~ol_ex__caozhang"] = "黄须儿，愧对父亲……",
 }
 
+local wangyi = General(extension, "ol_ex__wangyi", "wei", 3, 3, General.Female)
+local miji = fk.CreateTriggerSkill{
+  name = "ol_ex__miji",
+  anim_type = "drawcard",
+  events = {fk.EventPhaseStart},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self) and player.phase == Player.Finish and player:isWounded()
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local n = player:getLostHp()
+    room:drawCards(player, n, self.name)
+    if player.dead or player:isNude() then return false end
+    n = player:getLostHp()
+    if n > 0 then
+      U.askForDistribution(player, player:getCardIds("he"), room:getOtherPlayers(player, false), self.name, 0, n)
+    end
+  end,
+}
+local zhenlie = fk.CreateTriggerSkill{
+  name = "ol_ex__zhenlie",
+  anim_type = "defensive",
+  events = {fk.TargetConfirmed},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self) and data.from ~= player.id and
+      (data.card:isCommonTrick() or data.card.trueName == "slash")
+  end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    if room:askForSkillInvoke(player, self.name, nil, "#ol_ex__zhenlie-invoke:" .. data.from .. "::" .. data.card:toLogString()) then
+      room:doIndicate(player.id, {data.from})
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    room:loseHp(player, 1, self.name)
+    if player.dead then return false end
+    table.insertIfNeed(data.nullifiedTargets, player.id)
+    local choices = {}
+    local to = room:getPlayerById(data.from)
+    if not (to.dead or to:isNude()) then
+      table.insert(choices, "ol_ex__zhenlie_prey")
+    end
+    if player:isWounded() then
+      table.insert(choices, "ol_ex__zhenlie_miji")
+    end
+
+    if #choices == 0 then return false end
+    table.insert(choices, "Cancel")
+    local choice = room:askForChoice(player, choices, self.name, "", false, {"ol_ex__zhenlie_prey", "ol_ex__zhenlie_miji", "Cancel"})
+    if choice == "ol_ex__zhenlie_prey" then
+      local id = room:askForCardChosen(player, to, "he", self.name)
+      room:obtainCard(player.id, id, false, fk.ReasonPrey, player.id)
+    elseif choice == "ol_ex__zhenlie_miji" then
+      miji:use(event, target, player, data)
+    end
+  end,
+}
+wangyi:addSkill(zhenlie)
+wangyi:addSkill(miji)
+Fk:loadTranslationTable{
+  ["ol_ex__wangyi"] = "界王异",
+  ["#ol_ex__wangyi"] = "决意的巾帼",
+  --["designer:ol_ex__wangyi"] = "",
+  --["illustrator:ol_ex__wangyi"] = "",
+  ["ol_ex__zhenlie"] = "贞烈",
+  [":ol_ex__zhenlie"] = "当你成为【杀】或普通锦囊牌的目标后，若使用者不为你，你可以失去1点体力，令此牌对你无效，你选择：1.获得使用者的一张牌；2.发动〖秘计〗。",
+  ["ol_ex__miji"] = "秘计",
+  [":ol_ex__miji"] = "结束阶段，若你已受伤，你可以摸X张牌，然后可以将至多X张牌交给其他角色。（X为你已损失的体力值）",
+  ["#ol_ex__zhenlie-invoke"] = "是否对%src发动 贞烈，令其使用的%arg对你无效",
+  ["ol_ex__zhenlie_prey"] = "获得使用者一张牌",
+  ["ol_ex__zhenlie_miji"] = "发动一次“秘计”",
+
+  ["$ol_ex__zhenlie1"] = "",
+  ["$ol_ex__zhenlie2"] = "",
+  ["$ol_ex__miji1"] = "",
+  ["$ol_ex__miji2"] = "",
+  ["~ol_ex__wangyi"] = "",
+}
+
+
+
+
+
+
+
+
+
+
+
+
 return extension
