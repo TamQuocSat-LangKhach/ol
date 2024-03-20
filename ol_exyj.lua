@@ -206,7 +206,7 @@ local zhenlie = fk.CreateTriggerSkill{
     if not (to.dead or to:isNude()) then
       table.insert(choices, "ol_ex__zhenlie_prey")
     end
-    if player:isWounded() then
+    if player:isWounded() and player:hasSkill(miji) then
       table.insert(choices, "ol_ex__zhenlie_miji")
     end
 
@@ -217,6 +217,8 @@ local zhenlie = fk.CreateTriggerSkill{
       local id = room:askForCardChosen(player, to, "he", self.name)
       room:obtainCard(player.id, id, false, fk.ReasonPrey, player.id)
     elseif choice == "ol_ex__zhenlie_miji" then
+      room:notifySkillInvoked(player, "ol_ex__miji")
+      player:broadcastSkillInvoke("ol_ex__miji")
       miji:use(event, target, player, data)
     end
   end,

@@ -448,7 +448,7 @@ local ol__dulie = fk.CreateTriggerSkill{
   anim_type = "drawcard",
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(self) and player:usedSkillTimes(self.name) == 0 and
-    (data.card.trueName == "slash" or data.card:isCommonTrick()) and
+    (data.card.type == Card.TypeBasic or data.card:isCommonTrick()) and
     data.from ~= player.id and U.isOnlyTarget(player, data, event)
   end,
   on_cost = function(self, event, target, player, data)

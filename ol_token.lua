@@ -972,32 +972,31 @@ Fk:loadTranslationTable{
 local siZhaoSwordSkill = fk.CreateTriggerSkill{
   name = "#sizhao_sword_skill",
   attached_equip = "sizhao_sword",
-  events = {fk.TargetSpecified},
+  events = {fk.CardUsing},
   frequency = Skill.Compulsory,
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(self) and data.card.trueName == "slash" and data.card.number > 0
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local to = room:getPlayerById(data.to)
     local use_event = room.logic:getCurrentEvent():findParent(GameEvent.UseCard, true)
-    if use_event == nil then return end
-    room:setPlayerMark(to, "sizhao_sword", data.card.number)
+    if use_event == nil then return false end
+    --奇葩剑，随便整整算了
+    for _, p in ipairs(room.alive_players) do
+      room:setPlayerMark(p, "sizhao_sword", data.card.number)
+    end
     use_event:addCleaner(function()
-      room:setPlayerMark(to, "sizhao_sword", 0)
+      for _, p in ipairs(room.alive_players) do
+        room:setPlayerMark(p, "sizhao_sword", 0)
+      end
     end)
   end,
 }
 local siZhaoSwordProhibit = fk.CreateProhibitSkill{
   name = "#sizhao_sword_prohibit",
   prohibit_use = function(self, player, card)
-    -- FIXME: 确保是因为【杀】而出闪，并且指明好事件id
-    if Fk.currentResponsePattern ~= "jink" or card.name ~= "jink" or player:getMark("sizhao_sword") == 0 then
-      return false
-    end
-    if card.number > 0 and card.number < player:getMark("sizhao_sword") then
-      return true
-    end
+    return card.name == "jink" and player:getMark("sizhao_sword") > 0 and
+    card.number > 0 and card.number < player:getMark("sizhao_sword")
   end,
 }
 siZhaoSwordSkill:addRelatedSkill(siZhaoSwordProhibit)
@@ -1016,8 +1015,7 @@ Fk:loadTranslationTable{
   ["#sizhao_sword_skill"] = "思召剑",
   ["#sizhao_sword_prohibit"] = "思召剑",
   [":sizhao_sword"] = "装备牌·武器<br/><b>攻击范围</b>：2<br/>"..
-  "<b>武器技能</b>：锁定技，当你使用【杀】指定一名角色为目标后，该角色不能使用点数小于此【杀】的【闪】响应此【杀】。",
-  --实际上时机是使用【杀】时。
+  "<b>武器技能</b>：锁定技，当你使用【杀】时，你令所有角色不能使用点数小于此【杀】的【闪】直到此【杀】结算结束。",
 }
 
 return extension
