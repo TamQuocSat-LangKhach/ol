@@ -3162,8 +3162,8 @@ local kuansai = fk.CreateTriggerSkill{
   anim_type = "control",
   events = {fk.TargetSpecified},
   can_trigger = function(self, event, target, player, data)
-    return player:hasSkill(self) and data.firstTarget and #AimGroup:getAllTargets(data.tos) > player.hp and
-      player:usedSkillTimes(self.name, Player.HistoryTurn) == 0
+    return player:hasSkill(self) and data.firstTarget and #AimGroup:getAllTargets(data.tos) >= player.hp
+    and player:usedSkillTimes(self.name, Player.HistoryTurn) == 0
   end,
   on_cost = function(self, event, target, player, data)
     local to = player.room:askForChoosePlayers(player, AimGroup:getAllTargets(data.tos), 1, 1, "#kuansai-choose", self.name, true)
@@ -3191,7 +3191,7 @@ local kuansai = fk.CreateTriggerSkill{
       end
       local card = room:askForCard(to, 1, 1, true, self.name, cancelable, ".", "#kuansai-give:"..player.id)
       if #card > 0 then
-        room:obtainCard(player, card[1], true, fk.ReasonGive)
+        room:moveCardTo(card, Player.Hand, player, fk.ReasonGive, self.name, nil, false, to.id)
       else
         room:recover{
           who = player,
@@ -3215,7 +3215,7 @@ Fk:loadTranslationTable{
   ["weifu"] = "威抚",
   [":weifu"] = "出牌阶段，你可以弃置一张牌并判定，你本回合下次使用与判定牌类别相同的牌无距离限制且可以多指定一个目标；若弃置牌与判定牌类别相同，你摸一张牌。",
   ["kuansai"] = "款塞",
-  [":kuansai"] = "每回合限一次，当一张牌指定目标后，若目标数大于你的体力值，你可以令其中一个目标选择一项：1.交给你一张牌；2.你回复1点体力。",
+  [":kuansai"] = "每回合限一次，当一张牌指定目标后，若目标数不小于你的体力值，你可以令其中一个目标选择一项：1.交给你一张牌；2.你回复1点体力。",
   ["#weifu"] = "威抚：你可以弃置一张牌并判定，你使用下一张判定结果类别的牌无距离限制且目标+1",
   ["@weifu-turn"] = "威抚",
   ["#weifu_delay"] = "威抚",
