@@ -785,7 +785,13 @@ local function doGuanxu(player, target, skill_name)
   local cids = target:getCardIds(Player.Hand)
   local cards = room:getNCards(5)
   local to_ex = U.askForExchange(player, "Top", "$Hand", cards, cids, "#guanxu-exchange", 1)
-  if #to_ex == 0 then return end
+  if #to_ex == 0 then
+    for i = #cards, 1, -1 do
+      table.insert(room.draw_pile, 1, cards[i])
+    end
+    room:doBroadcastNotify("UpdateDrawPile", tostring(#room.draw_pile))
+    return
+  end
   local index = 0
   local cardA = table.find(cards, function (id)
     index = index + 1
@@ -794,65 +800,49 @@ local function doGuanxu(player, target, skill_name)
   local cardB = table.find(to_ex, function (id)
     return id ~= cardA
   end)
-  room:moveCards({
-    ids = cards,
-    toArea = Card.Processing,
-    skillName = skill_name,
-    moveReason = fk.ReasonExchange,
-    proposer = player.id,
-    moveVisible = false
-  }, {
+
+  room:moveCards{
     ids = {cardB},
     from = target.id,
-    toArea = Card.Processing,
+    toArea = Card.Void,
     skillName = skill_name,
     moveReason = fk.ReasonExchange,
     proposer = player.id,
     moveVisible = false
-  })
-  local moveInfos = {}
-  if room:getCardArea(cardA) == Card.Processing then
-    if target.dead then
-      table.insert(moveInfos, {
-        ids = {cardA},
-        fromArea = Card.Processing,
-        toArea = Card.DiscardPile,
-        moveReason = fk.ReasonExchange,
-        proposer = player.id,
-        skillName = skill_name
-      })
-    else
-      table.insert(moveInfos, {
-        ids = {cardA},
-        fromArea = Card.Processing,
-        to = target.id,
-        toArea = Card.PlayerHand,
-        moveReason = fk.ReasonExchange,
-        proposer = player.id,
-        skillName = skill_name,
-        moveVisible = false
-      })
-    end
-  end
+  }
+
   table.remove(cards, index)
   table.insert(cards, index, cardB)
-  cards = table.reverse(cards)
-  cards = table.filter(cards, function (id)
-    return room:getCardArea(id) == Card.Processing
-  end)
-  if #cards > 0 then
-    table.insert(moveInfos, {
-      ids = cards,
-      toArea = Card.DrawPile,
+  table.removeOne(room.void, cardB)
+  for i = #cards, 1, -1 do
+    table.insert(room.draw_pile, 1, cards[i])
+  end
+  room:setCardArea(cardB, Card.DrawPile, nil)
+  room:doBroadcastNotify("UpdateDrawPile", tostring(#room.draw_pile))
+
+  if target.dead then
+    room:moveCards{
+      ids = {cardA},
+      fromArea = Card.Void,
+      toArea = Card.DiscardPile,
+      skillName = skill_name,
       moveReason = fk.ReasonExchange,
       proposer = player.id,
-      skillName = skill_name,
       moveVisible = false
-    })
+    }
+  else
+    room:moveCards{
+      ids = {cardA},
+      fromArea = Card.Void,
+      to = target.id,
+      toArea = Card.PlayerHand,
+      skillName = skill_name,
+      moveReason = fk.ReasonExchange,
+      proposer = player.id,
+      moveVisible = false
+    }
   end
-  if #moveInfos > 0 then
-    room:moveCards(table.unpack(moveInfos))
-  end
+
   if player.dead or target.dead then return end
   cids = target:getCardIds(Player.Hand)
   local check = {{}, {}, {}, {}}
