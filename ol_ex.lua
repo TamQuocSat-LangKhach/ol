@@ -3751,11 +3751,9 @@ local ol_ex__zuoci = General(extension, "ol_ex__zuoci", "qun", 3, 3, General.Fem
 
 local huashen_blacklist = {
   -- imba
-  "zuoci", "ol_ex__zuoci", "qyt__dianwei", "starsp__xiahoudun",
+  "zuoci", "ol_ex__zuoci", "qyt__dianwei", "starsp__xiahoudun", "mou__wolong",
   -- haven't available skill
   "js__huangzhong", "liyixiejing", "olz__wangyun", "yanyan", "duanjiong", "wolongfengchu", "wuanguo", "os__wangling",
-  -- wrong mark record
-  "mou__wolong",
 }
 local function Gethuashen(player, n)
   local room = player.room

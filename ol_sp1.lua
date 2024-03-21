@@ -3452,7 +3452,7 @@ local fujian = fk.CreateTriggerSkill {
     local room = player.room
     local to = table.random(self.cost_data)
     room:doIndicate(player.id, {to})
-    U.viewCards(player, room:getPlayerById(to).player_cards[Player.Hand], self.name)
+    U.viewCards(player, room:getPlayerById(to).player_cards[Player.Hand], self.name, "$ViewCardsFrom:"..to)
   end,
 }
 lingren:addRelatedSkill(lingren_delay)
