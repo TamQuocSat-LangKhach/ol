@@ -1889,10 +1889,18 @@ local tianhou_hot = fk.CreateTriggerSkill{
   events = {fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
     return target ~= player and player:hasSkill(self) and target.phase == Player.Finish and not target.dead and
-      table.every(player.room:getOtherPlayers(target), function(p) return target.hp >= p.hp end)
+      table.every(player.room.alive_players, function(p) return target.hp >= p.hp end)
   end,
   on_use = function(self, event, target, player, data)
     player.room:loseHp(target, 1, self.name)
+  end,
+
+  refresh_events = {fk.EventAcquireSkill, fk.EventLoseSkill},
+  can_refresh = function(self, event, target, player, data)
+    return player == target and data == self
+  end,
+  on_refresh = function(self, event, target, player, data)
+    player.room:setPlayerMark(player, "@@tianhou_hot", event == fk.EventAcquireSkill and 1 or 0)
   end,
 }
 local tianhou_fog = fk.CreateTriggerSkill{
@@ -1923,6 +1931,14 @@ local tianhou_fog = fk.CreateTriggerSkill{
       data.nullifiedTargets = table.map(room.players, Util.IdMapper)
     end
   end,
+
+  refresh_events = {fk.EventAcquireSkill, fk.EventLoseSkill},
+  can_refresh = function(self, event, target, player, data)
+    return player == target and data == self
+  end,
+  on_refresh = function(self, event, target, player, data)
+    player.room:setPlayerMark(player, "@@tianhou_fog", event == fk.EventAcquireSkill and 1 or 0)
+  end,
 }
 local tianhou_rain = fk.CreateTriggerSkill{
   name = "tianhou_rain",
@@ -1934,7 +1950,22 @@ local tianhou_rain = fk.CreateTriggerSkill{
       if event == fk.DamageCaused then
         return target and target ~= player and data.damageType == fk.FireDamage
       else
-        return data.damageType == fk.ThunderDamage and data.extra_data and data.extra_data.tianhou_rain
+        if not (target.dead or target:isRemoved()) and data.damageType == fk.ThunderDamage then
+          local next_p = target:getNextAlive()
+          if next_p == nil or next_p == target then return false end
+          local targets = {}
+          table.insert(targets, next_p.id)
+          for _, p in ipairs(player.room.alive_players) do
+            if p ~= target and p ~= next_p and p:getNextAlive() == target then
+              table.insert(targets, p.id)
+              break
+            end
+          end
+          if #targets > 0 then
+            self.cost_data = targets
+            return true
+          end
+        end
       end
     end
   end,
@@ -1946,7 +1977,9 @@ local tianhou_rain = fk.CreateTriggerSkill{
       return true
     else
       room:notifySkillInvoked(player, self.name, "offensive")
-      for _, pid in ipairs(data.extra_data.tianhou_rain) do
+      local targets = table.simpleClone(self.cost_data)
+      room:doIndicate(player.id, targets)
+      for _, pid in ipairs(targets) do
         local p = room:getPlayerById(pid)
         if not p.dead then
           room:loseHp(p, 1, self.name)
@@ -1955,17 +1988,12 @@ local tianhou_rain = fk.CreateTriggerSkill{
     end
   end,
 
-  refresh_events = {fk.BeforeHpChanged},
+  refresh_events = {fk.EventAcquireSkill, fk.EventLoseSkill},
   can_refresh = function(self, event, target, player, data)
-    if data.damageEvent and data.damageEvent.damageType == fk.ThunderDamage and not player.dead then
-      return target:getNextAlive() == player or player:getNextAlive() == target
-    end
+    return player == target and data == self
   end,
   on_refresh = function(self, event, target, player, data)
-    local damage = data.damageEvent
-    damage.extra_data = damage.extra_data or {}
-    damage.extra_data.tianhou_rain = damage.extra_data.tianhou_rain or {}
-    table.insertIfNeed(damage.extra_data.tianhou_rain, player.id)
+    player.room:setPlayerMark(player, "@@tianhou_rain", event == fk.EventAcquireSkill and 1 or 0)
   end,
 }
 local tianhou_frost = fk.CreateTriggerSkill{
@@ -1975,10 +2003,18 @@ local tianhou_frost = fk.CreateTriggerSkill{
   events = {fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
     return target ~= player and player:hasSkill(self) and target.phase == Player.Finish and not target.dead and
-      table.every(player.room:getOtherPlayers(target), function(p) return target.hp <= p.hp end)
+      table.every(player.room.alive_players, function(p) return target.hp <= p.hp end)
   end,
   on_use = function(self, event, target, player, data)
     player.room:loseHp(target, 1, self.name)
+  end,
+
+  refresh_events = {fk.EventAcquireSkill, fk.EventLoseSkill},
+  can_refresh = function(self, event, target, player, data)
+    return player == target and data == self
+  end,
+  on_refresh = function(self, event, target, player, data)
+    player.room:setPlayerMark(player, "@@tianhou_frost", event == fk.EventAcquireSkill and 1 or 0)
   end,
 }
 local chenshuo = fk.CreateTriggerSkill{
@@ -1998,6 +2034,7 @@ local chenshuo = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     player:showCards(self.cost_data)
+    room:delay(1000)
     if player.dead then return end
     local card = Fk:getCardById(self.cost_data[1])
     local dummy = Fk:cloneCard("dilu")
@@ -2053,6 +2090,10 @@ Fk:loadTranslationTable{
   ["tianhou_frost"] = "严霜",
   [":tianhou_frost"] = "锁定技，其他角色的结束阶段，若其体力值全场最小，其失去1点体力。",
   ["#tianhou-choose"] = "天候：令一名角色获得技能<br>〖%arg〗：%arg2",
+  ["@@tianhou_hot"] = "烈暑",
+  ["@@tianhou_fog"] = "凝雾",
+  ["@@tianhou_rain"] = "骤雨",
+  ["@@tianhou_frost"] = "严霜",
   ["#chenshuo-invoke"] = "谶说：你可以展示一张手牌，亮出并获得牌堆顶至多三张相同类型/花色/点数/字数的牌",
 
   ["$tianhou1"] = "雷霆雨露，皆为君恩。",

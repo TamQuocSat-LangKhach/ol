@@ -290,10 +290,10 @@ Fk:loadTranslationTable{
 
   ["$mubing1"] = "兵者，不唯在精，亦在广。",
 	["$mubing2"] = "男儿当从军，功名马上取。",
-  ["$ziqu1"] = "留财不留命，留命不留财。",
-  ["$ziqu2"] = "兵马已动，尔等速将粮草缴来。",
-  ["$diaoling1"] = "邻军告急，当遣将急援。",
-  ["$diaoling2"] = "兵甲已足，当汇集三军。",
+  ["$ziqu1"] = "兵马已动，尔等速将粮草缴来。",
+  ["$ziqu2"] = "留财不留命，留命不留财。",
+  ["$diaoling1"] = "兵甲已足，当汇集三军。",
+  ["$diaoling2"] = "临军告急，当遣将急援。",
   ["~sp__zhangliao"] = "孤军难鸣，进退维谷。",
 }
 
@@ -729,41 +729,42 @@ local wangong = fk.CreateTriggerSkill{
   name = "wangong",
   anim_type = "offensive",
   frequency = Skill.Compulsory,
-  events = {fk.AfterCardUseDeclared},
+  events = {fk.CardUsing},
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(self) and player:getMark("@@wangong") > 0 and data.card.trueName == "slash"
   end,
   on_use = function(self, event, target, player, data)
+    player.room:setPlayerMark(player, "@@wangong", 0)
     data.additionalDamage = (data.additionalDamage or 0) + 1
-  end,
-
-  refresh_events = {fk.CardUseFinished},
-  can_refresh = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self, true)
-  end,
-  on_refresh = function(self, event, target, player, data)
-    local room = player.room
-    if data.card.type == Card.TypeBasic then
-      room:setPlayerMark(player, "@@wangong", 1)
-    else
-      room:setPlayerMark(player, "@@wangong", 0)
+    if not data.extraUse then
+      player:addCardUseHistory(data.card.trueName, -1)
+      data.extraUse = true
     end
+  end,
+}
+local wangong_delay = fk.CreateTriggerSkill{
+  name = "#wangong_delay",
+  frequency = Skill.Compulsory,
+  events = {fk.CardUseFinished},
+  mute = true,
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self, true) and ((player:getMark("@@wangong") == 0) == (data.card.type == Card.TypeBasic))
+  end,
+  on_use = function(self, event, target, player, data)
+    player.room:setPlayerMark(player, "@@wangong", data.card.type == Card.TypeBasic and 1 or 0)
   end,
 }
 local wangong_targetmod = fk.CreateTargetModSkill{
   name = "#wangong_targetmod",
-  residue_func = function(self, player, skill, scope)
-    if skill.trueName == "slash_skill" and player:getMark("@@wangong") > 0 and scope == Player.HistoryPhase then
-      return 999
-    end
+  bypass_times = function(self, player, skill, scope)
+    return skill.trueName == "slash_skill" and player:getMark("@@wangong") > 0 and scope == Player.HistoryPhase
   end,
-  distance_limit_func =  function(self, player, skill)
-    if skill.trueName == "slash_skill" and player:getMark("@@wangong") > 0 then
-      return 999
-    end
+  targetRecorded =  function(self, player, skill)
+    return skill.trueName == "slash_skill" and player:getMark("@@wangong") > 0
   end,
 }
 wangong:addRelatedSkill(wangong_targetmod)
+wangong:addRelatedSkill(wangong_delay)
 huangzu:addSkill(wangong)
 Fk:loadTranslationTable{
   ["ol__huangzu"] = "黄祖",
@@ -772,6 +773,7 @@ Fk:loadTranslationTable{
   ["wangong"] = "挽弓",
   [":wangong"] = "锁定技，若你使用的上一张牌是基本牌，你使用【杀】无距离和次数限制且造成的伤害+1。",
   ["@@wangong"] = "挽弓",
+  ["#wangong_delay"] = "挽弓",
 
   ["$wangong1"] = "强弓挽之，以射长箭！",
   ["$wangong2"] = "挽弓如月，克定江夏！",
