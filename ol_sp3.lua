@@ -989,6 +989,7 @@ local dianjun = fk.CreateTriggerSkill{
       damage = 1,
       skillName = self.name,
     }
+    if player.dead then return false end
     player:gainAnExtraPhase(Player.Play)
   end,
 }
@@ -997,20 +998,38 @@ local kangrui = fk.CreateTriggerSkill{
   anim_type = "support",
   events = {fk.Damaged},
   can_trigger = function(self, event, target, player, data)
-    if player:hasSkill(self) and target.phase ~= Player.NotActive and not target.dead then
-      if target:getMark("kangrui-turn") == 0 then
-        player.room:addPlayerMark(target, "kangrui-turn", 1)
-        return true
+    if player:hasSkill(self) and not target.dead then
+      local room = player.room
+      if room.current ~= target then return false end
+      local x = target:getMark("kangrui_record-turn")
+      if x == 0 then
+        U.getActualDamageEvents(room, 1, function (e)
+          if e.data[1].to == target then
+            x = e.id
+            room:setPlayerMark(target, "kangrui_record-turn", x)
+            return true
+          end
+        end)
       end
+      return x == room.logic:getCurrentEvent().id
     end
   end,
   on_cost = function(self, event, target, player, data)
-    return player.room:askForSkillInvoke(player, self.name, data, "#kangrui-invoke::"..target.id)
+    local room = player.room
+    if room:askForSkillInvoke(player, self.name, data, "#kangrui-invoke::"..target.id) then
+      room:doIndicate(player.id, {target.id})
+      return true
+    end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
     player:drawCards(1, self.name)
-    local choice = room:askForChoice(player, {"recover", "kangrui_damage"}, self.name, "#kangrui-choice::"..target.id)
+    if player.dead or target.dead then return false end
+    local choices = {"kangrui_damage"}
+    if target:isWounded() then
+      table.insert(choices, "recover")
+    end
+    local choice = room:askForChoice(player, choices, self.name, "#kangrui-choice::"..target.id, false, {"recover", "kangrui_damage"})
     if choice == "recover" then
       room:recover{
         who = target,
@@ -1018,8 +1037,10 @@ local kangrui = fk.CreateTriggerSkill{
         recoverBy = player,
         skillName = self.name
       }
+      if target.dead then return false end
+      room:setPlayerMark(target, "@kangrui-turn", "")
     else
-      room:addPlayerMark(target, "kangrui_damage-turn", 1)
+      room:setPlayerMark(target, "@kangrui-turn", "kangrui_adddamage")
     end
   end,
 }
@@ -1029,14 +1050,21 @@ local kangrui_delay = fk.CreateTriggerSkill{
   events = {fk.DamageCaused},
   mute = true,
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:getMark("kangrui_damage-turn") > 0
+    return target == player and player:getMark("@kangrui-turn") ~= 0
   end,
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    data.damage = data.damage + 1
+    if player:getMark("@kangrui-turn") == "kangrui_adddamage" then
+      if player:hasSkill(kangrui, true) then
+        room:notifySkillInvoked(player, "kangrui", "offensive")
+        player:broadcastSkillInvoke("kangrui")
+      end
+      data.damage = data.damage + 1
+    end
+    room:setPlayerMark(player, "@kangrui-turn", 0)
     room:setPlayerMark(player, "kangrui_minus-turn", 1)
-    room:setPlayerMark(player, "kangrui_damage-turn", 0)
+    room:broadcastProperty(player, "MaxCards")
   end,
 }
 local kangrui_maxcards = fk.CreateMaxCardsSkill{
@@ -1059,16 +1087,18 @@ Fk:loadTranslationTable{
   ["dianjun"] = "殿军",
   [":dianjun"] = "锁定技，结束阶段结束时，你受到1点伤害并执行一个额外的出牌阶段。",
   ["kangrui"] = "亢锐",
-  [":kangrui"] = "当一名角色于其回合内首次受到伤害后，你可以摸一张牌并令其：1.回复1点体力；2.本回合下次造成的伤害+1，然后当其造成伤害时，其此回合手牌上限改为0。",
+  [":kangrui"] = "当一名角色于其回合内首次受到伤害后，你可以摸一张牌并令其：1.回复1点体力；2.本回合下次造成的伤害+1。然后当其造成伤害时，其此回合手牌上限改为0。",
   ["#kangrui-invoke"] = "亢锐：你可以摸一张牌，令 %dest 回复1点体力或本回合下次造成伤害+1",
-  ["kangrui_damage"] = "本回合下次造成伤害+1，造成伤害后本回合手牌上限改为0",
+  ["kangrui_damage"] = "本回合下次造成伤害+1",
   ["#kangrui_delay"] = "亢锐",
   ["#kangrui-choice"] = "亢锐：选择令 %dest 执行的一项",
+  ["@kangrui-turn"] = "亢锐",
+  ["kangrui_adddamage"] = "加伤害",
 
   ["$dianjun1"] = "大将军勿忧，翼可领后军。",
   ["$dianjun2"] = "诸将速行，某自领军殿后！",
-  ["$kangrui1"] = "尔等魍魉，愿试吾剑之利乎！",
-  ["$kangrui2"] = "诸君努力，克复中原指日可待！",
+  ["$kangrui1"] = "尔等魍魉，愿试吾剑之利乎？",
+  ["$kangrui2"] = "诸君鼓力，克复中原指日可待！",
   ["~ol__zhangyiy"] = "伯约不见疲惫之国力乎？",
 }
 
@@ -1533,6 +1563,7 @@ local hongji = fk.CreateTriggerSkill{
 local hongji_delay = fk.CreateTriggerSkill{
   name = "#hongji_delay",
   events = {fk.EventPhaseEnd},
+  mute = true,
   can_trigger = function(self, event, target, player, data)
     return target == player and ((player.phase == Player.Draw and player:getMark("hongji1-turn") > 0) or
     (player.phase == Player.Play and player:getMark("hongji2-turn") > 0))
@@ -2793,91 +2824,122 @@ Fk:loadTranslationTable{
 }
 
 local caoxi = General(extension, "caoxi", "wei", 3)
-local function SetGangshu(player, choice)
-  local room = player.room
-  room:setPlayerMark(player, "gangshu1", math.min(player:getAttackRange(), 5))
-  room:setPlayerMark(player, "gangshu2", 2 + player:getMark("gangshu2_fix"))
-  local card = Fk:cloneCard("slash")
-  local n = card.skill:getMaxUseTime(player, Player.HistoryPhase, card, nil)
-  n = math.min(n, 5)
-  if player:hasSkill("#crossbow_skill") then
-    n = 5
+local function gangshuTimesCheck(player, card)
+  local status_skills = Fk:currentRoom().status_skills[TargetModSkill] or Util.DummyTable
+  for _, skill in ipairs(status_skills) do
+    if skill:bypassTimesCheck(player, card.skill, Player.HistoryPhase, card) then return true end
   end
-  room:setPlayerMark(player, "gangshu3", n)
-  room:setPlayerMark(player, "@gangshu", string.format("%d-%d-%d",
-    player:getMark("gangshu1"),
-    player:getMark("gangshu2"),
-    player:getMark("gangshu3")))
+  return false
+end
+local function updateGangshu(player, reset)
+  local room = player.room
+  local hasGangshu = player:hasSkill("gangshu", true)
+  if reset or not hasGangshu then
+    room:setPlayerMark(player, "gangshu1_fix", 0)
+    room:setPlayerMark(player, "gangshu2_fix", 0)
+    room:setPlayerMark(player, "gangshu3_fix", 0)
+  end
+  if hasGangshu then
+    local card = Fk:cloneCard("slash")
+    local x1 = player:getAttackRange()
+    if x1 > 499 then
+      --FIXME:暂无无限攻击范围机制
+      x1 = "∞"
+    else
+      x1 = tostring(x1)
+    end
+    local x2 = tostring(player:getMark("gangshu2_fix")+2)
+    local x3 = ""
+    if gangshuTimesCheck(player, card) then
+      x3 = "∞"
+    else
+      x3 = tostring(card.skill:getMaxUseTime(player, Player.HistoryPhase, card, nil))
+    end
+    local mark = U.getMark(player, "@gangshu")
+    if #mark ~= 3 or mark[1] ~= x1 or mark[2] ~= x2 or mark[3] ~= x3 then
+      room:setPlayerMark(player, "@gangshu", { x1, x2, x3 })
+    end
+  else
+    room:setPlayerMark(player, "@gangshu", 0)
+  end
 end
 local gangshu = fk.CreateTriggerSkill{
   name = "gangshu",
-  anim_type = "special",
-  events = {fk.CardUseFinished},
+  events = {fk.CardUseFinished, fk.CardEffectCancelledOut, fk.DrawNCards},
+  mute = true,
   can_trigger = function (self, event, target, player, data)
-    if target == player and player:hasSkill(self) and data.card.type ~= Card.TypeBasic then
-      for i = 1, 3, 1 do
-        if player:getMark("gangshu"..i) < 5 then
+    if not player:hasSkill(self) then return false end
+    if event == fk.CardUseFinished then
+      if target == player and data.card.type ~= Card.TypeBasic then
+        if player:getMark("gangshu2_fix") < 3 then return true end
+        if player:getAttackRange() < 5 then return true end
+        local card = Fk:cloneCard("slash")
+        return not gangshuTimesCheck(player, card) and card.skill:getMaxUseTime(player, Player.HistoryPhase, card, nil) < 5
+      end
+    elseif event == fk.CardEffectCancelledOut then
+      if player:getMark("gangshu1_fix") == 0 and player:getMark("gangshu2_fix") == 0 and player:getMark("gangshu3_fix") == 0 then return false end
+      local room = player.room
+      local use_event = room.logic:getCurrentEvent():findParent(GameEvent.UseCard, true)
+      if use_event == nil then return false end
+      local is_from = false
+      U.getEventsByRule(room, GameEvent.UseCard, 1, function (e)
+        local use = e.data[1]
+        if use.responseToEvent == data then
+          if use.from == player.id then
+            is_from = true
+          end
           return true
         end
+      end, use_event.id)
+      return is_from
+    elseif event == fk.DrawNCards then
+      return target == player and player:getMark("gangshu2_fix") > 0
+    end
+  end,
+  on_cost = function(self, event, target, player, data)
+    if event == fk.CardUseFinished then
+      local choices = {"Cancel"}
+      if player:getAttackRange() < 5 then
+        table.insert(choices, "gangshu1")
       end
+      if player:getMark("gangshu2_fix") < 3 then
+        table.insert(choices, "gangshu2")
+      end
+      local card = Fk:cloneCard("slash")
+      if not gangshuTimesCheck(player, card) and card.skill:getMaxUseTime(player, Player.HistoryPhase, card, nil) < 5 then
+        table.insert(choices, "gangshu3")
+      end
+      if #choices == 1 then return false end
+      local choice = player.room:askForChoice(player, choices, self.name, "#gangshu-choice", false, {"gangshu1", "gangshu2", "gangshu3", "Cancel"})
+      if choice == "Cancel" then return false end
+      self.cost_data = choice
+      return true
+    else
+      return true
     end
   end,
   on_use = function (self, event, target, player, data)
     local room = player.room
-    local all_choices = {"gangshu1", "gangshu2", "gangshu3"}
-    local choices = table.filter(all_choices, function(mark) return player:getMark(mark) < 5 end)
-    local choice = room:askForChoice(player, choices, self.name, "#gangshu-choice", false, all_choices)
-    room:addPlayerMark(player, choice.."_fix", 1)
-    SetGangshu(player, choice)
-  end,
-
-  refresh_events = {fk.GameStart, fk.EventAcquireSkill, fk.EventLoseSkill, fk.CardUseFinished, fk.DrawNCards, fk.AfterCardsMove},
-  can_refresh = function (self, event, target, player, data)
-    if player:hasSkill(self, true) then
-      if event == fk.GameStart then
-        return true
-      elseif event == fk.AfterCardsMove then
-        for _, move in ipairs(data) do
-          if move.to == player.id and move.toArea == Card.PlayerEquip then
-            return true
-          end
-          if move.from == player.id then
-            for _, info in ipairs(move.moveInfo) do
-              if info.fromArea == Card.PlayerEquip then
-                return true
-              end
-            end
-          end
-        end
-      elseif target == player then
-        if event == fk.EventAcquireSkill or event == fk.EventLoseSkill then
-          return data == self
-        elseif event == fk.CardUseFinished then
-          return data.responseToEvent
-        elseif event == fk.DrawNCards then
-          return player:getMark("gangshu2_fix") > 0
-        end
-      end
-    end
-  end,
-  on_refresh = function (self, event, target, player, data)
-    local room = player.room
-    if event == fk.GameStart or event == fk.EventAcquireSkill or event == fk.AfterCardsMove then
-      SetGangshu(player)
-    elseif event == fk.EventLoseSkill then
-      for _, mark in ipairs({"gangshu1", "gangshu2", "gangshu3", "gangshu1_fix", "gangshu2_fix", "gangshu3_fix", "@gangshu"}) do
-        room:setPlayerMark(player, mark, 0)
-      end
-    elseif event == fk.CardUseFinished then
-      for _, mark in ipairs({"gangshu1_fix", "gangshu2_fix", "gangshu3_fix"}) do
-        room:setPlayerMark(player, mark, 0)
-      end
-      SetGangshu(player)
+    player:broadcastSkillInvoke(self.name)
+    if event == fk.CardUseFinished then
+      room:notifySkillInvoked(player, self.name)
+      room:addPlayerMark(player, self.cost_data .. "_fix", 1)
+      updateGangshu(player)
+    elseif event == fk.CardEffectCancelledOut then
+      room:notifySkillInvoked(player, self.name, "negative")
+      updateGangshu(player, true)
     elseif event == fk.DrawNCards then
+      room:notifySkillInvoked(player, self.name, "drawcard")
       data.n = data.n + player:getMark("gangshu2_fix")
       room:setPlayerMark(player, "gangshu2_fix", 0)
-      SetGangshu(player)
+      updateGangshu(player)
     end
+  end,
+
+  refresh_events = {fk.EventAcquireSkill, fk.EventLoseSkill, fk.AfterCardsMove, fk.AfterSkillEffect},
+  can_refresh = Util.TrueFunc,
+  on_refresh = function (self, event, target, player, data)
+    updateGangshu(player)
   end,
 }
 local gangshu_attackrange = fk.CreateAttackRangeSkill{
@@ -2912,11 +2974,15 @@ local jianxuan = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     local to = room:getPlayerById(self.cost_data)
-    to:drawCards(1, self.name)
-    while table.find({player:getMark("gangshu1"), player:getMark("gangshu2"), player:getMark("gangshu3")}, function(n)
-      return n == to:getHandcardNum() end) and not to.dead do
+    local n = 0
+    local card = Fk:cloneCard("slash")
+    repeat
       to:drawCards(1, self.name)
-    end
+      if to.dead or player.dead or not player:hasSkill(gangshu, true) then break end
+      n = to:getHandcardNum()
+    until (n ~= player:getAttackRange() and n ~= player:getMark("gangshu2_fix") + 2 and 
+    (gangshuTimesCheck(player, card) or 
+    n ~= card.skill:getMaxUseTime(player, Player.HistoryPhase, card, nil)))
   end,
 }
 gangshu:addRelatedSkill(gangshu_attackrange)

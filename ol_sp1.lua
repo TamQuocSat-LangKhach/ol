@@ -600,24 +600,44 @@ local fengpo = fk.CreateTriggerSkill{
   anim_type = "offensive",
   events ={fk.TargetSpecified},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self) and (data.card.trueName == "slash" or data.card.trueName == "duel") and
-      player:usedCardTimes("slash") + player:usedCardTimes("duel") <= 1 and data.firstTarget
+    if target == player and player:hasSkill(self) and (data.card.trueName == "slash" or data.card.trueName == "duel") then
+      local room = player.room
+      local to = room:getPlayerById(data.to)
+      if not to.dead and U.isOnlyTarget(to, data, event) then
+        local x = player:getMark("fengpo_record_" .. data.card.trueName.."-turn")
+        if x == 0 then
+          room.logic:getEventsOfScope(GameEvent.UseCard, 1, function (e)
+            local use = e.data[1]
+            if use.from == player.id and use.card.trueName == data.card.trueName then
+              x = e.id
+              room:setPlayerMark(player, "fengpo_record_" .. data.card.trueName.."-turn", x)
+              return true
+            end
+          end, Player.HistoryTurn)
+        end
+        return x == room.logic:getCurrentEvent().id
+      end
+    end
   end,
   on_cost = function(self, event, target, player, data)
-    return player.room:askForSkillInvoke(player, self.name, nil, "#fengpo-invoke::"..data.to..":"..data.card:toLogString())
+    local room = player.room
+    local choice = room:askForChoice(player, {"fengpo_draw", "fengpo_damage", "Cancel"}, self.name,
+      "#fengpo-choice::"..data.to..":"..data.card:toLogString())
+    if choice == "Cancel" then return false end
+    room:doIndicate(player.id, {data.to})
+    self.cost_data = choice
+    return true
   end,
   on_use = function(self, event, target, player, data)
-    local room = player.room
-    local to = room:getPlayerById(data.to)
+    local to = player.room:getPlayerById(data.to)
     local n = 0
     for _, id in ipairs(to:getCardIds("he")) do
       if Fk:getCardById(id).suit == Card.Diamond then
         n = n + 1
       end
     end
-    local choice = room:askForChoice(player, {"fengpo_draw", "fengpo_damage"}, self.name,
-      "#fengpo-choice::"..data.to..":"..data.card:toLogString())
-    if choice == "fengpo_draw" then
+    --FIXME:理论上应当对全部目标加伤的，但考虑到不会有重复目标，两者没区别就是了
+    if self.cost_data == "fengpo_draw" then
       if n > 0 then
         player:drawCards(n, self.name)
       end
