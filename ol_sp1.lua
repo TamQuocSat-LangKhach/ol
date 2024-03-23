@@ -3410,8 +3410,10 @@ local lingren = fk.CreateTriggerSkill{
       if not player:hasSkill("xingshang", true) then
         table.insert(skills, "xingshang")
       end
-      room:setPlayerMark(player, self.name, skills)
-      room:handleAddLoseSkills(player, table.concat(skills, "|"), nil, true, false)
+      if #skills > 0 then
+        room:setPlayerMark(player, self.name, skills)
+        room:handleAddLoseSkills(player, table.concat(skills, "|"), nil, true, false)
+      end
     end
   end,
 }

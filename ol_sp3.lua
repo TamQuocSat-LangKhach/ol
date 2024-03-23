@@ -516,13 +516,15 @@ local chenglie_delay = fk.CreateTriggerSkill{
     local resp_players = {}
     local use_events = room.logic.event_recorder[GameEvent.UseCard] or Util.DummyTable
     local cards = data.cardsResponded
-    for i = #use_events, 1, -1 do
-      local e = use_events[i]
-      local use = e.data[1]
-      if e.data[1] == data then break end
-      --FIXME:还需要更加精准的判断
-      if table.contains(cards, use.card) then
-        table.insert(resp_players, use.from)
+    if cards ~= nil then
+      for i = #use_events, 1, -1 do
+        local e = use_events[i]
+        local use = e.data[1]
+        if e.data[1] == data then break end
+        --FIXME:还需要更加精准的判断
+        if table.contains(cards, use.card) then
+          table.insert(resp_players, use.from)
+        end
       end
     end
     for _, pid in ipairs(targets) do
@@ -4328,7 +4330,7 @@ local jiane = fk.CreateTriggerSkill{
     if event == fk.CardEffecting then
       return target ~= player and not target.dead and data.from == player.id and target:getMark("@@jiane_debuff-turn") == 0
     else
-      if target.dead or player:getMark("@@jiane_buff-turn") > 0 then return false end
+      if player:getMark("@@jiane_buff-turn") > 0 then return false end
       local room = player.room
       local use_event = room.logic:getCurrentEvent():findParent(GameEvent.UseCard, true)
       if use_event == nil then return false end

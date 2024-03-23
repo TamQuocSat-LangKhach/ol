@@ -550,36 +550,38 @@ Fk:loadTranslationTable{
 local panshu = General(extension, "ol__panshu", "wu", 3, 3, General.Female)
 local weiyi = fk.CreateTriggerSkill{
   name = "weiyi",
-  anim_type = "control",
   events = {fk.Damaged},
+  mute = true,
   can_trigger = function(self, event, target, player, data)
-    return player:hasSkill(self) and not target.dead and target:getMark(self.name) == 0
+    return player:hasSkill(self) and not target.dead and target:getMark(self.name) == 0 and
+    (target:isWounded() or target.hp >= player.hp)
   end,
   on_cost = function(self, event, target, player, data)
-    local prompt
-    if target.hp == player.hp and target:isWounded() then
-      prompt = "#weiyi1-invoke::"
-    elseif target.hp >= player.hp then
-      prompt = "#weiyi2-invoke::"
-    elseif target.hp <= player.hp and target:isWounded() then
-      prompt = "#weiyi3-invoke::"
-    end
-    return player.room:askForSkillInvoke(player, self.name, nil, prompt..target.id)
-  end,
-  on_use = function(self, event, target, player, data)
     local room = player.room
-    room:addPlayerMark(target, self.name, 1)
-    local choices = {}
+    local choices = {"Cancel"}
     if target.hp >= player.hp then
       table.insert(choices, "loseHp")
     end
     if target.hp <= player.hp and target:isWounded() then
       table.insert(choices, "recover")
     end
-    local choice = room:askForChoice(player, choices, self.name, "#weiyi-choice::"..target.id)
-    if choice == "loseHp" then
+    local choice = room:askForChoice(player, choices, self.name, "#weiyi-choice::"..target.id, false, {"loseHp", "recover", "Cancel"})
+    if choice ~= "Cancel" then
+      room:doIndicate(player.id, {target.id})
+      self.cost_data = choice
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    room:addPlayerMark(target, self.name, 1)
+    if self.cost_data == "loseHp" then
+      room:notifySkillInvoked(player, self.name, "offensive")
+      player:broadcastSkillInvoke(self.name, 1)
       room:loseHp(target, 1, self.name)
     else
+      room:notifySkillInvoked(player, self.name, "support")
+      player:broadcastSkillInvoke(self.name, 2)
       room:recover({
         who = target,
         num = 1,
@@ -5215,7 +5217,7 @@ local zeyue = fk.CreateTriggerSkill{
     local n = #room.alive_players - 1
     U.getActualDamageEvents(player.room, 1, function(e)
       local damage = e.data[1]
-      if not damage.from.dead and damage.from ~= player and damage.to == player
+      if damage.from and not damage.from.dead and damage.from ~= player and damage.to == player
       and table.insertIfNeed(optional, damage.from.id) and #optional == n then
         return true
       end
