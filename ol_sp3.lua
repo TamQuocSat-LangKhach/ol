@@ -1691,65 +1691,72 @@ Fk:loadTranslationTable{
 local lushi = General(extension, "lushi", "qun", 3, 3, General.Female)
 local function setZhuyanMark(p)  --FIXME：先用个mark代替贴脸文字
   local room = p.room
-  if p:getMark("zhuyan1") == 0 then
-    local sig = ""
-    local n = p:getMark("zhuyan")[1] - p.hp
-    if n > 0 then
-      sig = "+"
+  local mark = U.getMark(p, "zhuyan")
+  if #mark == 2 then
+    if p:getMark("zhuyan_hp") == 0 then
+      local sig = ""
+      local n = p:getMark("zhuyan")[1] - p.hp
+      if n > 0 then
+        sig = "+"
+      end
+      room:setPlayerMark(p, "@zhuyan1", sig..tostring(n))
     end
-    room:setPlayerMark(p, "@zhuyan1", sig..tostring(n))
-  end
-  if p:getMark("zhuyan2") == 0 then
-    local sig = ""
-    local n = p:getMark("zhuyan")[2] - p:getHandcardNum()
-    if n > 0 then
-      sig = "+"
+    if p:getMark("zhuyan_handcard") == 0 then
+      local sig = ""
+      local n = p:getMark("zhuyan")[2] - p:getHandcardNum()
+      if n > 0 then
+        sig = "+"
+      end
+      room:setPlayerMark(p, "@zhuyan2", sig..tostring(n))
     end
-    room:setPlayerMark(p, "@zhuyan2", sig..tostring(n))
   end
 end
+local zhuyan_active = fk.CreateActiveSkill{
+  name = "zhuyan_active",
+  card_num = 0,
+  target_num = 1,
+  interaction = function()
+    return UI.ComboBox {choices = {"zhuyan_hp", "zhuyan_handcard"}}
+  end,
+  card_filter = Util.FalseFunc,
+  target_filter = function(self, to_select, selected)
+    if #selected > 0 then return false end
+    local to = Fk:currentRoom():getPlayerById(to_select)
+    return to:getMark(self.interaction.data) == 0 and #U.getMark(to, "zhuyan") == 2
+  end,
+}
+Fk:addSkill(zhuyan_active)
 local zhuyan = fk.CreateTriggerSkill{
   name = "zhuyan",
   anim_type = "control",
   events = {fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self) and player.phase == Player.Finish
+    return target == player and player:hasSkill(self) and player.phase == Player.Finish and
+    not table.every(player.room.alive_players, function (p)
+      return #U.getMark(p, "zhuyan") ~= 2 or (p:getMark("zhuyan_hp") > 0 and p:getMark("zhuyan_handcard") > 0)
+    end)
   end,
   on_cost = function(self, event, target, player, data)
-    local targets = table.map(table.filter(player.room.alive_players, function(p)
-      return p:getMark("zhuyan1") == 0 or p:getMark("zhuyan2") == 0 end), Util.IdMapper)
-    if #targets == 0 then return end
-    for _, id in ipairs(targets) do
-      local p = player.room:getPlayerById(id)
+    local room = player.room
+    for _, p in ipairs(room.alive_players) do
       setZhuyanMark(p)
     end
-    local to = player.room:askForChoosePlayers(player, targets, 1, 1, "#zhuyan-choose", self.name, true)
-    for _, id in ipairs(targets) do
-      local p = player.room:getPlayerById(id)
-      player.room:setPlayerMark(p, "@zhuyan1", 0)
-      player.room:setPlayerMark(p, "@zhuyan2", 0)
+    local _, dat = room:askForUseActiveSkill(player, "zhuyan_active", "#zhuyan-choose", true, nil, false)
+    for _, p in ipairs(room.alive_players) do
+      room:setPlayerMark(p, "@zhuyan1", 0)
+      room:setPlayerMark(p, "@zhuyan2", 0)
     end
-    if #to > 0 then
-      self.cost_data = to[1]
+    if dat then
+      self.cost_data = {dat.targets[1], dat.interaction}
       return true
     end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local to = room:getPlayerById(self.cost_data)
-    setZhuyanMark(to)
-    local choices = {}
-    if to:getMark("zhuyan1") == 0 then
-      table.insert(choices, "@zhuyan1")
-    end
-    if to:getMark("zhuyan2") == 0 then
-      table.insert(choices, "@zhuyan2")
-    end
-    local choice = room:askForChoice(player, choices, self.name, "#zhuyan-choice::"..to.id)
-    room:setPlayerMark(to, "@zhuyan1", 0)
-    room:setPlayerMark(to, "@zhuyan2", 0)
-    if choice == "@zhuyan1" then
-      room:setPlayerMark(to, "zhuyan1", 1)
+    local to = room:getPlayerById(self.cost_data[1])
+    local choice = self.cost_data[2]
+    if choice == "zhuyan_hp" then
+      room:setPlayerMark(to, "zhuyan_hp", 1)
       local n = to:getMark(self.name)[1] - to.hp
       if n > 0 then
         if to:isWounded() then
@@ -1764,7 +1771,7 @@ local zhuyan = fk.CreateTriggerSkill{
         room:loseHp(to, -n, self.name)
       end
     else
-      room:setPlayerMark(to, "zhuyan2", 1)
+      room:setPlayerMark(to, "zhuyan_handcard", 1)
       local n = to:getMark(self.name)[2] - to:getHandcardNum()
       if n > 0 then
         to:drawCards(n, self.name)
@@ -1774,7 +1781,7 @@ local zhuyan = fk.CreateTriggerSkill{
     end
   end,
 
-  refresh_events = {fk.GameStart , fk.EventPhaseStart},
+  refresh_events = {fk.GameStart , fk.AfterPhaseEnd},
   can_refresh = function(self, event, target, player, data)
     if event == fk.GameStart then
       return true
@@ -1806,7 +1813,7 @@ local leijie = fk.CreateTriggerSkill{
     local judge = {
       who = to,
       reason = self.name,
-      pattern = ".|2~9|spade",
+      pattern = ".",
     }
     room:judge(judge)
     if judge.card.suit == Card.Spade and judge.card.number >= 2 and judge.card.number <= 9 then
@@ -1836,8 +1843,11 @@ Fk:loadTranslationTable{
   ["#zhuyan-choice"] = "驻颜：选择令 %dest 调整的一项",
   ["#leijie-choose"] = "雷劫：令一名角色判定，若为♠2~9，其受到2点雷电伤害，否则其摸两张牌",
 
+  ["zhuyan_active"] = "驻颜",
   ["@zhuyan1"] = "体力",
   ["@zhuyan2"] = "手牌",
+  ["zhuyan_hp"] = "体力值",
+  ["zhuyan_handcard"] = "手牌数",
 
   ["$zhuyan1"] = "心有灵犀，面如不老之椿。",
   ["$zhuyan2"] = "驻颜有术，此间永得芳容。",
