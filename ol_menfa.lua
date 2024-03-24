@@ -2158,10 +2158,20 @@ local yuzhi = fk.CreateTriggerSkill{
   can_trigger = function(self, event, target, player, data)
     if player:hasSkill(self) then
       if event == fk.RoundStart then
-        return true
+        return not player:isKongcheng()
       else
-        return player:getMark("_yuzhi") ~= 0 and
-          (player:getMark("yuzhi2-round") < tonumber(player:getMark("yuzhi1")) or tonumber(player:getMark("_yuzhi")) < tonumber(player:getMark("yuzhi1")))
+        local x = player:getMark("@yuzhi-round")
+        if x == 0 then return false end
+        local room = player.room
+        if room:getTag("RoundCount") > 1 and player:getMark("_yuzhi-round") < x then return true end
+        local round_event = room.logic:getCurrentEvent():findParent(GameEvent.Round, true)
+        if round_event == nil then return false end
+        local use_events = U.getEventsByRule(room, GameEvent.UseCard, x, function(e)
+          return e.data[1].from == player.id
+        end, round_event.id)
+        if #use_events < x then
+          return true
+        end
       end
     end
   end,
@@ -2170,47 +2180,34 @@ local yuzhi = fk.CreateTriggerSkill{
     player:broadcastSkillInvoke(self.name)
     if event == fk.RoundStart then
       room:notifySkillInvoked(player, self.name, "drawcard")
-      local cards = {}
-      if not player:isKongcheng() then
-        cards = room:askForCard(player, 1, 1, false, self.name, false, ".", "#yuzhi-card")
-        player:showCards(cards)
-      end
-      if not player.dead then
-        if player:getMark("yuzhi1") ~= 0 then
-          room:setPlayerMark(player, "_yuzhi", player:getMark("yuzhi1"))
-        end
-        if #cards == 0 then
-          room:setPlayerMark(player, "yuzhi1", "0")
-        else
-          local n = Fk:translate(Fk:getCardById(cards[1]).trueName):len() -- FIXME: depends on config language, catastrophe!
-          room:setPlayerMark(player, "yuzhi1", n)
-          player:drawCards(n, self.name)
-        end
-        room:setPlayerMark(player, "@yuzhi", player:getMark("yuzhi1"))
-      end
+      local cards = room:askForDiscard(player, 1, 1, false, self.name, false, ".", "#yuzhi-card", true)
+      if #cards == 0 then return false end
+      local n = Fk:translate(Fk:getCardById(cards[1]).trueName):len() -- FIXME: depends on config language, catastrophe!
+      room:throwCard(cards, self.name, player, player)
+      if player.dead then return false end
+      room:drawCards(player, n, self.name)
+      if player.dead then return false end
+      room:setPlayerMark(player, "@yuzhi-round", n)
     else
       room:notifySkillInvoked(player, self.name, "negative")
-      local choices = {"loseHp"}
-      if player:hasSkill("baozu", true) then
-        table.insert(choices, "yuzhi2")
-      end
-      local choice = room:askForChoice(player, choices, self.name)
-      if choice == "loseHp" then
-        room:loseHp(player, 1, self.name)
-      else
+      if player:hasSkill("baozu", true) and room:askForChoice(player, {"loseHp", "yuzhi2"}, self.name) == "yuzhi2" then
         room:handleAddLoseSkills(player, "-baozu", nil, true, false)
+      else
+        room:loseHp(player, 1, self.name)
       end
     end
   end,
 
-  refresh_events = {fk.CardUsing},
-  can_refresh = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name, true) and player:getMark("yuzhi1") ~= 0
-  end,
+  refresh_events = {fk.RoundEnd},
+  can_refresh = Util.TrueFunc,
   on_refresh = function(self, event, target, player, data)
     local room = player.room
-    room:addPlayerMark(player, "yuzhi2-round", 1)
-    room:setPlayerMark(player, "@yuzhi", tostring(player:getMark("yuzhi1"))[1].."/"..tostring(player:getMark("yuzhi2-round")))
+    if player:getMark("_yuzhi-round") ~= player:getMark("_yuzhi_tmp") then
+      room:setPlayerMark(player, "_yuzhi-round", player:getMark("_yuzhi_tmp"))
+    end
+    if player:getMark("@yuzhi-round") ~= player:getMark("_yuzhi_tmp") then
+      room:setPlayerMark(player, "_yuzhi_tmp", player:getMark("@yuzhi-round"))
+    end
   end,
 }
 local xieshu = fk.CreateTriggerSkill{
@@ -2218,19 +2215,36 @@ local xieshu = fk.CreateTriggerSkill{
   anim_type = "drawcard",
   events = {fk.Damage, fk.Damaged},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self) and data.card and #player:getCardIds("he") >= Fk:translate(data.card.trueName):len()
-  end,
-  on_cost = function(self, event, target, player, data)
-    local n = Fk:translate(data.card.trueName):len()
-    local cards = player.room:askForDiscard(player, n, n, true, self.name, true, ".",
-      "#xieshu-invoke:::"..math.floor(n)..":"..player:getLostHp(), true)
-    if #cards == n then
-      self.cost_data = cards
-      return true
+    if target == player and not player.chained and player:hasSkill(self) and data.card then
+      local x = player:getMark("xieshu_record-turn")
+      local room = player.room
+      local damage_event = room.logic:getCurrentEvent():findParent(GameEvent.Damage, true)
+      if damage_event == nil then return false end
+      if x == 0 then
+        U.getActualDamageEvents(room, 1, function (e)
+          local damage = e.data[1]
+          if damage.card and (damage.from == player or damage.to == player) then
+            x = e.id
+            room:setPlayerMark(target, "xieshu_record-turn", x)
+            return true
+          end
+        end)
+      end
+      return x == damage_event.id and (event == fk.Damage or player ~= data.from)
     end
   end,
+  on_cost = function(self, event, target, player, data)
+    return player.room:askForSkillInvoke(player, self.name, data,
+    "#xieshu-invoke:::"..math.floor(Fk:translate(data.card.trueName):len())..":"..player:getLostHp())
+  end,
   on_use = function(self, event, target, player, data)
-    player.room:throwCard(self.cost_data, self.name, player, player)
+    player:setChainState(true)
+    if player.dead then return false end
+    local room = player.room
+    local n = Fk:translate(data.card.trueName):len()
+    local cards = room:askForDiscard(player, n, n, true, self.name, false, ".", nil, true)
+    if #cards < n then return false end
+    room:throwCard(cards, self.name, player, player)
     if not player.dead and player:isWounded() then
       player:drawCards(player:getLostHp(), self.name)
     end
@@ -2243,17 +2257,16 @@ Fk:loadTranslationTable{
   ["olz__zhonghui"] = "族钟会",
   ["#olz__zhonghui"] = "百巧惎",
   ["designer:olz__zhonghui"] = "玄蝶既白",
-
   ["yuzhi"] = "迂志",
-  [":yuzhi"] = "锁定技，每轮开始时，你展示一张手牌，摸X张牌（X为此牌牌名字数）。每轮结束时，若你本轮使用牌数或上轮以此法摸牌数小于X，"..
-  "你失去1点体力或失去〖保族〗。",
+  [":yuzhi"] = "锁定技，每轮开始时，你弃置一张手牌，摸X张牌。此轮结束时，若你本轮使用牌数或上轮以此法摸牌数小于X，"..
+  "你失去1点体力或失去〖保族〗。（X为此牌牌名字数）",
   ["xieshu"] = "挟术",
-  [":xieshu"] = "当你使用牌造成伤害后或受到牌造成的伤害后，你可以弃置X张牌（X为此牌牌名字数），摸你已损失体力值张数的牌。",
-  ["#yuzhi-card"] = "迂志：请展示一张手牌，摸其牌名字数的牌",
-  ["@yuzhi"] = "迂志",
+  [":xieshu"] = "当你每回合首次造成或受到牌的伤害后，你可以横置，然后弃置X张牌（X为此牌牌名字数）并摸你已损失体力值张数的牌。",
+  ["#yuzhi-card"] = "迂志：请弃置一张手牌，摸其牌名字数的牌",
+  ["@yuzhi-round"] = "迂志",
   ["yuzhi2"] = "失去〖保族〗",
   [":loseHp"] = "失去1点体力",
-  ["#xieshu-invoke"] = "挟术：你可以弃%arg张牌，摸%arg2张牌",
+  ["#xieshu-invoke"] = "是否发动 挟术，横置自身，然后弃置%arg张牌并摸%arg2张牌",
 
   ["$yuzhi1"] = "我欲行夏禹旧事，为天下人。",
   ["$yuzhi2"] = "汉鹿已失，魏牛犹在，吾欲执其耳。",

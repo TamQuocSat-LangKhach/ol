@@ -604,6 +604,8 @@ local fengpo = fk.CreateTriggerSkill{
       local room = player.room
       local to = room:getPlayerById(data.to)
       if not to.dead and U.isOnlyTarget(to, data, event) then
+        local use_event = room.logic:getCurrentEvent():findParent(GameEvent.UseCard, true)
+        if use_event == nil then return false end
         local x = player:getMark("fengpo_record_" .. data.card.trueName.."-turn")
         if x == 0 then
           room.logic:getEventsOfScope(GameEvent.UseCard, 1, function (e)
@@ -615,7 +617,7 @@ local fengpo = fk.CreateTriggerSkill{
             end
           end, Player.HistoryTurn)
         end
-        return x == room.logic:getCurrentEvent().id
+        return x == use_event.id
       end
     end
   end,

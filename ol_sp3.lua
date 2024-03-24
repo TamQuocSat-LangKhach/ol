@@ -1003,6 +1003,8 @@ local kangrui = fk.CreateTriggerSkill{
     if player:hasSkill(self) and not target.dead then
       local room = player.room
       if room.current ~= target then return false end
+      local damage_event = room.logic:getCurrentEvent():findParent(GameEvent.Damage, true)
+      if damage_event == nil then return false end
       local x = target:getMark("kangrui_record-turn")
       if x == 0 then
         U.getActualDamageEvents(room, 1, function (e)
@@ -1013,7 +1015,7 @@ local kangrui = fk.CreateTriggerSkill{
           end
         end)
       end
-      return x == room.logic:getCurrentEvent().id
+      return x == damage_event.id
     end
   end,
   on_cost = function(self, event, target, player, data)
