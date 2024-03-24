@@ -2361,9 +2361,9 @@ local ol_ex__haoshi_delay = fk.CreateTriggerSkill{
         end
       end
       local tos, cards = U.askForChooseCardsAndPlayers(room, player, x, x, targets, 1, 1,
-      ".", "#ol_ex__haoshi-give:::" .. x, false, true)
+      ".", "#ol_ex__haoshi-give:::" .. x, "ol_ex__haoshi", false)
       local to = room:getPlayerById(tos[1])
-      room:moveCardTo(cards, Card.PlayerHand, to, fk.ReasonGive, self.name, nil, false, player.id)
+      room:moveCardTo(cards, Card.PlayerHand, to, fk.ReasonGive, "ol_ex__haoshi", nil, false, player.id)
       if player.dead or to.dead then return false end
       local targetRecorded = U.getMark(player, "ol_ex__haoshi_target")
       if table.insertIfNeed(targetRecorded, to.id) then
@@ -2378,7 +2378,7 @@ local ol_ex__haoshi_delay = fk.CreateTriggerSkill{
         if p and not player.dead and not p.dead and p ~= player and not p:isKongcheng() then
           local card = room:askForCard(p, 1, 1, true, ol_ex__haoshi.name, true, ".|.|.|hand", "#ol_ex__haoshi-regive:"..player.id)
           if #card > 0 then
-            room:obtainCard(player, card[1], false, fk.ReasonGive)
+            room:obtainCard(player, card[1], false, fk.ReasonGive, p.id)
           end
         end
       end)
