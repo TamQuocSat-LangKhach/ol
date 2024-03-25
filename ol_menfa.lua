@@ -2439,7 +2439,7 @@ Fk:loadTranslationTable{
   ["chenya_active"] = "沉雅",
   ["#chenya-card"] = "沉雅：你可以重铸任意张牌名字数为%arg的牌",
 
-  ["$fuxun1"] = "东吴遗民惶惶，宜抚而不宜罚。	",
+  ["$fuxun1"] = "东吴遗民惶惶，宜抚而不宜罚。",
   ["$fuxun2"] = "江东新附，不可以严法度之。",
   ["$chenya1"] = "喜怒不现于形，此为执中之道。",
   ["$chenya2"] = "胸有万丈之海，故而波澜不惊。",
@@ -2531,7 +2531,7 @@ Fk:loadTranslationTable{
   ["$huanghan2"] = "战战惶惶，汗出如浆。",
   ["$baozu_olz__zhongyu1"] = "弟会腹有恶谋，不可不防。",
   ["$baozu_olz__zhongyu2"] = "会期大祸将至，请晋公恕之。",
-  ["~olz__zhongyu"] = "百年钟氏，一朝为臣矣……",
+  ["~olz__zhongyu"] = "百年钟氏，一朝为尘矣……",
 }
 
 local wanglun = General(extension, "olz__wanglun", "wei", 3)

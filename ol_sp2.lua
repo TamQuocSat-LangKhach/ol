@@ -106,7 +106,7 @@ Fk:loadTranslationTable{
   ["#shanzhuan-draw"] = "擅专：你可以摸一张牌",
 
   ["$tuogu1"] = "君托以六尺之孤，爽，当寄百里之命。",
-  ["$tuogu2"] = "先帝以大事托我，任重而道远。	",
+  ["$tuogu2"] = "先帝以大事托我，任重而道远。",
   ["$shanzhuan1"] = "打入冷宫，禁足绝食。",
   ["$shanzhuan2"] = "我言既出，谁敢不从？",
   ["~caoshuang"] = "悔不该降了司马懿。",
