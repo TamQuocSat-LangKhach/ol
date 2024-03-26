@@ -3108,46 +3108,42 @@ local zhangjiq = fk.CreateTriggerSkill{
   anim_type = "drawcard",
   events = {fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
-    return player:hasSkill(self) and target.phase == Player.Finish and
-      (player:getMark("zhangji1-turn") > 0 or (player:getMark("zhangji2-turn") > 0 and not target:isNude()))
+    if player:hasSkill(self) and target.phase == Player.Finish and not target.dead then
+      return #U.getActualDamageEvents(player.room, 1, function(e)
+        return e.data[1].from == player or e.data[1].to == player
+      end) > 0
+    end
   end,
   on_cost = function(self, event, target, player, data)
-    if player:getMark("zhangji1-turn") > 0 then
-      if player.room:askForSkillInvoke(player, self.name, data, "#zhangji-draw::"..target.id) then
-        self.cost_data = "zhangji1"
-        return true
+    local list = {}
+    U.getActualDamageEvents(player.room, 1, function(e)
+      if e.data[1].from == player then
+        table.insertIfNeed(list, "draw")
       end
-    else
-      if player.room:askForSkillInvoke(player, self.name, data, "#zhangji-discard::"..target.id) then
-        self.cost_data = "zhangji2"
-        return true
+      if e.data[1].to == player then
+        table.insertIfNeed(list, "discard")
       end
+      return #list == 2
+    end)
+    if #list == 1 and list[1] == "discard" and target:isNude() then return end
+    for i = #list, 1, -1 do
+      if not player.room:askForSkillInvoke(player, self.name, data, "#zhangji-"..list[i].."::"..target.id) then
+        table.remove(list, i)
+      end
+    end
+    if #list > 0 then
+      self.cost_data = list
+      return true
     end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    if self.cost_data == "zhangji1" then
+    room:doIndicate(player.id, {target.id})
+    if table.contains(self.cost_data, "draw") then
       target:drawCards(2, self.name)
-      if player:getMark("zhangji2-turn") > 0 and not target:isNude() and
-        room:askForSkillInvoke(player, self.name, data, "#zhangji-discard::"..target.id) then
-        room:doIndicate(player.id, {target.id})
-        room:askForDiscard(target, 2, 2, true, self.name, false)
-      end
-    else
-      room:doIndicate(player.id, {target.id})
-      room:askForDiscard(target, 2, 2, true, self.name, false)
     end
-  end,
-
-  refresh_events = {fk.Damage, fk.Damaged},
-  can_refresh = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self)
-  end,
-  on_refresh = function(self, event, target, player, data)
-    if event == fk.Damage then
-      player.room:addPlayerMark(player, "zhangji1-turn", 1)
-    else
-      player.room:addPlayerMark(player, "zhangji2-turn", 1)
+    if table.contains(self.cost_data, "discard") and not target.dead and not target:isNude() then
+      room:askForDiscard(target, 2, 2, true, self.name, false)
     end
   end,
 }
