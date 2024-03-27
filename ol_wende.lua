@@ -1419,29 +1419,25 @@ local tairan = fk.CreateTriggerSkill{
 local ruilue = fk.CreateTriggerSkill{
   name = "ruilue$",
 
-  refresh_events = {fk.GameStart, fk.EventAcquireSkill, fk.EventLoseSkill, fk.Deathed},
+  refresh_events = {fk.AfterPropertyChange, fk.EventAcquireSkill, fk.EventLoseSkill, fk.Deathed},
   can_refresh = function(self, event, target, player, data)
-    if event == fk.GameStart then
-      return player:hasSkill(self, true)
-    elseif event == fk.EventAcquireSkill or event == fk.EventLoseSkill then
-      return data == self and not table.find(player.room:getOtherPlayers(player), function(p) return p:hasSkill(self, true) end)
-    else
-      return target == player and player:hasSkill(self, true, true) and
-        not table.find(player.room:getOtherPlayers(player), function(p) return p:hasSkill(self, true) end)
+    if event == fk.EventAcquireSkill or event == fk.EventLoseSkill then
+      return data == self
+    elseif event == fk.Deathed then
+      return target:hasSkill(self, true, true)
+    elseif event == fk.AfterPropertyChange then
+      return target == player
     end
   end,
   on_refresh = function(self, event, target, player, data)
     local room = player.room
-    if event == fk.GameStart or event == fk.EventAcquireSkill then
-      if player:hasSkill(self, true) then
-        for _, p in ipairs(room:getOtherPlayers(player)) do
-          room:handleAddLoseSkills(p, "ruilue&", nil, false, true)
-        end
-      end
-    elseif event == fk.EventLoseSkill or event == fk.Deathed then
-      for _, p in ipairs(room:getOtherPlayers(player)) do
-        room:handleAddLoseSkills(p, "-ruilue&", nil, false, true)
-      end
+    local attached = player.kingdom == "jin" and table.find(room.alive_players, function (p)
+      return p ~= player and p:hasSkill(self, true)
+    end)
+    if attached and not player:hasSkill("ruilue&", true, true) then
+      room:handleAddLoseSkills(player, "ruilue&", nil, false, true)
+    elseif not attached and player:hasSkill("ruilue&", true, true) then
+      room:handleAddLoseSkills(player, "-ruilue&", nil, false, true)
     end
   end,
 }
@@ -1472,7 +1468,7 @@ local ruilue_active = fk.CreateActiveSkill{
     target:broadcastSkillInvoke("ruilue")
     room:notifySkillInvoked(target, "ruilue", "support")
     room:doIndicate(effect.from, {target.id})
-    room:moveCardTo(effect.cards, Player.Hand, target, fk.ReasonGive, self.name, nil, true)
+    room:moveCardTo(effect.cards, Player.Hand, target, fk.ReasonGive, self.name, nil, true, player.id)
   end,
 }
 Fk:addSkill(ruilue_active)
