@@ -1173,7 +1173,7 @@ Fk:loadTranslationTable{
   ["qin__fachu"] = "伐楚",
   [":qin__fachu"] = "锁定技，你造成伤害使非秦势力角色进入濒死状态后，随机废除其一个装备栏。",
   ["qin__changsheng"] = "常胜",
-  [":qin__changsheng"] = "锁定技，你使用【杀】无距离限制",
+  [":qin__changsheng"] = "锁定技，你使用【杀】无距离限制。",
   ["#qin__shashen"] = "杀神：你可以将一张手牌当【杀】使用或打出",
 
   ["$qin__wuan"] = "受封武安，为国尽忠！",
@@ -1506,7 +1506,9 @@ local qin__haizhong = fk.CreateTriggerSkill{
         skillName = self.name,
       }
     end
-    room:addPlayerMark(target, "@qin__haizhong", 1)
+    if not target.dead then
+      room:addPlayerMark(target, "@qin__haizhong", 1)
+    end
   end,
 }
 local qin__yuanli = fk.CreateTriggerSkill{
@@ -1544,7 +1546,7 @@ Fk:loadTranslationTable{
   ["qin__gaizhao"] = "改诏",
   [":qin__gaizhao"] = "当你成为【杀】或普通锦囊牌的目标时，你可以将此牌的目标转移给此牌目标以外的一名其他秦势力角色。",
   ["qin__haizhong"] = "害忠",
-  [":qin__haizhong"] = "锁定技，每回合限十四次，非秦势力角色回复体力后，其需选择一项：1.弃置一张红色牌，2.受到X点伤害（X为其拥有的“害”标记数，至少为1）。然后其获得一个“害”标记", -- 限14=秦朝活了十四年，海嗣智慧
+  [":qin__haizhong"] = "锁定技，每回合限十四次，非秦势力角色回复体力后，其需选择一项：1.弃置一张红色牌，2.受到X点伤害（X为其拥有的“害”标记数，至少为1）。然后其获得一个“害”标记。", -- 限14=秦朝活了十四年，海嗣智慧
   ["qin__yuanli"] = "爰历",
   [":qin__yuanli"] = "锁定技，出牌阶段开始时，你随机获得两张普通锦囊牌。",
   ["#qin__zhilu"] = "指鹿：你可以将一张红色/黑色手牌当【闪】/【杀】使用或打出",

@@ -14,7 +14,7 @@ local isFamilyMember = function (player, famaly)
     ["xun"] = {"xunshu", "xunchen", "xuncai", "xuncan", "xunyu", "xunyou"},
     ["wu"] = {"wuxian", "wuyi", "wuban", "wukuang", "wuqiao"},
     ["han"] = {"hanshao", "hanrong"},
-    ["wang"] = {"wangyun", "wangling", "wangchang", "wanghun", "wanglun"},
+    ["wang"] = {"wangyun", "wangling", "wangchang", "wanghun", "wanglun", "wangguang"},
     ["zhong"] = {"zhongyao", "zhongyu", "zhonghui", "zhongyan"},
   }
   local names = familyMap[famaly] or {}
@@ -2913,6 +2913,155 @@ Fk:loadTranslationTable{
   ["$muyin_olz__wuqiao1"] = "生继汉泽于身，死效忠义于行。",
   ["$muyin_olz__wuqiao2"] = "吾祖彰汉室之荣，今子孙未敢忘。",
   ["~olz__wuqiao"] = "蜀川万里，孤身伶仃……",
+}
+
+local wangguang = General(extension, "olz__wangguang", "wei", 3)
+
+local lilun = fk.CreateActiveSkill{
+  name = "lilun",
+  anim_type = "drawcard",
+  prompt = "#lilun-active",
+  min_card_num = 2,
+  target_num = 0,
+  can_use = function(self, player)
+    return player:usedSkillTimes(self.name, Player.HistoryPhase) == 0
+  end,
+  card_filter = function(self, to_select, selected)
+    if #selected > 1 then return false end
+    local card_name = Fk:getCardById(to_select).trueName
+    return not table.contains(U.getMark(Self, "lilun-turn"), card_name) and
+    (#selected == 0 or card_name == Fk:getCardById(selected[1]).trueName)
+  end,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    local cards = table.simpleClone(effect.cards)
+    local mark = U.getMark(player, "lilun-turn")
+    table.insert(mark, Fk:getCardById(cards[1]).trueName)
+    room:setPlayerMark(player, "lilun-turn", mark)
+    room:recastCard(cards, player, self.name)
+    if player.dead then return end
+    local card
+    cards = table.filter(cards, function (id)
+      if room:getCardArea(id) == Card.DiscardPile then
+        card = Fk:getCardById(id)
+        return player:canUse(card, { bypass_times = true }) and not player:prohibitUse(card)
+      end
+    end)
+    if #cards == 0 then return end
+    U.askForUseRealCard(room, player, cards, ".", self.name, nil, { expand_pile = cards, bypass_times = true })
+  end
+}
+local jianjiw = fk.CreateTriggerSkill{
+  name = "jianjiw",
+  frequency = Skill.Limited,
+  events = {fk.TurnEnd},
+  can_trigger = function(self, event, target, player, data)
+    if player:hasSkill(self) and not (target.dead or target:isRemoved()) and
+    player:usedSkillTimes(self.name, Player.HistoryGame) == 0 then
+      local room = player.room
+      local turn_event = room.logic:getCurrentEvent():findParent(GameEvent.Turn, true)
+      if turn_event == nil then return false end
+      local targets = {}
+      local next_alive = target:getNextAlive()
+      if next_alive == nil  or next_alive == target then return false end
+      table.insert(targets, next_alive.id)
+      for _, p in ipairs(room.alive_players) do
+        if p:getNextAlive() == target then
+          table.insert(targets, p.id)
+          break
+        end
+      end
+      local jianjiw1, jianjiw2 = false, false
+      local use
+      U.getEventsByRule(room, GameEvent.UseCard, 1, function (e)
+        use = e.data[1]
+        if use.from and table.contains(targets, use.from) then
+          jianjiw1 = true
+        end
+        if not table.every(TargetGroup:getRealTargets(use.tos), function (id)
+          return not table.contains(targets, id)
+        end) then
+          jianjiw2 = true
+        end
+        return jianjiw1 and jianjiw2
+      end, turn_event.id)
+      targets = {}
+      if not jianjiw1 then
+        table.insert(targets, "jianjiw1")
+      end
+      if not jianjiw2 then
+        table.insert(targets, "jianjiw2")
+      end
+      if #targets > 0 then
+        self.cost_data = targets
+        return true
+      end
+    end
+  end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    local to_invoke = table.simpleClone(self.cost_data)
+    if table.contains(to_invoke, "jianjiw1") then
+      local prompt = "#jianjiw-draw::" .. target.id
+      if #to_invoke > 1 then
+        prompt = "#jianjiw-draw-slash::" .. target.id
+      end
+      if room:askForSkillInvoke(player, self.name, data, prompt) then
+        room:doIndicate(player.id, {target.id})
+        return true
+      end
+      if #to_invoke == 1 then return false end
+    end
+    local use = U.askForUseVirtualCard(room, player, "slash", {}, self.name, "#jianjiw-slash", true, true, false, true, {}, true)
+    if use then
+      self.cost_data = use
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local to_invoke = table.simpleClone(self.cost_data)
+    local targets = {}
+    if table.contains(to_invoke, "jianjiw1") then
+      room:drawCards(player, 1, self.name)
+      if not target.dead then
+        room:drawCards(target, 1, self.name)
+      end
+      if player.dead or #to_invoke == 1 then return false end
+      U.askForUseVirtualCard(room, player, "slash", {}, self.name, "#jianjiw-slash", true, true, false, true, {})
+    else
+      room:useCard(to_invoke)
+    end
+  end,
+}
+
+lilun.scope_type = Player.HistoryPhase
+wangguang:addSkill(lilun)
+wangguang:addSkill(jianjiw)
+wangguang:addSkill("zhongliu")
+Fk:loadTranslationTable{
+  ["olz__wangguang"] = "族王广",
+  ["#olz__wangguang"] = "",
+  --["designer:olz__wangguang"] = "",
+  --["illustrator:olz__wangguang"] = "",
+  ["lilun"] = "离论",
+  [":lilun"] = "出牌阶段限一次，你可以重铸两张牌名相同的牌（不能是本回合以此法重铸过的牌名）并可以使用其中一张牌。",
+  ["jianjiw"] = "见机",
+  [":jianjiw"] = "限定技，一名角色的回合结束时，若与其相邻的角色于此回合内均未使用过牌，你可以与其各摸一张牌。"..
+  "若与其相邻的角色于此回合内均未成为过牌的目标，你可以视为使用【杀】。",
+
+  ["#lilun-active"] = "发动 离论，选择2张牌名相同的牌重铸",
+  ["#jianjiw-draw"] = "是否发动 见机，与%dest各摸一张牌",
+  ["#jianjiw-draw-slash"] = "是否发动 见机，与%dest各摸一张牌，然后可以视为使用【杀】",
+  ["#jianjiw-slash"] = "是否发动 见机，视为使用【杀】",
+
+  ["$lilun1"] = "",
+  ["$lilun2"] = "",
+  ["$jianjiw1"] = "",
+  ["$jianjiw2"] = "",
+  ["$zhongliu_olz__wangguang1"] = "",
+  ["$zhongliu_olz__wangguang2"] = "",
+  ["~olz__wangguang"] = "",
 }
 
 return extension
