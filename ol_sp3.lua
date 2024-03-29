@@ -1870,8 +1870,8 @@ local tianhou = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     local top_cards = room:getNCards(1)
-    local piles = room:askForExchange(player, {top_cards, player:getCardIds{Player.Hand, Player.Equip}},
-      {"Top", player.general}, self.name)
+    local piles = U.askForArrangeCards(player, self.name,
+    {"Top", top_cards, player.general, player:getCardIds{Player.Hand, Player.Equip}})
     if room:getCardOwner(piles[1][1]) == player then
       local move1 = {
         ids = piles[1],
