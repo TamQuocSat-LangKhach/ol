@@ -959,7 +959,10 @@ local ol__zhendu = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     room:throwCard(self.cost_data, self.name, player, player)
-    if not target.dead and room:useVirtualCard("analeptic", nil, target, target, self.name, false) and player ~= target and not target.dead then
+    if not target.dead and target:canUseTo(Fk:cloneCard("analeptic"), target) then
+      room:useVirtualCard("analeptic", nil, target, target, self.name, false)
+    end
+    if player ~= target and not target.dead then
       room:damage{
         from = player,
         to = target,
