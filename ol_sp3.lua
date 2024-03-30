@@ -222,8 +222,23 @@ local ol__tongdu = fk.CreateTriggerSkill{
     local room = player.room
     local to = room:getPlayerById(self.cost_data)
     local card = room:askForCard(to, 1, 1, false, self.name, false, ".", "#ol__tongdu-give:"..player.id)
-    room:obtainCard(player.id, card[1], false, fk.ReasonGive)
-    room:setPlayerMark(player, "ol__tongdu-turn", card[1])
+    room:moveCardTo(card, Player.Hand, player, fk.ReasonGive, self.name, nil, false, to.id)
+  end,
+
+  refresh_events = {fk.AfterCardsMove},
+  can_refresh = Util.TrueFunc,
+  on_refresh = function(self, event, target, player, data)
+    local room = player.room
+    for _, move in ipairs(data) do
+      if move.to == player.id and move.toArea == Card.PlayerHand and move.skillName == self.name then
+        for _, info in ipairs(move.moveInfo) do
+          local id = info.cardId
+          if room:getCardArea(id) == Card.PlayerHand and room:getCardOwner(id) == player then
+            room:setCardMark(Fk:getCardById(id), "@@ol__tongdu-inhand-turn", 1)
+          end
+        end
+      end
+    end
   end,
 }
 local ol__tongdu_trigger = fk.CreateTriggerSkill{
@@ -231,18 +246,23 @@ local ol__tongdu_trigger = fk.CreateTriggerSkill{
   mute = true,
   events = {fk.EventPhaseEnd},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player.phase == Player.Play and player:usedSkillTimes("ol__tongdu", Player.HistoryTurn) > 0 and
-      player:getMark("ol__tongdu-turn") ~= 0 and player.room:getCardOwner(player:getMark("ol__tongdu-turn")) == player and
-      player.room:getCardArea(player:getMark("ol__tongdu-turn")) == Card.PlayerHand
+    if target == player and not player.dead and player.phase == Player.Play then
+      local cards = table.filter(player:getCardIds(Player.Hand), function (id)
+        return Fk:getCardById(id):getMark("@@ol__tongdu-inhand-turn") > 0
+      end)
+      if #cards > 0 then
+        self.cost_data = cards
+        return true
+      end
+    end
   end,
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     local room = player.room
     player:broadcastSkillInvoke("ol__tongdu")
     room:notifySkillInvoked(player, "ol__tongdu")
-    local id = player:getMark("ol__tongdu-turn")
     room:moveCards({
-      ids = {id},
+      ids = table.simpleClone(self.cost_data),
       from = player.id,
       fromArea = Card.PlayerHand,
       toArea = Card.DrawPile,
@@ -266,92 +286,46 @@ local ol__zhubi = fk.CreateActiveSkill{
   on_use = function(self, room, effect)
     local target = room:getPlayerById(effect.tos[1])
     local card = room:askForCard(target, 1, 1, true, self.name, false, ".", "#ol__zhubi-card")
-    room:moveCards({
-      ids = card,
-      from = target.id,
-      toArea = Card.DiscardPile,
-      skillName = self.name,
-      moveReason = fk.ReasonPutIntoDiscardPile,
-      proposer = target.id
-    })
-    room:sendLog{
-      type = "#RecastBySkill",
-      from = target.id,
-      card = card,
-      arg = self.name,
-    }
-    local id = target:drawCards(1, self.name)[1]
-    if room:getCardOwner(id) == target and room:getCardArea(id) == Card.PlayerHand then
-      local mark = target:getMark(self.name)
-      if mark == 0 then mark = {} end
-      table.insertIfNeed(mark, id)
-      room:setPlayerMark(target, self.name, mark)
-    end
-  end
+    room:recastCard(card, target, self.name)
+  end,
 }
 local ol__zhubi_trigger = fk.CreateTriggerSkill{
   name = "#ol__zhubi_trigger",
   mute = true,
   events = {fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
-    if player:hasSkill(self, true) and target.phase == Player.Finish and target:getMark("ol__zhubi") ~= 0 then
-      for _, id in ipairs(target:getMark("ol__zhubi")) do
-        if player.room:getCardOwner(id) == target and player.room:getCardArea(id) == Card.PlayerHand then
-          return true
-        end
+    if target == player and not player.dead and player.phase == Player.Finish then
+      local cards = table.filter(player:getCardIds(Player.Hand), function (id)
+        return Fk:getCardById(id):getMark("@@ol__zhubi-inhand") > 0
+      end)
+      if #cards > 0 then
+        self.cost_data = cards
+        return true
       end
     end
   end,
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    player:broadcastSkillInvoke("ol__tongdu")
-    room:notifySkillInvoked(player, "ol__tongdu")
-    local ids = {}
-    for _, id in ipairs(target:getMark("ol__zhubi")) do
-      if room:getCardOwner(id) == target and room:getCardArea(id) == Card.PlayerHand then
-        table.insert(ids, id)
+    local piles = U.askForArrangeCards(player, "ol__zhubi",
+    {"Bottom", table.reverse(room:getNCards(5, "bottom")), "@@ol__zhubi-inhand", self.cost_data}, "#ol__zhubi-exchange")
+    U.swapCardsWithPile(player, piles[1], piles[2], "ol__zhubi", "Bottom")
+  end,
+
+  refresh_events = {fk.AfterCardsMove},
+  can_refresh = Util.TrueFunc,
+  on_refresh = function(self, event, target, player, data)
+    local room = player.room
+    for _, move in ipairs(data) do
+      if move.to == player.id and move.toArea == Card.PlayerHand and
+      move.skillName == "ol__zhubi" and move.moveReason == fk.ReasonDraw then
+        for _, info in ipairs(move.moveInfo) do
+          local id = info.cardId
+          if room:getCardArea(id) == Card.PlayerHand and room:getCardOwner(id) == player then
+            room:setCardMark(Fk:getCardById(id), "@@ol__zhubi-inhand", 1)
+          end
+        end
       end
-    end
-    local piles = room:askForExchange(target, {room:getNCards(5, "bottom"), ids}, {"Bottom", "ol__zhubi"}, "ol__zhubi")
-    local cards1, cards2 = {}, {}
-    for _, id in ipairs(piles[1]) do
-      if room:getCardArea(id) == target.Hand then
-        table.insert(cards1, id)
-      end
-    end
-    for _, id in ipairs(piles[2]) do
-      if room:getCardArea(id) ~= target.Hand then
-        table.insert(cards2, id)
-      end
-    end
-    local move1 = {
-      ids = cards1,
-      from = target.id,
-      fromArea = Card.PlayerHand,
-      toArea = Card.DrawPile,
-      moveReason = fk.ReasonJustMove,
-      skillName = "ol__zhubi",
-      drawPilePosition = -1,
-    }
-    local move2 = {
-      ids = cards2,
-      to = target.id,
-      toArea = Card.PlayerHand,
-      moveReason = fk.ReasonJustMove,
-      skillName = "ol__zhubi",
-    }
-    room:moveCards(move1, move2)
-    ids = {}
-    for _, id in ipairs(target:getMark("ol__zhubi")) do
-      if room:getCardOwner(id) == target and room:getCardArea(id) == Card.PlayerHand then
-        table.insertIfNeed(ids, id)
-      end
-    end
-    if #ids == 0 then
-      room:setPlayerMark(target, "ol__zhubi", 0)
-    else
-      room:setPlayerMark(target, "ol__zhubi", ids)
     end
   end,
 }
@@ -370,7 +344,10 @@ Fk:loadTranslationTable{
   "然后可以用任意“币”交换其中等量张牌（X为你的体力上限）。",
   ["#ol__tongdu-choose"] = "统度：你可以令一名其他角色交给你一张手牌，出牌阶段结束时你将之置于牌堆顶",
   ["#ol__tongdu-give"] = "统度：你须交给 %src 一张手牌，出牌阶段结束时将之置于牌堆顶",
+  ["@@ol__tongdu-inhand-turn"] = "统度",
   ["#ol__zhubi-card"] = "铸币：重铸一张牌，摸到的“币”可以在你的结束阶段和牌堆底牌交换",
+  ["@@ol__zhubi-inhand"] = "币",
+  ["#ol__zhubi-exchange"] = "铸币：你可以用“币”交换牌堆底的卡牌",
 
   ["$ol__tongdu1"] = "上下调度，臣工皆有所为。",
   ["$ol__tongdu2"] = "统筹部划，不糜国利分毫。",
@@ -1871,31 +1848,13 @@ local tianhou = fk.CreateTriggerSkill{
     local room = player.room
     local top_cards = room:getNCards(1)
     local piles = U.askForArrangeCards(player, self.name,
-    {"Top", top_cards, player.general, player:getCardIds{Player.Hand, Player.Equip}})
-    if room:getCardOwner(piles[1][1]) == player then
-      local move1 = {
-        ids = piles[1],
-        from = player.id,
-        toArea = Card.DrawPile,
-        moveReason = fk.ReasonExchange,
-        skillName = self.name,
-      }
-      local move2 = {
-        ids = top_cards,
-        to = player.id,
-        toArea = Card.PlayerHand,
-        moveReason = fk.ReasonExchange,
-        skillName = self.name,
-      }
-      room:moveCards(move1, move2)
-    else
-      table.insert(room.draw_pile, 1, piles[1][1])
-    end
-    local card = room:getNCards(1)[1]
-    table.insert(room.draw_pile, 1, card)
-    room:doBroadcastNotify("UpdateDrawPile", tostring(#room.draw_pile))
-    player:showCards(card)
-    local suit = Fk:getCardById(card, true).suit
+    {"Top", top_cards, player.general, player:getCardIds{Player.Hand, Player.Equip}}, "#tianhou-exchange")
+    U.swapCardsWithPile(player, piles[1], piles[2], self.name, "Top")
+    top_cards = room:getNCards(1)
+    table.insert(room.draw_pile, 1, top_cards[1])
+    room:doBroadcastNotify("UpdateDrawPile", #room.draw_pile)
+    player:showCards(top_cards)
+    local suit = Fk:getCardById(top_cards[1], true).suit
     if suit == Card.NoSuit then return end
     local suits = {Card.Heart, Card.Diamond, Card.Spade, Card.Club}
     local i = table.indexOf(suits, suit)
@@ -2134,6 +2093,7 @@ Fk:loadTranslationTable{
   [":tianhou_rain"] = "锁定技，防止其他角色造成的火焰伤害。当一名角色受到雷电伤害后，其相邻的角色失去1点体力。",
   ["tianhou_frost"] = "严霜",
   [":tianhou_frost"] = "锁定技，其他角色的结束阶段，若其体力值全场最小，其失去1点体力。",
+  ["#tianhou-exchange"] = "天候：你可以用一张手牌交换牌堆底部的牌",
   ["#tianhou-choose"] = "天候：令一名角色获得技能<br>〖%arg〗：%arg2",
   ["@@tianhou_hot"] = "烈暑",
   ["@@tianhou_fog"] = "凝雾",
