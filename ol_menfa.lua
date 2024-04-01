@@ -2921,7 +2921,7 @@ local lilun = fk.CreateActiveSkill{
   name = "lilun",
   anim_type = "drawcard",
   prompt = "#lilun-active",
-  min_card_num = 2,
+  card_num = 2,
   target_num = 0,
   can_use = function(self, player)
     return player:usedSkillTimes(self.name, Player.HistoryPhase) == 0

@@ -3318,7 +3318,13 @@ local cangxin = fk.CreateTriggerSkill{
   frequency = Skill.Compulsory,
   mute = true,
   can_trigger = function(self, event, target, player, data)
-    return player:hasSkill(self) and target == player and (event == fk.DamageInflicted or player.phase == Player.Draw)
+    if player:hasSkill(self) and target == player then
+      if event == fk.DamageInflicted then
+        return player:getMark("cangxin-turn") == 0
+      elseif event == fk.EventPhaseStart then
+        return player.phase == Player.Draw
+      end
+    end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
@@ -3331,7 +3337,6 @@ local cangxin = fk.CreateTriggerSkill{
       skillName = self.name,
       moveReason = fk.ReasonJustMove,
     })
-    local break_event = false
     if event == fk.EventPhaseStart then
       room:delay(1500)
       local x = 0
@@ -3344,18 +3349,21 @@ local cangxin = fk.CreateTriggerSkill{
         room:drawCards(player, x, self.name)
       end
     elseif event == fk.DamageInflicted then
+      room:setPlayerMark(player, "cangxin-turn", 1)
       local to_throw = room:askForCardsChosen(player, player, 0, 3, {
         card_data = {
           { "Bottom", card_ids }
         }
       }, self.name)
       if #to_throw > 0 then
+        local x = 0
         for _, id in ipairs(to_throw) do
           if Fk:getCardById(id).suit == Card.Heart then
-            break_event = true
+            x = x + 1
           end
           table.removeOne(card_ids, id)
         end
+        data.damage = data.damage - x
         room:moveCards({
           ids = to_throw,
           toArea = Card.DiscardPile,
@@ -3373,7 +3381,6 @@ local cangxin = fk.CreateTriggerSkill{
         drawPilePosition = -1,
       })
     end
-    return break_event
   end,
 }
 local runwei = fk.CreateTriggerSkill{
@@ -3418,9 +3425,10 @@ Fk:loadTranslationTable{
 
   ["cangxin"] = "藏心",
   [":cangxin"] = "锁定技，摸牌阶段开始时，你展示牌堆底三张牌并摸与其中<font color='red'>♥</font>牌数等量张牌。"..
-  "当你受到伤害时，你展示牌堆底三张牌并弃置其中任意张牌，若弃置了<font color='red'>♥</font>牌，防止此伤害。",
+  "当你每回合首次受到伤害时，你展示牌堆底三张牌并弃置其中任意张牌，令伤害值-X（X为以此法弃置的<font color='red'>♥</font>牌数）。",
   ["runwei"] = "润微",
-  [":runwei"] = "已受伤角色的弃牌阶段开始时，你可令其弃置一张牌且其本回合手牌上限+1，或令其摸一张牌且其本回合手牌上限-1。",
+  [":runwei"] = "一名角色的弃牌阶段开始时，若其已受伤，你可以选择：1.令其弃置一张牌，其本回合手牌上限+1；"..
+  "2.令其摸一张牌，其本回合手牌上限-1。",
 
   ["#runwei-choice"] = "你可以发动 润微，令%dest执行一项",
   ["runwei1"] = "令其摸一张牌且手牌上限-1",
