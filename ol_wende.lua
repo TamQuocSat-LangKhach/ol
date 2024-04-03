@@ -213,40 +213,22 @@ local ol__huishi = fk.CreateTriggerSkill{
   anim_type = "drawcard",
   events = {fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self) and player.phase == Player.Draw
+    return target == player and player:hasSkill(self) and player.phase == Player.Draw and #player.room.draw_pile % 10 > 1
   end,
   on_cost = function(self, event, target, player, data)
     return player.room:askForSkillInvoke(player, self.name, nil, "#ol__huishi-invoke:::"..#player.room.draw_pile % 10)
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local n = #room.draw_pile % 10
-    if n == 0 then return true end
-    local card_ids = room:getNCards(n)
-    local get = {}
-    room:fillAG(player, card_ids)
-    if n == 1 then
-      room:delay(2000)
-      room:closeAG(player)
-      return true
+    local x = #room.draw_pile % 10
+    if x == 0 then return true end
+    local card_ids = room:getNCards(x)
+    local y = x // 2
+    local rusult = room:askForGuanxing(player, card_ids, {x-y, x}, {y, y}, self.name, true, {"Bottom", "toObtain"})
+    for i = #rusult.top, 1, -1 do
+      table.insert(room.draw_pile, rusult.top[i])
     end
-    while #get < (n // 2) do
-      local card_id = room:askForAG(player, card_ids, false, self.name)
-      room:takeAG(player, card_id)
-      table.insert(get, card_id)
-      table.removeOne(card_ids, card_id)
-    end
-    room:closeAG(player)
-    local dummy = Fk:cloneCard("dilu")
-    dummy:addSubcards(get)
-    room:obtainCard(player, dummy, false, fk.ReasonJustMove)
-    room:moveCards({
-      ids = card_ids,
-      toArea = Card.DrawPile,
-      moveReason = fk.ReasonJustMove,
-      skillName = self.name,
-      drawPilePosition = -1,
-    })
+    room:moveCardTo(rusult.bottom, Player.Hand, player, fk.ReasonPrey, self.name, "", false, player.id)
     return true
   end,
 }
@@ -294,6 +276,7 @@ Fk:loadTranslationTable{
   [":qingleng"] = "其他角色回合结束时，若其体力值与手牌数之和不小于X，你可将一张牌当无距离限制的冰【杀】对其使用。"..
   "你对一名没有成为过〖清冷〗目标的角色发动〖清冷〗时，摸一张牌。（X为牌堆数量的个位数）",
   ["#ol__huishi-invoke"] = "慧识：你可以放弃摸牌，改为观看牌堆顶%arg张牌并获得其中的一半，其余置于牌堆底",
+  ["toObtain"] = "获得的牌",
   ["#qingleng-invoke"] = "清冷：你可以将一张牌当冰【杀】对 %dest 使用",
 
   ["$xuanmu1"] = "四门穆穆，八面莹澈。",

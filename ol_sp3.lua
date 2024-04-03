@@ -4370,7 +4370,7 @@ lukai:addSkill(xuanzhu)
 lukai:addSkill(jiane)
 Fk:loadTranslationTable{
   ["ol__lukai"] = "陆凯",
-  --["#ol__lukai"] = "",
+  ["#ol__lukai"] = "节概梗梗",
 
   ["xuanzhu"] = "玄注",
   [":xuanzhu"] = "转换技，每回合限一次，阳：你可以将一张牌移出游戏，视为使用任意基本牌；阴：你可以将一张牌移出游戏，视为使用仅指定唯一角色为目标的普通锦囊牌。"..
@@ -4380,6 +4380,12 @@ Fk:loadTranslationTable{
 
   ["@@jiane_buff-turn"] = "謇谔",
   ["@@jiane_debuff-turn"] = "謇谔",
+
+  ["$xuanzhu1"] = "提笔注太玄，佐国定江山。",
+  ["$xuanzhu2"] = "总太玄之要，纵弼国之实。",
+  ["$jiane1"] = "臣者，未死于战，则死于谏。",
+  ["$jiane2"] = "君有弊，坐视之辈甚于外贼。",
+  ["~ol__lukai"] = "注经之人，终寄身于土……",
 }
 
 local caoyu = General(extension, "caoyu", "wei", 3)
