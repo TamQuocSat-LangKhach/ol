@@ -51,31 +51,34 @@ local huiyun_trigger = fk.CreateTriggerSkill{
       end
       if player.dead or #choices == 0 then break end
       local to = room:getPlayerById(pid)
-      if not to.dead then
+      if not to.dead and showMap[to.id] then
         local choice = player.room:askForChoice(player, choices, "huiyun", "#huiyun-choice::"..to.id)
         room:setPlayerMark(player, choice, 1)
-        local show = showMap[to.id]
-        local name = show and Fk:getCardById(show):toLogString() or ""
-        if choice == "huiyun3-round" then
-          if room:askForSkillInvoke(to, "huiyun", nil, "#huiyun3-draw") then
-            to:drawCards(1, "huiyun")
-          end
-        elseif choice == "huiyun1-round" then
-          if show and table.contains(to:getCardIds("h"), show) then
-            local use = U.askForUseRealCard(room, to, {show}, ".", "huiyun", "#huiyun1-card:::"..name)
-            if use then
-              room:delay(500)
-              if not to.dead and not to:isKongcheng() then
-                room:recastCard(to:getCardIds("h"), to, "huiyun")
+        local cards = showMap[to.id]
+        for _, cardId in ipairs(cards) do
+          if to.dead then break end
+          local name = Fk:getCardById(cardId):toLogString()
+          if choice == "huiyun3-round" then
+            if room:askForSkillInvoke(to, "huiyun", nil, "#huiyun3-draw") then
+              to:drawCards(1, "huiyun")
+            end
+          elseif choice == "huiyun1-round" then
+            if table.contains(to:getCardIds("h"), cardId) then
+              local use = U.askForUseRealCard(room, to, {cardId}, ".", "huiyun", "#huiyun1-card:::"..name)
+              if use then
+                room:delay(300)
+                if not to.dead and not to:isKongcheng() then
+                  room:recastCard(to:getCardIds("h"), to, "huiyun")
+                end
               end
             end
-          end
-        elseif choice == "huiyun2-round" then
-          local use = U.askForUseRealCard(room, to, to:getCardIds("h"), ".", "huiyun", "#huiyun2-card:::"..name)
-          if use then
-            room:delay(500)
-            if show and table.contains(to:getCardIds("h"), show) then
-              room:recastCard({show}, to, "huiyun")
+          elseif choice == "huiyun2-round" then
+            local use = U.askForUseRealCard(room, to, to:getCardIds("h"), ".", "huiyun", "#huiyun2-card:::"..name)
+            if use then
+              room:delay(300)
+              if not to.dead and table.contains(to:getCardIds("h"), cardId) then
+                room:recastCard({cardId}, to, "huiyun")
+              end
             end
           end
         end
@@ -99,7 +102,8 @@ local huiyun_trigger = fk.CreateTriggerSkill{
       local use = e.data[1]
       use.extra_data = use.extra_data or {}
       use.extra_data.huiyun = use.extra_data.huiyun or {}
-      use.extra_data.huiyun[player.id] = data.cardIds[1]
+      use.extra_data.huiyun[player.id] = use.extra_data.huiyun[player.id] or {}
+      table.insert(use.extra_data.huiyun[player.id], data.cardIds[1])
     end
   end,
 }
@@ -109,6 +113,7 @@ Fk:loadTranslationTable{
   ["ol__huban"] = "胡班",
   ["#ol__huban"] = "险误忠良",
   ["designer:ol__huban"] = "cyc",
+  ["illustrator:ol__huban"] = "鬼画府",
 
   ["huiyun"] = "晖云",
   [":huiyun"] = "你可以将一张牌当【火攻】使用，然后你于此牌结算结束后，对每个目标依次选择一项（每个选项每轮限一次），令其选择是否执行：1.使用展示牌，然后重铸所有手牌；2.使用一张手牌，然后重铸展示牌；3.摸一张牌。",

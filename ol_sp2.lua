@@ -5253,7 +5253,7 @@ local zeyue = fk.CreateTriggerSkill{
     room:handleAddLoseSkills(to, "-"..choice, nil, true, false)
     room:setPlayerMark(player, "@zeyue", choice)
     local mark = U.getMark(player, "zeyue_record")
-    table.insert(mark, {to.id, choice, 1})
+    table.insert(mark, {to.id, choice, 0})
     room:setPlayerMark(player, "zeyue_record", mark)
   end,
 }

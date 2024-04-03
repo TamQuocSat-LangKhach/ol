@@ -2086,6 +2086,7 @@ xuangongzhu:addSkill(zhuijix)
 Fk:loadTranslationTable{
   ["xuangongzhu"] = "宣公主",
   ["#xuangongzhu"] = "高陵公主",
+  ["designer:xuangongzhu"] = "世外高v狼",
   ["illustrator:xuangongzhu"] = "凡果",
   ["gaoling"] = "高陵",
   [":gaoling"] = "<font color='red'>隐匿技（暂时无法生效）</font>，当你于其他角色的回合内登场时，你可以令一名角色回复1点体力。",
