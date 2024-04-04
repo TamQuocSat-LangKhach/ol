@@ -22,15 +22,10 @@ local tuogu = fk.CreateTriggerSkill{
       table.insertTableIfNeed(skills, Fk.generals[target.deputyGeneral]:getSkillNameList())
     end
     self.cost_data = table.filter(skills, function(s)
-      return not player:hasSkill(s, true) and Fk.skills[s].frequency < 4
+      local skill = Fk.skills[s]
+      return not player:hasSkill(skill, true) and skill.frequency < 4 and not skill.lordSkill
+      and (#skill.attachedKingdom == 0 or table.contains(skill.attachedKingdom, player.kingdom))
     end)
-    local ban_types = {Skill.Limited, Skill.Wake, Skill.Quest}
-    for _, skill_name in ipairs(Fk.generals[target.general]:getSkillNameList()) do
-      local skill = Fk.skills[skill_name]
-      if not (skill.lordSkill or table.contains(ban_types, skill.frequency)) then
-        table.insertIfNeed(skills, skill_name)
-      end
-    end
     return #self.cost_data > 0 and player.room:askForSkillInvoke(player, self.name, nil, "#tuogu-invoke::"..target.id)
   end,
   on_use = function(self, event, target, player, data)
@@ -38,12 +33,11 @@ local tuogu = fk.CreateTriggerSkill{
     room:doIndicate(player.id, {target.id})
     local choice = room:askForChoice(target, self.cost_data, self.name, "#tuogu-choice:"..player.id)
     local mark = player:getMark(self.name)
-    if mark ~= 0 then
-      room:handleAddLoseSkills(player, choice.."|-"..mark, nil, true, true)
-    else
-      room:handleAddLoseSkills(player, choice, nil, true, true)
-    end
     room:setPlayerMark(player, self.name, choice)
+    if mark ~= 0 then
+      choice = "-"..mark.."|"..choice
+    end
+    room:handleAddLoseSkills(player, choice)
   end,
 }
 local shanzhuan = fk.CreateTriggerSkill{

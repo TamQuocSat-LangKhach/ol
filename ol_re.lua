@@ -676,6 +676,7 @@ ol__guanyinping:addSkill(ol__wuji)
 Fk:loadTranslationTable{
   ["ol__guanyinping"] = "关银屏",
   ["#ol__guanyinping"] = "武姬",
+  ["designer:ol__guanyinping"] = "千幻",
   ["illustrator:ol__guanyinping"] = "光域鹿鸣", -- 传说皮肤 虎女兔娇
   ["ol__xuehen"] = "雪恨",
   [":ol__xuehen"] = "出牌阶段限一次，你可以弃置一张红色牌并选择至多X名角色（X为你已损失的体力值且至少为1），然后你横置这些角色，并对其中一名角色造成1点火焰伤害。",
