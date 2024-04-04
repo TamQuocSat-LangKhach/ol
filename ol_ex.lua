@@ -60,7 +60,7 @@ local ol_ex__botu = fk.CreateTriggerSkill{
   can_refresh = function(self, event, target, player, data)
     if event == fk.TurnStart then
       return player == target
-    elseif (player.room.current == player and player:hasSkill(self, true)) then
+    elseif player.room.current == player then
       local mark = player:getMark("@ol_ex__botu-turn")
       if type(mark) == "table" then
         return #mark < 4
@@ -3008,7 +3008,8 @@ local ol_ex__tiaoxin = fk.CreateActiveSkill{
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
     local target = room:getPlayerById(effect.tos[1])
-    local use = room:askForUseCard(target, "slash", "slash", "#ol_ex__tiaoxin-use:" .. player.id, true, {exclusive_targets = {player.id}})
+    local use = room:askForUseCard(target, "slash", "slash", "#ol_ex__tiaoxin-use:" .. player.id, true,
+    {exclusive_targets = {player.id}, bypass_times = true})
     if use then
       room:useCard(use)
       if player.dead then return false end

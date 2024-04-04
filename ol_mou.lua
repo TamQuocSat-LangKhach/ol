@@ -281,6 +281,11 @@ local weilingy = fk.CreateViewAsSkill{
     card.skillName = self.name
     return card
   end,
+  before_use = function(self, player, use)
+    local room = player.room
+    use.extra_data = use.extra_data or {}
+    use.extra_data.weilingy_user = player.id
+  end,
   enabled_at_play = function(self, player)
     return player:usedSkillTimes(self.name) == 0
   end,
@@ -290,21 +295,26 @@ local weilingy = fk.CreateViewAsSkill{
 }
 local weilingy_trigger = fk.CreateTriggerSkill{
   name = "#weilingy_trigger",
-  anim_type = "offensive",
-  events = {fk.TargetSpecified},
+  events = {fk.CardUsing},
+  mute = true,
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(weilingy)
-    and table.contains(data.card.skillNames, "weilingy") and data.card.color ~= Card.NoColor
-    and not player.room:getPlayerById(data.to).dead
+    return not player.dead and data.extra_data and data.extra_data.weilingy_user == player.id and data.card.color ~= Card.NoColor
   end,
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local to = room:getPlayerById(data.to)
-    local mark = U.getMark(to, "@weilingy-turn")
-    table.insertIfNeed(mark, data.card:getColorString())
-    room:setPlayerMark(to, "@weilingy-turn", mark)
-    to:filterHandcards()
+    local to
+    local color = data.card:getColorString()
+    for _, pid in ipairs(TargetGroup:getRealTargets(data.tos)) do
+      to = room:getPlayerById(pid)
+      if not to.dead then
+        local mark = U.getMark(to, "@weilingy-turn")
+        if table.insertIfNeed(mark, color) then
+          room:setPlayerMark(to, "@weilingy-turn", mark)
+          to:filterHandcards()
+        end
+      end
+    end
   end,
 }
 local weilingy_filter = fk.CreateFilterSkill{

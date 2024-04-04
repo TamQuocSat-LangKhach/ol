@@ -2353,7 +2353,8 @@ local lianji = fk.CreateActiveSkill{
     if #targets > 0 then
       local victim = room:askForChoosePlayers(player, targets, 1, 1, "#lianji-choose::"..target.id, self.name, false)[1]
       room:doIndicate(target.id, {victim})
-      local use = room:askForUseCard(target, "slash", "slash", "#lianji-slash:"..player.id..":"..victim, true, {exclusive_targets = {victim}})
+      local use = room:askForUseCard(target, "slash", "slash", "#lianji-slash:"..player.id..":"..victim, true,
+      {exclusive_targets = {victim}, bypass_times = true})
       if use then
         room:useCard(use)
         if use.damageDealt then
@@ -3233,8 +3234,8 @@ local ol__wuniang = fk.CreateTriggerSkill{
     local room = player.room
     local to = room:getPlayerById(TargetGroup:getRealTargets(data.tos)[1])
     if not to.dead then
-      local use = room:askForUseCard(to, "slash", "slash", "#ol__wuniang-use:"..player.id, true, {exclusive_targets
-      = {player.id}})
+      local use = room:askForUseCard(to, "slash", "slash", "#ol__wuniang-use:"..player.id, true,
+      {exclusive_targets = {player.id}, bypass_times = true})
       if use then
         use.extraUse = true
         room:useCard(use)
