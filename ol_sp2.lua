@@ -737,17 +737,17 @@ local wangong = fk.CreateTriggerSkill{
       data.extraUse = true
     end
   end,
-}
-local wangong_delay = fk.CreateTriggerSkill{
-  name = "#wangong_delay",
-  frequency = Skill.Compulsory,
-  events = {fk.CardUseFinished},
-  mute = true,
-  can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self, true) and ((player:getMark("@@wangong") == 0) == (data.card.type == Card.TypeBasic))
+
+  refresh_events = {fk.CardUseFinished, fk.EventLoseSkill},
+  can_refresh = function(self, event, target, player, data)
+    if event == fk.CardUseFinished then
+      return target == player and player:hasSkill(self, true)
+    else
+      return target == player and data == self
+    end
   end,
-  on_use = function(self, event, target, player, data)
-    player.room:setPlayerMark(player, "@@wangong", data.card.type == Card.TypeBasic and 1 or 0)
+  on_refresh = function(self, event, target, player, data)
+    player.room:setPlayerMark(player, "@@wangong", (event == fk.CardUseFinished and data.card.type == Card.TypeBasic) and 1 or 0)
   end,
 }
 local wangong_targetmod = fk.CreateTargetModSkill{
@@ -755,12 +755,11 @@ local wangong_targetmod = fk.CreateTargetModSkill{
   bypass_times = function(self, player, skill, scope)
     return skill.trueName == "slash_skill" and player:getMark("@@wangong") > 0 and scope == Player.HistoryPhase
   end,
-  targetRecorded =  function(self, player, skill)
+  bypass_distances = function(self, player, skill)
     return skill.trueName == "slash_skill" and player:getMark("@@wangong") > 0
   end,
 }
 wangong:addRelatedSkill(wangong_targetmod)
-wangong:addRelatedSkill(wangong_delay)
 huangzu:addSkill(wangong)
 Fk:loadTranslationTable{
   ["ol__huangzu"] = "黄祖",
