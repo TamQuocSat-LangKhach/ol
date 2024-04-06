@@ -761,10 +761,10 @@ local wangong_delay = fk.CreateTriggerSkill{
 local wangong_targetmod = fk.CreateTargetModSkill{
   name = "#wangong_targetmod",
   bypass_times = function(self, player, skill, scope)
-    return skill.trueName == "slash_skill" and player:getMark("@@wangong") > 0 and scope == Player.HistoryPhase
+    return player:hasSkill(wangong) and skill.trueName == "slash_skill" and player:getMark("@@wangong") > 0 and scope == Player.HistoryPhase
   end,
   bypass_distances = function(self, player, skill)
-    return skill.trueName == "slash_skill" and player:getMark("@@wangong") > 0
+    return player:hasSkill(wangong) and skill.trueName == "slash_skill" and player:getMark("@@wangong") > 0
   end,
 }
 wangong:addRelatedSkill(wangong_targetmod)
