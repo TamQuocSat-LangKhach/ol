@@ -738,16 +738,24 @@ local wangong = fk.CreateTriggerSkill{
     end
   end,
 
-  refresh_events = {fk.CardUseFinished, fk.EventLoseSkill},
+  refresh_events = {fk.EventLoseSkill},
   can_refresh = function(self, event, target, player, data)
-    if event == fk.CardUseFinished then
-      return target == player and player:hasSkill(self, true)
-    else
-      return target == player and data == self
-    end
+    return target == player and data == self
   end,
   on_refresh = function(self, event, target, player, data)
-    player.room:setPlayerMark(player, "@@wangong", (event == fk.CardUseFinished and data.card.type == Card.TypeBasic) and 1 or 0)
+    player.room:setPlayerMark(player, "@@wangong", 0)
+  end,
+}
+local wangong_delay = fk.CreateTriggerSkill{
+  name = "#wangong_delay",
+  mute = true,
+  frequency = Skill.Compulsory,
+  events = {fk.CardUseFinished},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(wangong)
+  end,
+  on_use = function(self, event, target, player, data)
+    player.room:setPlayerMark(player, "@@wangong", data.card.type == Card.TypeBasic and 1 or 0)
   end,
 }
 local wangong_targetmod = fk.CreateTargetModSkill{
@@ -760,6 +768,7 @@ local wangong_targetmod = fk.CreateTargetModSkill{
   end,
 }
 wangong:addRelatedSkill(wangong_targetmod)
+wangong:addRelatedSkill(wangong_delay)
 huangzu:addSkill(wangong)
 Fk:loadTranslationTable{
   ["ol__huangzu"] = "黄祖",
