@@ -134,14 +134,15 @@ local quanbian = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     local all_cards = room:getNCards(player.maxHp)
-    local available_cards = table.filter(all_cards, function(id) return Fk:getCardById(id).suit ~= data.card.suit end)
-    local cards, choice = U.askforChooseCardsAndChoice(player, available_cards, {"OK"}, self.name, "#quanbian-get", {"Cancel"}, 1, 1, all_cards)
-    if #cards > 0 then
-      table.removeOne(all_cards, cards[1])
-      room:obtainCard(player, cards[1], false, fk.ReasonPrey)
+    local suits = {"spade", "club", "heart", "diamond"}
+    table.remove(suits, data.card.suit)
+    local cardmap = U.askForArrangeCards(player, self.name, {all_cards, "Top", "toObtain"}, "", true, 0,
+    {#all_cards, 1}, {0, 0}, ".|.|"..table.concat(suits, ","))
+    for i = #cardmap[1], 1, -1 do
+      table.insert(room.draw_pile, 1, cardmap[1][i])
     end
-    if #all_cards > 0 then
-      room:askForGuanxing(player, all_cards, nil, {0, 0}, self.name)
+    if #cardmap[2] > 0 then
+      room:obtainCard(player, cardmap[2][1], false, fk.ReasonPrey)
     end
   end,
 
@@ -276,7 +277,6 @@ Fk:loadTranslationTable{
   [":qingleng"] = "其他角色回合结束时，若其体力值与手牌数之和不小于X，你可将一张牌当无距离限制的冰【杀】对其使用。"..
   "你对一名没有成为过〖清冷〗目标的角色发动〖清冷〗时，摸一张牌。（X为牌堆数量的个位数）",
   ["#ol__huishi-invoke"] = "慧识：你可以放弃摸牌，改为观看牌堆顶%arg张牌并获得其中的一半，其余置于牌堆底",
-  ["toObtain"] = "获得的牌",
   ["#qingleng-invoke"] = "清冷：你可以将一张牌当冰【杀】对 %dest 使用",
 
   ["$xuanmu1"] = "四门穆穆，八面莹澈。",
