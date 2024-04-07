@@ -14,7 +14,7 @@ local isFamilyMember = function (player, famaly)
     ["xun"] = {"xunshu", "xunchen", "xuncai", "xuncan", "xunyu", "xunyou"},
     ["wu"] = {"wuxian", "wuyi", "wuban", "wukuang", "wuqiao"},
     ["han"] = {"hanshao", "hanrong"},
-    ["wang"] = {"wangyun", "wangling", "wangchang", "wanghun", "wanglun", "wangguang"},
+    ["wang"] = {"wangyun", "wangling", "wangchang", "wanghun", "wanglun", "wangguang", "wangmingshan"},
     ["zhong"] = {"zhongyao", "zhongyu", "zhonghui", "zhongyan"},
   }
   local names = familyMap[famaly] or {}
@@ -2916,7 +2916,6 @@ Fk:loadTranslationTable{
 }
 
 local wangguang = General(extension, "olz__wangguang", "wei", 3)
-
 local lilun = fk.CreateActiveSkill{
   name = "lilun",
   anim_type = "drawcard",
@@ -3063,5 +3062,232 @@ Fk:loadTranslationTable{
   ["$zhongliu_olz__wangguang2"] = "",
   ["~olz__wangguang"] = "",
 }
+
+local wangmingshan = General(extension, "olz__wangmingshan", "wei", 3)
+local danque = fk.CreateTriggerSkill{
+  name = "danque",
+  events = {fk.CardUseFinished},
+  can_trigger = function(self, event, target, player, data)
+    if player ~= target or not player:hasSkill(self) or data.card.number == 0 or player:usedSkillTimes(self.name) > 0 then return false end
+    local room = player.room
+    local logic = room.logic
+    local use_event = logic:getCurrentEvent()
+    local events = logic.event_recorder[GameEvent.UseCard] or Util.DummyTable
+    local last_find = false
+    for i = #events, 1, -1 do
+      local e = events[i]
+      if e.data[1].from == player.id then
+        if e.id == use_event.id then
+          last_find = true
+        elseif last_find then
+          local last_use = e.data[1]
+          if last_use.card.number == 0 then return false end
+          local x = math.abs(last_use.card.number - data.card.number)
+          if x == 0 then return false end
+          local targets = table.filter(room.alive_players, function (p)
+            return p.hp == x
+          end)
+          if #targets > 0 then
+            self.cost_data = {table.map(targets, Util.IdMapper), x}
+            return true
+          end
+          return false
+        end
+      end
+    end
+  end,
+  on_cost = function(self, event, target, player, data)
+    local targets = player.room:askForChoosePlayers(player, self.cost_data[1], 1, 1,
+    "#danque-choose:::" .. tostring(self.cost_data[2]), self.name, true)
+    if #targets > 0 then
+      self.cost_data = targets[1]
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    room:damage{
+      from = player,
+      to = room:getPlayerById(self.cost_data),
+      damage = 1,
+      skillName = self.name,
+    }
+  end,
+
+  refresh_events = {fk.AfterCardUseDeclared, fk.EventLoseSkill},
+  can_refresh = function(self, event, target, player, data)
+    if event == fk.AfterCardUseDeclared then
+      return target == player and player:hasSkill(self, true)
+    elseif event == fk.EventLoseSkill then
+      return data == self
+    end
+  end,
+  on_refresh = function(self, event, target, player, data)
+    local room = player.room
+    if event == fk.AfterCardUseDeclared then
+      room:setPlayerMark(player, "@danque", data.card:getNumberStr())
+    elseif event == fk.EventLoseSkill then
+      room:setPlayerMark(player, "@danque", 0)
+    end
+  end,
+}
+local function getShengmoCards(player)
+  local cards = U.getMark(player, "shengmo_cards-turn")
+  if #cards < 3 then return {} end
+  local cardmap = {}
+  for _ = 1, 13, 1 do
+    table.insert(cardmap, {})
+  end
+  for _, id in ipairs(cards) do
+    table.insert(cardmap[Fk:getCardById(id).number], id)
+  end
+  for i = 1, 13, 1 do
+    if #cardmap[i] > 0 then
+      cardmap[i] = {}
+      break
+    end
+  end
+  for i = 13, 1, -1 do
+    if #cardmap[i] > 0 then
+      cardmap[i] = {}
+      break
+    end
+  end
+  return table.connect(table.unpack(cardmap))
+end
+local shengmo = fk.CreateViewAsSkill{
+  name = "shengmo",
+  pattern = ".|.|.|.|.|basic",
+  prompt = "#shengmo-viewas",
+  expand_pile = function()
+    return getShengmoCards(Self)
+  end,
+  interaction = function()
+    local mark = U.getMark(Self, "shengmo_used")
+    local all_names = U.getAllCardNames("b")
+    local names = table.filter(U.getViewAsCardNames(Self, "shengmo", all_names), function (name)
+      return not table.contains(mark, Fk:cloneCard(name).trueName)
+    end)
+    if #names > 0 then
+      return UI.ComboBox { choices = names, all_choices = all_names }
+    end
+  end,
+  card_filter = function(self, to_select, selected)
+    return #selected == 0 and table.contains(U.getMark(Self, "shengmo_cards-turn"), to_select)
+  end,
+  view_as = function(self, cards)
+    if #cards ~= 1 or not self.interaction.data then return end
+    local card = Fk:cloneCard(self.interaction.data)
+    card.skillName = self.name
+    card:setMark("shengmo_subcards", cards[1])
+    return card
+  end,
+  before_use = function(self, player, use)
+    local room = player.room
+    local mark = U.getMark(player, "shengmo_used")
+    table.insert(mark, use.card.trueName)
+    room:setPlayerMark(player, "shengmo_used", mark)
+    mark = U.getMark(player, "@$shengmo")
+    table.removeOne(mark, use.card.trueName)
+    room:setPlayerMark(player, "@$shengmo", mark)
+    local card_id = use.card:getMark("shengmo_subcards")
+    room:obtainCard(player, card_id, true, fk.ReasonPrey, player.id)
+  end,
+  enabled_at_play = function(self, player)
+    if #getShengmoCards(player) > 0 then
+      local mark = U.getMark(Self, "shengmo_used")
+      return #table.filter(U.getViewAsCardNames(Self, "shengmo", U.getAllCardNames("b")), function (name)
+        return not table.contains(mark, Fk:cloneCard(name).trueName)
+      end) > 0
+    end
+  end,
+  enabled_at_response = function(self, player, response)
+    if not response and #getShengmoCards(player) > 0 then
+      local mark = U.getMark(Self, "shengmo_used")
+      return #table.filter(U.getViewAsCardNames(Self, "shengmo", U.getAllCardNames("b")), function (name)
+        return not table.contains(mark, Fk:cloneCard(name).trueName)
+      end) > 0
+    end
+  end,
+}
+local shengmo_refresh = fk.CreateTriggerSkill{
+  name = "#shengmo_refresh",
+
+  refresh_events = {fk.AfterCardsMove, fk.AfterDrawPileShuffle, fk.EventAcquireSkill, fk.EventLoseSkill},
+  can_refresh = function(self, event, target, player, data)
+    return event == fk.AfterCardsMove or event == fk.AfterDrawPileShuffle or (player == target and data == shengmo)
+  end,
+  on_refresh = function(self, event, target, player, data)
+    local room = player.room
+    if event == fk.AfterCardsMove then
+      local ids = U.getMark(player, "shengmo_cards-turn")
+      for _, move in ipairs(data) do
+        if move.toArea == Card.DiscardPile then
+          for _, info in ipairs(move.moveInfo) do
+            table.insertIfNeed(ids, info.cardId)
+          end
+        end
+      end
+      ids = table.filter(ids, function (id)
+        return room:getCardArea(id) == Card.DiscardPile
+      end)
+      room:setPlayerMark(player, "shengmo_cards-turn", ids)
+    elseif event == fk.AfterDrawPileShuffle then
+      room:setPlayerMark(player, "shengmo_cards-turn", 0)
+    elseif event == fk.EventAcquireSkill then
+      local basics = U.getAllCardNames("b", true)
+      room:setPlayerMark(player, "@$shengmo", basics)
+      local turn_event = room.logic:getCurrentEvent():findParent(GameEvent.Turn, true)
+      if turn_event == nil then return false end
+      local ids = {}
+      U.getEventsByRule(room, GameEvent.MoveCards, 1, function (e)
+        for _, move in ipairs(e.data) do
+          if move.toArea == Card.DiscardPile then
+            for _, info in ipairs(move.moveInfo) do
+              table.insertIfNeed(ids, info.cardId)
+            end
+          end
+        end
+        return false
+      end, turn_event.id)
+      ids = table.filter(ids, function (id)
+        return room:getCardArea(id) == Card.DiscardPile
+      end)
+      room:setPlayerMark(player, "shengmo_cards-turn", ids)
+    elseif event == fk.EventLoseSkill then
+      room:setPlayerMark(player, "@$shengmo", 0)
+      room:setPlayerMark(player, "shengmo_used", 0)
+    end
+  end,
+}
+danque.scope_type = Player.HistoryTurn
+shengmo:addRelatedSkill(shengmo_refresh)
+wangmingshan:addSkill(danque)
+wangmingshan:addSkill(shengmo)
+wangmingshan:addSkill("zhongliu")
+Fk:loadTranslationTable{
+  ["olz__wangmingshan"] = "族王明山",
+  ["#olz__wangmingshan"] = "",
+  --["designer:olz__wangmingshan"] = "",
+  --["illustrator:olz__wangmingshan"] = "",
+  ["danque"] = "弹雀",
+  [":danque"] = "当你使用的牌结算结束后，若你于当前回合内为发动过此技能，"..
+  "你可以对一名体力值为X的角色造成1点伤害（X为此牌的点数与你上一张使用的牌的点数之差且不能为0）。",
+  ["shengmo"] = "剩墨",
+  [":shengmo"] = "你可以获得于当前回合内移至弃牌堆的牌中的一张不为其中点数最大且不为其中点数最小的牌，视为使用未以此法使用过的基本牌。",
+  ["#danque-choose"] = "是否发动 弹雀，对一名体力值为%arg的角色造成1点伤害",
+  ["@danque"] = "弹雀",
+  ["#shengmo-viewas"] = "发动 剩墨，获得弃牌堆里的一张牌，并视为使用一张基本牌",
+  ["@$shengmo"] = "剩墨",
+
+  ["$danque1"] = "",
+  ["$danque2"] = "",
+  ["$shengmo1"] = "",
+  ["$shengmo2"] = "",
+  ["$zhongliu_olz__wangmingshan1"] = "",
+  ["$zhongliu_olz__wangmingshan2"] = "",
+  ["~olz__wangmingshan"] = "",
+}
+
 
 return extension
