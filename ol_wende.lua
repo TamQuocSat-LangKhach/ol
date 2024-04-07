@@ -8,6 +8,8 @@ Fk:loadTranslationTable{
   ["jin"] = "晋",
 }
 
+Fk:appendKingdomMap("god", {"jin"})
+
 local simayi = General(extension, "ol__simayi", "jin", 3)
 local buchen = fk.CreateTriggerSkill{
   name = "buchen",
