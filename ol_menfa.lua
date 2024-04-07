@@ -3040,7 +3040,7 @@ wangguang:addSkill(jianjiw)
 wangguang:addSkill("zhongliu")
 Fk:loadTranslationTable{
   ["olz__wangguang"] = "族王广",
-  ["#olz__wangguang"] = "",
+  ["#olz__wangguang"] = "才性离异",
   --["designer:olz__wangguang"] = "",
   --["illustrator:olz__wangguang"] = "",
   ["lilun"] = "离论",
@@ -3064,8 +3064,8 @@ Fk:loadTranslationTable{
 }
 
 local wangmingshan = General(extension, "olz__wangmingshan", "wei", 3)
-local danque = fk.CreateTriggerSkill{
-  name = "danque",
+local tanque = fk.CreateTriggerSkill{
+  name = "tanque",
   events = {fk.CardUseFinished},
   can_trigger = function(self, event, target, player, data)
     if player ~= target or not player:hasSkill(self) or data.card.number == 0 or player:usedSkillTimes(self.name) > 0 then return false end
@@ -3098,7 +3098,7 @@ local danque = fk.CreateTriggerSkill{
   end,
   on_cost = function(self, event, target, player, data)
     local targets = player.room:askForChoosePlayers(player, self.cost_data[1], 1, 1,
-    "#danque-choose:::" .. tostring(self.cost_data[2]), self.name, true)
+    "#tanque-choose:::" .. tostring(self.cost_data[2]), self.name, true)
     if #targets > 0 then
       self.cost_data = targets[1]
       return true
@@ -3125,9 +3125,9 @@ local danque = fk.CreateTriggerSkill{
   on_refresh = function(self, event, target, player, data)
     local room = player.room
     if event == fk.AfterCardUseDeclared then
-      room:setPlayerMark(player, "@danque", data.card:getNumberStr())
+      room:setPlayerMark(player, "@tanque", data.card:getNumberStr())
     elseif event == fk.EventLoseSkill then
-      room:setPlayerMark(player, "@danque", 0)
+      room:setPlayerMark(player, "@tanque", 0)
     end
   end,
 }
@@ -3260,28 +3260,28 @@ local shengmo_refresh = fk.CreateTriggerSkill{
     end
   end,
 }
-danque.scope_type = Player.HistoryTurn
+tanque.scope_type = Player.HistoryTurn
 shengmo:addRelatedSkill(shengmo_refresh)
-wangmingshan:addSkill(danque)
+wangmingshan:addSkill(tanque)
 wangmingshan:addSkill(shengmo)
 wangmingshan:addSkill("zhongliu")
 Fk:loadTranslationTable{
   ["olz__wangmingshan"] = "族王明山",
-  ["#olz__wangmingshan"] = "",
+  ["#olz__wangmingshan"] = "擅书多艺",
   --["designer:olz__wangmingshan"] = "",
   --["illustrator:olz__wangmingshan"] = "",
-  ["danque"] = "弹雀",
-  [":danque"] = "当你使用的牌结算结束后，若你于当前回合内为发动过此技能，"..
+  ["tanque"] = "弹雀",
+  [":tanque"] = "当你使用的牌结算结束后，若你于当前回合内为发动过此技能，"..
   "你可以对一名体力值为X的角色造成1点伤害（X为此牌的点数与你上一张使用的牌的点数之差且不能为0）。",
   ["shengmo"] = "剩墨",
   [":shengmo"] = "你可以获得于当前回合内移至弃牌堆的牌中的一张不为其中点数最大且不为其中点数最小的牌，视为使用未以此法使用过的基本牌。",
-  ["#danque-choose"] = "是否发动 弹雀，对一名体力值为%arg的角色造成1点伤害",
-  ["@danque"] = "弹雀",
+  ["#tanque-choose"] = "是否发动 弹雀，对一名体力值为%arg的角色造成1点伤害",
+  ["@tanque"] = "弹雀",
   ["#shengmo-viewas"] = "发动 剩墨，获得弃牌堆里的一张牌，并视为使用一张基本牌",
   ["@$shengmo"] = "剩墨",
 
-  ["$danque1"] = "",
-  ["$danque2"] = "",
+  ["$tanque1"] = "",
+  ["$tanque2"] = "",
   ["$shengmo1"] = "",
   ["$shengmo2"] = "",
   ["$zhongliu_olz__wangmingshan1"] = "",

@@ -5170,7 +5170,7 @@ Fk:loadTranslationTable{
 
 Fk:loadTranslationTable{
   ["liupan"] = "刘磐",
-  --["#liupan"] = "",
+  ["#liupan"] = "骁隽悍勇",
 
   ["pijingl"] = "披荆",
   [":pijingl"] = "当你使用黑色【杀】或黑色锦囊牌普通锦囊牌指定唯一目标后，若你于当前回合内未发动过此技能，你可以令至多X名角色也成为此牌的目标（X为你已损失的体力值且至少为1）。"..
@@ -5181,7 +5181,7 @@ Fk:loadTranslationTable{
 
 Fk:loadTranslationTable{
   ["ol__liupi"] = "刘辟",
-  --["#ol__liupi"] = "",
+  ["#ol__liupi"] = "易城报君",
 
   ["yichengl"] = "易城",
   [":yichengl"] = "出牌阶段限一次，你可以观看牌堆顶三张牌，然后可以用任意张手牌交换其中等量张，"..
