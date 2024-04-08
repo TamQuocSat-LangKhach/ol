@@ -131,16 +131,18 @@ local ranji = fk.CreateTriggerSkill{
     if player:isWounded() then
       table.insert(choices, "ranji-recover")
     end
-    local choice = room:askForChoice(player, choices, self.name)
-    if choice == "ranji-draw" then
-      player:drawCards(player.maxHp - player:getHandcardNum(), self.name)
-    else
-      room:recover({
-        who = player,
-        num = player:getLostHp(),
-        recoverBy = player,
-        skillName = self.name
-      })
+    if #choices > 0 then
+      local choice = room:askForChoice(player, choices, self.name)
+      if choice == "ranji-draw" then
+        player:drawCards(player.maxHp - player:getHandcardNum(), self.name)
+      else
+        room:recover({
+          who = player,
+          num = player:getLostHp(),
+          recoverBy = player,
+          skillName = self.name
+        })
+      end
     end
     room:setPlayerMark(player, "@@ranji", 1)
   end,

@@ -393,9 +393,7 @@ local chenglie = fk.CreateTriggerSkill{
       if room:getCardOwner(results[2]) == player then
         id1, id2 = results[2], results[1]
       end
-      --FIXME:为了修复中央区存在id为-1的牌的bug，直接修改区域，以毒攻毒
-      table.removeOne(room.void, id2)
-      room:setCardArea(id2, Card.DrawPile)
+
       local move1 = {
         ids = {id1},
         from = player.id,
@@ -419,6 +417,7 @@ local chenglie = fk.CreateTriggerSkill{
     local targets = TargetGroup:getRealTargets(data.tos)
 
     local chenglie_data = {}
+    local to_clean = {}
 
     while #ids > 0 and not player.dead do
       room:setPlayerMark(player, "chenglie_cards", ids)
@@ -427,12 +426,12 @@ local chenglie = fk.CreateTriggerSkill{
       room:setPlayerMark(player, "chenglie_cards", 0)
       room:setPlayerMark(player, "chenglie_targets", 0)
 
-
       if dat == nil then
         dat = {targets = {targets[1]}, cards = {ids[1]}}
       end
       table.removeOne(targets, dat.targets[1])
       table.removeOne(ids, dat.cards[1])
+      table.insert(to_clean, dat.cards[1])
       --FIXME:需要背面朝上移动（或者直接隐藏），且移动的log中不显示具体信息，所以改为直接采用标记
       --room:getPlayerById(dat.targets[1]):addToPile("#chenglie", dat.cards[1], true, self.name)
 
@@ -455,8 +454,16 @@ local chenglie = fk.CreateTriggerSkill{
       table.insert(data.extra_data.chenglie_data, {player.id, chenglie_data})
     end
 
+    --FIXME:原因同上
+    local use_event = room.logic:getCurrentEvent():findParent(GameEvent.UseCard)
+    if use_event ~= nil then
+      use_event:addCleaner(function()
+        room:moveCardTo(to_clean, Card.DiscardPile, nil, fk.ReasonJustMove, nil, nil, true, nil)
+      end)
+    end
+
     if #ids > 0 then
-      room:moveCardTo(ids, Card.DiscardPile, player, fk.ReasonJustMove, nil, nil, true, nil)
+      room:moveCardTo(ids, Card.DiscardPile, nil, fk.ReasonJustMove, nil, nil, true, nil)
     end
   end,
 }

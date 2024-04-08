@@ -2552,7 +2552,6 @@ local bolan_active = fk.CreateActiveSkill{
     end)
     if not target then return end
     target:broadcastSkillInvoke("bolan")
-    room:notifySkillInvoked(target, "bolan", "special")
     room:doIndicate(player.id, {target.id})
     room:loseHp(player, 1, "bolan")
     if player.dead or target.dead then return end

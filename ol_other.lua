@@ -271,8 +271,9 @@ lvbu3:addRelatedSkill("ol_ex__wansha")
 Fk:loadTranslationTable{
   ["hulao__godlvbu3"] = "神吕布",
   ["#hulao__godlvbu3"] = "神鬼无前",
+  ["illustrator:hulao__godlvbu3"] = "LiuHeng",
   ["shenqu"] = "神躯",
-  [":shenqu"] = "一名角色的准备阶段，若你的手牌数不大于你的体力上限，你可摸两张牌。当你受到伤害后，你可使用一张【桃】。",
+  [":shenqu"] = "一名角色的准备阶段，若你的手牌数不大于你的体力上限，你可以摸两张牌。当你受到伤害后，你可以使用一张【桃】。",
   ["jiwu"] = "极武",
   [":jiwu"] = "出牌阶段，你可以弃置一张牌，然后本回合你拥有以下其中一个技能：〖强袭〗、〖铁骑〗、〖旋风〗、〖完杀〗。",
 
