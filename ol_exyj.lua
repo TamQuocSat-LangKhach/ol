@@ -245,7 +245,124 @@ Fk:loadTranslationTable{
   ["~ol_ex__wangyi"] = "",
 }
 
+local yufan = General(extension, "ol_ex__yufan", "wu", 3)
+local zongxuan = fk.CreateTriggerSkill{
+  name = "ol_ex__zongxuan",
+  anim_type = "control",
+  events = {fk.AfterCardsMove},
+  can_trigger = function(self, event, target, player, data)
+    if player:hasSkill(self) then
+      local cards = {}
+      local last_player_id = 0
+      if not player:isRemoved() then
+        last_player_id = player:getLastAlive(false).id
+      end
+      for _, move in ipairs(data) do
+        if (move.from == player.id or move.from == last_player_id) and move.toArea == Card.DiscardPile and move.moveReason == fk.ReasonDiscard then
+          for _, info in ipairs(move.moveInfo) do
+            if info.fromArea == Card.PlayerHand or info.fromArea == Card.PlayerEquip then
+              table.insertIfNeed(cards, info.cardId)
+            end
+          end
+        end
+      end
+      cards = U.moveCardsHoldingAreaCheck(player.room, cards)
+      if #cards > 0 then
+        self.cost_data = cards
+        return true
+      end
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local top = U.askForArrangeCards(player, self.name, {self.cost_data, "pile_discard","Top"},
+    "#ol_ex__zongxuan-invoke", true, 7, nil, {0, 1})[2]
+    top = table.reverse(top)
+    room:sendLog{
+      type = "#PutKnownCardtoDrawPile",
+      from = player.id,
+      card = top
+    }
+    room:moveCards({
+      ids = top,
+      toArea = Card.DrawPile,
+      moveReason = fk.ReasonPut,
+      skillName = self.name,
+      proposer = player.id,
+      moveVisible = true,
+    })
+  end,
+}
+local zhiyan = fk.CreateTriggerSkill{
+  name = "ol_ex__zhiyan",
+  anim_type = "drawcard",
+  events = {fk.EventPhaseStart},
+  can_trigger = function(self, event, target, player, data)
+    return target.phase == Player.Finish and (target == player or target:getNextAlive() == player) and player:hasSkill(self)
+  end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    local to = room:askForChoosePlayers(player, table.map(room.alive_players, Util.IdMapper), 1, 1, "#ol_ex__zhiyan-choose", self.name, true)
+    if #to > 0 then
+      self.cost_data = to[1]
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local to = room:getPlayerById(self.cost_data)
+    local ids = to:drawCards(1, self.name)
+    if #ids == 0 then return false end
+    local id = ids[1]
+    if room:getCardOwner(id) ~= to or room:getCardArea(id) ~= Card.PlayerHand then return false end
+    local card = Fk:getCardById(id)
+    to:showCards(card)
+    if to.dead then return false end
+    room:delay(1000)
+    if card.type == Card.TypeEquip then
+      if to:canUseTo(card, to) then
+        room:useCard({
+          from = to.id,
+          tos = {{to.id}},
+          card = card,
+        })
+        if to:isWounded() and not to.dead then
+          room:recover({
+            who = to,
+            num = 1,
+            recoverBy = player,
+            skillName = self.name
+          })
+        end
+      end
+    elseif to.hp >= player.hp then
+      room:loseHp(to, 1, self.name)
+    end
+  end,
+}
+yufan:addSkill(zongxuan)
+yufan:addSkill(zhiyan)
+Fk:loadTranslationTable{
+  ["ol_ex__yufan"] = "界虞翻",
+  ["#ol_ex__yufan"] = "狂直之士",
+  --["designer:ol_ex__yufan"] = "",
+  ["illustrator:ol_ex__yufan"] = "YanBai",
+  ["ol_ex__zongxuan"] = "纵玄",
+  [":ol_ex__zongxuan"] = "当你或你上家的牌因弃置而置入弃牌堆后，你可以将其中任意张牌置于牌堆顶。",
+  ["ol_ex__zhiyan"] = "直言",
+  [":ol_ex__zhiyan"] = "你或你上家的结束阶段，你可以令一名角色摸一张牌并展示之，若此牌：为装备牌，其使用此牌并回复1点体力；"..
+  "不为装备牌且其体力值不小于你，其失去1点体力。",
 
+  ["#ol_ex__zongxuan-invoke"] = "纵玄：将任意数量的弃牌置于牌堆顶",
+  ["#ol_ex__zhiyan-choose"] = "是否发动 直言，令一名角色摸一张牌",
+  ["#PutKnownCardtoDrawPile"] = "%from 将 %card 置于牌堆顶",
+
+  ["$ol_ex__zongxuan1"] = "",
+  ["$ol_ex__zongxuan2"] = "",
+  ["$ol_ex__zhiyan1"] = "",
+  ["$ol_ex__zhiyan2"] = "",
+  ["~ol_ex__yufan"] = "",
+}
 
 
 
