@@ -148,6 +148,7 @@ local ol_ex__yaowu = fk.CreateTriggerSkill{
 local ol_ex__shizhan = fk.CreateActiveSkill{
   name = "ol_ex__shizhan",
   anim_type = "offensive",
+  prompt = "#ol_ex__shizhan-active",
   can_use = function(self, player)
     return player:usedSkillTimes(self.name, Player.HistoryPhase) < 2
   end,
@@ -173,7 +174,8 @@ Fk:loadTranslationTable{
   ["ol_ex__yaowu"] = "耀武",
   [":ol_ex__yaowu"] = "锁定技，当你受到牌造成的伤害时，若造成伤害的牌：为红色，伤害来源摸一张牌；不为红色，你摸一张牌。",
   ["ol_ex__shizhan"] = "势斩",
-  [":ol_ex__shizhan"] = "出牌阶段限两次，你可以令一名其他角色视为对你使用一张【决斗】。",
+  [":ol_ex__shizhan"] = "出牌阶段限两次，你可以令一名其他角色视为对你使用【决斗】。",
+  ["#ol_ex__shizhan-active"] = "发动 势斩，选择一名其他角色，令其视为对你使用【决斗】",
 
   ["$ol_ex__yaowu1"] = "有吾在此，解太师烦忧。",
   ["$ol_ex__yaowu2"] = "这些杂兵，我有何惧！",
@@ -201,8 +203,8 @@ local ol_ex__shensu = fk.CreateTriggerSkill{
     local slash = Fk:cloneCard("slash")
     local max_num = slash.skill:getMaxTargetNum(player, slash)
     local targets = {}
-    for _, p in ipairs(room:getOtherPlayers(player)) do
-      if not player:isProhibited(p, slash) then
+    for _, p in ipairs(room.alive_players) do
+      if player ~= p and not player:isProhibited(p, slash) then
         table.insert(targets, p.id)
       end
     end
@@ -425,6 +427,13 @@ local ol_ex__liegong = fk.CreateTriggerSkill{
     local to = player.room:getPlayerById(data.to)
     return data.card.trueName == "slash" and (#to:getCardIds(Player.Hand) <= #player:getCardIds(Player.Hand) or to.hp >= player.hp)
   end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    if room:askForSkillInvoke(player, self.name, nil, "#ol_ex__liegong-invoke::"..data.to) then
+      room:doIndicate(player.id, {data.to})
+      return true
+    end
+  end,
   on_use = function(self, event, target, player, data)
     local to = player.room:getPlayerById(data.to)
     if #to:getCardIds(Player.Hand) <= #player:getCardIds(Player.Hand) then
@@ -450,7 +459,11 @@ Fk:loadTranslationTable{
   ["#ol_ex__huangzhong"] = "老当益壮",
   ["illustrator:ol_ex__huangzhong"] = "匠人绘",
   ["ol_ex__liegong"] = "烈弓",
-  [":ol_ex__liegong"] = "①你对至其距离不大于此【杀】点数的角色使用【杀】无距离关系的限制。②当你使用【杀】指定一个目标后，你可执行：1.若其手牌数不大于你，此【杀】不能被此目标抵消；2.若其体力值不小于你，此【杀】对此目标的伤害值基数+1。",
+  [":ol_ex__liegong"] = "①你对至其距离不大于此【杀】点数的角色使用【杀】无距离关系的限制。"..
+  "②当你使用【杀】指定一个目标后，你可执行：1.若其手牌数不大于你，此【杀】不能被此目标抵消；"..
+  "2.若其体力值不小于你，此【杀】对此目标的伤害值基数+1。",
+
+  ["#ol_ex__liegong-invoke"] = "是否对%dest发动 烈弓",
 
   ["$ol_ex__liegong1"] = "龙骨成镞，矢破苍穹！",
   ["$ol_ex__liegong2"] = "凤翎为羽，箭没坚城！",
@@ -466,10 +479,9 @@ local ol_ex__kuanggu = fk.CreateTriggerSkill{
     return player:hasSkill(self) and target == player and (data.extra_data or {}).kuanggucheck
   end,
   on_trigger = function(self, event, target, player, data)
-    self.cancel_cost = false
     for i = 1, data.damage do
+      if i > 1 and (self.cost_data == "Cancel" or not player:hasSkill(self)) then break end
       self:doCost(event, target, player, data)
-      if self.cost_data == "Cancel" or player.dead then break end
     end
   end,
   on_cost = function(self, event, target, player, data)
@@ -877,7 +889,8 @@ local ol_ex__leiji = fk.CreateTriggerSkill{
         end
         if player.dead then return false end
       end
-      local targets = player.room:askForChoosePlayers(player, table.map(player.room:getOtherPlayers(player), Util.IdMapper), 1, 1, "#ol_ex__leiji-choose:::" .. x, self.name, true)
+      local targets = room:askForChoosePlayers(player, table.map(room:getOtherPlayers(player, false), Util.IdMapper), 1, 1,
+      "#ol_ex__leiji-choose:::" .. x, self.name, true)
       if #targets > 0 then
         local tar = targets[1]
         room:damage{
@@ -899,7 +912,8 @@ local ol_ex__guidao = fk.CreateTriggerSkill{
     return player:hasSkill(self) and not player:isNude()
   end,
   on_cost = function(self, event, target, player, data)
-    local card = player.room:askForResponse(player, self.name, ".|.|spade,club|hand,equip", "#ol_ex__guidao-ask::" .. target.id..":"..data.reason, true)
+    local card = player.room:askForResponse(player, self.name, ".|.|spade,club|hand,equip",
+    "#ol_ex__guidao-ask::" .. target.id..":"..data.reason, true)
     if card ~= nil then
       self.cost_data = card
       return true
@@ -1265,7 +1279,7 @@ local ol_ex__jieming = fk.CreateTriggerSkill{
     if event == fk.Damaged then
       self.cancel_cost = false
       for i = 1, data.damage do
-        if self.cancel_cost or not player:hasSkill(self) then break end
+        if i > 1 and (self.cancel_cost or not player:hasSkill(self)) then break end
         self:doCost(event, target, player, data)
       end
     elseif event == fk.Death then
@@ -1309,7 +1323,6 @@ Fk:loadTranslationTable{
 }
 
 local wolong = General(extension, "ol_ex__wolong", "shu", 3)
-
 local ol_ex__huoji__fireAttackSkill = fk.CreateActiveSkill{
   name = "ol_ex__huoji__fire_attack_skill",
   prompt = "#fire_attack_skill",
@@ -1354,7 +1367,6 @@ local ol_ex__huoji__fireAttackSkill = fk.CreateActiveSkill{
   end,
 }
 Fk:addSkill(ol_ex__huoji__fireAttackSkill)
-
 local ol_ex__huoji = fk.CreateViewAsSkill{
   name = "ol_ex__huoji",
   anim_type = "offensive",
@@ -1416,7 +1428,6 @@ local ol_ex__kanpo_buff = fk.CreateTriggerSkill{
     data.disresponsiveList = table.map(player.room.alive_players, Util.IdMapper)
   end,
 }
-
 local cangzhuo = fk.CreateTriggerSkill{
   name = "cangzhuo",
   anim_type = "defensive",
@@ -1451,7 +1462,6 @@ local cangzhuo_maxcards = fk.CreateMaxCardsSkill{
     return player:getMark("cangzhuo-phase") > 0 and card.type == Card.TypeTrick
   end,
 }
-
 wolong:addSkill("bazhen")
 ol_ex__huoji:addRelatedSkill(ol_ex__huoji_buff)
 ol_ex__kanpo:addRelatedSkill(ol_ex__kanpo_buff)
@@ -1487,7 +1497,6 @@ Fk:loadTranslationTable{
 }
 
 local pangtong = General(extension, "ol_ex__pangtong", "shu", 3)
-
 local ol_ex__lianhuan = fk.CreateActiveSkill{
   name = "ol_ex__lianhuan",
   mute = true,
@@ -1577,7 +1586,6 @@ local ol_ex__niepan = fk.CreateTriggerSkill{
     room:handleAddLoseSkills(player, choice, nil)
   end,
 }
-
 ol_ex__lianhuan:addRelatedSkill(ol_ex__lianhuan_trigger)
 pangtong:addSkill(ol_ex__lianhuan)
 pangtong:addSkill(ol_ex__niepan)
@@ -1677,7 +1685,6 @@ local hanzhan = fk.CreateTriggerSkill{
     end
   end,
 }
-
 local taishici = General(extension, "ol_ex__taishici", "wu", 4)
 taishici:addSkill("tianyi")
 taishici:addSkill(hanzhan)
@@ -1725,7 +1732,6 @@ local ol_ex__jianchu = fk.CreateTriggerSkill{
     end
   end,
 }
-
 local pangde = General(extension, "ol_ex__pangde", "qun", 4)
 pangde:addSkill("mashu")
 pangde:addSkill(ol_ex__jianchu)
@@ -1762,7 +1768,6 @@ local ol_ex__shuangxiong = fk.CreateViewAsSkill{
     if #cards ~= 1 then
       return nil
     end
-
     local c = Fk:cloneCard("duel")
     c:addSubcard(cards[1])
     return c
@@ -1843,7 +1848,6 @@ local ol_ex__shuangxiong_trigger = fk.CreateTriggerSkill{
     room:setPlayerMark(player, "ol_ex__shuangxiong_damage-turn", damageRecorded)
   end,
 }
-
 ol_ex__shuangxiong:addRelatedSkill(ol_ex__shuangxiong_trigger)
 local yanliangwenchou = General(extension, "ol_ex__yanliangwenchou", "qun", 4)
 yanliangwenchou:addSkill(ol_ex__shuangxiong)
@@ -2226,7 +2230,6 @@ local ol_ex__zaiqi = fk.CreateTriggerSkill{
     end
   end,
 }
-
 local menghuo = General(extension, "ol_ex__menghuo", "shu", 4)
 menghuo:addSkill("huoshou")
 menghuo:addSkill(ol_ex__zaiqi)
