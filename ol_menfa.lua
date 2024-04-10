@@ -461,18 +461,32 @@ local shangshen = fk.CreateTriggerSkill{
   events = {fk.Damaged},
   can_trigger = function(self, event, target, player, data)
     if player:hasSkill(self) and not target.dead and data.damageType ~= fk.NormalDamage then
-      if player:getMark("shangshen-turn") == 0 then
-        player.room:setPlayerMark(player, "shangshen-turn", 1)
-        return true
+      local room = player.room
+      local damage_event = room.logic:getCurrentEvent():findParent(GameEvent.Damage, true)
+      if damage_event == nil then return false end
+      local mark = player:getMark("shangshen_record-turn")
+      if mark == 0 then
+        U.getActualDamageEvents(room, 1, function(e)
+          local damage = e.data[1]
+          if damage.damageType ~= fk.NormalDamage then
+            mark = e.id
+            room:setPlayerMark(player, "shangshen_record-turn", mark)
+            return true
+          end
+        end, Player.HistoryTurn)
       end
+      return mark == damage_event.id
     end
   end,
   on_cost = function(self, event, target, player, data)
-    return player.room:askForSkillInvoke(player, self.name, data, "#shangshen-invoke::"..target.id)
+    local room = player.room
+    if room:askForSkillInvoke(player, self.name, data, "#shangshen-invoke::"..target.id) then
+      room:doIndicate(player.id, {target.id})
+      return true
+    end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    room:doIndicate(player.id, {target.id})
     if player:getMark("fenchai") == 0 and player:compareGenderWith(target, true) then
       room:setPlayerMark(player, "fenchai", target.id)
     end
@@ -482,7 +496,7 @@ local shangshen = fk.CreateTriggerSkill{
       pattern = ".|2~9|spade",
     }
     room:judge(judge)
-    if judge.card.suit == Card.Spade and judge.card.number >= 2 and judge.card.number <= 9 then
+    if judge.card.suit == Card.Spade and judge.card.number > 1 and judge.card.number < 10 then
       room:damage{
         to = player,
         damage = 3,
@@ -490,8 +504,9 @@ local shangshen = fk.CreateTriggerSkill{
         skillName = self.name,
       }
     end
+    if target.dead then return false end
     local n = 4 - target:getHandcardNum()
-    if n > 0 and not target.dead then
+    if n > 0 then
       target:drawCards(n, self.name)
     end
   end,
@@ -520,7 +535,8 @@ Fk:loadTranslationTable{
   ["illustrator:olz__xuncan"] = "凡果",
 
   ["yushen"] = "熨身",
-  [":yushen"] = "出牌阶段限一次，你可以选择一名已受伤的其他角色并选择：1.其回复1点体力，视为其对你使用一张冰【杀】；2.其回复1点体力，视为你对其使用一张冰【杀】。",
+  [":yushen"] = "出牌阶段限一次，你可以选择一名已受伤的其他角色并选择："..
+  "1.令其回复1点体力，其视为对你使用冰【杀】；2.令其回复1点体力，你视为对其使用冰【杀】。",
   ["shangshen"] = "伤神",
   [":shangshen"] = "当每回合首次有角色受到属性伤害后，你可以进行一次【闪电】判定并令其将手牌摸至四张。",
   ["fenchai"] = "分钗",
@@ -704,8 +720,7 @@ local dianzhan = fk.CreateTriggerSkill{
   on_refresh = function(self, event, target, player, data)
     if event == fk.AfterCardUseDeclared then
       local suitRecorded = U.getMark(player, "@dianzhan_suit-round")
-      if not table.contains(suitRecorded, data.card:getSuitString(true)) then
-        table.insert(suitRecorded, data.card:getSuitString(true))
+      if table.insertIfNeed(suitRecorded, data.card:getSuitString(true)) then
         player.room:setPlayerMark(player, "@dianzhan_suit-round", suitRecorded)
       end
     elseif event == fk.EventLoseSkill then
@@ -826,10 +841,10 @@ local muyin = fk.CreateTriggerSkill{
     local room = player.room
     local targets = {}
     local max_num = player:getMaxCards()
-    for _, p in ipairs(player.room.alive_players) do
+    for _, p in ipairs(room.alive_players) do
       max_num = math.max(max_num, p:getMaxCards())
     end
-    for _, p in ipairs(player.room.alive_players) do
+    for _, p in ipairs(room.alive_players) do
       if (isFamilyMember(p, "wu") or player == p) and p:getMaxCards() < max_num then
         table.insert(targets, p.id)
       end
@@ -841,8 +856,9 @@ local muyin = fk.CreateTriggerSkill{
     end
   end,
   on_use = function(self, event, target, player, data)
-    player.room:addPlayerMark(player.room:getPlayerById(self.cost_data), MarkEnum.AddMaxCards, 1)
-    player.room:broadcastProperty(player, "MaxCards")
+    local room = player.room
+    room:addPlayerMark(room:getPlayerById(self.cost_data), MarkEnum.AddMaxCards, 1)
+    room:broadcastProperty(player, "MaxCards")
   end,
 }
 zhanding:addRelatedSkill(zhanding_record)
