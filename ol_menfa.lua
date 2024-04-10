@@ -409,14 +409,31 @@ local yushen = fk.CreateActiveSkill{
   anim_type = "support",
   card_num = 0,
   target_num = 1,
+  prompt = function(self)
+    return "#yushen-active:::" .. self.interaction.data
+  end,
+  interaction = function()
+    return UI.ComboBox {
+      choices = {"yushen2", "yushen1"}
+    }
+  end,
   can_use = function(self, player)
     return player:usedSkillTimes(self.name, Player.HistoryPhase) == 0
   end,
-  card_filter = function(self, to_select, selected)
-    return false
-  end,
+  card_filter = Util.FalseFunc,
   target_filter = function(self, to_select, selected)
-    return #selected == 0 and Fk:currentRoom():getPlayerById(to_select):isWounded() and to_select ~= Self.id
+    if #selected == 0 and to_select ~= Self.id then
+      local target = Fk:currentRoom():getPlayerById(to_select)
+      if target:isWounded() then
+        local slash = Fk:cloneCard("ice__slash")
+        slash.skillName = self.name
+        if self.interaction.data == "yushen2" then
+          return Self:canUseTo(slash, target, { bypass_times = true, bypass_distances = true })
+        elseif self.interaction.data == "yushen1" then
+          return target:canUseTo(slash, Self, { bypass_times = true, bypass_distances = true })
+        end
+      end
+    end
   end,
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
@@ -430,8 +447,8 @@ local yushen = fk.CreateActiveSkill{
       recoverBy = player,
       skillName = self.name
     })
-    local choice = room:askForChoice(player, {"yushen1", "yushen2"}, self.name)
-    if choice == "yushen1" then
+    if player.dead or target.dead then return end
+    if self.interaction.data == "yushen1" then
       room:useVirtualCard("ice__slash", nil, target, player, self.name, true)
     else
       room:useVirtualCard("ice__slash", nil, player, target, self.name, true)
@@ -503,12 +520,13 @@ Fk:loadTranslationTable{
   ["illustrator:olz__xuncan"] = "凡果",
 
   ["yushen"] = "熨身",
-  [":yushen"] = "出牌阶段限一次，你可以选择一名其他角色并令其回复1点体力，然后选择一项：1.视为其对你使用一张冰【杀】；2.视为你对其使用一张冰【杀】。",
+  [":yushen"] = "出牌阶段限一次，你可以选择一名已受伤的其他角色并选择：1.其回复1点体力，视为其对你使用一张冰【杀】；2.其回复1点体力，视为你对其使用一张冰【杀】。",
   ["shangshen"] = "伤神",
   [":shangshen"] = "当每回合首次有角色受到属性伤害后，你可以进行一次【闪电】判定并令其将手牌摸至四张。",
   ["fenchai"] = "分钗",
   [":fenchai"] = "锁定技，若首次成为你技能目标的异性角色存活，你的判定牌视为<font color='red'>♥</font>，否则视为♠。",
   ["#shangshen-invoke"] = "伤神：你可以进行一次【闪电】判定并令 %dest 将手牌摸至四张",
+  ["#yushen-active"] = "发动 熨身，令一名其他角色回复1点体力，%arg",
   ["yushen1"] = "视为其对你使用冰【杀】",
   ["yushen2"] = "视为你对其使用冰【杀】",
 

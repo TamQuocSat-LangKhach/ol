@@ -209,10 +209,8 @@ local zhenlie = fk.CreateTriggerSkill{
     if player:isWounded() and player:hasSkill(miji) then
       table.insert(choices, "ol_ex__zhenlie_miji")
     end
-
     if #choices == 0 then return false end
-    table.insert(choices, "Cancel")
-    local choice = room:askForChoice(player, choices, self.name, "", false, {"ol_ex__zhenlie_prey", "ol_ex__zhenlie_miji", "Cancel"})
+    local choice = room:askForChoice(player, choices, self.name, "", false, {"ol_ex__zhenlie_prey", "ol_ex__zhenlie_miji"})
     if choice == "ol_ex__zhenlie_prey" then
       local id = room:askForCardChosen(player, to, "he", self.name)
       room:obtainCard(player.id, id, false, fk.ReasonPrey, player.id)
