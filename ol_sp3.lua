@@ -1721,9 +1721,9 @@ Fk:addSkill(zhuyan_active)
 local zhuyan = fk.CreateTriggerSkill{
   name = "zhuyan",
   anim_type = "control",
-  events = {fk.EventPhaseStart},
+  events = {fk.EventPhaseEnd},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self) and player.phase == Player.Finish and
+    return target == player and player:hasSkill(self) and player.phase == Player.Discard and
     not table.every(player.room.alive_players, function (p)
       return #U.getMark(p, "zhuyan") ~= 2 or (p:getMark("zhuyan_hp") > 0 and p:getMark("zhuyan_handcard") > 0)
     end)
@@ -1778,45 +1778,43 @@ local zhuyan = fk.CreateTriggerSkill{
     if event == fk.GameStart then
       return true
     else
-      return target == player and player.phase == Player.Start
+      return target == player and player.phase == Player.Finish
     end
   end,
   on_refresh = function(self, event, target, player, data)
     player.room:setPlayerMark(player, self.name, {player.hp, math.min(player:getHandcardNum(), 5)})
   end,
 }
-local leijie = fk.CreateTriggerSkill{
+local leijie = fk.CreateActiveSkill{
   name = "leijie",
   anim_type = "control",
-  events = {fk.EventPhaseStart},
-  can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self) and player.phase == Player.Start
+  prompt = "#leijie-active",
+  card_num = 0,
+  target_num = 1,
+  can_use = function(self, player)
+    return player:usedSkillTimes(self.name, Player.HistoryPhase) == 0
   end,
-  on_cost = function(self, event, target, player, data)
-    local to = player.room:askForChoosePlayers(player, table.map(player.room:getAlivePlayers(), Util.IdMapper), 1, 1, "#leijie-choose", self.name, true)
-    if #to > 0 then
-      self.cost_data = to[1]
-      return true
-    end
+  card_filter = Util.FalseFunc,
+  target_filter = function(self, to_select, selected, selected_cards)
+    return #selected == 0
   end,
-  on_use = function(self, event, target, player, data)
-    local room = player.room
-    local to = room:getPlayerById(self.cost_data)
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    local target = room:getPlayerById(effect.tos[1])
     local judge = {
-      who = to,
+      who = target,
       reason = self.name,
       pattern = ".",
     }
     room:judge(judge)
-    if judge.card.suit == Card.Spade and judge.card.number >= 2 and judge.card.number <= 9 then
-      room:damage{
-        to = to,
-        damage = 2,
-        damageType = fk.ThunderDamage,
-        skillName = self.name,
-      }
+    if target.dead then return end
+    if judge.card.suit == Card.Spade and judge.card.number > 1 and judge.card.number < 10 then
+      if player == target or player.dead then return false end
+      if room:useVirtualCard("thunder__slash", nil, player, target, self.name, true) and not (player.dead or target.dead) then
+        room:useVirtualCard("thunder__slash", nil, player, target, self.name, true)
+      end
     else
-      to:drawCards(2, self.name)
+      room:drawCards(target, 2, self.name)
     end
   end,
 }
@@ -1827,13 +1825,13 @@ Fk:loadTranslationTable{
   ["#lushi"] = "蝉蜕蛇解",
   ["illustrator:lushi"] = "君桓文化",
   ["zhuyan"] = "驻颜",
-  [":zhuyan"] = "结束阶段，你可以令一名角色将以下项调整至与其上个准备阶段结束时（若无则改为游戏开始时）相同：体力值；手牌数（至多摸至五张）。"..
+  [":zhuyan"] = "弃牌阶段结束时，你可以令一名角色将以下项调整至与其上个结束阶段时（若无则改为游戏开始时）相同：体力值；手牌数（至多摸至五张）。"..
   "每名角色每项限一次",
   ["leijie"] = "雷劫",
-  [":leijie"] = "准备阶段，你可以令一名角色判定，若结果为♠2~9，其受到2点雷电伤害，否则其摸两张牌。",
+  [":leijie"] = "出牌阶段限一次，你可以令一名角色判定，若结果为♠2~9，你依次视为对其使用两张雷【杀】，否则其摸两张牌。",
   ["#zhuyan-choose"] = "驻颜：你可以令一名角色将体力值或手牌数调整至与其上个准备阶段相同",
   ["#zhuyan-choice"] = "驻颜：选择令 %dest 调整的一项",
-  ["#leijie-choose"] = "雷劫：令一名角色判定，若为♠2~9，其受到2点雷电伤害，否则其摸两张牌",
+  ["#leijie-active"] = "发动 雷劫，令一名角色判定，若为♠2~9，视为对其使用两张雷【杀】，否则其摸两张牌",
 
   ["zhuyan_active"] = "驻颜",
   ["@zhuyan1"] = "体力",
@@ -4458,19 +4456,20 @@ local xiangxu = fk.CreateTriggerSkill{
   can_trigger = function(self, event, target, player, data)
     if not player:hasSkill(self) then return end
     if event == fk.AfterCardsMove and player:getMark("@@xiangxu-turn") == 0 then
+      local x = player:getHandcardNum()
       for _, move in ipairs(data) do
         if move.from == player.id then
           for _, info in ipairs(move.moveInfo) do
             if info.fromArea == Card.PlayerHand then
               return table.every(player.room.alive_players, function (p)
-                return p:getHandcardNum() >= player:getHandcardNum()
+                return p:getHandcardNum() >= x
               end)
             end
           end
         end
         if move.to == player.id and move.toArea == Card.PlayerHand then
           return table.every(player.room.alive_players, function (p)
-            return p:getHandcardNum() >= player:getHandcardNum()
+            return p:getHandcardNum() >= x
           end)
         end
       end
@@ -4486,7 +4485,11 @@ local xiangxu = fk.CreateTriggerSkill{
       local x, y = player:getHandcardNum(), target:getHandcardNum()
       if x > y then
         local n = x - y
-        local cards = player.room:askForDiscard(player, n, n, false, self.name, true, ".", "#xiangxu-discard:::"..tostring(n), true)
+        local prompt = "#xiangxu-discard:::"..tostring(n)
+        if n > 1 then
+          prompt = prompt .. ":" .. "xiangxu_recover"
+        end
+        local cards = player.room:askForDiscard(player, n, n, false, self.name, true, ".", prompt, true)
         if #cards > 0 then
           self.cost_data = cards
           return true
@@ -4512,8 +4515,16 @@ local xiangxu = fk.CreateTriggerSkill{
       room:setPlayerMark(player, "xiangxu_targets", mark)
       player:broadcastSkillInvoke(self.name)
       if #self.cost_data > 0 then
-        room:notifySkillInvoked(player, self.name, "negative")
+        room:notifySkillInvoked(player, self.name, "support")
         room:throwCard(self.cost_data, self.name, player, player)
+        if #self.cost_data > 1 and not player.dead and player:isWounded() then
+          room:recover{
+            who = player,
+            num = 1,
+            recoverBy = player,
+            skillName = self.name,
+          }
+        end
       else
         room:notifySkillInvoked(player, self.name, "drawcard")
         local n = math.min(target:getHandcardNum(), 5) - player:getHandcardNum()
@@ -4528,34 +4539,36 @@ local xiangzuo = fk.CreateTriggerSkill{
   frequency = Skill.Limited,
   events = {fk.EnterDying},
   can_trigger = function(self, event, target, player, data)
-    if target == player and player:hasSkill(self) and player.dying and not player:isNude() and
-    player:usedSkillTimes(self.name, Player.HistoryGame) == 0 then
-      local current = player.room.current
-      return not current.dead and player ~= current
-    end
+    return target == player and player:hasSkill(self) and player.dying and not player:isNude() and
+    player:usedSkillTimes(self.name, Player.HistoryGame) == 0
   end,
   on_cost = function(self, event, target, player, data)
     local room = player.room
-    local current = room.current
-    local prompt = "#xiangzuo-cost::" .. room.current.id .. ":"
-    if table.contains(U.getMark(player, "gongjie_targets"), current.id) and
-    table.contains(U.getMark(player, "xiangxu_targets"), current.id) then
-      prompt = prompt .. "xiangzuo_recover"
+    local gongjie_targets = U.getMark(player, "gongjie_targets")
+    local xiangxu_targets = U.getMark(player, "xiangxu_targets")
+    for _, p in ipairs(room.alive_players) do
+      if table.contains(gongjie_targets, p.id) and table.contains(gongjie_targets, p.id) then
+        room:setPlayerMark(p, "@@xiangzuo", 1)
+      end
     end
-    local cards = room:askForCard(player, 1, 998, true, self.name, true, ".", prompt)
-    if #cards > 0 then
-      room:doIndicate(player.id, {current.id})
-      self.cost_data = cards
+    local tos, cards = U.askForChooseCardsAndPlayers(room, player, 1, 999,
+    table.map(room:getOtherPlayers(player, false), Util.IdMapper), 1, 1, ".",
+    "#xiangzuo-invoke", self.name, true, false)
+    for _, p in ipairs(room.alive_players) do
+      room:setPlayerMark(p, "@@xiangzuo", 0)
+    end
+    if #tos > 0 and #cards > 0 then
+      self.cost_data = {tos, cards}
       return true
     end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local current = room.current
-    local cards = table.simpleClone(self.cost_data)
-    room:moveCardTo(cards, Player.Hand, current, fk.ReasonGive, self.name, nil, false, player.id)
-    if not player.dead and player:isWounded() and table.contains(U.getMark(player, "gongjie_targets"), current.id) and
-    table.contains(U.getMark(player, "xiangxu_targets"), current.id) then
+    local to = room:getPlayerById(self.cost_data[1][1])
+    local cards = table.simpleClone(self.cost_data[2])
+    room:moveCardTo(cards, Player.Hand, to, fk.ReasonGive, self.name, nil, false, player.id)
+    if not player.dead and player:isWounded() and table.contains(U.getMark(player, "gongjie_targets"), to.id) and
+    table.contains(U.getMark(player, "xiangxu_targets"), to.id) then
       room:recover({
         who = player,
         num = #cards,
@@ -4575,16 +4588,18 @@ Fk:loadTranslationTable{
   ["gongjie"] = "恭节",
   [":gongjie"] = "每轮的第一个回合开始后，你可以令任意名角色各获得你一张牌，然后你摸X张牌（X为被获得牌的花色数）。",
   ["xiangxu"] = "相胥",
-  [":xiangxu"] = "当你得到/失去手牌后，若你是手牌数最小的角色，你于本回合结束时可以将手牌调整至与当前回合角色相同（至多摸至五张）。",
+  [":xiangxu"] = "当你得到/失去手牌后，若你是手牌数最小的角色，你于本回合结束时可以将手牌调整至与当前回合角色相同（至多摸至五张），"..
+  "若你以此法弃置了至少两张牌，你回复1点体力。",
   ["xiangzuo"] = "襄胙",
-  [":xiangzuo"] = "限定技，当你进入濒死状态时，你可以交给当前回合角色任意张牌，若你对其发动过〖恭节〗和〖相胥〗，你回复等量体力。",
+  [":xiangzuo"] = "限定技，当你进入濒死状态时，你可以将任意张牌交给一名角色，若你对其发动过〖恭节〗和〖相胥〗，你回复等量体力。",
 
   ["#gongjie-choose"] = "你可以发动 恭节，令至多%arg名角色获得你的牌",
   ["@@xiangxu-turn"] = "相胥",
   ["#xiangxu-discard"] = "你可以发动 相胥，弃置%arg张手牌",
+  ["xiangxu_recover"] = "，并回复1点体力",
   ["#xiangxu-draw"] = "你可以发动 相胥，摸%arg张牌",
-  ["#xiangzuo-cost"] = "你可以发动 襄胙，将任意张牌交给%dest%arg",
-  ["xiangzuo_recover"] = "，并回复等量的体力",
+  ["#xiangzuo-invoke"] = "你可以发动 襄胙，将任意张牌交给一名角色",
+  ["@@xiangzuo"] = "可回复体力",
 
   ["$gongjie1"] = "身负浩然之气，当以恭节待人。",
   ["$gongjie2"] = "生于帝王之家，不可忘恭失节。",
