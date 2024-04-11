@@ -1394,6 +1394,7 @@ Fk:loadTranslationTable{
   ["luoxian"] = "罗宪",
   ["#luoxian"] = "介然毕命",
   ["designer:luoxian"] = "玄蝶既白",
+  ["cv:luoxian"] = "邵晨",
   ["illustrator:luoxian"] = "匠人绘",
 
   ["daili"] = "带砺",
@@ -5149,6 +5150,7 @@ guotu:addSkill(weijie)
 Fk:loadTranslationTable{
   ["guotu"] = "郭图",
   ["#guotu"] = "凶臣",
+  ["cv:guotu"] = "杨超然",
 
   ["qushi"] = "趋势",
   [":qushi"] = "出牌阶段限一次，你可以摸一张牌，然后将一张手牌扣置于一名其他角色的武将牌旁（称为“趋”）。"..

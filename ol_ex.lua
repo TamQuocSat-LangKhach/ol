@@ -3751,7 +3751,7 @@ Fk:loadTranslationTable{
   ["~ol_ex__zhangzhaozhanghong"] = "老臣年迈，无力为继……",
 }
 
-local ol_ex__zuoci = General(extension, "ol_ex__zuoci", "qun", 3, 3, General.Female)
+local ol_ex__zuoci = General(extension, "ol_ex__zuoci", "qun", 3)
 
 local huashen_blacklist = {
   -- imba
