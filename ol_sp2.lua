@@ -406,6 +406,8 @@ Fk:loadTranslationTable{
   ["zhangling"] = "张陵",
   ["#zhangling"] = "祖天师",
   ["illustrator:zhangling"] = "匠人绘",
+  ["cv:zhangling"] = "虞晓旭",
+
   ["huqi"] = "虎骑",
   [":huqi"] = "锁定技，你计算与其他角色的距离-1；当你于回合外受到伤害后，你进行判定，若结果为红色，视为你对伤害来源使用一张【杀】（无距离限制）。",
   ["shoufu"] = "授符",
@@ -2774,6 +2776,7 @@ Fk:loadTranslationTable{
   ["fanjiangzhangda"] = "范疆张达",
   ["#fanjiangzhangda"] = "你死我亡",
   ["designer:fanjiangzhangda"] = "七哀",
+  ["cv:fanjiangzhangda"] = "虞晓旭/段杰达",
   ["illustrator:fanjiangzhangda"] = "游漫美绘",
 
   ["yuanchou"] = "怨仇",
