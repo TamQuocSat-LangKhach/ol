@@ -13,50 +13,52 @@ Fk:appendKingdomMap("god", {"jin"})
 local simayi = General(extension, "ol__simayi", "jin", 3)
 local buchen = fk.CreateTriggerSkill{
   name = "buchen",
-  can_trigger = Util.FalseFunc,
-}
-local yingshis = fk.CreateTriggerSkill{
-  name = "yingshis",
-  refresh_events = {fk.EventPhaseChanging, fk.EventPhaseStart, fk.EventAcquireSkill, fk.EventLoseSkill,
-  fk.AfterCardsMove, fk.MaxHpChanged, fk.AfterDrawPileShuffle},
-  can_refresh = function (self, event, target, player, data)
-    if event == fk.EventLoseSkill then
-      return target == player and data == self
-    elseif event == fk.EventPhaseChanging then
-      return target == player and data.from == Player.Play and player:hasSkill(self, true)
-    elseif event == fk.AfterCardsMove then
-      if player.phase == Player.Play and player:hasSkill(self, true) then
-        for _, move in ipairs(data) do
-          if move.toArea == Card.DrawPile then
-            return true
-          end
-          for _, info in ipairs(move.moveInfo) do
-            if info.fromArea == Card.DrawPile then
-              return true
-            end
-          end
-        end
-      end
-    else
-      return (target == player or not target) and player.phase == Player.Play and player:hasSkill(self, true)
+  events = {"fk.GeneralAppeared"},
+  anim_type = "control",
+  can_trigger = function (self, event, target, player, data)
+    if target == player and player:hasShownSkill(self) then
+      local to = player.room.current
+      return to and to ~= player and not to:isNude()
     end
+  end,
+  on_cost = function (self, event, target, player, data)
+    return player.room:askForSkillInvoke(player, self.name, nil, "#buchen-invoke:"..player.room.current.id)
+  end,
+  on_use = function (self, event, target, player, data)
+    local room = player.room
+    local id = room:askForCardChosen(player, room.current, "he", self.name)
+    room:moveCardTo(id, Card.PlayerHand, player, fk.ReasonPrey, self.name, nil, false, player.id)
+  end,
+}
+buchen.isHiddenSkill = true
+local yingshis = fk.CreateActiveSkill{
+  name = "yingshis",
+  frequency = Skill.Compulsory,  --锁定主动技（
+  card_num = 999,
+  target_num = 0,
+  expand_pile = function() return U.getMark(Self, "yingshis") end,
+  card_filter = function (self, to_select)
+    return table.contains(U.getMark(Self, "yingshis"), to_select)
+  end,
+  can_use = Util.TrueFunc,
+}
+local yingshis_trigger = fk.CreateTriggerSkill{
+  name = "#yingshis_trigger",
+  refresh_events = {fk.StartPlayCard},
+  can_refresh = function (self, event, target, player, data)
+    return target == player and player:hasSkill(yingshis)
   end,
   on_refresh = function (self, event, target, player, data)
     local room = player.room
-    if event == fk.EventPhaseChanging or event == fk.EventLoseSkill then
-      room:setPlayerMark(player, "@[private]$yingshis", 0)
-      return
-    end
     local ids = {}
-    if player:hasSkill(self) then
-      for i = 1, player.maxHp, 1 do
-        if i > #room.draw_pile then break end
-        table.insert(ids, room.draw_pile[i])
-      end
+    for i = 1, player.maxHp, 1 do
+      if i > #room.draw_pile then break end
+      table.insert(ids, room.draw_pile[i])
     end
-    U.setPrivateMark(player, "$yingshis", ids)
+    player.room:setPlayerMark(player, "yingshis", ids)
   end,
 }
+yingshis:addRelatedSkill(yingshis_trigger)
 local xiongzhi = fk.CreateActiveSkill{
   name = "xiongzhi",
   anim_type = "offensive",
@@ -180,20 +182,21 @@ Fk:loadTranslationTable{
   ["#ol__simayi"] = "通权达变",
   ["illustrator:ol__simayi"] = "六道目",
   ["buchen"] = "不臣",
-  [":buchen"] = "<font color='red'>隐匿技（暂时无法生效）</font>，你于其他角色的回合登场后，你可获得其一张牌。",
+  [":buchen"] = "隐匿。你于其他角色的回合登场后，你可获得其一张牌。",
   ["yingshis"] = "鹰视",
-  [":yingshis"] = "锁定技，牌堆顶的X张牌于你的出牌阶段对你可见（X为你的体力上限）。",
+  [":yingshis"] = "锁定技，牌堆顶的X张牌于你出牌阶段空闲时对你可见（X为你的体力上限）。",
   ["xiongzhi"] = "雄志",
   [":xiongzhi"] = "限定技，出牌阶段，你可展示牌堆顶牌并使用之。你可重复此流程直到牌堆顶牌不能被使用。",
   ["quanbian"] = "权变",
   [":quanbian"] = "当你于出牌阶段首次使用或打出一种花色的手牌时，你可从牌堆顶X张牌中获得一张与此牌花色不同的牌，将其余牌以任意顺序置于牌堆顶。"..
   "出牌阶段，你至多使用X张非装备手牌。（X为你的体力上限）",
-  ["@[private]$yingshis"] = "鹰视",
+  ["#yingshis_trigger"] = "鹰视",
   ["#xiongzhi"] = "雄志：你可以重复展示牌堆顶牌并使用之(有次数限制)",
   ["xiongzhi_viewas"] = "雄志",
   ["#xiongzhi-use"] = "雄志：是否使用%arg？",
   ["@quanbian-phase"] = "权变",
   ["#quanbian-get"] = "权变：获得一张花色不同的牌",
+  ["#buchen-invoke"] = "不臣:你可获得 %src 一张牌",
 
   ["$buchen1"] = "螟蛉之光，安敢同日月争辉？",
   ["$buchen2"] = "巍巍隐帝，岂可为臣？",
@@ -209,8 +212,33 @@ Fk:loadTranslationTable{
 local zhangchunhua = General(extension, "ol__zhangchunhua", "jin", 3, 3, General.Female)
 local xuanmu = fk.CreateTriggerSkill{
   name = "xuanmu",
-  can_trigger = Util.FalseFunc,
+  mute = true,
+  events = {"fk.GeneralAppeared"},
+  frequency = Skill.Compulsory,
+  can_trigger = function (self, event, target, player, data)
+    if target == player and player:hasShownSkill(self) then
+      return player.phase == Player.NotActive
+    end
+  end,
+  on_use = function (self, event, target, player, data)
+    player.room:setPlayerMark(player, "@@xuanmu-turn", 1)
+  end,
 }
+xuanmu.isHiddenSkill = true
+local xuanmu_delay = fk.CreateTriggerSkill{
+  name = "#xuanmu_delay",
+  anim_type = "defensive",
+  events = {fk.DamageInflicted},
+  can_trigger = function (self, event, target, player, data)
+    return target == player and player:getMark("@@xuanmu-turn") > 0
+  end,
+  on_cost = Util.TrueFunc,
+  on_use = function (self, event, target, player, data)
+    player:broadcastSkillInvoke("xuanmu")
+    return true
+  end,
+}
+xuanmu:addRelatedSkill(xuanmu_delay)
 local ol__huishi = fk.CreateTriggerSkill{
   name = "ol__huishi",
   anim_type = "drawcard",
@@ -272,7 +300,7 @@ Fk:loadTranslationTable{
   ["#ol__zhangchunhua"] = "宣穆皇后",
   ["illustrator:ol__zhangchunhua"] = "六道目",
   ["xuanmu"] = "宣穆",
-  [":xuanmu"] = "锁定技，<font color='red'>隐匿技（暂时无法生效）</font>，你于其他角色的回合登场时，防止你受到的伤害直到回合结束。",
+  [":xuanmu"] = "隐匿。锁定技，你于其他角色的回合登场时，防止你受到的伤害直到回合结束。",
   ["ol__huishi"] = "慧识",
   [":ol__huishi"] = "摸牌阶段，你可以放弃摸牌，改为观看牌堆顶的X张牌，获得其中的一半（向下取整），然后将其余牌置入牌堆底。（X为牌堆数量的个位数）",
   ["qingleng"] = "清冷",
@@ -280,6 +308,8 @@ Fk:loadTranslationTable{
   "你对一名没有成为过〖清冷〗目标的角色发动〖清冷〗时，摸一张牌。（X为牌堆数量的个位数）",
   ["#ol__huishi-invoke"] = "慧识：你可以放弃摸牌，改为观看牌堆顶%arg张牌并获得其中的一半，其余置于牌堆底",
   ["#qingleng-invoke"] = "清冷：你可以将一张牌当冰【杀】对 %dest 使用",
+  ["#xuanmu_delay"] = "宣穆",
+  ["@@xuanmu-turn"] = "宣穆",
 
   ["$xuanmu1"] = "四门穆穆，八面莹澈。",
   ["$xuanmu2"] = "天色澄穆，心明清静。",
@@ -1179,56 +1209,72 @@ Fk:loadTranslationTable{
 local xiahouhui = General(extension, "xiahouhui", "jin", 3, 3, General.Female)
 local baoqie = fk.CreateTriggerSkill{
   name = "baoqie",
-  can_trigger = Util.FalseFunc,
+  frequency = Skill.Compulsory,
+  events = {"fk.GeneralAppeared"},
+  anim_type = "drawcard",
+  can_trigger = function (self, event, target, player, data)
+    return target == player and player:hasShownSkill(self)
+  end,
+  on_use = function (self, event, target, player, data)
+    local room = player.room
+    local ids = room:getCardsFromPileByRule(".|.|.|.|.|treasure")
+    if #ids > 0 then
+      room:moveCardTo(ids, Player.Hand, player, fk.ReasonPrey, self.name)
+      local cid = ids[1]
+      local card = Fk:getCardById(cid)
+      if not player.dead and table.contains(player:getCardIds("h"), cid) and card.type == Card.TypeEquip and
+      player:canUseTo(card, player) and room:askForSkillInvoke(player, self.name, nil, "#baoqie-use:::"..card:toLogString()) then
+        room:useCard{from = player.id, tos = {{player.id}}, card = card}
+      end
+    end
+  end,
 }
+baoqie.isHiddenSkill = true
 local yishi = fk.CreateTriggerSkill{
   name = "yishi",
   anim_type = "support",
   events = {fk.AfterCardsMove},
   can_trigger = function(self, event, target, player, data)
-    if player:hasSkill(self) then
+    if player:hasSkill(self) and player:usedSkillTimes(self.name, Player.HistoryTurn) == 0 then
       local room = player.room
+      local dat = {}
       for _, move in ipairs(data) do
-        if move.from ~= player.id and move.moveReason == fk.ReasonDiscard and room:getPlayerById(move.from).phase == Player.Play and
-          not room:getPlayerById(move.from).dead and player:usedSkillTimes(self.name, Player.HistoryTurn) == 0 then
-          self.cost_data = move.from
-          player.tag[self.name] = {}
+        if move.from and move.from ~= player.id and move.moveReason == fk.ReasonDiscard 
+        and room:getPlayerById(move.from).phase == Player.Play and not room:getPlayerById(move.from).dead then
+          dat[1] = move.from
+          dat[2] = dat[2] or {}
           for _, info in ipairs(move.moveInfo) do
-            if info.fromArea == Card.PlayerHand and
-              (room:getCardArea(info.cardId) == Card.DiscardPile or room:getCardArea(info.cardId) == Card.Processing) then
-              table.insertIfNeed(player.tag[self.name], info.cardId)
+            if info.fromArea == Card.PlayerHand and room:getCardArea(info.cardId) == Card.DiscardPile then
+              table.insertIfNeed( dat[2], info.cardId)
             end
           end
-          return #player.tag[self.name] > 0
         end
+      end
+      if dat[2] and #dat[2] > 0 then
+        self.cost_data = dat
+        return true
       end
     end
   end,
   on_cost = function(self, event, target, player, data)
-    return player.room:askForSkillInvoke(player, self.name, data, "#yishi-invoke::"..self.cost_data)
+    return player.room:askForSkillInvoke(player, self.name, data, "#yishi-invoke::"..self.cost_data[1])
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local to = room:getPlayerById(self.cost_data)
-    local cards = player.tag[self.name]
-    for _, id in ipairs(cards) do
-      if room:getCardArea(id) ~= Card.DiscardPile and room:getCardArea(id) ~= Card.Processing then
-        table.removeOne(cards)
-      end
+    local to = room:getPlayerById(self.cost_data[1])
+    local cards = self.cost_data[2]
+    local give = cards[1]
+    if #cards > 1 then
+      give = room:askForCardChosen(player, to, { card_data = { { "yishi", cards } } }, self.name, "#yishi-card:"..to.id)
     end
-    if #cards == 1 then
-      room:obtainCard(to, cards[1], true, fk.ReasonJustMove)
-    else
-      room:fillAG(player, cards)
-      local id = room:askForAG(player, cards, false, self.name)
-      room:closeAG(player)
-      table.removeOne(cards, id)
-      room:obtainCard(to, id, true, fk.ReasonJustMove)
-      local dummy = Fk:cloneCard("dilu")
-      dummy:addSubcards(cards)
-      room:obtainCard(player, dummy, true, fk.ReasonJustMove)
+    room:moveCardTo(give, Player.Hand, to, fk.ReasonPrey, self.name)
+    if player.dead then return end
+    cards = table.filter(cards, function (id)
+      return id ~= give and room:getCardArea(id) == Card.DiscardPile
+    end)
+    if #cards > 0 then
+      room:moveCardTo(cards, Player.Hand, player, fk.ReasonPrey, self.name)
     end
-    player.tag[self.name] = {}
   end,
 }
 local shidu = fk.CreateActiveSkill{
@@ -1271,13 +1317,15 @@ Fk:loadTranslationTable{
   ["#xiahouhui"] = "景怀皇后",
   ["illustrator:xiahouhui"] = "凝聚永恒",
   ["baoqie"] = "宝箧",
-  [":baoqie"] = "<font color='red'>隐匿技（暂时无法生效）</font>，锁定技，当你登场后，你从牌堆或弃牌堆获得一张宝物牌，然后你可以使用之。",
+  [":baoqie"] = "隐匿。锁定技，当你登场后，你从牌堆或弃牌堆获得一张宝物牌，然后你可以使用之。",
   ["yishi"] = "宜室",
   [":yishi"] = "每回合限一次，当一名其他角色于其出牌阶段弃置手牌后，你可以令其获得其中的一张牌，然后你获得其余的牌。",
   ["shidu"] = "识度",
   [":shidu"] = "出牌阶段限一次，你可以与一名其他角色拼点，若你赢，你获得其所有手牌，然后你交给其你的一半手牌（向下取整）。",
   ["#yishi-invoke"] = "宜室：你可以令 %dest 收回一张弃置的牌，你获得其余的牌",
+  ["#yishi-card"] = "宜室：选择一张牌还给 %src",
   ["#shidu-give"] = "识度：你需交还%arg张手牌",
+  ["#baoqie-use"] = "宝箧：你可以使用 %arg",
 
   ["$baoqie1"] = "宝箧藏玺，时局变动。",
   ["$baoqie2"] = "曹亡宝箧，尽露锋芒。",
@@ -1291,8 +1339,25 @@ Fk:loadTranslationTable{
 local simashi = General(extension, "ol__simashi", "jin", 3, 4)
 local taoyin = fk.CreateTriggerSkill{
   name = "taoyin",
-  can_trigger = Util.FalseFunc,
+  events = {"fk.GeneralAppeared"},
+  anim_type = "control",
+  can_trigger = function (self, event, target, player, data)
+    if target == player and player:hasShownSkill(self) then
+      local to = player.room.current
+      return to and to ~= player and not to.dead
+    end
+  end,
+  on_cost = function (self, event, target, player, data)
+    return player.room:askForSkillInvoke(player, self.name, nil, "#taoyin-invoke:"..player.room.current.id)
+  end,
+  on_use = function (self, event, target, player, data)
+    local room = player.room
+    local to = room.current
+    room:addPlayerMark(to, MarkEnum.MinusMaxCardsInTurn, 2)
+    room:broadcastProperty(to, "MaxCards")
+  end,
 }
+taoyin.isHiddenSkill = true
 local yimie = fk.CreateTriggerSkill{
   name = "yimie",
   anim_type = "offensive",
@@ -1467,7 +1532,7 @@ Fk:loadTranslationTable{
   ["#ol__simashi"] = "晋景王",
   ["illustrator:ol__simashi"] = "拉布拉卡",
   ["taoyin"] = "韬隐",
-  [":taoyin"] = "<font color='red'>隐匿技（暂时无法生效）</font>，你于其他角色的回合登场后，你可以令其本回合的手牌上限-2。",
+  [":taoyin"] = "隐匿。你于其他角色的回合登场后，你可以令其本回合的手牌上限-2。",
   ["yimie"] = "夷灭",
   [":yimie"] = "每回合限一次，当你对一名其他角色造成伤害时，你可失去1点体力，令此伤害值+X（X为其体力值减去伤害值）。伤害结算后，其回复X点体力。",
   ["tairan"] = "泰然",
@@ -1480,6 +1545,7 @@ Fk:loadTranslationTable{
   ["#yimie_delay"] = "夷灭",
   ["#yimie-invoke"] = "夷灭：你可以失去1点体力，令你对 %arg 造成的伤害增加至其体力值！",
   ["@@tairan-inhand"] = "泰然",
+  ["#taoyin-invoke"] = "韬隐：你可以令 %src 本回合的手牌上限-2",
 
   ["$taoyin1"] = "司马氏善谋、善忍，善置汝于绝境！",
   ["$taoyin2"] = "隐忍数载，亦不坠青云之志！",
@@ -1495,8 +1561,30 @@ Fk:loadTranslationTable{
 local yanghuiyu = General(extension, "ol__yanghuiyu", "jin", 3, 3, General.Female)
 local huirong = fk.CreateTriggerSkill{
   name = "huirong",
-  can_trigger = Util.FalseFunc,
+  frequency = Skill.Compulsory,
+  events = {"fk.GeneralAppeared"},
+  anim_type = "control",
+  can_trigger = function (self, event, target, player, data)
+    return target == player and player:hasShownSkill(self)
+  end,
+  on_use = function (self, event, target, player, data)
+    local room = player.room
+    local tos = player.room:askForChoosePlayers(player, table.map(room.alive_players, Util.IdMapper), 1, 1, "#huirong-choose", self.name, false)
+    if #tos > 0 then
+      local to = room:getPlayerById(tos[1])
+      local n = to:getHandcardNum() - to.hp
+      if n > 0 then
+        room:askForDiscard(to, n, n, false, self.name, false)
+      else
+        n = math.min(5-to:getHandcardNum(), -n)
+        if n > 0 then
+          to:drawCards(n, self.name)
+        end
+      end
+    end
+  end,
 }
+huirong.isHiddenSkill = true
 local ciwei = fk.CreateTriggerSkill{
   name = "ciwei",
   anim_type = "control",
@@ -1593,12 +1681,13 @@ Fk:loadTranslationTable{
   ["#ol__yanghuiyu"] = "景献皇后",
   ["illustrator:ol__yanghuiyu"] = "Jzeo",
   ["huirong"] = "慧容",
-  [":huirong"] = "<font color='red'>隐匿技（暂时无法生效）</font>，锁定技，你登场时，令一名角色将手牌摸或弃至体力值（至多摸至五张）。",
+  [":huirong"] = "隐匿。锁定技，你登场时，令一名角色将手牌摸或弃至体力值（至多摸至五张）。",
   ["ciwei"] = "慈威",
   [":ciwei"] = "其他角色于其回合内使用第二张牌时，若此牌为基本牌或普通锦囊牌，你可弃置一张牌令此牌无效（取消所有目标）。",
   ["caiyuan"] = "才媛",
   [":caiyuan"] = "锁定技，回合结束前，若你于上回合结束至今未扣减过体力，你摸两张牌。",
   ["#ciwei-invoke"] = "慈威：你可以弃置一张牌，取消 %dest 使用的%arg",
+  ["#huirong-choose"] = "慧容:令一名角色将手牌摸或弃至体力值（至多摸至五张）",
 
   ["$huirong1"] = "红尘洗练，慧容不改。",
   ["$huirong2"] = "花貌易改，福惠长存。",
@@ -1719,8 +1808,52 @@ Fk:loadTranslationTable{
 local simazhao = General(extension, "ol__simazhao", "jin", 3)
 local tuishi = fk.CreateTriggerSkill{
   name = "tuishi",
-  can_trigger = Util.FalseFunc,
+  events = {"fk.GeneralAppeared"},
+  mute = true,
+  can_trigger = function (self, event, target, player, data)
+    if target == player and player:hasShownSkill(self) then
+      return player.phase == Player.NotActive
+    end
+  end,
+  on_cost = Util.TrueFunc,
+  on_use = function (self, event, target, player, data)
+    player.room:setPlayerMark(player, "@@tuishi-turn", 1)
+  end,
 }
+tuishi.isHiddenSkill = true
+local tuishi_delay = fk.CreateTriggerSkill{
+  name = "#tuishi_delay",
+  events = {fk.EventPhaseStart},
+  anim_type = "offensive",
+  can_trigger = function (self, event, target, player, data)
+    if not target.dead and target.phase == Player.Finish and player:getMark("@@tuishi-turn") > 0 then
+      return table.find(player.room.alive_players, function (p)
+        return target:inMyAttackRange(p)
+      end)
+    end
+  end,
+  on_cost = function (self, event, target, player, data)
+    local targets = table.filter(player.room.alive_players, function (p) return target:inMyAttackRange(p) end)
+    local tos = player.room:askForChoosePlayers(player, table.map(targets, Util.IdMapper), 1, 1, "#tuishi-choose:"..target.id, self.name, true)
+    if #tos > 0 then
+      self.cost_data = tos[1]
+      return true
+    end
+  end,
+  on_use = function (self, event, target, player, data)
+    local room = player.room
+    player:broadcastSkillInvoke("tuishi")
+    local use = room:askForUseCard(target, "slash", "slash", "#tuishi-slash:"..self.cost_data..":"..player.id, true, 
+    {exclusive_targets = {self.cost_data}})
+    if use then
+      use.extraUse = true
+      room:useCard(use)
+    else
+      room:damage { from = player, to = target, damage = 1, skillName = "tuishi" }
+    end
+  end,
+}
+tuishi:addRelatedSkill(tuishi_delay)
 local choufa = fk.CreateActiveSkill{
   name = "choufa",
   anim_type = "control",
@@ -1874,8 +2007,7 @@ Fk:loadTranslationTable{
   ["#ol__simazhao"] = "晋文帝",
   ["illustrator:ol__simazhao"] = "君桓文化",
   ["tuishi"] = "推弑",
-  [":tuishi"] = "<font color='red'>隐匿技（暂时无法生效）</font>，若你于其他角色的回合登场，此回合结束时，你可令其对其攻击范围内你选择的一名角色"..
-  "使用【杀】，若其未使用【杀】，你对其造成1点伤害。",
+  [":tuishi"] = "隐匿。当你于其他角色的回合内登场后，你可以于此回合结束阶段令其选择一项：1.对其攻击范围内你选择的一名角色使用【杀】；2.受到1点伤害。",
   ["choufa"] = "筹伐",
   [":choufa"] = "出牌阶段限一次，你可展示一名其他角色的一张手牌，其手牌中与此牌不同类型的牌均视为【杀】直到其回合结束。",
   ["zhaoran"] = "昭然",
@@ -1890,6 +2022,10 @@ Fk:loadTranslationTable{
   ["#zhaoran-invoke"] = "昭然：你可以展示所有手牌，本阶段你失去一种花色最后的手牌后摸一张牌或弃置一名角色一张牌",
   ["@zhaoran-phase"] = "昭然",
   ["#zhaoran-discard"] = "昭然：弃置一名其他角色一张牌，或点“取消”摸一张牌",
+  ["#tuishi-choose"] = "推弑：你可选择一名角色，若 %src 未对其使用【杀】，你对 %src 造成1点伤害",
+  ["#tuishi_delay"] = "推弑",
+  ["@@tuishi-turn"] = "推弑",
+  ["#tuishi-slash"] = "推弑：你需对 %src 使用【杀】，否则 %dest 对你造成1点伤害",
 
   ["$tuishi1"] = "此僚怀异，召汝讨贼。",
   ["$tuishi2"] = "推令既出，焉敢不从？",
@@ -1905,8 +2041,29 @@ Fk:loadTranslationTable{
 local xuangongzhu = General(extension, "xuangongzhu", "jin", 3, 3, General.Female)
 local gaoling = fk.CreateTriggerSkill{
   name = "gaoling",
-  can_trigger = Util.FalseFunc,
+  anim_type = "support",
+  events = {"fk.GeneralAppeared"},
+  can_trigger = function (self, event, target, player, data)
+    if target == player and player:hasShownSkill(self) then
+      return player.room.current ~= player and table.find(player.room.alive_players, function (p)
+        return p:isWounded()
+      end)
+    end
+  end,
+  on_cost = function (self, event, target, player, data)
+    local targets = table.filter(player.room.alive_players, function (p) return p:isWounded() end)
+    local tos = player.room:askForChoosePlayers(player, table.map(targets, Util.IdMapper), 1, 1, "#gaoling-choose", self.name, true)
+    if #tos > 0 then
+      self.cost_data = tos[1]
+      return true
+    end
+  end,
+  on_use = function (self, event, target, player, data)
+    local room = player.room
+    room:recover { num = 1, skillName = self.name, who = room:getPlayerById(self.cost_data), recoverBy = player }
+  end,
 }
+gaoling.isHiddenSkill = true
 local qimei = fk.CreateTriggerSkill{
   name = "qimei",
   anim_type = "support",
@@ -2074,7 +2231,7 @@ Fk:loadTranslationTable{
   ["designer:xuangongzhu"] = "世外高v狼",
   ["illustrator:xuangongzhu"] = "凡果",
   ["gaoling"] = "高陵",
-  [":gaoling"] = "<font color='red'>隐匿技（暂时无法生效）</font>，当你于其他角色的回合内登场时，你可以令一名角色回复1点体力。",
+  [":gaoling"] = "隐匿。当你于其他角色的回合内登场时，你可以令一名角色回复1点体力。",
   ["qimei"] = "齐眉",
   [":qimei"] = "准备阶段，你可以选择一名其他角色，直到你的下个回合开始（每回合每项限一次），当你或该角色的手牌数或体力值变化后，若双方的此数值相等，"..
   "另一方摸一张牌。",
@@ -2085,6 +2242,7 @@ Fk:loadTranslationTable{
   ["#qimei_delay"] = "齐眉",
   ["zhuiji_recover-phase"] = "回复1点体力，此阶段结束时弃两张牌",
   ["zhuiji_draw-phase"] = "摸两张牌，此阶段结束时失去1点体力",
+  ["#gaoling-choose"] = "高陵:可以令一名角色回复1点体力",
 
   ["$gaoling1"] = "天家贵胄，福泽四海。",
   ["$gaoling2"] = "宣王之女，恩惠八方。",
@@ -2099,6 +2257,7 @@ local wangyuanji = General(extension, "ol__wangyuanji", "jin", 3, 3, General.Fem
 local shiren = fk.CreateTriggerSkill{
   name = "shiren",
   events = {"fk.GeneralAppeared"},
+  anim_type = "drawcard",
   can_trigger = function (self, event, target, player, data)
     if target == player and player:hasShownSkill(self) then
       local to = player.room.current
@@ -2187,7 +2346,7 @@ Fk:loadTranslationTable{
   ["#ol__wangyuanji"] = "文明皇后",
   ["illustrator:ol__wangyuanji"] = "六道目",
   ["shiren"] = "识人",
-  [":shiren"] = "<font color='red'>隐匿技（暂时无法生效）</font>，你于其他角色的回合登场后，若当前回合角色有手牌，你可以对其发动〖宴戏〗。",
+  [":shiren"] = "隐匿。你于其他角色的回合登场后，若当前回合角色有手牌，你可以对其发动〖宴戏〗。",
   ["yanxi"] = "宴戏",
   [":yanxi"] = "出牌阶段限一次，你将一名其他角色的随机一张手牌与牌堆顶的两张牌混合后展示，你猜测哪张牌来自其手牌。若猜对，你获得三张牌；"..
   "若猜错，你获得选中的牌。你以此法获得的牌本回合不计入手牌上限。",
