@@ -2098,13 +2098,28 @@ Fk:loadTranslationTable{
 local wangyuanji = General(extension, "ol__wangyuanji", "jin", 3, 3, General.Female)
 local shiren = fk.CreateTriggerSkill{
   name = "shiren",
-  can_trigger = Util.FalseFunc,
+  events = {"fk.GeneralAppeared"},
+  can_trigger = function (self, event, target, player, data)
+    if target == player and player:hasShownSkill(self) then
+      local to = player.room.current
+      return to and to ~= player and not to:isKongcheng()
+    end
+  end,
+  on_cost = function (self, event, target, player, data)
+    return player.room:askForSkillInvoke(player, self.name, nil, "#shiren-invoke:"..player.room.current.id)
+  end,
+  on_use = function (self, event, target, player, data)
+    local room = player.room
+    Fk.skills["yanxi"]:onUse(room, {from = player.id, tos = {room.current.id}})
+  end,
 }
+shiren.isHiddenSkill = true
 local yanxi = fk.CreateActiveSkill{
   name = "yanxi",
   anim_type = "drawcard",
   card_num = 0,
   target_num = 1,
+  prompt = "#yanxi-prompt",
   can_use = function(self, player)
     return player:usedSkillTimes(self.name, Player.HistoryPhase) == 0
   end,
@@ -2127,7 +2142,7 @@ local yanxi = fk.CreateActiveSkill{
       card_data = {
         { "$Hand", cards }
       }
-    }, self.name)
+    }, self.name, "#yanxi-card")
     if id2 ~= id then
       cards = {id2}
     end
@@ -2178,6 +2193,9 @@ Fk:loadTranslationTable{
   "若猜错，你获得选中的牌。你以此法获得的牌本回合不计入手牌上限。",
 
   ["@@yanxi-inhand"] = "宴戏",
+  ["#yanxi-prompt"] = "宴戏:将一名其他角色的一张手牌与牌堆顶的两张牌混合后，猜测哪张来自其手牌",
+  ["#yanxi-card"] = "宴戏:选择你认为来自其手牌的一张牌",
+  ["#shiren-invoke"] = "识人：你可以对 %src 发动〖宴戏〗",
 
   ["$shiren1"] = "宠过必乱，不可大任。",
   ["$shiren2"] = "开卷有益，识人有法",
