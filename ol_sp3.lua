@@ -1169,7 +1169,8 @@ local cuipo = fk.CreateTriggerSkill{
   frequency = Skill.Compulsory,
   events = {fk.CardUsing},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self) and player:getMark("@cuipo-turn") == #Fk:translate(data.card.trueName)/3
+    return target == player and player:hasSkill(self)
+    and player:getMark("@cuipo-turn") == Fk:translate(data.card.trueName, "zh_CN"):len()
   end,
   on_use = function(self, event, target, player, data)
     if data.card.is_damage_card then
@@ -2064,7 +2065,7 @@ local chenshuo = fk.CreateTriggerSkill{
       dummy:addSubcard(get[1])
       local card2 = Fk:getCardById(get[1], true)
       if card.type == card2.type or card.suit == card2.suit or card.number == card2.number or
-        #Fk:translate(card.trueName) == #Fk:translate(card2.trueName) then
+      Fk:translate(card.trueName, "zh_CN"):len() == Fk:translate(card2.trueName, "zh_CN"):len() then
         room:setCardEmotion(get[1], "judgegood")
         room:delay(1000)
       else
