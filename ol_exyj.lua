@@ -251,6 +251,7 @@ local zongxuan = fk.CreateTriggerSkill{
   can_trigger = function(self, event, target, player, data)
     if player:hasSkill(self) then
       local cards = {}
+      local room = player.room
       local last_player_id = 0
       if not player:isRemoved() then
         last_player_id = player:getLastAlive(false).id
@@ -258,13 +259,14 @@ local zongxuan = fk.CreateTriggerSkill{
       for _, move in ipairs(data) do
         if (move.from == player.id or move.from == last_player_id) and move.toArea == Card.DiscardPile and move.moveReason == fk.ReasonDiscard then
           for _, info in ipairs(move.moveInfo) do
-            if info.fromArea == Card.PlayerHand or info.fromArea == Card.PlayerEquip then
+            if (info.fromArea == Card.PlayerHand or info.fromArea == Card.PlayerEquip) and
+            room:getCardArea(info.cardId) == Card.DiscardPile then
               table.insertIfNeed(cards, info.cardId)
             end
           end
         end
       end
-      cards = U.moveCardsHoldingAreaCheck(player.room, cards)
+      cards = U.moveCardsHoldingAreaCheck(room, cards)
       if #cards > 0 then
         self.cost_data = cards
         return true

@@ -2266,7 +2266,7 @@ local dongzhao = General(extension, "ol__dongzhao", "wei", 3)
 local xianlue = fk.CreateTriggerSkill{
   name = "xianlue",
   anim_type = "control",
-  events = {fk.TurnStart, fk.CardUsing},
+  events = {fk.TurnStart, fk.CardUseFinished},
   can_trigger = function(self, event, target, player, data)
     if not player:hasSkill(self) then return false end
     if event == fk.TurnStart then
@@ -2277,11 +2277,11 @@ local xianlue = fk.CreateTriggerSkill{
     end
   end,
   on_cost = function(self, event, target, player, data)
-    return event == fk.CardUsing or player.room:askForSkillInvoke(player, self.name, data, "#xianlue-invoke")
+    return event == fk.CardUseFinished or player.room:askForSkillInvoke(player, self.name, data, "#xianlue-invoke")
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    if event == fk.CardUsing then
+    if event == fk.CardUseFinished then
       room:addPlayerMark(player, "xianlue-turn")
       local cards = player:drawCards(2, "xianlue")
       if player.dead then return false end
@@ -2949,9 +2949,9 @@ local dezhang = fk.CreateTriggerSkill{
     return target == player and player:hasSkill(self) and player:usedSkillTimes(self.name, Player.HistoryGame) == 0
   end,
   can_wake = function(self, event, target, player, data)
-    return not table.find(player:getCardIds("h"), function (id)
+    return not (player:hasSkill(huaiyuan, true) and table.find(player:getCardIds("h"), function (id)
       return Fk:getCardById(id):getMark("@@appease") > 0
-    end)
+    end))
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
@@ -3068,7 +3068,6 @@ Fk:loadTranslationTable{
 }
 
 local qinghegongzhu = General(extension, "qinghegongzhu", "wei", 3, 3, General.Female)
-
 local zengou = fk.CreateTriggerSkill{
   name = "zengou",
   anim_type = "control",
