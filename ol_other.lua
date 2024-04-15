@@ -854,7 +854,7 @@ local qin__limu = fk.CreateTriggerSkill{
     return target == player and player:hasSkill(self) and data.card:isCommonTrick()
   end,
   on_use = function(self, event, target, player, data)
-    data.prohibitedCardNames = {"nullification"}
+    data.unoffsetableList = table.map(player.room.alive_players, Util.IdMapper)
   end,
 }
 local qin__kencao = fk.CreateTriggerSkill{
@@ -902,7 +902,7 @@ Fk:loadTranslationTable{
   [":qin__bianfa"] = "出牌阶段限一次，你可以将一张普通锦囊牌当【商鞅变法】使用。"..
   "<br><font color='grey'><b>商鞅变法</b>：出牌阶段，对一名其他角色使用，随机对其造成1~2点伤害，若其进入濒死，你判定，若为黑色，除其以外的角色不能对其使用【桃】。",
   ["qin__limu"] = "立木",
-  [":qin__limu"] = "锁定技，你使用的普通锦囊牌不能被【无懈可击】响应。",
+  [":qin__limu"] = "锁定技，你使用的普通锦囊牌不能被抵消。",
   ["qin__kencao"] = "垦草",
   [":qin__kencao"] = "锁定技，每当秦势力角色造成1点伤害后，其获得一枚“功”标记。然后若其“功”标记不小于3，其弃置所有“功”标记，加1点体力上限，回复1点体力。",
   ["#qin__bianfa"] = "变法：你可以将一张普通锦囊牌当【商鞅变法】使用",

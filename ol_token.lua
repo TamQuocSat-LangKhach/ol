@@ -309,7 +309,7 @@ local qinDragonSwordSkill = fk.CreateTriggerSkill{
       player:usedSkillTimes(self.name, Player.HistoryTurn) == 0
   end,
   on_use = function(self, event, target, player, data)
-    data.prohibitedCardNames = {"nullification"}
+    data.unoffsetableList = table.map(player.room.alive_players, Util.IdMapper)
   end,
 }
 Fk:addSkill(qinDragonSwordSkill)
@@ -324,7 +324,7 @@ extension:addCard(qinDragonSword)
 Fk:loadTranslationTable{
   ["qin_dragon_sword"] = "真龙长剑",
   ["#qin_dragon_sword_skill"] = "真龙长剑",
-  [":qin_dragon_sword"] = "装备牌·武器<br/><b>攻击范围</b>：4<br/><b>武器技能</b>：锁定技，你每回合使用的第一张普通锦囊牌不能被【无懈可击】响应。",
+  [":qin_dragon_sword"] = "装备牌·武器<br/><b>攻击范围</b>：4<br/><b>武器技能</b>：锁定技，你每回合使用的第一张普通锦囊牌不能被抵消。",
 }
 
 local qinSealSkill = fk.CreateTriggerSkill{
