@@ -2061,6 +2061,7 @@ local chenshuo = fk.CreateTriggerSkill{
         toArea = Card.Processing,
         moveReason = fk.ReasonJustMove,
         skillName = self.name,
+        proposer = player.id
       }
       dummy:addSubcard(get[1])
       local card2 = Fk:getCardById(get[1], true)
@@ -3342,8 +3343,9 @@ local cangxin = fk.CreateTriggerSkill{
     room:moveCards({
       ids = card_ids,
       toArea = Card.Processing,
-      skillName = self.name,
       moveReason = fk.ReasonJustMove,
+      skillName = self.name,
+      proposer = player.id
     })
     if event == fk.EventPhaseStart then
       room:delay(1500)
@@ -5187,26 +5189,329 @@ Fk:loadTranslationTable{
   ["~guotu"] = "工于心计而不成事，匹夫怀其罪……",
 }
 
---local liupan = General(extension, "liupan", "qun", 4)
+local liupan = General(extension, "liupan", "qun", 4)
+local pijingl = fk.CreateTriggerSkill{
+  name = "pijingl",
+  anim_type = "offensive",
+  events = {fk.TargetSpecifying},
+  can_trigger = function(self, event, target, player, data)
+    if target == player and player:hasSkill(self) and player:usedSkillTimes(self.name, Player.HistoryPhase) == 0 and
+    data.card.color == Card.Black and (data.card.trueName == "slash" or data.card:isCommonTrick()) and data.firstTarget and
+    U.isOnlyTarget(player.room:getPlayerById(data.to), data, event) then
+      local targets = U.getUseExtraTargets(player.room, data, false, true)
+      if #targets > 0 then
+        self.cost_data = targets
+        return true
+      end
+    end
+  end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    local x = math.max(1, player:getLostHp())
+    local tos = room:askForChoosePlayers(player, self.cost_data, 1, x,
+    "#pijingl-choose:::" .. tostring(x) .. ":"..data.card:toLogString(), self.name, true)
+    if #tos > 0 then
+      self.cost_data = tos
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local tos = table.simpleClone(self.cost_data)
+    room:sortPlayersByAction(tos)
+    local mark = U.getMark(player, "pijingl")
+    table.insertTableIfNeed(mark, tos)
+    room:setPlayerMark(player, "pijingl", mark)
+    local to
+    tos = table.map(tos, function (pid)
+      AimGroup:addTargets(room, data, pid)
+      to = room:getPlayerById(pid)
+      room:setPlayerMark(to, "@@pijingl", 1)
+      return to
+    end)
+    for _, p in ipairs(tos) do
+      if not (p.dead or p:isNude()) then
+        local cards = room:askForCard(p, 1, 1, true, self.name, false, ".", "#pijingl-give:"..player.id)
+        room:obtainCard(player, cards[1], false, fk.ReasonGive, p.id)
+        if player.dead then break end
+      end
+    end
+  end,
+
+  refresh_events = {fk.BuryVictim},
+  can_refresh = function(self, event, target, player, data)
+    return player == target
+  end,
+  on_refresh = function(self, event, target, player, data)
+    local room = player.room
+    for _, p in ipairs(room.alive_players) do
+      local mark = U.getMark(p, "pijingl")
+      if table.removeOne(mark, player.id) then
+        room:setPlayerMark(p, "pijingl", #mark > 0 and mark or 0)
+      end
+      if p:getMark("@@pijingl") > 0 and table.every(room.alive_players, function (p2)
+        return not table.contains(U.getMark(p2, "pijingl"), p.id)
+      end) then
+        room:setPlayerMark(p, "@@pijingl", 0)
+      end
+    end
+  end,
+}
+local pijingl_delay = fk.CreateTriggerSkill{
+  name = "#pijingl_delay",
+  events = {fk.TargetSpecifying},
+  mute = true,
+  can_trigger = function(self, event, target, player, data)
+    return not player.dead and not target.dead and table.contains(U.getMark(player, "pijingl"), target.id) and
+    (data.card.type == Card.TypeBasic or data.card:isCommonTrick()) and data.firstTarget and
+    U.isOnlyTarget(player.room:getPlayerById(data.to), data, event)
+  end,
+  on_cost = Util.TrueFunc,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local mark = U.getMark(player, "pijingl")
+    table.removeOne(mark, target.id)
+    room:setPlayerMark(player, "pijingl", mark)
+    if table.every(room.alive_players, function (p)
+      return not table.contains(U.getMark(p, "pijingl"), target.id)
+    end) then
+      room:setPlayerMark(target, "@@pijingl", 0)
+    end
+    local choices = {"draw1", "Cancel"}
+    if table.contains(U.getUseExtraTargets(room, data, true, true), player.id) then
+      table.insert(choices, "pijingl_target")
+    end
+    local choice = room:askForChoice(target, choices, "", "#pijingl-choice::" .. player.id .. ":" .. data.card:toLogString(),
+    false, {"draw1", "pijingl_target", "Cancel"})
+    if choice == "draw1" then
+      room:drawCards(target, 1, self.name)
+    elseif choice == "pijingl_target" then
+      room:doIndicate(target.id, {player.id})
+      AimGroup:addTargets(room, data, player.id)
+    end
+  end,
+}
+pijingl:addRelatedSkill(pijingl_delay)
+liupan:addSkill(pijingl)
 
 Fk:loadTranslationTable{
   ["liupan"] = "刘磐",
   ["#liupan"] = "骁隽悍勇",
 
   ["pijingl"] = "披荆",
-  [":pijingl"] = "当你使用黑色【杀】或黑色锦囊牌普通锦囊牌指定唯一目标后，若你于当前回合内未发动过此技能，你可以令至多X名角色也成为此牌的目标（X为你已损失的体力值且至少为1）。"..
-  "这些角色下次使用基本牌或普通锦囊牌指定唯一目标时，可以令你也成为此牌的目标。",
+  [":pijingl"] = "当你使用黑色【杀】或黑色普通锦囊牌指定唯一目标时，若你于当前回合内未发动过此技能，"..
+  "你可以令至多X名角色也成为此牌的目标（X为你已损失的体力值且至少为1），这些角色各将一张牌交给你。"..
+  "这些角色下次使用基本牌或普通锦囊牌指定唯一目标时，其可以选择：1.令你也成为此牌的目标；2.摸一张牌。",
+  ["#pijingl-choose"] = "是否发动 披荆，选择至多%arg名角色交给你一张牌且也成为%arg的目标",
+  ["#pijingl-give"] = "披荆：选择一张牌交给%src",
+  ["@@pijingl"] = "披荆",
+  ["#pijingl_delay"] = "披荆",
+  ["#pijingl-choice"] = "披荆：你可以摸一张牌，或令%dest也成为%arg的目标",
+  ["pijingl_target"] = "增加目标",
 }
 
---local liupi = General(extension, "ol__liupi", "qun", 4)
-
+local liupi = General(extension, "ol__liupi", "qun", 4)
+local yichengl = fk.CreateActiveSkill{
+  name = "yichengl",
+  prompt = "#yichengl-active",
+  anim_type = "control",
+  card_num = 0,
+  target_num = 0,
+  can_use = function(self, player)
+    return player:usedSkillTimes(self.name, Player.HistoryPhase) == 0
+  end,
+  card_filter = Util.FalseFunc,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    local cards = room:getNCards(3)
+    room:moveCards({
+      ids = cards,
+      toArea = Card.Processing,
+      moveReason = fk.ReasonJustMove,
+      skillName = self.name,
+      proposer = player.id,
+    })
+    local n = 0
+    for _, id in ipairs(cards) do
+      n = n + Fk:getCardById(id).number
+    end
+    local cardmap = U.askForArrangeCards(player, self.name,
+    {cards, player:getCardIds(Player.Hand), "Top", "$Hand"}, "#yichengl-exchange", false)
+    local topile = table.filter(cardmap[1], function (id)
+      return not table.contains(cards, id)
+    end)
+    if #topile > 0 then
+      room:moveCardTo(topile, Card.Processing, nil, fk.ReasonPut, self.name, "", true, player.id)
+      topile = table.filter(cards, function (id)
+        return not table.contains(cardmap[1], id)
+      end)
+      if player.dead then
+        room:moveCardTo(topile, Card.DiscardPile, nil, fk.ReasonJustMove, self.name, "", true)
+      else
+        room:moveCardTo(topile, Card.PlayerHand, player, fk.ReasonJustMove, self.name, "", true, player.id)
+        if not player.dead then
+          for _, id in ipairs(cardmap[1]) do
+            n = n - Fk:getCardById(id).number
+          end
+          if n < 0 and room:askForSkillInvoke(player, self.name, nil, "#yichengl-invoke") then
+            local handcards = player:getCardIds(Player.Hand)
+            local top = U.askForArrangeCards(player, self.name,
+            {handcards, "Top"}, "#yichengl-exchange2", true, nil, {#handcards}, {#handcards})[1]
+            top = table.reverse(top)
+            room:moveCards({
+              ids = top,
+              from = player.id,
+              toArea = Card.DrawPile,
+              moveReason = fk.ReasonPut,
+              skillName = self.name,
+              proposer = player.id,
+              moveVisible = false,
+            })
+            if player.dead then
+              room:moveCardTo(cardmap[1], Card.DiscardPile, nil, fk.ReasonJustMove, self.name, "", true)
+            else
+              room:moveCardTo(cardmap[1], Card.PlayerHand, player, fk.ReasonJustMove, self.name, "", true, player.id)
+            end
+            return
+          end
+        end
+      end
+    end
+    local top = cardmap[1]
+    room:sendLog{
+      type = "#PutKnownCardtoDrawPile",
+      from = player.id,
+      card = top
+    }
+    top = table.reverse(top)
+    room:moveCards({
+      ids = top,
+      toArea = Card.DrawPile,
+      moveReason = fk.ReasonPut,
+      skillName = self.name,
+      proposer = player.id,
+      moveVisible = true,
+    })
+  end
+}
+liupi:addSkill(yichengl)
 Fk:loadTranslationTable{
   ["ol__liupi"] = "刘辟",
   ["#ol__liupi"] = "易城报君",
 
   ["yichengl"] = "易城",
-  [":yichengl"] = "出牌阶段限一次，你可以观看牌堆顶三张牌，然后可以用任意张手牌交换其中等量张，"..
+  [":yichengl"] = "出牌阶段限一次，你可以展示牌堆顶三张牌，然后可以用任意张手牌交换其中等量张，"..
   "若展示牌点数之和因此增加，你可以用所有手牌交换展示牌。",
+  ["#yichengl-active"] = "发动 易城，展示牌堆顶3张牌，并可以用手牌交换其中的牌",
+  ["#yichengl-exchange"] = "易城：你可以用任意张手牌替换等量的牌堆顶牌",
+  ["#yichengl-invoke"] = "易城：是否用所有手牌交换展示的牌",
+  ["#yichengl-exchange2"] = "易城：请排列手牌在牌堆顶的位置",
 }
+
+local sunce = General(extension, "olsp__sunce", "qun", 4)
+local liantao = fk.CreateTriggerSkill{
+  name = "liantao",
+  anim_type = "offensive",
+  events = {fk.EventPhaseStart},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self) and player.phase == Player.Play
+  end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    local tos = room:askForChoosePlayers(player, table.map(room:getOtherPlayers(player, false), Util.IdMapper), 1, 1,
+    "#liantao-choose", self.name, true)
+    if #tos > 0 then
+      self.cost_data = tos
+      return true
+    end
+    return false
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local to = room:getPlayerById(self.cost_data[1])
+    local choice = room:askForChoice(to, {"red", "black"}, self.name, "#liantao-choice:"..player.id)
+    local duel = Fk:cloneCard("duel")
+    duel.skillName = self.name
+    local cards
+    local id
+    local draw3 = true
+    local event_id = room.logic.current_event_id
+    local events
+    local breakloop = false
+    local damage
+    local x = 0
+    while true do
+      cards = table.filter(player:getCardIds(Player.Hand), function(id)
+        duel.subcards = {}
+        duel:addSubcard(id)
+        return duel:getColorString() == choice and player:canUseTo(duel, to)
+      end)
+      if #cards == 0 then break end
+      id = room:askForCard(player, 1, 1, false, self.name, false, tostring(Exppattern{ id = cards }),
+      "#liantao-duel::" .. to.id .. ":" .. choice)[1]
+      local use = {
+        from = player.id,
+        tos = { { to.id } },
+        card = Fk:cloneCard("duel")
+      }
+      use.card.skillName = self.name
+      use.card:addSubcard(id)
+      room:useCard(use)
+      if use.damageDealt then
+        draw3 = false
+      end
+      if player.dead then return false end
+      events = room.logic.event_recorder[GameEvent.Damage] or Util.DummyTable
+      for i = #events, 1, -1 do
+        local e = events[i]
+        if e.id <= event_id then break end
+        damage = e.data[1]
+        if damage.dealtRecorderId and damage.from == player and damage.card == use.card then
+          x = x + damage.damage
+        end
+      end
+      if target.dead then break end
+      events = room.logic.event_recorder[GameEvent.Dying] or Util.DummyTable
+      for i = #events, 1, -1 do
+        local e = events[i]
+        if e.id <= event_id then break end
+        if e.data[1].who == player.id or e.data[1].who == to.id then
+          breakloop = true
+          break
+        end
+      end
+      if breakloop then break end
+      event_id = room.logic.current_event_id
+    end
+    if draw3 then
+      room:addPlayerMark(player, MarkEnum.AddMaxCardsInTurn, 3)
+      room:setPlayerMark(player, "liantao_prohibit-turn", 1)
+      room:drawCards(player, 3, self.name)
+    elseif x > 0 then
+      room:drawCards(player, x, self.name)
+    end
+  end,
+}
+local liantao_prohibit = fk.CreateProhibitSkill{
+  name = "#liantao_prohibit",
+  prohibit_use = function(self, player, card)
+    return player:getMark("liantao_prohibit-turn") > 0 and card.trueName == "slash"
+  end,
+}
+liantao:addRelatedSkill(liantao_prohibit)
+sunce:addSkill(liantao)
+Fk:loadTranslationTable{
+  ["olsp"] = "OLSP",
+  ["olsp__sunce"] = "孙策",
+  ["#olsp__sunce"] = "壮武命世",
+
+  ["liantao"] = "连讨",
+  [":liantao"] = "出牌阶段开始时，你可以令一名其他角色选择一种颜色，然后你依次将此颜色的手牌当【决斗】对其使用直到你或其进入濒死状态，"..
+  "然后你摸X张牌（X为你以此法造成过的伤害值）。若没有角色以此法受到过伤害，你摸三张牌，于此回合内手牌上限+3且不能使用【杀】。",
+  ["#liantao-choose"] = "是否发动 连讨，选择一名其他角色",
+  ["#liantao-choice"] = "连讨：选择%from即将对你使用【决斗】的颜色",
+  ["#liantao-duel"] = "连讨：选择一张%arg手牌当【决斗】对%dest使用",
+}
+
 
 return extension

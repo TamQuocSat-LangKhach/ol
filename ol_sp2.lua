@@ -143,6 +143,8 @@ local mubing = fk.CreateTriggerSkill{
       ids = cards,
       toArea = Card.Processing,
       moveReason = fk.ReasonPut,
+      skillName = self.name,
+      proposer = player.id
     })
     local can_throw = table.filter(player:getCardIds("h"), function(id) return not player:prohibitDiscard(Fk:getCardById(id)) end)
     if #can_throw > 0 then
@@ -3700,7 +3702,7 @@ local shengong = fk.CreateActiveSkill{
     local good,bad = 0,0
     table.insert(players, 1, player)
     local show = room:getNCards(#players)
-    room:moveCards({ ids = show, toArea = Card.Processing, moveReason = fk.ReasonPut })
+    room:moveCards({ ids = show, toArea = Card.Processing, moveReason = fk.ReasonPut, skillName = self.name, proposer = player.id })
     for i, p in ipairs(players) do
       room:delay(200)
       local num = Fk:getCardById(show[i]).number

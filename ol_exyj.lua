@@ -277,12 +277,12 @@ local zongxuan = fk.CreateTriggerSkill{
     local room = player.room
     local top = U.askForArrangeCards(player, self.name, {self.cost_data, "pile_discard","Top"},
     "#ol_ex__zongxuan-invoke", true, 7, nil, {0, 1})[2]
-    top = table.reverse(top)
     room:sendLog{
       type = "#PutKnownCardtoDrawPile",
       from = player.id,
       card = top
     }
+    top = table.reverse(top)
     room:moveCards({
       ids = top,
       toArea = Card.DrawPile,
