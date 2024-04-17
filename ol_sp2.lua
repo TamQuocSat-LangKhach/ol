@@ -2348,7 +2348,7 @@ local zaowang_trigger = fk.CreateTriggerSkill{
 
   refresh_events = {fk.BeforeGameOverJudge},
   can_refresh = function(self, event, target, player, data)
-    return player:getMark("@@zaowang") > 0
+    return not player.dead and player:getMark("@@zaowang") > 0
   end,
   on_refresh = function(self, event, target, player, data)
     local room = player.room
