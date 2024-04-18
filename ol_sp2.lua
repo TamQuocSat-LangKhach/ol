@@ -2348,20 +2348,24 @@ local zaowang_trigger = fk.CreateTriggerSkill{
 
   refresh_events = {fk.BeforeGameOverJudge},
   can_refresh = function(self, event, target, player, data)
-    return not player.dead and player:getMark("@@zaowang") > 0
+    if player:getMark("@@zaowang") > 0 then
+      if player.role == "loyalist" then
+        return not player.dead and target.role == "lord"
+      elseif player.role == "rebel" then
+        return target == player and data.damage and data.damage.from and
+        (data.damage.from.role == "lord" or data.damage.from.role == "loyalist")
+      end
+    end
   end,
   on_refresh = function(self, event, target, player, data)
     local room = player.room
-    if target.role == "lord" and player.role == "loyalist" then
+    room:setPlayerMark(player, "@@zaowang", 0)
+    if player.role == "loyalist" then
       player.role = "lord"
       target.role = "loyalist"
-      for _, p in ipairs(room.players) do
-        room:notifyProperty(p, player, "role")
-        room:notifyProperty(p, target, "role")
-      end
-      room:setPlayerMark(player, "@@zaowang", 0)
-    elseif target == player and player.role == "rebel" and data.damage and data.damage.from and
-      (data.damage.from.role == "lord" or data.damage.from.role == "loyalist") then
+      room:broadcastProperty(player, "role")
+      room:broadcastProperty(target, "role")
+    else
       room:gameOver("lord+loyalist")
     end
   end,

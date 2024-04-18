@@ -699,6 +699,8 @@ xiaoqiao:addSkill(ol_ex__hongyan)
 xiaoqiao:addSkill(ol_ex__piaoling)
 Fk:loadTranslationTable{
   ["ol_ex__xiaoqiao"] = "界小乔",
+  ["#ol_ex__xiaoqiao"] = "矫情之花",
+  ["illustrator:ol_ex__xiaoqiao"] = "王强",
   ["ol_ex__tianxiang"] = "天香",
   [":ol_ex__tianxiang"] = "当你受到伤害时，你可弃置一张<font color='red'>♥</font>牌并选择一名其他角色。你防止此伤害，"..
   "选择：1.令来源对其造成1点普通伤害，其摸X张牌（X为其已损失的体力值且至多为5）；2.令其失去1点体力，其获得牌堆或弃牌堆中你以此法弃置的牌。",
@@ -831,6 +833,8 @@ zhoutai:addSkill(ol_ex__buqu)
 zhoutai:addSkill(ol_ex__fenji)
 Fk:loadTranslationTable{
   ["ol_ex__zhoutai"] = "界周泰",
+  ["#ol_ex__zhoutai"] = "历战之躯",
+  ["illustrator:ol_ex__zhoutai"] = "Thinking",
   ["ol_ex__buqu"] = "不屈",
   [":ol_ex__buqu"] = "锁定技，①当你处于濒死状态时，你将牌堆顶的一张牌置于武将牌上（称为“创”），若：没有与此“创”点数相同的其他“创”，你将体力回复至1点；有与此“创”点数相同的其他“创”，你将此“创”置入弃牌堆。②若有“创”，你的手牌上限初值改为“创”数，",
   ["ol_ex__fenji"] = "奋激",
@@ -998,6 +1002,8 @@ zhangjiao:addSkill(ol_ex__huangtian)
 
 Fk:loadTranslationTable{
   ["ol_ex__zhangjiao"] = "界张角",
+  ["#ol_ex__zhangjiao"] = "天公将军",
+  ["illustrator:ol_ex__zhangjiao"] = "青骑士",
   ["ol_ex__leiji"] = "雷击",
   [":ol_ex__leiji"] = "①当你使用或打出【闪】或【闪电】时，你可判定。②当你的判定结果确定后，若结果为：黑桃，你可对一名其他角色造成2点雷电伤害；梅花，你回复1点体力，然后你可对一名其他角色造成1点雷电伤害。",
   ["ol_ex__guidao"] = "鬼道",
@@ -1162,6 +1168,8 @@ ol_ex__chanyuan:addRelatedSkill(ol_ex__chanyuan_audio)
 ol_ex__yuji:addRelatedSkill(ol_ex__chanyuan)
 Fk:loadTranslationTable{
   ["ol_ex__yuji"] = "界于吉",
+  ["#ol_ex__yuji"] = "太平道人",
+  ["illustrator:ol_ex__yuji"] = "波子",
   ["ol_ex__guhuo"] = "蛊惑",
   [":ol_ex__guhuo"] = "每回合限一次，你可以扣置一张手牌，将此牌当任意一张基本牌或普通锦囊牌使用或打出。此牌使用前，其他角色同时选择是否质疑，选择结束后，若有质疑则翻开此牌，若此牌为：假，此牌作废且所有质疑角色摸一张牌；真，所有质疑角色依次弃置一张牌或失去1点体力，然后获得技能〖缠怨〗。",
   ["#ol_ex__guhuo-discard"] = "蛊惑：弃置一张牌，否则失去1点体力",
@@ -1247,6 +1255,7 @@ dianwei:addSkill(ol_ex__ninge)
 Fk:loadTranslationTable{
   ["ol_ex__dianwei"] = "界典韦",
   ["#ol_ex__dianwei"] = "古之恶来",
+  ["illustrator:ol_ex__dianwei"] = "君桓文化",
   ["ol_ex__qiangxi"] = "强袭",
   [":ol_ex__qiangxi"] = "出牌阶段限两次，你可受到1点普通伤害或弃置一张武器牌并选择一名于此阶段内未选择过的其他角色，你对其造成1点普通伤害。",
   ["ol_ex__ninge"] = "狞恶",
@@ -2150,6 +2159,9 @@ zhurong:addSkill(ol_ex__changbiao)
 
 Fk:loadTranslationTable{
   ["ol_ex__zhurong"] = "界祝融",
+  ["#ol_ex__zhurong"] = "野性的女王",
+  ["illustrator:ol_ex__zhurong"] = "匠人绘",
+
   ["ol_ex__changbiao"] = "长标",
   ["#ol_ex__changbiao_trigger"] = "长标",
   [":ol_ex__changbiao"] = "出牌阶段限一次，你可将至少一张手牌转化为普【杀】使用（无距离关系的限制），此阶段结束时，若此【杀】造成过伤害，你摸x张牌（X为以此法转化的牌数）。",
@@ -2236,6 +2248,8 @@ menghuo:addSkill(ol_ex__zaiqi)
 
 Fk:loadTranslationTable{
   ["ol_ex__menghuo"] = "界孟获",
+  ["#ol_ex__menghuo"] = "南蛮王",
+  ["illustrator:ol_ex__menghuo"] = "磐蒲",
   ["ol_ex__zaiqi"] = "再起",
   [":ol_ex__zaiqi"] = "弃牌阶段结束时，你可选择至多X名角色（X为弃牌堆里于此回合内移至此区域的红色牌数），这些角色各选择：1.令你回复1点体力；2.摸一张牌。",
 
@@ -2300,6 +2314,8 @@ sunjian:addSkill(ol_ex__wulie)
 
 Fk:loadTranslationTable{
   ["ol_ex__sunjian"] = "界孙坚",
+  ["#ol_ex__sunjian"] = "武烈帝",
+  ["illustrator:ol_ex__sunjian"] = "匠人绘",
   ["ol_ex__wulie"] = "武烈",
   ["#ol_ex__wulie_delay"] = "武烈",
   [":ol_ex__wulie"] = "限定技，结束阶段，你可以失去任意点体力，令等量的其他角色各获得1枚“烈”标记。当有“烈”的角色受到伤害时，其弃所有“烈”，防止此伤害。",
@@ -2472,6 +2488,8 @@ lusu:addSkill(ol_ex__dimeng)
 
 Fk:loadTranslationTable{
   ["ol_ex__lusu"] = "界鲁肃",
+  ["#ol_ex__lusu"] = "独断的外交家",
+  ["illustrator:ol_ex__lusu"] = "游漫美绘",
   ["ol_ex__haoshi"] = "好施",
   ["#ol_ex__haoshi_delay"] = "好施",
   [":ol_ex__haoshi"] = "摸牌阶段，你可令额定摸牌数+2，此阶段结束时，若你的手牌数大于5，你将一半的手牌交给除你外手牌数最少的一名角色。当你于你的下个回合开始之前成为【杀】或普通锦囊牌的目标后，你令其可将一张手牌交给你。",
@@ -2607,6 +2625,8 @@ dongzhuo:addSkill(ol_ex__baonue)
 
 Fk:loadTranslationTable{
   ["ol_ex__dongzhuo"] = "界董卓",
+  ["#ol_ex__dongzhuo"] = "魔王",
+  ["illustrator:ol_ex__dongzhuo"] = "磐蒲",
   ["ol_ex__jiuchi"] = "酒池",
   ["#ol_ex__jiuchi_trigger"] = "酒池",
   [":ol_ex__jiuchi"] = "①你可将一张♠手牌转化为【酒】使用。②你使用【酒】无次数限制。③当你造成伤害后，若渠道为受【酒】效果影响的【杀】，你的〖崩坏〗于当前回合内无效。",
@@ -2750,6 +2770,8 @@ jiaxu:addSkill(ol_ex__weimu)
 
 Fk:loadTranslationTable{
   ["ol_ex__jiaxu"] = "界贾诩",
+  ["#ol_ex__jiaxu"] = "冷酷的毒士",
+  ["illustrator:ol_ex__jiaxu"] = "游漫美绘",
   ["ol_ex__wansha"] = "完杀",
   [":ol_ex__wansha"] = "锁定技，①除进行濒死流程的角色以外的其他角色于你的回合内不能使用【桃】。②在一名角色于你的回合内进行的濒死流程中，除其以外的其他角色的不带“锁定技”标签的技能无效。",
   ["ol_ex__luanwu"] = "乱武",
@@ -2860,6 +2882,8 @@ zhanghe:addSkill(ol_ex__qiaobian)
 
 Fk:loadTranslationTable{
   ["ol_ex__zhanghe"] = "界张郃",
+  ["#ol_ex__zhanghe"] = "料敌机先",
+  ["illustrator:ol_ex__zhanghe"] = "君桓文化",
   ["ol_ex__qiaobian"] = "巧变",
   [":ol_ex__qiaobian"] = "游戏开始时，你获得2枚“变”标记。你可以弃置一张牌或移除1枚“变”标记并跳过你的一个阶段（准备阶段和结束阶段除外）：若跳过摸牌阶段，你可以获得至多两名角色的各一张手牌；若跳过出牌阶段，你可以移动场上的一张牌。结束阶段开始时，若你的手牌数与之前你的每一回合结束阶段开始时的手牌数均不相等，你获得1枚“变”标记。",
 
@@ -2975,6 +2999,8 @@ dengai:addRelatedSkill(ol_ex__jixi)
 
 Fk:loadTranslationTable{
   ["ol_ex__dengai"] = "界邓艾",
+  ["#ol_ex__dengai"] = "矫然的壮士",
+  ["illustrator:ol_ex__dengai"] = "君桓文化",
   ["ol_ex__tuntian"] = "屯田",
   ["#ol_ex__tuntian_delay"] = "屯田",
   [":ol_ex__tuntian"] = "当你于回合外失去牌后，或于回合内因弃置而失去【杀】后，你可以进行判定，若结果不为红桃，你将判定牌置于你的武将牌上，称为“田”；你计算与其他角色的距离-X（X为“田”的数量）。",
@@ -3068,6 +3094,8 @@ jiangwei:addRelatedSkill("ex__guanxing")
 
 Fk:loadTranslationTable{
   ["ol_ex__jiangwei"] = "界姜维",
+  ["#ol_ex__jiangwei"] = "龙的衣钵",
+  ["illustrator:ol_ex__jiangwei"] = "游漫美绘",
   ["ol_ex__tiaoxin"] = "挑衅",
   [":ol_ex__tiaoxin"] = "出牌阶段限一次，你可以选择一名攻击范围内含有你的角色，然后除非该角色对你使用一张【杀】且你因其执行此【杀】的效果而受到过伤害，否则你弃置其一张牌，然后本阶段本技能限两次。",
   ["ol_ex__zhiji"] = "志继",
@@ -3994,7 +4022,7 @@ Fk:loadTranslationTable{
   ["#ol_ex__caiwenji"] = "异乡的孤女",
   ["illustrator:ol_ex__caiwenji"] = "罔両",
   ["ol_ex__beige"] = "悲歌",
-  [":ol_ex__beige"] = "当一名角色受到【杀】造成的伤害后，若你有牌，你可以令其进行一次判定，然后你可以弃置一张牌，根据判定结果执行：红桃，其回复1点体力；方块，其摸两张牌；梅花，伤害来源弃置两张牌；黑桃，伤害来源将武将牌翻面；点数相同，你获得你弃置的牌；花色相同，你获得判定牌。",
+  [":ol_ex__beige"] = "当一名角色受到【杀】造成的伤害后，若你有牌，你可以令其进行一次判定，然后你可以弃置一张牌，根据判定结果执行：<font color='red'>♥</font>，其回复1点体力；<font color='red'>♦</font>，其摸两张牌；♣，伤害来源弃置两张牌；♠，伤害来源将武将牌翻面；点数相同，你获得你弃置的牌；花色相同，你获得判定牌。",
 
   ["#ol_ex__beige-invoke"] = "悲歌：你可以令%dest进行判定",
   ["#ol_ex__beige-discard"] = "悲歌：你可以弃置一张牌令%dest根据判定的花色执行对应效果",

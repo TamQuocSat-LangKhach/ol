@@ -243,6 +243,7 @@ Fk:loadTranslationTable{
   ["~ol_ex__wangyi"] = "",
 }
 
+-- yj2013
 local yufan = General(extension, "ol_ex__yufan", "wu", 3)
 local zongxuan = fk.CreateTriggerSkill{
   name = "ol_ex__zongxuan",
@@ -364,8 +365,82 @@ Fk:loadTranslationTable{
   ["~ol_ex__yufan"] = "",
 }
 
-
-
+local ol_ex__jianyong = General(extension, "ol_ex__jianyong", "shu", 3)
+local ol_ex__qiaoshui = fk.CreateActiveSkill{
+  name = "ol_ex__qiaoshui",
+  anim_type = "control",
+  prompt = "#ol_ex__qiaoshui-prompt",
+  can_use = function(self, player)
+    return not player:isKongcheng() and player:getMark("ol_ex__qiaoshui_fail-turn") == 0
+  end,
+  card_num = 0,
+  card_filter = Util.FalseFunc,
+  target_num = 1,
+  target_filter = function(self, to_select, selected)
+    return #selected == 0 and to_select ~= Self.id and Self:canPindian(Fk:currentRoom():getPlayerById(to_select))
+  end,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    player:broadcastSkillInvoke("m_ex__qiaoshui")
+    local to = room:getPlayerById(effect.tos[1])
+    local pindian = player:pindian({to}, self.name)
+    if player.dead then return end
+    if pindian.results[to.id].winner == player then
+      room:setPlayerMark(player, "@@ol_ex__qiaoshui-turn", 1)
+    else
+      room:setPlayerMark(player, "ol_ex__qiaoshui_fail-turn", 1)
+    end
+  end,
+}
+local ol_ex__qiaoshui_delay = fk.CreateTriggerSkill{
+  name = "#ol_ex__qiaoshui_delay",
+  events = {fk.AfterCardTargetDeclared},
+  mute = true,
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:getMark("@@ol_ex__qiaoshui-turn") > 0
+    and data.card.type ~= Card.TypeEquip and data.card.sub_type ~= Card.SubtypeDelayedTrick
+  end,
+  on_cost = Util.TrueFunc,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    room:setPlayerMark(player, "@@ol_ex__qiaoshui-turn", 0)
+    local targets = U.getUseExtraTargets(room, data, true)
+    if #TargetGroup:getRealTargets(data.tos) > 1 then
+      table.insertTable(targets, TargetGroup:getRealTargets(data.tos))
+    end
+    if #targets == 0 then return false end
+    local tos = room:askForChoosePlayers(player, targets, 1, 1, "#ol_ex__qiaoshui-choose:::"
+    ..data.card:toLogString(), ol_ex__qiaoshui.name, true)
+    if #tos == 0 then return false end
+    if table.contains(TargetGroup:getRealTargets(data.tos), tos[1]) then
+      TargetGroup:removeTarget(data.tos, tos[1])
+      room:sendLog{ type = "#RemoveTargetsBySkill", from = target.id, to = tos, arg = ol_ex__qiaoshui.name, arg2 = data.card:toLogString() }
+    else
+      table.insert(data.tos, tos)
+      room:sendLog{ type = "#AddTargetsBySkill", from = target.id, to = tos, arg = ol_ex__qiaoshui.name, arg2 = data.card:toLogString() }
+    end
+  end,
+}
+ol_ex__qiaoshui:addRelatedSkill(ol_ex__qiaoshui_delay)
+local ol_ex__qiaoshui_prohibit = fk.CreateProhibitSkill{
+  name = "#ol_ex__qiaoshui_prohibit",
+  prohibit_use = function(self, player, card)
+    return player:getMark("ol_ex__qiaoshui_fail-turn") > 0 and card and card.type == Card.TypeTrick
+  end,
+}
+ol_ex__qiaoshui:addRelatedSkill(ol_ex__qiaoshui_prohibit)
+ol_ex__jianyong:addSkill(ol_ex__qiaoshui)
+ol_ex__jianyong:addSkill("zongshij")
+Fk:loadTranslationTable{
+  ["ol_ex__jianyong"] = "界简雍",
+  ["#ol_ex__jianyong"] = "悠游风议",
+  
+  ["ol_ex__qiaoshui"] = "巧说",
+  [":ol_ex__qiaoshui"] = "出牌阶段，你可以与一名角色拼点。若你赢，本回合你使用下一张基本牌或普通锦囊牌可以多或少选择一个目标（无距离限制）；若你没赢，此技能失效且你不能使用锦囊牌直到回合结束。",
+  ["#ol_ex__qiaoshui-choose"] = "巧说：你可以为%arg增加/减少一个目标",
+  ["@@ol_ex__qiaoshui-turn"] = "巧说",
+  ["#ol_ex__qiaoshui-prompt"] = "巧说:与一名角色拼点，若赢，下一张基本牌或普通锦囊牌可增加或取消一个目标",
+}
 
 
 
