@@ -1963,7 +1963,6 @@ local lizhan = fk.CreateTriggerSkill{
 }
 ol_sp__caoren:addSkill(lizhan)
 Fk:loadTranslationTable{
-  ["ol_sp"] = "OLSP",
   ["ol_sp__caoren"] = "曹仁",
   ["#ol_sp__caoren"] = "鬼神之勇",
   ["weikui"] = "伪溃",

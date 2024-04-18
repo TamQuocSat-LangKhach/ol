@@ -6,6 +6,7 @@ local U = require "packages/utility/utility"
 Fk:loadTranslationTable{
   ["ol_sp1"] = "OL专属1",
   ["ol"] = "OL",
+  ["ol_sp"] = "OLSP",
 }
 
 local zhugeke = General(extension, "zhugeke", "wu", 3)

@@ -5408,7 +5408,7 @@ Fk:loadTranslationTable{
   ["#yichengl-exchange2"] = "易城：请排列手牌在牌堆顶的位置",
 }
 
-local sunce = General(extension, "olsp__sunce", "qun", 4)
+local sunce = General(extension, "ol_sp__sunce", "qun", 4)
 local liantao = fk.CreateTriggerSkill{
   name = "liantao",
   anim_type = "offensive",
@@ -5501,9 +5501,8 @@ local liantao_prohibit = fk.CreateProhibitSkill{
 liantao:addRelatedSkill(liantao_prohibit)
 sunce:addSkill(liantao)
 Fk:loadTranslationTable{
-  ["olsp"] = "OLSP",
-  ["olsp__sunce"] = "孙策",
-  ["#olsp__sunce"] = "壮武命世",
+  ["ol_sp__sunce"] = "孙策",
+  ["#ol_sp__sunce"] = "壮武命世",
 
   ["liantao"] = "连讨",
   [":liantao"] = "出牌阶段开始时，你可以令一名其他角色选择一种颜色，然后你依次将此颜色的手牌当【决斗】对其使用直到你或其进入濒死状态，"..
@@ -5511,6 +5510,10 @@ Fk:loadTranslationTable{
   ["#liantao-choose"] = "是否发动 连讨，选择一名其他角色",
   ["#liantao-choice"] = "连讨：选择%from即将对你使用【决斗】的颜色",
   ["#liantao-duel"] = "连讨：选择一张%arg手牌当【决斗】对%dest使用",
+
+  ["$liantao1"] = "沙场百战疾，争衡天下间。",
+  ["$liantao2"] = "征战无休，决胜千里。",
+  ["~ol_sp__sunce"] = "身受百创，力难从心……",
 }
 
 

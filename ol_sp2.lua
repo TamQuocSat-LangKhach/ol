@@ -106,7 +106,7 @@ Fk:loadTranslationTable{
   ["~caoshuang"] = "悔不该降了司马懿。",
 }
 
-local zhangliao = General(extension, "sp__zhangliao", "qun", 4)
+local zhangliao = General(extension, "ol_sp__zhangliao", "qun", 4)
 Fk:addPoxiMethod{
   name = "mubing_prey",
   card_filter = function(to_select, selected)
@@ -263,9 +263,9 @@ zhangliao:addSkill(mubing)
 zhangliao:addSkill(ziqu)
 zhangliao:addSkill(diaoling)
 Fk:loadTranslationTable{
-  ["sp__zhangliao"] = "张辽",
-  ["#sp__zhangliao"] = "功果显名",
-  ["illustrator:sp__zhangliao"] = "君桓文化",
+  ["ol_sp__zhangliao"] = "张辽",
+  ["#ol_sp__zhangliao"] = "功果显名",
+  ["illustrator:ol_sp__zhangliao"] = "君桓文化",
   ["mubing"] = "募兵",
   [":mubing"] = "出牌阶段开始时，你可以亮出牌堆顶三张牌，然后你可以弃置任意张手牌，获得任意张亮出的牌，你弃置牌点数之和不能小于获得牌点数之和。",
   ["ziqu"] = "资取",
@@ -290,7 +290,7 @@ Fk:loadTranslationTable{
   ["$ziqu2"] = "留财不留命，留命不留财。",
   ["$diaoling1"] = "兵甲已足，当汇集三军。",
   ["$diaoling2"] = "临军告急，当遣将急援。",
-  ["~sp__zhangliao"] = "孤军难鸣，进退维谷。",
+  ["~ol_sp__zhangliao"] = "孤军难鸣，进退维谷。",
 }
 
 local zhangling = General(extension, "zhangling", "qun", 3)
@@ -2172,7 +2172,7 @@ Fk:loadTranslationTable{
   ["~ol__zhuling"] = "母亲，弟弟，我来了……",
 }
 
-local zhanghe = General(extension, "ol__zhanghe", "qun", 4)
+local zhanghe = General(extension, "ol_sp__zhanghe", "qun", 4)
 local ol__zhouxuan = fk.CreateTriggerSkill{
   name = "ol__zhouxuan",
   anim_type = "drawcard",
@@ -2247,10 +2247,10 @@ local ol__zhouxuan_trigger = fk.CreateTriggerSkill{
 ol__zhouxuan:addRelatedSkill(ol__zhouxuan_trigger)
 zhanghe:addSkill(ol__zhouxuan)
 Fk:loadTranslationTable{
-  ["ol__zhanghe"] = "张郃",
-  ["#ol__zhanghe"] = "倾柱覆州",
-  ["designer:ol__zhanghe"] = "七哀",
-  ["illustrator:ol__zhanghe"] = "君桓文化",
+  ["ol_sp__zhanghe"] = "张郃",
+  ["#ol_sp__zhanghe"] = "倾柱覆州",
+  ["designer:ol_sp__zhanghe"] = "七哀",
+  ["illustrator:ol_sp__zhanghe"] = "君桓文化",
 
   ["ol__zhouxuan"] = "周旋",
   [":ol__zhouxuan"] = "弃牌阶段开始时，你可将任意张手牌扣置于武将牌上（均称为「旋」，至多五张）。"..
@@ -2261,7 +2261,7 @@ Fk:loadTranslationTable{
 
   ["$ol__zhouxuan1"] = "详勘细察，洞若观火。",
   ["$ol__zhouxuan2"] = "知敌底细，方能百战百胜。",
-  ["~ol__zhanghe"] = "我终究是看不透这人心。",
+  ["~ol_sp__zhanghe"] = "我终究是看不透这人心。",
 }
 
 local dongzhao = General(extension, "ol__dongzhao", "wei", 3)
@@ -3360,7 +3360,7 @@ Fk:loadTranslationTable{
   ["~ol__tengfanglan"] = "封侯归命，夫妻同归……",
 }
 
-local menghuo = General(extension, "sp__menghuo", "qun", 4)
+local menghuo = General(extension, "ol_sp__menghuo", "qun", 4)
 local function doManwang(player, i)
   local room = player.room
   if i == 1 then
@@ -3451,10 +3451,10 @@ local panqin = fk.CreateTriggerSkill{
 menghuo:addSkill(manwang)
 menghuo:addRelatedSkill(panqin)
 Fk:loadTranslationTable{
-  ["sp__menghuo"] = "孟获",
-  ["#sp__menghuo"] = "夷汉并服",
-  ["designer:sp__menghuo"] = "玄蝶既白",
-  ["illustrator:sp__menghuo"] = "君桓文化",
+  ["ol_sp__menghuo"] = "孟获",
+  ["#ol_sp__menghuo"] = "夷汉并服",
+  ["designer:ol_sp__menghuo"] = "玄蝶既白",
+  ["illustrator:ol_sp__menghuo"] = "君桓文化",
 
   ["manwang"] = "蛮王",
   [":manwang"] = "出牌阶段，你可以弃置任意张牌依次执行前等量项：1.获得〖叛侵〗；2.摸一张牌；3.回复1点体力；4.摸两张牌并失去〖叛侵〗。",
@@ -3468,7 +3468,7 @@ Fk:loadTranslationTable{
   ["$manwang2"] = "夷汉所服，据南中诸郡，当以蛮王为号！",
   ["$panqin1"] = "百兽嘶鸣筋骨振，蛮王起兮万人随！",
   ["$panqin2"] = "呼勒格诗惹之民，召南中群雄复起！",
-  ["~sp__menghuo"] = "有材而得生，无材而得纵……",
+  ["~ol_sp__menghuo"] = "有材而得生，无材而得纵……",
 }
 
 local ruiji = General(extension, "ruiji", "wu", 3, 3, General.Female)
