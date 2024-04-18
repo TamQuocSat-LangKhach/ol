@@ -5313,7 +5313,9 @@ Fk:loadTranslationTable{
 local liupi = General(extension, "ol__liupi", "qun", 4)
 local yichengl = fk.CreateActiveSkill{
   name = "yichengl",
-  prompt = "#yichengl-active",
+  prompt = function()
+    return "#yichengl-active:::" .. tostring(Self.maxHp)
+  end,
   anim_type = "control",
   card_num = 0,
   target_num = 0,
@@ -5323,7 +5325,7 @@ local yichengl = fk.CreateActiveSkill{
   card_filter = Util.FalseFunc,
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
-    local cards = room:getNCards(3)
+    local cards = room:getNCards(player.maxHp)
     room:moveCards({
       ids = cards,
       toArea = Card.Processing,
@@ -5400,9 +5402,9 @@ Fk:loadTranslationTable{
   ["#ol__liupi"] = "易城报君",
 
   ["yichengl"] = "易城",
-  [":yichengl"] = "出牌阶段限一次，你可以展示牌堆顶三张牌，然后可以用任意张手牌交换其中等量张，"..
+  [":yichengl"] = "出牌阶段限一次，你可以展示牌堆顶X张牌（X为你的体力上限），然后可以用任意张手牌交换其中等量张，"..
   "若展示牌点数之和因此增加，你可以用所有手牌交换展示牌。",
-  ["#yichengl-active"] = "发动 易城，展示牌堆顶3张牌，并可以用手牌交换其中的牌",
+  ["#yichengl-active"] = "发动 易城，展示牌堆顶%arg张牌，并可以用手牌交换其中的牌",
   ["#yichengl-exchange"] = "易城：你可以用任意张手牌替换等量的牌堆顶牌",
   ["#yichengl-invoke"] = "易城：是否用所有手牌交换展示的牌",
   ["#yichengl-exchange2"] = "易城：请排列手牌在牌堆顶的位置",
