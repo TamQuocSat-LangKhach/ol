@@ -313,7 +313,7 @@ local ol__zhubi_trigger = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     local piles = U.askForArrangeCards(player, "ol__zhubi",
-    {"Bottom", table.reverse(room:getNCards(5, "bottom")), "@@ol__zhubi-inhand", self.cost_data}, "#ol__zhubi-exchange")
+    {"Bottom", room:getNCards(5, "bottom"), "@@ol__zhubi-inhand", self.cost_data}, "#ol__zhubi-exchange")
     U.swapCardsWithPile(player, piles[1], piles[2], "ol__zhubi", "Bottom")
   end,
 
