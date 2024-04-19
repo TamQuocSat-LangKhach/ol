@@ -5309,7 +5309,15 @@ Fk:loadTranslationTable{
   ["#pijingl-choice"] = "披荆：你可以摸一张牌，或令%dest也成为%arg的目标",
   ["pijingl_target"] = "增加目标",
 }
-
+Fk:addPoxiMethod{
+  name = "yichengl",
+  card_filter = function(to_select, selected, data)
+    return table.contains(data[2], to_select)
+  end,
+  feasible = function(selected)
+    return true
+  end,
+}
 local liupi = General(extension, "ol__liupi", "qun", 4)
 local yichengl = fk.CreateActiveSkill{
   name = "yichengl",
@@ -5338,7 +5346,7 @@ local yichengl = fk.CreateActiveSkill{
       n = n + Fk:getCardById(id).number
     end
     local cardmap = U.askForArrangeCards(player, self.name,
-    {cards, player:getCardIds(Player.Hand), "Top", "$Hand"}, "#yichengl-exchange", false)
+    {cards, player:getCardIds(Player.Hand), "Top", "$Hand"}, "#yichengl-exchange:::" .. tostring(n), false)
     local topile = table.filter(cardmap[1], function (id)
       return not table.contains(cards, id)
     end)
@@ -5355,26 +5363,28 @@ local yichengl = fk.CreateActiveSkill{
           for _, id in ipairs(cardmap[1]) do
             n = n - Fk:getCardById(id).number
           end
-          if n < 0 and room:askForSkillInvoke(player, self.name, nil, "#yichengl-invoke") then
+          if n < 0 then
             local handcards = player:getCardIds(Player.Hand)
             local top = U.askForArrangeCards(player, self.name,
-            {handcards, "Top"}, "#yichengl-exchange2", true, nil, {#handcards}, {#handcards})[1]
-            top = table.reverse(top)
-            room:moveCards({
-              ids = top,
-              from = player.id,
-              toArea = Card.DrawPile,
-              moveReason = fk.ReasonPut,
-              skillName = self.name,
-              proposer = player.id,
-              moveVisible = false,
-            })
-            if player.dead then
-              room:moveCardTo(cardmap[1], Card.DiscardPile, nil, fk.ReasonJustMove, self.name, "", true)
-            else
-              room:moveCardTo(cardmap[1], Card.PlayerHand, player, fk.ReasonJustMove, self.name, "", true, player.id)
+            {cardmap[1], handcards, "Top", "$Hand"}, "#yichengl-exchange2", false, nil, nil, nil, "", "yichengl")[2]
+            if #top > 0 then
+              top = table.reverse(top)
+              room:moveCards({
+                ids = top,
+                from = player.id,
+                toArea = Card.DrawPile,
+                moveReason = fk.ReasonPut,
+                skillName = self.name,
+                proposer = player.id,
+                moveVisible = true,
+              })
+              if player.dead then
+                room:moveCardTo(cardmap[1], Card.DiscardPile, nil, fk.ReasonJustMove, self.name, "", true)
+              else
+                room:moveCardTo(cardmap[1], Card.PlayerHand, player, fk.ReasonJustMove, self.name, "", true, player.id)
+              end
+              return
             end
-            return
           end
         end
       end
@@ -5405,9 +5415,8 @@ Fk:loadTranslationTable{
   [":yichengl"] = "出牌阶段限一次，你可以展示牌堆顶X张牌（X为你的体力上限），然后可以用任意张手牌交换其中等量张，"..
   "若展示牌点数之和因此增加，你可以用所有手牌交换展示牌。",
   ["#yichengl-active"] = "发动 易城，展示牌堆顶%arg张牌，并可以用手牌交换其中的牌",
-  ["#yichengl-exchange"] = "易城：你可以用任意张手牌替换等量的牌堆顶牌",
-  ["#yichengl-invoke"] = "易城：是否用所有手牌交换展示的牌",
-  ["#yichengl-exchange2"] = "易城：请排列手牌在牌堆顶的位置",
+  ["#yichengl-exchange"] = "易城：你可以用任意张手牌替换等量的牌堆顶牌，点数和超过%arg可全部交换",
+  ["#yichengl-exchange2"] = "易城：你可以用所有手牌交换展示的牌，请排列手牌在牌堆顶的位置",
 }
 
 local sunce = General(extension, "ol_sp__sunce", "qun", 4)
