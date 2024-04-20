@@ -3235,16 +3235,16 @@ local shengmo = fk.CreateViewAsSkill{
   end,
   enabled_at_play = function(self, player)
     if #getShengmoCards(player) > 0 then
-      local mark = U.getMark(Self, "shengmo_used")
-      return #table.filter(U.getViewAsCardNames(Self, "shengmo", U.getAllCardNames("b")), function (name)
+      local mark = U.getMark(player, "shengmo_used")
+      return #table.filter(U.getViewAsCardNames(player, "shengmo", U.getAllCardNames("b")), function (name)
         return not table.contains(mark, Fk:cloneCard(name).trueName)
       end) > 0
     end
   end,
   enabled_at_response = function(self, player, response)
     if not response and #getShengmoCards(player) > 0 then
-      local mark = U.getMark(Self, "shengmo_used")
-      return #table.filter(U.getViewAsCardNames(Self, "shengmo", U.getAllCardNames("b")), function (name)
+      local mark = U.getMark(player, "shengmo_used")
+      return #table.filter(U.getViewAsCardNames(player, "shengmo", U.getAllCardNames("b")), function (name)
         return not table.contains(mark, Fk:cloneCard(name).trueName)
       end) > 0
     end
@@ -3329,5 +3329,191 @@ Fk:loadTranslationTable{
   ["~olz__wangmingshan"] = "",
 }
 
+local zhongyao = General(extension, "olz__zhongyao", "wei", 3)
+local chengqi = fk.CreateViewAsSkill{
+  name = "chengqi",
+  prompt = "#chengqi-viewas",
+  pattern = ".",
+  interaction = function()
+    local mark = U.getMark(Self, "chengqi-turn")
+    local all_names = U.getAllCardNames("bt")
+    local names = table.filter(U.getViewAsCardNames(Self, "chengqi", all_names), function (name)
+      local card = Fk:cloneCard(name)
+      return not table.contains(mark, card.trueName)
+    end)
+    if #names > 0 then
+      return UI.ComboBox { choices = names, all_choices = all_names }
+    end
+  end,
+  card_filter = function(self, to_select, selected)
+    return Fk:currentRoom():getCardArea(to_select) ~= Card.PlayerEquip
+  end,
+  view_as = function(self, cards)
+    if #cards < 2 or not self.interaction.data then return end
+    local card = Fk:cloneCard(self.interaction.data)
+    local n = Fk:translate(card.trueName, "zh_CN"):len()
+    for _, id in ipairs(cards) do
+      n = n - Fk:translate(Fk:getCardById(id).trueName, "zh_CN"):len()
+    end
+    if n > 0 then return end
+    card:addSubcards(cards)
+    card.skillName = self.name
+    return card
+  end,
+  before_use = function(self, player, use)
+    local n = Fk:translate(use.card.trueName, "zh_CN"):len()
+    for _, id in ipairs(use.card.subcards) do
+      n = n - Fk:translate(Fk:getCardById(id).trueName, "zh_CN"):len()
+    end
+    if n == 0 then
+      use.extra_data = use.extra_data or {}
+      use.extra_data.chengqi_draw = player.id
+    end
+  end,
+  enabled_at_play = function(self, player)
+    return true
+  end,
+  enabled_at_response = function(self, player, response)
+    if response then return false end
+    local mark = U.getMark(player, "chengqi-turn")
+    return #table.filter(U.getViewAsCardNames(player, self.name, U.getAllCardNames("bt")), function (name)
+      return not table.contains(mark, Fk:cloneCard(name).trueName)
+    end) > 0
+  end,
+}
+local chengqi_trigger = fk.CreateTriggerSkill{
+  name = "#chengqi_trigger",
+  mute = true,
+  events = {fk.CardUsing},
+  can_trigger = function(self, event, target, player, data)
+    return not player.dead and data.extra_data and data.extra_data.chengqi_draw == player.id
+  end,
+  on_cost = Util.TrueFunc,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local tos = room:askForChoosePlayers(player, table.map(room.alive_players, Util.IdMapper), 1, 1,
+    "#chengqi-choose", self.name, false)
+    if #tos > 0 then
+      room:drawCards(room:getPlayerById(tos[1]), 1, chengqi.name)
+    end
+  end,
+
+  refresh_events = {fk.AfterCardUseDeclared, fk.EventAcquireSkill},
+  can_refresh = function(self, event, target, player, data)
+    if event == fk.AfterCardUseDeclared then
+      return target == player and player:hasSkill(chengqi, true)
+    else
+      return target == player and data == chengqi
+    end
+  end,
+  on_refresh = function(self, event, target, player, data)
+    local room = player.room
+    if event == fk.AfterCardUseDeclared then
+      local mark = U.getMark(player, "chengqi-turn")
+      table.insertIfNeed(mark, data.card.trueName)
+      room:setPlayerMark(player, "chengqi-turn", mark)
+    else
+      local mark = {}
+      local turn_event = room.logic:getCurrentEvent():findParent(GameEvent.Turn)
+      if turn_event == nil then return false end
+      local use
+      U.getEventsByRule(room, GameEvent.UseCard, 1, function (e)
+        use = e.data[1]
+        if use.from == player.id then
+          table.insertIfNeed(mark, use.card.trueName)
+        end
+        return false
+      end, turn_event.id)
+      room:setPlayerMark(player, "chengqi-turn", mark)
+    end
+  end,
+}
+local jieli = fk.CreateTriggerSkill{
+  name = "jieli",
+  anim_type = "control",
+  events = {fk.EventPhaseStart},
+  can_trigger = function(self, event, target, player, data)
+    if player == target and player.phase == Player.Finish and player:hasSkill(self) then
+      local room = player.room
+      local targets = table.filter(room.alive_players, function (p)
+        return not p:isKongcheng()
+      end)
+      if #targets == 0 then return false end
+      local turn_event = room.logic:getCurrentEvent():findParent(GameEvent.Turn)
+      if turn_event == nil then return false end
+      local x = 0
+      local use
+      U.getEventsByRule(room, GameEvent.UseCard, 1, function (e)
+        use = e.data[1]
+        if use.from == player.id then
+          x = math.max(x, Fk:translate(use.card.trueName, "zh_CN"):len())
+        end
+        return false
+      end, turn_event.id)
+      if x > 0 then
+        self.cost_data = {table.map(targets, Util.IdMapper), x}
+        return true
+      end
+    end
+  end,
+  on_cost = function(self, event, target, player, data)
+    local x = self.cost_data[2]
+    local to = player.room:askForChoosePlayers(player, self.cost_data[1], 1, 1,
+    "#jieli-choose:::" .. tostring(x), self.name, true)
+    if #to > 0 then
+      self.cost_data = {to[1], x}
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local to = room:getPlayerById(self.cost_data[1])
+    local x, y, z = self.cost_data[2], 0, 0
+    local handcards = {}
+    for _, id in ipairs(to:getCardIds(Player.Hand)) do
+      z = Fk:translate(Fk:getCardById(id).trueName, "zh_CN"):len()
+      if y < z then
+        y = z
+        handcards = {id}
+      elseif y == z then
+        table.insert(handcards, id)
+      end
+    end
+    local cards = room:getNCards(x)
+    local cardmap = U.askForArrangeCards(player, self.name,
+    {cards, handcards, "Top", "$Hand"}, "#jieli-exchange::" .. to.id)
+    U.swapCardsWithPile(to, cardmap[1], cardmap[2], self.name, "Top", false, player.id)
+  end,
+}
+chengqi:addRelatedSkill(chengqi_trigger)
+zhongyao:addSkill(chengqi)
+zhongyao:addSkill(jieli)
+zhongyao:addSkill("baozu")
+Fk:loadTranslationTable{
+  ["olz__zhongyao"] = "族钟繇",
+  --["#olz__zhongyao"] = "",
+  --["designer:olz__zhongyao"] = "",
+  ["illustrator:olz__zhongyao"] = "alien",
+  ["chengqi"] = "承启",
+  [":chengqi"] = "你可以将至少两张手牌当一张本回合未使用过的基本牌或普通锦囊牌使用"..
+  "（转化后的牌名字数不大于转化前牌名字数之和，若恰好相等，你于使用此牌时令一名角色摸一张牌）。",
+  ["jieli"] = "诫厉",
+  [":jieli"] = "结束阶段，你可以选择一名角色，观看其牌名字数最多的手牌和牌堆顶的X张牌（X为你本回合使用的牌名字数的最大值），"..
+  "然后你可以交换其中等量牌。",
+
+  ["#chengqi-viewas"] = "发动 承启，将至少两张牌当牌名字数不小于这些牌的牌名字数之和的牌使用",
+  ["#chengqi_trigger"] = "承启",
+  ["#chengqi-choose"] = "承启：选择一名角色，令其摸一张牌",
+  ["#jieli-choose"] = "发动 诫厉，观看一名角色的手牌及牌堆顶的%arg张卡牌",
+  ["#jieli-exchange"] = "诫厉：你可以交换%dest的手牌与牌堆顶的等量的牌",
+
+  ["$chengqi1"] = "",
+  ["$chengqi2"] = "",
+  ["$jieli1"] = "",
+  ["$jieli2"] = "",
+  ["$baozu_olz__zhongyao1"] = "",
+  ["$baozu_olz__zhongyao2"] = "",
+  ["~olz__zhongyao"] = "",
+}
 
 return extension

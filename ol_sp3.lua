@@ -4558,6 +4558,7 @@ caoyu:addSkill(xiangxu)
 caoyu:addSkill(xiangzuo)
 Fk:loadTranslationTable{
   ["caoyu"] = "曹宇",
+  ["#caoyu"] = "大魏燕王",
   ["designer:caoyu"] = "廷玉",
 
   ["gongjie"] = "恭节",
