@@ -2836,7 +2836,7 @@ local function updateGangshu(player, reset)
 end
 local gangshu = fk.CreateTriggerSkill{
   name = "gangshu",
-  events = {fk.CardUseFinished, fk.SkillEffect, fk.DrawNCards},
+  events = {fk.CardUseFinished, fk.CardEffecting, fk.DrawNCards},
   mute = true,
   can_trigger = function (self, event, target, player, data)
     if not player:hasSkill(self) then return false end
@@ -2847,18 +2847,10 @@ local gangshu = fk.CreateTriggerSkill{
         local card = Fk:cloneCard("slash")
         return not gangshuTimesCheck(player, card) and card.skill:getMaxUseTime(player, Player.HistoryPhase, card, nil) < 5
       end
-    elseif event == fk.SkillEffect then
+    elseif event == fk.CardEffecting then
       --你使用的以牌为目标的牌生效时，非常抽象的时机
-      --FIXME:本来应该用fk.CardEffecting的，但是由于目前不以角色为目标的牌不会触发此时机，导致只能如此
-      if player ~= target then return false end
-      if player:getMark("gangshu1_fix") == 0 and player:getMark("gangshu2_fix") == 0 and player:getMark("gangshu3_fix") == 0 then return false end
-      if not data.name:endsWith("_skill") then return false end
-      local card_name = data.name:sub(1, #data.name - 6)
-      if Fk.all_card_types[card_name] == nil then return false end
-      local effect_event = player.room.logic:getCurrentEvent():findParent(GameEvent.CardEffect)
-      if effect_event == nil then return false end
-      local effect = effect_event.data[1]
-      return effect.card.name == card_name and effect.toCard ~= nil
+      return data.toCard and data.from == player.id and
+      (player:getMark("gangshu1_fix") > 0 or player:getMark("gangshu2_fix") > 0 or player:getMark("gangshu3_fix") > 0)
     elseif event == fk.DrawNCards then
       return target == player and player:getMark("gangshu2_fix") > 0
     end
@@ -2892,7 +2884,7 @@ local gangshu = fk.CreateTriggerSkill{
       room:notifySkillInvoked(player, self.name)
       room:addPlayerMark(player, self.cost_data .. "_fix", 1)
       updateGangshu(player)
-    elseif event == fk.SkillEffect then
+    elseif event == fk.CardEffecting then
       room:notifySkillInvoked(player, self.name, "negative")
       updateGangshu(player, true)
     elseif event == fk.DrawNCards then
@@ -4302,7 +4294,7 @@ local jiane = fk.CreateTriggerSkill{
   can_trigger = function(self, event, target, player, data)
     if not player:hasSkill(self) then return false end
     if event == fk.CardEffecting then
-      return target ~= player and not target.dead and data.from == player.id and target:getMark("@@jiane_debuff-turn") == 0
+      return target and target ~= player and not target.dead and data.from == player.id and target:getMark("@@jiane_debuff-turn") == 0
     else
       if player:getMark("@@jiane_buff-turn") > 0 then return false end
       local room = player.room
