@@ -1429,7 +1429,7 @@ local tairan = fk.CreateTriggerSkill{
         room:setPlayerMark(player, "tairan_hp", n)
       end
       if player:getHandcardNum() < player.maxHp then
-        player:drawCards(player.maxHp - player:getHandcardNum(), self.name)
+        player:drawCards(player.maxHp - player:getHandcardNum(), self.name, nil, "@@tairan-inhand")
       end
     else
       local n = player:getMark("tairan_hp")
@@ -1445,22 +1445,6 @@ local tairan = fk.CreateTriggerSkill{
         end)
         if #cards > 0 then
           room:throwCard(cards, self.name, player, player)
-        end
-      end
-    end
-  end,
-
-  refresh_events = {fk.AfterCardsMove},
-  can_refresh = Util.TrueFunc,
-  on_refresh = function(self, event, target, player, data)
-    local room = player.room
-    for _, move in ipairs(data) do
-      if move.to == player.id and move.toArea == Card.PlayerHand and move.skillName == self.name then
-        for _, info in ipairs(move.moveInfo) do
-          local id = info.cardId
-          if room:getCardArea(id) == Card.PlayerHand and room:getCardOwner(id) == player then
-            room:setCardMark(Fk:getCardById(id), "@@tairan-inhand", 1)
-          end
         end
       end
     end
@@ -2305,39 +2289,15 @@ local yanxi = fk.CreateActiveSkill{
     if id2 ~= id then
       cards = {id2}
     end
-    room:moveCardTo(cards, Player.Hand, player, fk.ReasonPrey, self.name, nil, false, player.id)
-  end,
-}
-local yanxi_refresh = fk.CreateTriggerSkill{
-  name = "#yanxi_refresh",
-
-  refresh_events = {fk.AfterCardsMove, fk.AfterTurnEnd},
-  can_refresh = Util.TrueFunc,
-  on_refresh = function(self, event, target, player, data)
-    local room = player.room
-    if event == fk.AfterCardsMove then
-      for _, move in ipairs(data) do
-        if move.to == player.id and move.toArea == Card.PlayerHand and move.skillName == yanxi.name then
-          for _, info in ipairs(move.moveInfo) do
-            local id = info.cardId
-            if room:getCardArea(id) == Card.PlayerHand and room:getCardOwner(id) == player then
-              room:setCardMark(Fk:getCardById(id), "@@yanxi-inhand", 1)
-            end
-          end
-        end
-      end
-    elseif event == fk.AfterTurnEnd then
-      U.clearHandMark(player, "@@yanxi-inhand")
-    end
+    room:moveCardTo(cards, Player.Hand, player, fk.ReasonPrey, self.name, nil, false, player.id, "@@yanxi-inhand-turn")
   end,
 }
 local yanxi_maxcards = fk.CreateMaxCardsSkill{
   name = "#yanxi_maxcards",
   exclude_from = function(self, player, card)
-    return card:getMark("@@yanxi-inhand") > 0
+    return card:getMark("@@yanxi-inhand-turn") > 0
   end,
 }
-yanxi:addRelatedSkill(yanxi_refresh)
 yanxi:addRelatedSkill(yanxi_maxcards)
 wangyuanji:addSkill(shiren)
 wangyuanji:addSkill(yanxi)
@@ -2351,7 +2311,7 @@ Fk:loadTranslationTable{
   [":yanxi"] = "出牌阶段限一次，你将一名其他角色的随机一张手牌与牌堆顶的两张牌混合后展示，你猜测哪张牌来自其手牌。若猜对，你获得三张牌；"..
   "若猜错，你获得选中的牌。你以此法获得的牌本回合不计入手牌上限。",
 
-  ["@@yanxi-inhand"] = "宴戏",
+  ["@@yanxi-inhand-turn"] = "宴戏",
   ["#yanxi-prompt"] = "宴戏:将一名其他角色的一张手牌与牌堆顶的两张牌混合后，猜测哪张来自其手牌",
   ["#yanxi-card"] = "宴戏:选择你认为来自其手牌的一张牌",
   ["#shiren-invoke"] = "识人：你可以对 %src 发动〖宴戏〗",

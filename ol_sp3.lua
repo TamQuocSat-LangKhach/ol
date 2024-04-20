@@ -227,23 +227,7 @@ local ol__tongdu = fk.CreateTriggerSkill{
     local room = player.room
     local to = room:getPlayerById(self.cost_data)
     local card = room:askForCard(to, 1, 1, false, self.name, false, ".", "#ol__tongdu-give:"..player.id)
-    room:moveCardTo(card, Player.Hand, player, fk.ReasonGive, self.name, nil, false, to.id)
-  end,
-
-  refresh_events = {fk.AfterCardsMove},
-  can_refresh = Util.TrueFunc,
-  on_refresh = function(self, event, target, player, data)
-    local room = player.room
-    for _, move in ipairs(data) do
-      if move.to == player.id and move.toArea == Card.PlayerHand and move.skillName == self.name then
-        for _, info in ipairs(move.moveInfo) do
-          local id = info.cardId
-          if room:getCardArea(id) == Card.PlayerHand and room:getCardOwner(id) == player then
-            room:setCardMark(Fk:getCardById(id), "@@ol__tongdu-inhand-turn", 1)
-          end
-        end
-      end
-    end
+    room:moveCardTo(card, Player.Hand, player, fk.ReasonGive, self.name, nil, false, to.id, "@@ol__tongdu-inhand-turn")
   end,
 }
 local ol__tongdu_trigger = fk.CreateTriggerSkill{
@@ -4953,7 +4937,7 @@ local chongshen = fk.CreateViewAsSkill{
   card_filter = function(self, to_select, selected)
     if #selected ~= 0 then return false end
     local card = Fk:getCardById(to_select)
-    return card.color == Card.Red and card:getMark("@@chongshen-inhand") > 0
+    return card.color == Card.Red and card:getMark("@@chongshen-inhand-round") > 0
   end,
   view_as = function(self, cards)
     if #cards ~= 1 then return nil end
@@ -4969,28 +4953,21 @@ local chongshen = fk.CreateViewAsSkill{
 local chongshen_record = fk.CreateTriggerSkill{
   name = "#chongshen_record",
 
-  refresh_events = {fk.AfterCardsMove, fk.RoundEnd},
+  refresh_events = {fk.AfterCardsMove},
   can_refresh = function(self, event, target, player, data)
-    if event == fk.AfterCardsMove then
-      return player:hasSkill(chongshen, true)
-    end
-    return true
+    return player:hasSkill(chongshen, true)
   end,
   on_refresh = function(self, event, target, player, data)
     local room = player.room
-    if event == fk.AfterCardsMove then
-      for _, move in ipairs(data) do
-        if move.to == player.id and move.toArea == Player.Hand then
-          for _, info in ipairs(move.moveInfo) do
-            local id = info.cardId
-            if room:getCardArea(id) == Card.PlayerHand and room:getCardOwner(id) == player then
-              room:setCardMark(Fk:getCardById(id), "@@chongshen-inhand", 1)
-            end
+    for _, move in ipairs(data) do
+      if move.to == player.id and move.toArea == Player.Hand then
+        for _, info in ipairs(move.moveInfo) do
+          local id = info.cardId
+          if room:getCardArea(id) == Card.PlayerHand and room:getCardOwner(id) == player then
+            room:setCardMark(Fk:getCardById(id), "@@chongshen-inhand-round", 1)
           end
         end
       end
-    elseif event == fk.RoundEnd then
-      U.clearHandMark(player, "@@chongshen-inhand")
     end
   end,
 }
@@ -5011,7 +4988,7 @@ Fk:loadTranslationTable{
   ["#qingyuan-choose"] = "轻缘：选择一名其他角色",
   ["@@qingyuan"] = "轻缘",
   ["#chongshen-viewas"] = "发动 重身，将一张本轮获得的红色牌当做【闪】使用",
-  ["@@chongshen-inhand"] = "重身",
+  ["@@chongshen-inhand-round"] = "重身",
 
   ["$qingyuan1"] = "男儿重义气，自古轻别离。",
   ["$qingyuan2"] = "缘轻义重，倚东篱而叹长生。",

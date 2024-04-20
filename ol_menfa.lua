@@ -2876,9 +2876,6 @@ Fk:loadTranslationTable{
   ["@[baichu]"] = "百出",
   ["#baichu-choice"] = "百出：记录一张普通锦囊牌",
 
-  ["@@baichu-inhand"] = "<font color='yellow'>未出</font>",
-  ["@@baichu_record-inhand"] = "百出",
-
   ["$baichu1"] = "腹有经纶，到用时施无穷之计。",
   ["$baichu2"] = "胸纳甲兵，烽烟起可靖疆晏海。",
   ["$daojie_olz__xunyou1"] = "秉忠正之心，可抚宁内外。",
