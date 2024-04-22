@@ -794,14 +794,12 @@ local function doGuanxu(player, target, skill_name)
   local room = player.room
   local cids = target:getCardIds(Player.Hand)
   local cards = room:getNCards(5)
-  local to_ex = U.askForExchange(player, "Top", "$Hand", cards, cids, "#guanxu-exchange", 1)
-  if #to_ex == 0 then
-    for i = #cards, 1, -1 do
-      table.insert(room.draw_pile, 1, cards[i])
-    end
-    room:doBroadcastNotify("UpdateDrawPile", tostring(#room.draw_pile))
-    return
+  for i = #cards, 1, -1 do
+    table.insert(room.draw_pile, 1, cards[i])
   end
+  room:doBroadcastNotify("UpdateDrawPile", tostring(#room.draw_pile))
+  local to_ex = U.askForExchange(player, "Top", "$Hand", cards, cids, "#guanxu-exchange", 1)
+  if #to_ex ~= 2 then return end
   local index = 0
   local cardA = table.find(cards, function (id)
     index = index + 1
@@ -810,48 +808,9 @@ local function doGuanxu(player, target, skill_name)
   local cardB = table.find(to_ex, function (id)
     return id ~= cardA
   end)
-
-  room:moveCards{
-    ids = {cardB},
-    from = target.id,
-    toArea = Card.Void,
-    skillName = skill_name,
-    moveReason = fk.ReasonExchange,
-    proposer = player.id,
-    moveVisible = false
-  }
-
   table.remove(cards, index)
   table.insert(cards, index, cardB)
-  table.removeOne(room.void, cardB)
-  for i = #cards, 1, -1 do
-    table.insert(room.draw_pile, 1, cards[i])
-  end
-  room:setCardArea(cardB, Card.DrawPile, nil)
-  room:doBroadcastNotify("UpdateDrawPile", tostring(#room.draw_pile))
-
-  if target.dead then
-    room:moveCards{
-      ids = {cardA},
-      fromArea = Card.Void,
-      toArea = Card.DiscardPile,
-      skillName = skill_name,
-      moveReason = fk.ReasonExchange,
-      proposer = player.id,
-      moveVisible = false
-    }
-  else
-    room:moveCards{
-      ids = {cardA},
-      fromArea = Card.Void,
-      to = target.id,
-      toArea = Card.PlayerHand,
-      skillName = skill_name,
-      moveReason = fk.ReasonExchange,
-      proposer = player.id,
-      moveVisible = false
-    }
-  end
+  U.swapCardsWithPile(target, cards, {cardA}, "guanxu", "Top", false, player.id)
 
   if player.dead or target.dead then return end
   cids = target:getCardIds(Player.Hand)

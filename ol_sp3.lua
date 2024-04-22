@@ -369,8 +369,8 @@ local chenglie = fk.CreateTriggerSkill{
 
     local n = #TargetGroup:getRealTargets(data.tos)
     local ids = room:getNCards(n)
-    --FIXME:为了后续的秘密移动，只能移动到Card.Void
-    room:moveCardTo(ids, Card.Void, player, fk.ReasonJustMove, self.name, nil, true, player.id)
+    local ui_clean = {}
+    room:moveCardTo(ids, Card.Processing, player, fk.ReasonJustMove, self.name, nil, true, player.id)
     local results = U.askForExchange(player, "Top", "$Hand", ids, player:getCardIds("h"), "#chenglie-exchange", 1)
     if #results > 0 then
       local id1, id2 = results[1], results[2]
@@ -381,7 +381,7 @@ local chenglie = fk.CreateTriggerSkill{
       local move1 = {
         ids = {id1},
         from = player.id,
-        toArea = Card.Void,
+        toArea = Card.Processing,
         moveReason = fk.ReasonExchange,
         skillName = self.name,
         moveVisible = false,
@@ -397,6 +397,7 @@ local chenglie = fk.CreateTriggerSkill{
       room:moveCards(move1, move2)
       table.insert(ids, id1)
       table.removeOne(ids, id2)
+      table.insert(ui_clean, id2)
     end
     local targets = TargetGroup:getRealTargets(data.tos)
 
@@ -416,6 +417,7 @@ local chenglie = fk.CreateTriggerSkill{
       table.removeOne(targets, dat.targets[1])
       table.removeOne(ids, dat.cards[1])
       table.insert(to_clean, dat.cards[1])
+
       --FIXME:需要背面朝上移动（或者直接隐藏），且移动的log中不显示具体信息，所以改为直接采用标记
       --room:getPlayerById(dat.targets[1]):addToPile("#chenglie", dat.cards[1], true, self.name)
 
@@ -444,6 +446,14 @@ local chenglie = fk.CreateTriggerSkill{
       use_event:addCleaner(function()
         room:moveCardTo(to_clean, Card.DiscardPile, nil, fk.ReasonJustMove, nil, nil, true, nil)
       end)
+    end
+    if #to_clean > 0 then
+      local move_to_notify = {
+        toArea = Card.DiscardPile,
+        moveInfo = {{ cardId = to_clean[1], fromArea = Card.Processing }},
+        moveReason = fk.ReasonPutIntoDiscardPile
+      }
+      room:notifyMoveCards(room:getOtherPlayers(player, false, true), {move_to_notify}, true)
     end
 
     if #ids > 0 then
@@ -1426,6 +1436,7 @@ local xianbi = fk.CreateActiveSkill{
             moveReason = fk.ReasonPrey,
             proposer = player.id,
             skillName = self.name,
+            moveVisible = false,
           })
         end
       end
