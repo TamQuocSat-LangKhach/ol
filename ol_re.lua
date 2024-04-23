@@ -2389,4 +2389,117 @@ Fk:loadTranslationTable{
   ["~ol__jikang"] = "曲终人散，空留余音……",
 }
 
+local ol__xinxianying = General(extension, "ol__xinxianying", "wei", 3, 3, General.Female)
+local ol__zhongjian = fk.CreateActiveSkill{
+  name = "ol__zhongjian",
+  anim_type = "control",
+  card_num = 1,
+  target_num = 1,
+  prompt = "#ol__zhongjian-prompt",
+  can_use = function(self, player)
+    return player:usedSkillTimes(self.name, Player.HistoryPhase) < (1 + player:getMark("ol__zhongjian_times-turn"))
+  end,
+  card_filter = function(self, to_select, selected)
+    return #selected == 0 and Fk:currentRoom():getCardArea(to_select) ~= Player.Equip
+  end,
+  target_filter = function(self, to_select, selected, cards)
+    if #selected == 0 and Self.id ~= to_select and #cards == 1 then
+      local to = Fk:currentRoom():getPlayerById(to_select)
+      return to.hp > 0 and not to:isKongcheng()
+    end
+  end,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    local to = room:getPlayerById(effect.tos[1])
+    player:showCards(effect.cards)
+    local x = math.min(to:getHandcardNum(), to.hp)
+    local show = room:askForCardsChosen(player, to, x, x, "h", self.name)
+    to:showCards(show)
+    local card = Fk:getCardById(effect.cards[1])
+    local hasSame
+    if table.find(show, function(id) return Fk:getCardById(id).number == card.number end) then
+      room:setPlayerMark(player, "ol__zhongjian_times-turn", 1)
+      hasSame = true
+    end
+    if table.find(show, function(id) return Fk:getCardById(id).color == card.color end) then
+      local targets = table.filter(room:getOtherPlayers(player), function (p) return not p:isNude() end)
+      if #targets > 0 then
+        local tos = room:askForChoosePlayers(player, table.map(targets, Util.IdMapper), 1, 1, "#ol__zhongjian-choose", self.name, true)
+        if #tos > 0 then
+          local to2 = room:getPlayerById(tos[1])
+          local cid = room:askForCardChosen(player, to2, "he", self.name)
+          room:throwCard({cid}, self.name, to2, player)
+          return
+        end
+      end
+      player:drawCards(1, self.name)
+      hasSame = true
+    end
+    if not hasSame and player:getMaxCards() > 0 then
+      room:addPlayerMark(player, MarkEnum.MinusMaxCards, 1)
+      room:broadcastProperty(player, "MaxCards")
+    end
+  end,
+}
+ol__xinxianying:addSkill(ol__zhongjian)
+local ol__caishi = fk.CreateTriggerSkill{
+  name = "ol__caishi",
+  anim_type = "defensive",
+  events = {fk.EventPhaseStart},
+  can_trigger = function(self, event, target, player, data)
+    return player:hasSkill(self) and player == target and player.phase == Player.Draw
+  end,
+  on_cost = function(self, event, target, player, data)
+    local choices = {"#ol__caishi1","cancel"}
+    if player:isWounded() then table.insert(choices,2, "#ol__caishi2") end
+    local choice = player.room:askForChoice(target, choices, self.name)
+    if choice ~= "cancel" then
+      self.cost_data = choice
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local choice = self.cost_data
+    if choice == "#ol__caishi1" then
+      room:addPlayerMark(player, MarkEnum.AddMaxCards, 1)
+      room:broadcastProperty(player, "MaxCards")
+    else
+      room:recover({ who = player,  num = 1, skillName = self.name })
+      room:setPlayerMark(player, "@@ol__caishi-turn", 1)
+    end
+  end,
+}
+local ol__caishi_prohibit = fk.CreateProhibitSkill{
+  name = "#ol__caishi_prohibit",
+  is_prohibited = function(self, from, to)
+    return from:getMark("@@ol__caishi-turn") > 0 and from == to
+  end,
+}
+ol__caishi:addRelatedSkill(ol__caishi_prohibit)
+ol__xinxianying:addSkill(ol__caishi)
+Fk:loadTranslationTable{
+  ["ol__xinxianying"] = "辛宪英",
+  ["#ol__xinxianying"] = "名门智女",
+  ["designer:ol__xinxianying"] = "如释帆飞",
+  ["illustrator:ol__xinxianying"] = "凝聚永恒", -- 才涌花娇
+
+  ["ol__zhongjian"] = "忠鉴",
+  [":ol__zhongjian"] = "出牌阶段限一次，你可以展示一张手牌，并展示一名其他角色的X张手牌（X为其体力值）。若其以此法展示的牌与你展示的牌中：有颜色相同的，你摸一张牌或弃置一名其他角色的一张牌；有点数相同的，本回合此技能改为“出牌阶段限两次”；均不同且你手牌上限大于0，你的手牌上限-1。",
+  ["#ol__zhongjian-choose"] = "忠鉴：你可弃置一名其他角色一张牌，或点“取消”摸一张牌",
+  ["#ol__zhongjian-prompt"] = "忠鉴：展示一张手牌，并展示一名其他角色X张手牌（X为其体力值）",
+  ["ol__caishi"] = "才识",
+  [":ol__caishi"] = "摸牌阶段开始时，你可以选择一项：1.手牌上限+1；2.回复1点体力，然后本回合你不能对自己使用牌。",
+  ["#ol__caishi1"] = "手牌上限+1",
+  ["#ol__caishi2"] = "回复1点体力，本回合不能对自己用牌",
+  ["@@ol__caishi-turn"] = "才识",
+
+  ["$ol__zhongjian1"] = "野心昭著者，虽女子亦能知晓。",
+  ["$ol__zhongjian2"] = "慧眼识英才，明智辨忠奸。",
+  ["$ol__caishi1"] = "才学雅量，识古通今。",
+  ["$ol__caishi2"] = "女子才智，自当有男子不及之处。",
+  ["~ol__xinxianying"] = "料人如神，而难自知啊……",
+}
+
+
 return extension
