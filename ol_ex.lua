@@ -1799,10 +1799,24 @@ local ol_ex__shuangxiong_trigger = fk.CreateTriggerSkill{
       if event == fk.EventPhaseEnd then
         return player.phase == Player.Draw and not player:isNude()
       elseif event == fk.EventPhaseStart and player.phase == Player.Finish then
-        local damageRecorded = U.getMark(player, "ol_ex__shuangxiong_damage-turn")
-        return table.find(damageRecorded, function(id)
-          return player.room:getCardArea(id) == Card.DiscardPile
+        local room = player.room
+        local turn_event = room.logic:getCurrentEvent():findParent(GameEvent.Turn, true)
+        if turn_event == nil then return false end
+        local cards = {}
+        local damage
+        U.getActualDamageEvents(room, 1, function(e)
+          damage = e.data[1]
+          if damage.to == player and damage.card then
+            table.insertTableIfNeed(cards, Card:getIdList(damage.card))
+          end
+        end, nil, turn_event.id)
+        cards = table.filter(cards, function (id)
+          return room:getCardArea(id) == Card.DiscardPile
         end)
+        if #cards > 0 then
+          self.cost_data = cards
+          return true
+        end
       end
     end
   end,
@@ -1828,33 +1842,8 @@ local ol_ex__shuangxiong_trigger = fk.CreateTriggerSkill{
       table.insertIfNeed(colorsRecorded, color)
       room:setPlayerMark(player, "@ol_ex__shuangxiong-turn", colorsRecorded)
     elseif event == fk.EventPhaseStart then
-      local damageRecorded = U.getMark(player, "ol_ex__shuangxiong_damage-turn")
-      local dummy = Fk:cloneCard("dilu")
-      table.forEach(damageRecorded, function(id)
-        if room:getCardArea(id) == Card.DiscardPile then
-          dummy:addSubcard(id)
-        end
-      end)
-      if #dummy.subcards > 0 then
-        room:obtainCard(player, dummy, true, fk.ReasonJustMove)
-      end
+      room:obtainCard(player, self.cost_data, true, fk.ReasonJustMove)
     end
-  end,
-
-  refresh_events = {fk.Damaged},
-  can_refresh = function(self, event, target, player, data)
-    if target == player and player.phase ~= Player.NotActive and data.card ~= nil then
-      return true
-    end
-  end,
-  on_refresh = function(self, event, target, player, data)
-    local room = player.room
-    local damageRecorded = U.getMark(player, "ol_ex__shuangxiong_damage-turn")
-    local cardlist = data.card:isVirtual() and data.card.subcards or {data.card.id}
-    table.forEach(cardlist, function(id)
-      table.insertIfNeed(damageRecorded, id)
-    end)
-    room:setPlayerMark(player, "ol_ex__shuangxiong_damage-turn", damageRecorded)
   end,
 }
 ol_ex__shuangxiong:addRelatedSkill(ol_ex__shuangxiong_trigger)
@@ -1866,7 +1855,8 @@ Fk:loadTranslationTable{
   ["illustrator:ol_ex__yanliangwenchou"] = "梦回唐朝",
   ["ol_ex__shuangxiong"] = "双雄",
   ["#ol_ex__shuangxiong_trigger"] = "双雄",
-  [":ol_ex__shuangxiong"] = "①摸牌阶段结束时，你可弃置一张牌，你于此回合内可以将一张与此牌颜色不同的牌转化为【决斗】使用。②（你记录所有于回合内对你造成过伤害的牌直到回合结束）结束阶段，你获得弃牌堆中你记录的牌。",
+  [":ol_ex__shuangxiong"] = "①摸牌阶段结束时，你可弃置一张牌，你于此回合内可以将一张与此牌颜色不同的牌转化为【决斗】使用。"..
+  "②结束阶段，你获得弃牌堆中于此回合内对你造成过伤害的牌。",
 
   ["@ol_ex__shuangxiong-turn"] = "双雄",
   ["#ol_ex__shuangxiong-discard"] = "双雄：你可以弃置一张牌，本回合可以将不同颜色的牌当【决斗】使用",
@@ -2570,7 +2560,7 @@ local ol_ex__baonue = fk.CreateTriggerSkill{
   on_trigger = function(self, event, target, player, data)
     self.cancel_cost = false
     for i = 1, data.damage do
-      if self.cancel_cost then break end
+      if i > 1 and (self.cancel_cost or not player:hasSkill(self)) then break end
       self:doCost(event, target, player, data)
     end
   end,
@@ -2609,8 +2599,7 @@ local ol_ex__baonue_delay = fk.CreateTriggerSkill{
   end,
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
-    local room = player.room
-    room:obtainCard(player.id, data.card)
+    player.room:obtainCard(player.id, data.card, true)
   end,
 }
 ol_ex__jiuchi:addRelatedSkill(ol_ex__jiuchi_targetmod)

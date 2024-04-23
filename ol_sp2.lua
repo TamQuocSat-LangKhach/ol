@@ -5130,8 +5130,9 @@ local qingyix_delay = fk.CreateTriggerSkill{
   name = "#qingyix_delay",
   anim_type = "drawcard",
   events = {fk.EventPhaseStart},
+  main_skill = qingyix,
   can_trigger = function(self, event, target, player, data)
-    if target == player and player:hasSkill(self) and player.phase == Player.Finish then
+    if target == player and player:hasSkill(qingyix) and player.phase == Player.Finish then
       local cards = table.filter(U.getMark(player, "qingyi-turn"), function(id) return player.room:getCardArea(id) == Card.DiscardPile end)
       local red,black = {},{}
       for _, id in ipairs(cards) do
@@ -5142,24 +5143,19 @@ local qingyix_delay = fk.CreateTriggerSkill{
         end
       end
       if #red > 0 and #black > 0 then
-        self.cost_data = {red,black}
+        self.cost_data = {red, black}
         return true
       end
     end
   end,
-  on_cost = function (self, event, target, player, data)
-    return player.room:askForSkillInvoke(player, "qingyi", nil, "#qingyi_get-invoke")
-  end,
+  on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local get = {}
-    for _, c in ipairs(self.cost_data) do
-      local chosen = room:askForCardChosen(player, player, { card_data = { { "$Prey", c }  } }, self.name, "#qingyi-get")
-      table.insert(get, chosen)
+    player:broadcastSkillInvoke("qingyix")
+    local get = U.askForExchange(player, "red", "black", self.cost_data[1], self.cost_data[2], "#qingyi_get-invoke", 1)
+    if #get == 2 then
+      room:obtainCard(player, get, false)
     end
-    local dummy = Fk:cloneCard("dilu")
-    dummy:addSubcards(get)
-    room:obtainCard(player, dummy, true, fk.ReasonPrey)
   end,
 }
 local zeyue = fk.CreateTriggerSkill{
@@ -5306,7 +5302,7 @@ Fk:loadTranslationTable{
   ["#huanfu_delay"] = "宦浮",
   ["#qingyi-discard"] = "清议：弃置一张牌",
   ["#qingyi-invoke"] = "清议：是否继续发动“清议”？",
-  ["#qingyi_get-invoke"] = "是否获得因“清议”弃置的牌中每颜色各一张？",
+  ["#qingyi_get-invoke"] = "清议：可选择获得红色和黑色的卡牌各一张",
   ["#qingyi-get"] = "清议：选择一张获得",
   ["#qingyix_delay"] = "清议",
   ["#zeyue-choose"] = "迮阅：你可以令一名角色失去一个技能，其每轮视为对你使用【杀】，造成伤害后恢复失去的技能",
