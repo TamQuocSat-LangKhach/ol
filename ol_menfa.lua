@@ -235,7 +235,7 @@ local shenjun_viewas = fk.CreateViewAsSkill{
   interaction = function()
     local names = {}
     for _, id in ipairs(Self:getMark("@$shenjun")) do
-      local name = Fk:getCardById(id, true).name
+      local name = Fk:getCardById(id).name
       if Self:canUse(Fk:cloneCard(name), { bypass_times = true }) then
         table.insertIfNeed(names, name)
       end
