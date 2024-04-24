@@ -369,8 +369,11 @@ local chenglie = fk.CreateTriggerSkill{
 
     local n = #TargetGroup:getRealTargets(data.tos)
     local ids = room:getNCards(n)
-    local ui_clean = {}
-    room:moveCardTo(ids, Card.Processing, player, fk.ReasonJustMove, self.name, nil, true, player.id)
+
+    --FIXME:被拿走的牌会从处理区消失(*꒦ິ⌓꒦ີ*)
+    --room:moveCardTo(ids, Card.Processing, player, fk.ReasonJustMove, self.name, nil, true, player.id)
+    player:showCards(ids)
+
     local results = U.askForExchange(player, "Top", "$Hand", ids, player:getCardIds("h"), "#chenglie-exchange", 1)
     if #results > 0 then
       local id1, id2 = results[1], results[2]
@@ -397,11 +400,10 @@ local chenglie = fk.CreateTriggerSkill{
       room:moveCards(move1, move2)
       table.insert(ids, id1)
       table.removeOne(ids, id2)
-      table.insert(ui_clean, id2)
     end
     local targets = TargetGroup:getRealTargets(data.tos)
 
-    local chenglie_data = {}
+    local red_players = {}
     local to_clean = {}
 
     while #ids > 0 and not player.dead do
@@ -418,42 +420,17 @@ local chenglie = fk.CreateTriggerSkill{
       table.removeOne(ids, dat.cards[1])
       table.insert(to_clean, dat.cards[1])
 
-      --FIXME:需要背面朝上移动（或者直接隐藏），且移动的log中不显示具体信息，所以改为直接采用标记
-      --room:getPlayerById(dat.targets[1]):addToPile("#chenglie", dat.cards[1], true, self.name)
+      room:getPlayerById(dat.targets[1]):addToPile("chenglie", dat.cards, false, self.name, player.id, player.id)
 
-      local c = Fk:getCardById(dat.cards[1])
-
-      player:doNotify("GameLog", json.encode{
-        type = "#ChenglieResult",
-        from = dat.targets[1],
-        arg = c:toLogString(),
-      })
-
-      if c.color == Card.Red then
-        table.insertIfNeed(chenglie_data, dat.targets[1])
+      if Fk:getCardById(dat.cards[1]).color == Card.Red then
+        table.insert(red_players, dat.targets[1])
       end
     end
 
-    if #chenglie_data > 0 then
+    if #to_clean > 0 then
       data.extra_data = data.extra_data or {}
       data.extra_data.chenglie_data = data.extra_data.chenglie_data or {}
-      table.insert(data.extra_data.chenglie_data, {player.id, chenglie_data})
-    end
-
-    --FIXME:原因同上
-    local use_event = room.logic:getCurrentEvent():findParent(GameEvent.UseCard)
-    if use_event ~= nil then
-      use_event:addCleaner(function()
-        room:moveCardTo(to_clean, Card.DiscardPile, nil, fk.ReasonJustMove, nil, nil, true, nil)
-      end)
-    end
-    if #to_clean > 0 then
-      local move_to_notify = {
-        toArea = Card.DiscardPile,
-        moveInfo = {{ cardId = to_clean[1], fromArea = Card.Processing }},
-        moveReason = fk.ReasonPutIntoDiscardPile
-      }
-      room:notifyMoveCards(room:getOtherPlayers(player, false, true), {move_to_notify}, true)
+      table.insert(data.extra_data.chenglie_data, {player.id, red_players, to_clean})
     end
 
     if #ids > 0 then
@@ -484,7 +461,7 @@ local chenglie_delay = fk.CreateTriggerSkill{
     if not player.dead and data.extra_data and data.extra_data.chenglie_data then
       for _, value in ipairs(data.extra_data.chenglie_data) do
         if value[1] == player.id then
-          self.cost_data = table.simpleClone(value[2])
+          self.cost_data = {table.simpleClone(value[2]), table.simpleClone(value[3])}
           return true
         end
       end
@@ -493,7 +470,8 @@ local chenglie_delay = fk.CreateTriggerSkill{
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local red_player = table.simpleClone(self.cost_data)
+    local red_player = table.simpleClone(self.cost_data[1])
+    local to_clean = table.simpleClone(self.cost_data[2])
     local targets = TargetGroup:getRealTargets(data.tos)
     room:sortPlayersByAction(targets)
     local resp_players = {}
@@ -530,6 +508,15 @@ local chenglie_delay = fk.CreateTriggerSkill{
         end
       end
     end
+    to_clean = table.filter(to_clean, function(id)
+      if room:getCardArea(id) == Card.PlayerSpecial then
+        local p = room:getCardOwner(id)
+        return p and p:getPileNameOfId(id) == "chenglie"
+      end
+    end)
+    if #to_clean > 0 then
+      room:moveCardTo(to_clean, Card.DiscardPile, nil, fk.ReasonPutIntoDiscardPile, nil, nil, true, nil)
+    end
   end,
 }
 Fk:addSkill(chenglie_active)
@@ -542,8 +529,8 @@ Fk:loadTranslationTable{
   ["designer:macheng"] = "cyc",
   ["illustrator:macheng"] = "君桓文化",
   ["chenglie"] = "骋烈",
-  [":chenglie"] = "你使用【杀】可以多指定至多两个目标，然后展示牌堆顶与目标数等量张牌，秘密将一张手牌与其中一张牌交换，<font color='red'>将之分别暗置于"..
-  "目标角色武将牌上直到此【杀】结算结束（暂时无法生效）</font>，其中“骋烈”牌为红色的角色若：响应了此【杀】，其交给你一张牌；未响应此【杀】，其回复1点体力。",
+  [":chenglie"] = "你使用【杀】可以多指定至多两个目标，然后展示牌堆顶与目标数等量张牌，秘密将一张手牌与其中一张牌交换，将之分别暗置于"..
+  "目标角色武将牌上直到此【杀】结算结束，其中“骋烈”牌为红色的角色若：响应了此【杀】，其交给你一张牌；未响应此【杀】，其回复1点体力。",
   ["#chenglie-choose"] = "骋烈：你可以为%arg多指定1-2个目标，并执行后续效果",
   ["#chenglie-exchange"] = "骋烈：你可以用一张手牌交换其中一张牌",
   ["chenglie_active"] = "骋烈",
@@ -5024,7 +5011,7 @@ local qushi = fk.CreateActiveSkill{
         table.insert(targetRecorded, player.id)
         room:setPlayerMark(target, "qushi_source", targetRecorded)
       end
-      target:addToPile("#qushi_pile", card, false, self.name)
+      target:addToPile("qushi_pile", card, false, self.name, player.id, {})
     end
   end
 }
@@ -5034,14 +5021,14 @@ local qushi_delay = fk.CreateTriggerSkill{
   mute = true,
   can_trigger = function(self, event, target, player, data)
     return target == player and not player.dead and player.phase == Player.Finish and
-    #player:getPile("#qushi_pile") > 0
+    #player:getPile("qushi_pile") > 0
   end,
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     local room = player.room
     local targets = U.getMark(player, "qushi_source")
     room:setPlayerMark(player, "qushi_source", 0)
-    local cards = player:getPile("#qushi_pile")
+    local cards = player:getPile("qushi_pile")
     local card_types = {}
     for _, id in ipairs(cards) do
       table.insertIfNeed(card_types, Fk:getCardById(id).type)
@@ -5077,16 +5064,6 @@ local qushi_delay = fk.CreateTriggerSkill{
       if not p.dead then
         p:drawCards(n, "qushi")
       end
-    end
-  end,
-
-  refresh_events = {fk.AfterCardsMove},
-  can_refresh = Util.TrueFunc,
-  on_refresh = function(self, event, target, player, data)
-    if #player:getPile("#qushi_pile") > 0 and player:getMark("@@qushi") == 0 then
-      player.room:setPlayerMark(player, "@@qushi", 1)
-    elseif #player:getPile("#qushi_pile") == 0 and player:getMark("@@qushi") > 0 then
-      player.room:setPlayerMark(player, "@@qushi", 0)
     end
   end,
 }
@@ -5157,8 +5134,7 @@ Fk:loadTranslationTable{
 
   ["#qushi-active"] = "发动 趋势，你可以摸一张牌，然后放置一张手牌作为“趋”",
   ["#qushi-choose"] = "趋势：选择作为“趋”的一张手牌以及一名其他角色",
-  ["#qushi_pile"] = "趋",
-  ["@@qushi"] = "趋",
+  ["qushi_pile"] = "趋",
   ["#qushi_delay"] = "趋势",
   ["#weijie-viewas"] = "发动 诿解，视为使用或打出一张基本牌",
   ["#weijie-choose"] = "诿解：弃置与你距离为1的一名角色的一张牌，若此牌为【%arg】，视为你使用或打出之",
