@@ -1058,7 +1058,7 @@ local ol_ex__guhuo = fk.CreateViewAsSkill{
     local room = player.room
     local cards = self.cost_data
     local card_id = cards[1]
-    room:moveCardTo(cards, Card.Void, nil, fk.ReasonPut, self.name, "", false)  --暂时放到Card.Void,理论上应该是Card.Processing,只要moveVisible可以false
+    room:moveCardTo(cards, Card.Processing, nil, fk.ReasonPut, self.name, "", false, player.id)
     local targets = TargetGroup:getRealTargets(use.tos)
     if targets and #targets > 0 then
       room:sendLog{
@@ -1105,6 +1105,7 @@ local ol_ex__guhuo = fk.CreateViewAsSkill{
       if #questioners > 0 then
         player:showCards({card_id})
         if use.card.name == Fk:getCardById(card_id).name then
+          room:setCardEmotion(card_id, "judgegood")
           for _, p in ipairs(questioners) do
             if not p.dead then
               if #room:askForDiscard(p, 1, 1, true, self.name, true, ".", "#ol_ex__guhuo-discard") == 0 then
@@ -1114,6 +1115,7 @@ local ol_ex__guhuo = fk.CreateViewAsSkill{
             room:handleAddLoseSkills(p, "ol_ex__chanyuan")
           end
         else
+          room:setCardEmotion(card_id, "judgebad")
           for _, p in ipairs(questioners) do
             if not p.dead then
               p:drawCards(1, self.name)
@@ -1124,11 +1126,6 @@ local ol_ex__guhuo = fk.CreateViewAsSkill{
       end
     end
 
-	--暂时使用setCardArea,当moveVisible可以false之后,不必再移动到Card.Void,也就不必再setCardArea
-    table.removeOne(room.void, card_id)
-    table.insert(room.processing_area, card_id)
-    room:setCardArea(card_id, Card.Processing, nil)
-	--
     if canuse then
       use.card:addSubcard(card_id)
     else
@@ -1153,15 +1150,23 @@ local ol_ex__chanyuan = fk.CreateInvaliditySkill {
 }
 local ol_ex__chanyuan_audio = fk.CreateTriggerSkill{
   name = "#ol_ex__chanyuan_audio",
-  refresh_events = {fk.HpChanged},
+  refresh_events = {fk.HpChanged, fk.EventAcquireSkill, fk.EventLoseSkill},
   can_refresh = function(self, event, target, player, data)
-    return target == player and player:hasSkill("ol_ex__chanyuan") and not player:isFakeSkill("ol_ex__chanyuan")
-    and player.hp <= 1 and data.num < 0 and (player.hp - data.num) > 1
+    if event == fk.HpChanged then
+      return target == player and player:hasSkill("ol_ex__chanyuan") and not player:isFakeSkill("ol_ex__chanyuan")
+      and player.hp <= 1 and data.num < 0 and (player.hp - data.num) > 1
+    else
+      return target == player and data == ol_ex__chanyuan
+    end
   end,
   on_refresh = function(self, event, target, player, data)
     local room = player.room
-    room:notifySkillInvoked(player, "ol_ex__chanyuan", "negative")
-    player:broadcastSkillInvoke("ol_ex__chanyuan")
+    if event == fk.HpChanged then
+      room:notifySkillInvoked(player, "ol_ex__chanyuan", "negative")
+      player:broadcastSkillInvoke("ol_ex__chanyuan")
+    else
+      room:setPlayerMark(player, "@@ol_ex__chanyuan", event == fk.EventAcquireSkill and 1 or 0)
+    end
   end,
 }
 ol_ex__chanyuan:addRelatedSkill(ol_ex__chanyuan_audio)
@@ -1175,6 +1180,7 @@ Fk:loadTranslationTable{
   ["#ol_ex__guhuo-discard"] = "蛊惑：弃置一张牌，否则失去1点体力",
   ["ol_ex__chanyuan"] = "缠怨",
   [":ol_ex__chanyuan"] = "锁定技，你不能质疑〖蛊惑〗；若你的体力值小于等于1，你的其他技能失效。",
+  ["@@ol_ex__chanyuan"] = "缠怨",
 
   ["$ol_ex__guhuo1"] = "真真假假，虚实难测。",
   ["$ol_ex__guhuo2"] = "这牌，猜对了吗？",
