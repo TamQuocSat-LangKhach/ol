@@ -2278,15 +2278,15 @@ local xieshu = fk.CreateTriggerSkill{
     room:throwCard(cards, self.name, player, player)
     if not player.dead and player:isWounded() then
       player:drawCards(player:getLostHp(), self.name)
+      if player.dead then return false end
+      local logic = room.logic
+      local turn_event = logic:getCurrentEvent():findParent(GameEvent.Turn)
+      if turn_event == nil then return false end
+      local dying_events = logic.event_recorder[GameEvent.Dying] or Util.DummyTable
+      if #dying_events > 0 and dying_events[#dying_events].id > turn_event.id then
+        room:setPlayerMark(player, "@@xieshu-turn", 1)
+      end
     end
-  end,
-
-  refresh_events = {fk.AfterDying},
-  can_refresh = function(self, event, target, player, data)
-    return player:hasSkill(self, true)
-  end,
-  on_refresh = function(self, event, target, player, data)
-    player.room:setPlayerMark(player, "@@xieshu-turn", 1)
   end,
 }
 zhonghui:addSkill(yuzhi)
@@ -2300,8 +2300,8 @@ Fk:loadTranslationTable{
   [":yuzhi"] = "锁定技，每轮开始时，你展示一张手牌，摸X张牌。此轮结束时，你弃置此牌，若你于此轮内使用过的牌数或上轮以此法摸牌数小于X，"..
   "你受到1点雷电伤害或失去〖保族〗。（X为此牌牌名字数）",
   ["xieshu"] = "挟术",
-  [":xieshu"] = "当你造成或受到牌的伤害后，你可以横置，然后弃置X张牌（X为此牌牌名字数）并摸你已损失体力值张数的牌。"..
-  "一名角色的濒死结算结束后，此技能于当前回合内无效。",
+  [":xieshu"] = "当你造成或受到牌的伤害后，你可以横置，然后弃置X张牌（X为此牌牌名字数）并摸你已损失体力值张数的牌，"..
+  "若有角色于当前回合内进入过濒死状态，此技能于此回合内无效。",
   ["#yuzhi-card"] = "迂志：展示一张手牌，摸其牌名字数的牌",
   ["@@yuzhi-inhand-round"] = "迂志",
   ["@yuzhi-round"] = "迂志",
@@ -3507,12 +3507,12 @@ Fk:loadTranslationTable{
   ["#jieli-choose"] = "发动 诫厉，观看一名角色的手牌及牌堆顶的%arg张卡牌",
   ["#jieli-exchange"] = "诫厉：你可以交换%dest的手牌与牌堆顶的等量的牌",
 
-  ["$chengqi1"] = "",
-  ["$chengqi2"] = "",
-  ["$jieli1"] = "",
-  ["$jieli2"] = "",
-  ["$baozu_olz__zhongyao1"] = "",
-  ["$baozu_olz__zhongyao2"] = "",
+  ["$chengqi1"] = "世有十万字形，亦当有十万字体。",
+  ["$chengqi2"] = "笔画如骨，不可拘于一形。",
+  ["$jieli1"] = "子不学难成其材，子不教难筑其器。",
+  ["$jieli2"] = "此子顽劣如斯，必当严加管教。",
+  ["$baozu_olz__zhongyao1"] = "立规定矩，教习钟门之材。",
+  ["$baozu_olz__zhongyao2"] = "放任纨绔，于族是祸非福。",
   ["~olz__zhongyao"] = "",
 }
 
