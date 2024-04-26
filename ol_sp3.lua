@@ -5152,21 +5152,35 @@ local pijingl = fk.CreateTriggerSkill{
   anim_type = "offensive",
   events = {fk.TargetSpecifying},
   can_trigger = function(self, event, target, player, data)
-    if target == player and player:hasSkill(self) and player:usedSkillTimes(self.name, Player.HistoryPhase) == 0 and
-    data.card.color == Card.Black and (data.card.trueName == "slash" or data.card:isCommonTrick()) and data.firstTarget and
-    U.isOnlyTarget(player.room:getPlayerById(data.to), data, event) then
-      local targets = U.getUseExtraTargets(player.room, data, false, true)
-      if #targets > 0 then
-        self.cost_data = targets
-        return true
-      end
-    end
+    return target == player and player:hasSkill(self) and player:usedSkillTimes(self.name, Player.HistoryPhase) == 0 and
+    (data.card.trueName == "slash" or data.card:isCommonTrick()) and data.firstTarget
   end,
   on_cost = function(self, event, target, player, data)
     local room = player.room
     local x = math.max(1, player:getLostHp())
-    local tos = room:askForChoosePlayers(player, self.cost_data, 1, x,
+    local current_targets = AimGroup:getAllTargets(data.tos)
+    local targets = U.getUseExtraTargets(player.room, data, false, true)
+    for _, p in ipairs(room.alive_players) do
+      if p ~= player then
+        if table.contains(current_targets, p.id) then
+          room:setPlayerMark(p, "@@CancelTarget", 1)
+        elseif table.contains(targets, p.id) then
+          room:setPlayerMark(p, "@@AddTarget", 1)
+        end
+      end
+    end
+    table.insertTable(targets, current_targets)
+    for i = #targets, 1, -1 do
+      if targets[i] == player.id then
+        table.remove(targets, i)
+      end
+    end
+    local tos = room:askForChoosePlayers(player, targets, 1, x,
     "#pijingl-choose:::" .. tostring(x) .. ":"..data.card:toLogString(), self.name, true)
+    for _, p in ipairs(room.alive_players) do
+      room:setPlayerMark(p, "@@CancelTarget", 0)
+      room:setPlayerMark(p, "@@AddTarget", 0)
+    end
     if #tos > 0 then
       self.cost_data = tos
       return true
@@ -5179,17 +5193,21 @@ local pijingl = fk.CreateTriggerSkill{
     local mark = U.getMark(player, "pijingl")
     table.insertTableIfNeed(mark, tos)
     room:setPlayerMark(player, "pijingl", mark)
+    local current_targets = AimGroup:getAllTargets(data.tos)
     local to
     tos = table.map(tos, function (pid)
-      AimGroup:addTargets(room, data, pid)
+      if table.contains(current_targets, pid) then
+        AimGroup:cancelTarget(data, pid)
+      else
+        AimGroup:addTargets(room, data, pid)
+      end
       to = room:getPlayerById(pid)
       room:setPlayerMark(to, "@@pijingl", 1)
       return to
     end)
     for _, p in ipairs(tos) do
       if not (p.dead or p:isNude()) then
-        local cards = room:askForCard(p, 1, 1, true, self.name, false, ".", "#pijingl-give:"..player.id)
-        room:obtainCard(player, cards[1], false, fk.ReasonGive, p.id)
+        room:obtainCard(player, table.random(p:getCardIds("he")), false, fk.ReasonGive, p.id)
         if player.dead then break end
       end
     end
@@ -5235,7 +5253,7 @@ local pijingl_delay = fk.CreateTriggerSkill{
       room:setPlayerMark(target, "@@pijingl", 0)
     end
     local choices = {"draw1", "Cancel"}
-    if table.contains(U.getUseExtraTargets(room, data, true, true), player.id) then
+    if table.contains(U.getUseExtraTargets(room, data, false, true), player.id) then
       table.insert(choices, "pijingl_target")
     end
     local choice = room:askForChoice(target, choices, "", "#pijingl-choice::" .. player.id .. ":" .. data.card:toLogString(),
@@ -5256,15 +5274,18 @@ Fk:loadTranslationTable{
   ["#liupan"] = "骁隽悍勇",
 
   ["pijingl"] = "披荆",
-  [":pijingl"] = "当你使用黑色【杀】或黑色普通锦囊牌指定唯一目标时，若你于当前回合内未发动过此技能，"..
-  "你可以令至多X名角色也成为此牌的目标（X为你已损失的体力值且至少为1），这些角色各将一张牌交给你。"..
-  "这些角色下次使用基本牌或普通锦囊牌指定唯一目标时，其可以选择：1.令你也成为此牌的目标；2.摸一张牌。",
-  ["#pijingl-choose"] = "是否发动 披荆，选择至多%arg名角色交给你一张牌且也成为%arg的目标",
+  [":pijingl"] = "当你使用【杀】或普通锦囊牌指定第一个目标时，若你于当前回合内未发动过此技能，"..
+  "你可以令任意名其他角色也成为此牌的目标并取消任意名其他目标角色合计至多X名角色（X为你已损失的体力值且至少为1），"..
+  "这些角色各随机将一张牌交给你，且下次使用基本牌或普通锦囊牌指定唯一目标时，其可以选择：1.令你也成为此牌的目标；2.摸一张牌。",
+
+  ["#pijingl-choose"] = "是否发动 披荆，选择至多%arg名角色随机交给你一张牌且也成为/取消成为%arg2的目标",
   ["#pijingl-give"] = "披荆：选择一张牌交给%src",
   ["@@pijingl"] = "披荆",
   ["#pijingl_delay"] = "披荆",
   ["#pijingl-choice"] = "披荆：你可以摸一张牌，或令%dest也成为%arg的目标",
   ["pijingl_target"] = "增加目标",
+  ["@@AddTarget"] = "增加目标",
+  ["@@CancelTarget"] = "取消目标",
 }
 Fk:addPoxiMethod{
   name = "yichengl",

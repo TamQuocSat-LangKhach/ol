@@ -97,7 +97,7 @@ local sankuang = fk.CreateTriggerSkill{
           return room:getCardArea(id) == Card.Processing
         end) then return false end
       end
-      room:moveCardTo(card_ids, Player.Hand, to, fk.ReasonPrey, self.name, nil, false, targets[1])
+      room:moveCardTo(card_ids, Player.Hand, to, fk.ReasonPrey, self.name, nil, true, targets[1])
     end
   end,
 }
