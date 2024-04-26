@@ -704,6 +704,7 @@ panshu:addSkill(jinzhi)
 Fk:loadTranslationTable{
   ["ol__panshu"] = "潘淑",
   ["#ol__panshu"] = "江东神女",
+	["designer:ol__panshu"] = "张浩",
   ["illustrator:ol__panshu"] = "君桓文化",
   ["weiyi"] = "威仪",
   [":weiyi"] = "每名角色限一次，当一名角色受到伤害后，若其体力值：1.不小于你，你可以令其失去1点体力；2.不大于你，你可以令其回复1点体力。",

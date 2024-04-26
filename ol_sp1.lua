@@ -2640,6 +2640,7 @@ Fk:loadTranslationTable{
   ["xizhicai"] = "戏志才",
   ["#xizhicai"] = "负俗的夭才",
   ["cv:xizhicai"] = "曹真",
+	["designer:xizhicai"] = "荼蘼",
   ["illustrator:xizhicai"] = "眉毛子",
   ["xianfu"] = "先辅",
   ["@xianfu"] = "先辅",
@@ -3903,7 +3904,7 @@ Fk:loadTranslationTable{
   [":xiying"] = "出牌阶段开始时，你可以弃置一张非基本手牌，令所有其他角色选择一项：1.弃置一张牌；2.本回合不能使用或打出牌。"..
   "若如此做，结束阶段，若你于本回合出牌阶段造成过伤害，你获得牌堆中一张【杀】或伤害锦囊牌。",
   ["#xiying_delay"] = "袭营",
-  ["@@xiying-turn"] = "被袭营袭营",
+  ["@@xiying-turn"] = "被袭营",
   ["#xiying-invoke"] = "袭营：你可以弃置一张非基本手牌，所有其他角色需弃置一张牌，否则其本回合不能使用或打出牌",
   ["#xiying-discard"] = "袭营：你需弃置一张牌，否则本回合不能使用或打出牌",
   
