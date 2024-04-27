@@ -1287,6 +1287,7 @@ ol__dingfeng:addSkill(ol__duanbing)
 local ol__fenxun = fk.CreateActiveSkill{
   name = "ol__fenxun",
   anim_type = "offensive",
+  prompt = "#ol__fenxun",
   card_num = 0,
   target_num = 1,
   can_use = function(self, player)
@@ -1354,6 +1355,8 @@ Fk:loadTranslationTable{
   ["ol__fenxun"] = "奋迅",
   [":ol__fenxun"] = "出牌阶段限一次，你可以令你本回合计算与一名其他角色的距离视为1。然后本回合的结束阶段，若你本回合未对其造成过伤害，你弃置一张牌。",
   ["#ol__duanbing-choose"] = "短兵：你可以额外选择一名距离为1的其他角色为目标",
+  ["#ol__fenxun_delay"] = "奋迅",
+  ["#ol__fenxun"] = "奋迅：选择一名其他角色，本回合计算与其的距离视为1",
 
   ["$ol__duanbing1"] = "弃马，亮兵器，杀！",
   ["$ol__duanbing2"] = "雪中奋短兵，快者胜！",

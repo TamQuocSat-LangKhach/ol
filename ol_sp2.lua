@@ -1847,6 +1847,7 @@ Fk:loadTranslationTable{
   ["#zhuangshu-cost"] = "是否使用妆梳，弃置一张牌，将对应种类的“宝梳”置入%dest的装备区<br>"..
     "基本牌-【琼梳】、锦囊牌-【犀梳】、装备牌-【金梳】",
   ["#chuiti-invoke"] = "是否使用 垂涕，使用其中被弃置的牌",
+  ["chuiti_viewas"] = "垂涕",
 
   ["$zhuangshu1"] = "殿前妆梳，风姿绝世。",
   ["$zhuangshu2"] = "顾影徘徊，丰容靓饰。",

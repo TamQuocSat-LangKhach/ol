@@ -2005,6 +2005,7 @@ Fk:loadTranslationTable{
   ["#choufa_filter"] = "筹伐",
   ["#zhaoran-invoke"] = "昭然：你可以展示所有手牌，本阶段你失去一种花色最后的手牌后摸一张牌或弃置一名角色一张牌",
   ["@zhaoran-phase"] = "昭然",
+  ["#zhaoran_trigger"] = "昭然",
   ["#zhaoran-discard"] = "昭然：弃置一名其他角色一张牌，或点“取消”摸一张牌",
   ["#tuishi-choose"] = "推弑：你可选择一名角色，若 %src 未对其使用【杀】，你对 %src 造成1点伤害",
   ["#tuishi_delay"] = "推弑",

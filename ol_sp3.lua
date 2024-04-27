@@ -1137,6 +1137,7 @@ Fk:loadTranslationTable{
   ["kenshang"] = "垦伤",
   [":kenshang"] = "你可以将至少两张牌当【杀】使用，然后目标可以改为等量的角色。你以此法使用的【杀】结算后，若这些牌数大于此牌造成的伤害，你摸一张牌。",
   ["#kenshang-choose"] = "垦伤：你可以将目标改为指定%arg名角色",
+  ["#kenshang_delay"] = "垦伤",
 
   ["$kenshang1"] = "择兵选将，一击而大白。",
   ["$kenshang2"] = "纵横三辅，垦伤庸富。",
@@ -3721,6 +3722,7 @@ Fk:loadTranslationTable{
   ["@lianju"] = "联句",
   ["@@lianju"] = "联句",
   ["#lianju_delay"] = "联句",
+  ["lianju_viewas"] = "联句",
   ["#lianju-supply"] = "联句：你可以令 %src 获得你使用过的 %arg",
   ["#lianju-use"] = "联句：你可以视为使用【%arg】",
 
