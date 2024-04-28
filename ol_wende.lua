@@ -1272,6 +1272,7 @@ local yishi = fk.CreateTriggerSkill{
 local shidu = fk.CreateActiveSkill{
   name = "shidu",
   anim_type = "control",
+  prompt = "#shidu-active",
   card_num = 0,
   target_num = 1,
   can_use = function(self, player)
@@ -1285,18 +1286,17 @@ local shidu = fk.CreateActiveSkill{
     local player = room:getPlayerById(effect.from)
     local target = room:getPlayerById(effect.tos[1])
     local pindian = player:pindian({target}, self.name)
-    if pindian.results[target.id].winner == player then
-      if not target:isKongcheng() then
-        local dummy = Fk:cloneCard("dilu")
-        dummy:addSubcards(target:getCardIds(Player.Hand))
-        room:obtainCard(player, dummy, false, fk.ReasonPrey)
+    if pindian.results[target.id].winner == player and not (player.dead or target.dead) then
+      local cards = target:getCardIds(Player.Hand)
+      if #cards > 0 then
+        room:obtainCard(player, cards, false, fk.ReasonPrey)
+        if player.dead or target.dead then return end
       end
       local n = #player:getCardIds(Player.Hand)
       if n > 1 then
-        local cards = room:askForCard(player, (n//2), (n//2), false, self.name, false, ".", "#shidu-give:::"..tostring(n//2))
-        local dummy2 = Fk:cloneCard("dilu")
-        dummy2:addSubcards(cards)
-        room:obtainCard(target, dummy2, false, fk.ReasonGive)
+        cards = room:askForCard(player, (n//2), (n//2), false, self.name, false, ".",
+        "#shidu-give::".. target.id .. ":"..tostring(n//2))
+        room:obtainCard(target, cards, false, fk.ReasonGive)
       end
     end
   end,
@@ -1313,10 +1313,11 @@ Fk:loadTranslationTable{
   ["yishi"] = "宜室",
   [":yishi"] = "每回合限一次，当一名其他角色于其出牌阶段弃置手牌后，你可以令其获得其中的一张牌，然后你获得其余的牌。",
   ["shidu"] = "识度",
-  [":shidu"] = "出牌阶段限一次，你可以与一名其他角色拼点，若你赢，你获得其所有手牌，然后你交给其你的一半手牌（向下取整）。",
+  [":shidu"] = "出牌阶段限一次，你可以与一名角色拼点，若你赢，你获得其所有手牌，然后你交给其你的一半手牌（向下取整）。",
+  ["#shidu-active"] = "发动 识度，与一名角色拼点，若你赢，你获得其所有手牌并交给其一半的手牌",
   ["#yishi-invoke"] = "宜室：你可以令 %dest 收回一张弃置的牌，你获得其余的牌",
   ["#yishi-card"] = "宜室：选择一张牌还给 %src",
-  ["#shidu-give"] = "识度：你需交还%arg张手牌",
+  ["#shidu-give"] = "识度：选择%arg张手牌交还给%dest",
   ["#baoqie-use"] = "宝箧：你可以使用 %arg",
 
   ["$baoqie1"] = "宝箧藏玺，时局变动。",

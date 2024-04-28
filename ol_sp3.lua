@@ -1455,10 +1455,8 @@ local zenrun = fk.CreateTriggerSkill{
     local to = room:getPlayerById(self.cost_data)
     local n = data.num
     data.num = 0
-    local dummy = Fk:cloneCard("dilu")
     local cards = room:askForCardsChosen(player, to, n, n, "he", self.name)
-    dummy:addSubcards(cards)
-    room:obtainCard(player.id, dummy, false, fk.ReasonPrey)
+    room:obtainCard(player.id, cards, false, fk.ReasonPrey)
     local choice = room:askForChoice(to, {"zenrun_draw", "zenrun_forbid"}, self.name, "#zenrun-choice:"..player.id)
     if choice == "zenrun_draw" then
       to:drawCards(n, self.name)
@@ -1591,9 +1589,7 @@ local xinggu = fk.CreateTriggerSkill{
           table.insertIfNeed(cards, id)
         end
       end
-      local dummy = Fk:cloneCard("dilu")
-      dummy:addSubcards(table.random(cards, 3))
-      player:addToPile(self.name, dummy, true, self.name)
+      player:addToPile(self.name, table.random(cards, 3), true, self.name)
     else
       local ret = self.cost_data
       room:moveCards({
@@ -2036,7 +2032,7 @@ local chenshuo = fk.CreateTriggerSkill{
     room:delay(1000)
     if player.dead then return end
     local card = Fk:getCardById(self.cost_data[1])
-    local dummy = Fk:cloneCard("dilu")
+    local cards = {}
     for i = 1, 3, 1 do
       local get = room:getNCards(1)
       room:moveCards{
@@ -2046,7 +2042,7 @@ local chenshuo = fk.CreateTriggerSkill{
         skillName = self.name,
         proposer = player.id
       }
-      dummy:addSubcard(get[1])
+      table.insert(cards, get[1])
       local card2 = Fk:getCardById(get[1], true)
       if card.type == card2.type or card.suit == card2.suit or card.number == card2.number or
       Fk:translate(card.trueName, "zh_CN"):len() == Fk:translate(card2.trueName, "zh_CN"):len() then
@@ -2058,7 +2054,7 @@ local chenshuo = fk.CreateTriggerSkill{
         break
       end
     end
-    room:obtainCard(player.id, dummy, true, fk.ReasonJustMove)
+    room:obtainCard(player.id, cards, true, fk.ReasonJustMove)
   end,
 }
 zhouqun:addSkill(tianhou)

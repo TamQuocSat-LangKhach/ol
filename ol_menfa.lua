@@ -1955,9 +1955,7 @@ local bolong = fk.CreateActiveSkill{
     if #target:getCardIds{Player.Hand, Player.Equip} >= n and n > 0 then
       local cards = room:askForCard(target, n, n, true, self.name, true, ".", "#bolong-card:"..player.id.."::"..n)
       if #cards == n then
-        local dummy = Fk:cloneCard("dilu")
-        dummy:addSubcards(cards)
-        room:obtainCard(player.id, dummy, false, fk.ReasonGive)
+        room:obtainCard(player.id, cards, false, fk.ReasonGive)
         room:useVirtualCard("analeptic", nil, target, player, self.name)
         return
       end
@@ -3513,7 +3511,7 @@ Fk:loadTranslationTable{
   ["$jieli2"] = "此子顽劣如斯，必当严加管教。",
   ["$baozu_olz__zhongyao1"] = "立规定矩，教习钟门之材。",
   ["$baozu_olz__zhongyao2"] = "放任纨绔，于族是祸非福。",
-  ["~olz__zhongyao"] = "",
+  ["~olz__zhongyao"] = "幼子得宠而无忌，恐生无妄之祸……",
 }
 
 return extension

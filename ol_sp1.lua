@@ -494,16 +494,14 @@ local yishe = fk.CreateTriggerSkill{
     local room = player.room
     if event == fk.EventPhaseStart then
       player:drawCards(2, self.name)
-      if player:isNude() then return end
-      local dummy = Fk:cloneCard("dilu")
+      if player:isNude() then return false end
       local cards
       if #player:getCardIds("he") < 3 then
         cards = player:getCardIds("he")
       else
         cards = room:askForCard(player, 2, 2, true, self.name, false, ".", "#yishe-cost")
       end
-      dummy:addSubcards(cards)
-      player:addToPile("zhanglu_mi", dummy, true, self.name)
+      player:addToPile("zhanglu_mi", cards, true, self.name)
     else
       room:recover({
         who = player,
@@ -939,16 +937,16 @@ local zhidao = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     room:doIndicate(player.id, {data.to.id})
-    local dummy = Fk:cloneCard("dilu")
     local flag = {"h", "e", "j"}
     local areas = {Player.Hand, Player.Equip, Player.Judge}
+    local cards = {}
     for i = 1, 3, 1 do
       if #data.to.player_cards[areas[i]] > 0 then
-        dummy:addSubcard(room:askForCardChosen(player, data.to, flag[i], self.name))
+        table.insert(cards, room:askForCardChosen(player, data.to, flag[i], self.name))
       end
     end
-    if #dummy.subcards > 0 then
-      room:obtainCard(player, dummy, false, fk.ReasonPrey)
+    if #cards > 0 then
+      room:obtainCard(player, cards, false, fk.ReasonPrey)
     end
     room:addPlayerMark(player, "@@zhidao-turn")
   end,
@@ -1307,9 +1305,7 @@ local dingpan = fk.CreateActiveSkill{
       local id = room:askForCardChosen(player, target, "e", self.name)
       room:throwCard({id}, self.name, target, player)
     else
-      local dummy = Fk:cloneCard("dilu")
-      dummy:addSubcards(target.player_cards[Player.Equip])
-      room:obtainCard(target, dummy, true, fk.ReasonJustMove)
+      room:obtainCard(target, target:getCardIds(Player.Equip), true, fk.ReasonPrey)
       room:damage{
         from = player,
         to = target,
@@ -2862,25 +2858,23 @@ local fenglue = fk.CreateTriggerSkill{
       local pindian = player:pindian({to}, self.name)
       if pindian.results[to.id].winner == player then
         if to:isAllNude() then return end
-        local dummy = Fk:cloneCard("dilu")
         local areas = {Player.Hand, Player.Equip, Player.Judge}
+        local cards = {}
         for i = 1, 3, 1 do
           if #to.player_cards[areas[i]] > 0 then
             local flag = {"h", "e", "j"}
             local id = room:askForCardChosen(to, to, flag[i], self.name)
-            dummy:addSubcard(id)
+            table.insert(cards, id)
           end
         end
-        room:obtainCard(player, dummy, false, fk.ReasonGive)
+        room:obtainCard(player, cards, false, fk.ReasonGive)
       else
         if player:isNude() then return end
         local id = room:askForCardChosen(player, player, "he", self.name)
         room:obtainCard(to, id, false, fk.ReasonGive)
       end
     else
-      local dummy = Fk:cloneCard("dilu")
-      dummy:addSubcards(self.cost_data[2])
-      room:obtainCard(self.cost_data[1], dummy, true, fk.ReasonGive)
+      room:obtainCard(self.cost_data[1], self.cost_data[2], true, fk.ReasonGive)
     end
   end,
 }
@@ -3003,9 +2997,7 @@ local lianpian = fk.CreateTriggerSkill{
       if #targets == 0 then return false end
       local tos = room:askForChoosePlayers(player, targets, 1, 1, "#lianpian-choose", self.name, true)
       if #tos > 0 then
-        local dummy = Fk:cloneCard("dilu")
-        dummy:addSubcards(cids)
-        room:obtainCard(tos[1], dummy, false, fk.ReasonGive)
+        room:obtainCard(tos[1], cids, false, fk.ReasonGive)
       end
     end
   end,

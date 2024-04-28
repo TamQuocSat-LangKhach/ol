@@ -3973,15 +3973,15 @@ local ol_ex__beige = fk.CreateTriggerSkill{
     local number = dis_card.number
     room:throwCard(card, self.name, player, player)
     if not player.dead then
-      local dummy = Fk:cloneCard("dilu")
+      local cards = {}
       if suit == judge.card.suit and room:getCardArea(judge.card.id) == Card.DiscardPile then
-        dummy:addSubcard(judge.card)
+        table.insert(cards, judge.card.id)
       end
       if number == judge.card.number and room:getCardArea(dis_card.id) == Card.DiscardPile then
-        dummy:addSubcard(dis_card)
+        table.insert(cards, dis_card.id)
       end
-      if #dummy.subcards > 0 then
-        room:obtainCard(player, dummy, true, fk.ReasonJustMove)
+      if #cards > 0 then
+        room:obtainCard(player, cards, true, fk.ReasonJustMove)
       end
     end
     if judge.card.suit == Card.Heart then

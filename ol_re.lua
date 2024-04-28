@@ -345,7 +345,7 @@ local ol__kongsheng = fk.CreateTriggerSkill{
   derived_piles = "ol__kongsheng_harp",
   events = {fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self) and (player.phase == Player.Start or
+    return target == player and player:hasSkill(self) and ((player.phase == Player.Start and not player:isNude()) or
     (player.phase == Player.Finish and #player:getPile("ol__kongsheng_harp") > 0))
   end,
   on_cost = function(self, event, target, player, data)
@@ -362,8 +362,6 @@ local ol__kongsheng = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     if player.phase == Player.Start then
-      local dummy = Fk:cloneCard("dilu")
-      dummy:addSubcards(self.cost_data)
       player:addToPile("ol__kongsheng_harp", self.cost_data, true, self.name)
     elseif player.phase == Player.Finish then
       local room = player.room
@@ -371,9 +369,7 @@ local ol__kongsheng = fk.CreateTriggerSkill{
         return Fk:getCardById(id).type ~= Card.TypeEquip
       end)
       if #cards == 0 then return false end
-      local dummy = Fk:cloneCard("dilu")
-      dummy:addSubcards(cards)
-      room:obtainCard(player.id, dummy, true, fk.ReasonJustMove)
+      room:obtainCard(player.id, cards, true, fk.ReasonJustMove)
       if player.dead or #player:getPile("ol__kongsheng_harp") == 0 then return false end
       local targets = table.filter(room.alive_players, function (p)
         return table.find(player:getPile("ol__kongsheng_harp"), function (id)
@@ -868,6 +864,7 @@ Fk:loadTranslationTable{
   ["ol__zhugejin"] = "诸葛瑾",
   ["#ol__zhugejin"] = "联盟的维系者",
   ["designer:ol__zhugejin"] = "玄蝶既白",
+  ["illustrator:ol__zhugejin"] = "G.G.G.",
 
   ["ol__huanshi"] = "缓释",
   [":ol__huanshi"] = "当一名角色的判定牌生效前，你可以令其观看你的牌并用其中一张牌代替判定牌。",
@@ -1006,6 +1003,8 @@ hetaihou:addSkill(ol__qiluan)
 Fk:loadTranslationTable{
   ["ol__hetaihou"] = "何太后",
   ["#ol__hetaihou"] = "弄权之蛇蝎",
+  ["illustrator:ol__hetaihou"] = "DH",
+
   ["ol__zhendu"] = "鸩毒",
   [":ol__zhendu"] = "一名角色的出牌阶段开始时，你可以弃置一张手牌。若如此做，该角色视为使用一张【酒】，然后若该角色不为你，你对其造成1点伤害。",
   ["ol__qiluan"] = "戚乱",
@@ -1213,13 +1212,15 @@ ol__sunluyu:addRelatedSkill(zhixi)
 Fk:loadTranslationTable{
   ['ol__sunluyu'] = '孙鲁育',
   ['#ol__sunluyu'] = '舍身饲虎',
+  ['illustrator:ol__sunluyu'] = '玉生贝利',
   ['ol__meibu'] = '魅步',
   [':ol__meibu'] = '其他角色的出牌阶段开始时，若你在其攻击范围内，' ..
-    '你可以弃置一张牌，令该角色于本回合内拥有〖止息〗。' ..
-    '若你以此法弃置的牌不是【杀】或黑色锦囊牌，则本回合其与你距离视为1。',
+    '你可以弃置一张牌，令该角色于此回合内拥有〖止息〗。' ..
+    '若你以此法弃置的牌不为【杀】或黑色锦囊牌，则其于此回合内至你的距离视为1。',
   ['#ol__meibu-invoke'] = '魅步：是否弃置一张牌让 %src 本回合获得技能“止息”？',
   ['ol__mumu'] = '穆穆',
-  [':ol__mumu'] = '出牌阶段开始时，你可以选择一项：1.弃置一名其他角色装备区里的一张牌；2.获得一名角色装备区里的一张防具牌且你本回合不能使用或打出【杀】。',
+  [':ol__mumu'] = '出牌阶段开始时，你可以选择：'..
+  '1.弃置一名其他角色装备区里的一张牌；2.获得一名角色装备区里的一张防具牌且你于此回合内不能使用或打出【杀】。',
   ['ol__mumu_get'] = '获得一名角色装备区的防具，本回合不可出杀',
   ['ol__mumu_discard'] = '弃置一名其他角色装备区里的一张牌',
   ['#ol__mumu-discard'] = '穆穆：请选择一名其他角色，弃置其装备区里的一张牌',
@@ -2170,6 +2171,8 @@ Fk:loadTranslationTable{
   ["ol__guyong"] = "顾雍",
   ["#ol__guyong"] = "庙堂的玉磐",
   ["designer:ol__guyong"] = "玄蝶既白",
+  ["illustrator:ol__guyong"] = "Sky",
+
   ["ol__bingyi"] = "秉壹",
   [":ol__bingyi"] = "每阶段限一次，当你的牌被弃置后，你可以展示所有手牌，若颜色均相同，你令你与至多X名角色各摸一张牌（X为你的手牌数）。",
   ["#ol__bingyi-choose"] = "秉壹：你可以与至多%arg名其他角色各摸一张牌，点取消则仅你摸牌",

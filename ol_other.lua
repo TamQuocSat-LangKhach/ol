@@ -128,9 +128,7 @@ local dengji = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     room:changeMaxHp(player, -1)
-    local dummy = Fk:cloneCard("dilu")
-    dummy:addSubcards(player:getPile("caopi_chu"))
-    room:obtainCard(player, dummy, false, fk.ReasonJustMove)
+    room:obtainCard(player, player:getPile("caopi_chu"), false, fk.ReasonJustMove)
     room:handleAddLoseSkills(player, "ex__jianxiong|tianxing", nil)
   end,
 }
@@ -148,9 +146,7 @@ local tianxing = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     room:changeMaxHp(player, -1)
-    local dummy = Fk:cloneCard("dilu")
-    dummy:addSubcards(player:getPile("caopi_chu"))
-    room:obtainCard(player, dummy, false, fk.ReasonJustMove)
+    room:obtainCard(player, player:getPile("caopi_chu"), false, fk.ReasonJustMove)
     local choice = room:askForChoice(player, {"ex__rende", "ex__zhiheng", "ol_ex__luanji"}, self.name, "#tianxing-choice", true)
     room:handleAddLoseSkills(player, choice.."|-chuyuan", nil)
   end,

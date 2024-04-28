@@ -172,9 +172,7 @@ local mubing = fk.CreateTriggerSkill{
             end
           end
         end
-        local dummy = Fk:cloneCard("dilu")
-        dummy:addSubcards(get)
-        room:obtainCard(player.id, dummy, true, fk.ReasonPrey)
+        room:obtainCard(player.id, get, true, fk.ReasonPrey)
         if player:usedSkillTimes("diaoling", Player.HistoryGame) > 0 then
           get = table.filter(get, function(id) return table.contains(player:getCardIds("h"), id) end)
           if #get > 0 then
@@ -3870,9 +3868,7 @@ local yuanzi = fk.CreateTriggerSkill{
     local room = player.room
     if event == fk.EventPhaseStart then
       room:doIndicate(player.id, {target.id})
-      local dummy = Fk:cloneCard("dilu")
-      dummy:addSubcards(player.player_cards[Player.Hand])
-      room:obtainCard(target, dummy, false, fk.ReasonGive)
+      room:obtainCard(target, player:getCardIds(Player.Hand), false, fk.ReasonGive, player.id)
     else
       room:drawCards(player, 2, self.name)
     end
