@@ -2577,31 +2577,34 @@ local bolan_skills = {
   "quhu", "qiangxi", "qice", "daoshu", "ol_ex__tiaoxin", "qiangwu", "tianyi", "ex__zhiheng", "ex__jieyin", "ex__guose",
   "lijian", "qingnang", "lihun", "mingce", "mizhao", "sanchen", "gongxin", "ex__chuli",
   --standard
-  "ex__kurou", "ex__yijue", "fanjian", "ex__fanjian", "dimeng", "jijie", "poxi", "jueyan",
+  "ex__kurou", "ex__yijue", "fanjian", "ex__fanjian", "dimeng", "jijie", "poxi", "jueyan", "zhiheng",
   --sp
-  "quji", "dahe", "tanhu", "fenxun","xueji",
+  "quji", "dahe", "tanhu", "fenxun","xueji", "re__anxu",
   --yjcm
   "nos__xuanhuo", "xinzhan", "nos__jujian", "ganlu", "xianzhen", "anxu", "gongqi", "huaiyi", "zhige", "anguo", "mingjian", "mieji",
+  "duliang","junxing",
   --ol
-  "ziyuan", "lianzhu", "shanxi", "lianji", "jianji", "liehou", "xianbi", "shidu", "yanxi", "xuanbei", "yushen", "bolong", "fuxun", "qiuxin", "ol_ex__dimeng", "juguan", "ol__xuehen", "ol__fenxun", "weikui", "ol__caozhao", "ol_ex__changbiao",
+  "ziyuan", "lianzhu", "shanxi", "lianji", "jianji", "liehou", "xianbi", "shidu", "yanxi", "xuanbei", "yushen", "bolong", "fuxun", "qiuxin", "ol_ex__dimeng", "juguan", "ol__xuehen", "ol__fenxun", "weikui", "ol__caozhao", "ol_ex__changbiao","qingyix","qin__qihuo",
+  "lilun",
   --mobile
   "wuyuan", "zhujian", "duansuo", "poxiang", "hannan", "shihe", "wisdom__qiai", "shameng", "zundi", "mobile__shangyi", "yangjie",
   "m_ex__anxu", "beizhu", "mobile__zhouxuan", "mobile__yizheng", "guli", "m_ex__xianzhen", "m_ex__ganlu", "m_ex__mieji", "yingba",
-  "qiaosi", "pingcai","guanxu","guangu","shandao",
+  "qiaosi", "pingcai","guanxu","guangu","shandao", "mou__zhiheng", "m_ex__junxing","mobile__yinju","dingzhou",
   --mougong
   "mou__qixi", "mou__lijian",
   --overseas
   "os__jimeng", "os__beini", "os__yuejian", "os__waishi", "os__weipo", "os__shangyi", "os__jinglue", "os__zhanyi", "os__daoji",
-  "os_ex__gongqi", "os__gongxin", "os__zhuidu", "os__danlie",
+  "os_ex__gongqi", "os__gongxin", "os__zhuidu", "os__danlie","os__mutao",
   --tenyear
   "guolun", "kuiji", "ty__jianji", "caizhuang", "xinyou", "tanbei", "lueming", "ty__songshu", "ty__mouzhu", "libang", "nuchen",
   "weiwu", "ty__qingcheng", "ty__jianshu", "qiangzhiz", "ty__fenglue", "boyan", "jianguo", "ty_ex__mingce", "ty_ex__anxu",
   "ty_ex__mingjian", "ty_ex__quji", "jianzheng", "ty_ex__jixu", "ty__kuangfu", "yingshui", "weimeng", "tunan", "ty_ex__ganlu",
-  "ty_ex__gongqi","huahuo","qiongying","jichun","xiaowu","mansi",
+  "ty_ex__gongqi","huahuo","qiongying","jichun","xiaowu","mansi","kuizhen","zigu","ty_ex__wurong","jiuxianc","ty__lianji",
+  "ty__xiongsuan","channi","ty__lianzhu","ty__beini","minsi","zhuren","cuijian",
   --jsrg
   "js__yizheng", "shelun", "lunshi", "chushi", "pingtao","js__lianzhu","js__jinfa","duxing",
   --offline
-  "miaojian", "xuepin", "ofl__shameng", "lifengs",
+  "miaojian", "xuepin", "ofl__shameng", "lifengs", "duyi",
   --mini,
   "mini_yanshi","mini_jifeng","mini__jieyin","mini__qiangwu","mini_zhujiu",
   --wandian
@@ -2679,6 +2682,7 @@ local bolan_active = fk.CreateActiveSkill{
   anim_type = "special",
   card_num = 0,
   target_num = 0,
+  prompt = "#bolan-other",
   can_use = function(self, player)
     return player:usedSkillTimes(self.name, Player.HistoryPhase) == 0
   end,
@@ -2751,6 +2755,7 @@ Fk:loadTranslationTable{
   ["bolan&"] = "博览",
   [":bolan&"] = "出牌阶段限一次，你可以失去1点体力，令钟琰从随机三个“出牌阶段限一次”的技能中选择一个，你获得之直到此阶段结束。",
   ["#bolan-choice"] = "博览：选择令 %dest 此阶段获得技能",
+  ["#bolan-other"] = "博览：你可失去1点体力，令钟琰从三个“出牌阶段限一次”的技能中选择一个令你获得",
   ["@yifa"] = "仪法",
 
   ["$bolan1"] = "博览群书，融会贯通。",
