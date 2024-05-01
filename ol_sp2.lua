@@ -1024,7 +1024,7 @@ Fk:loadTranslationTable{
 
 local duxi = General(extension, "duxi", "wei", 3)
 local quxi_active = fk.CreateActiveSkill{
-  name = "#quxi_active",
+  name = "quxi_active",
   anim_type = "control",
   target_num = 2,
   card_num = 0,
@@ -1041,113 +1041,155 @@ local quxi_active = fk.CreateActiveSkill{
       return false
     end
   end,
-  on_use = function(self, room, effect)
-    local target1 = room:getPlayerById(effect.tos[1])
-    local target2 = room:getPlayerById(effect.tos[2])
-    local from, to
-    if #target1.player_cards[Player.Hand] < #target2.player_cards[Player.Hand] then
-      from = target1
-      to = target2
-    else
-      from = target2
-      to = target1
-    end
-    local card = room:askForCardChosen(from, to, "he", "quxi")
-    room:obtainCard(from.id, card, true, fk.ReasonPrey)
-    room:addPlayerMark(from, "@@duxi_feng", 1)
-    room:addPlayerMark(to, "@@duxi_qian", 1)
-  end,
 }
 local quxi = fk.CreateTriggerSkill{
   name = "quxi",
   anim_type = "control",
   frequency = Skill.Limited,
-  events = {fk.EventPhaseEnd, fk.RoundStart, fk.Death},
+  mute = true,
+  events = {fk.EventPhaseEnd, fk.DrawNCards, fk.RoundStart, fk.Death},
   can_trigger = function(self, event, target, player, data)
     if event == fk.EventPhaseEnd then
-      return target == player and player:hasSkill(self) and player.phase == Player.Play and
-        not table.every(player.room:getOtherPlayers(player), function(p)
-          return #p.player_cards[Player.Hand] == #player.room:getOtherPlayers(player)[1].player_cards[Player.Hand]
-        end) and player:usedSkillTimes(self.name, Player.HistoryGame) == 0
-    else
-      return not player.dead and player:usedSkillTimes(self.name, Player.HistoryGame) > 0 and
-        (event == fk.RoundStart or (event == fk.Death and (target:getMark("@@duxi_feng") > 0 or target:getMark("@@duxi_qian") > 0)))
+      if target == player and player.phase == Player.Play and player:hasSkill(self) and
+      player:usedSkillTimes(self.name, Player.HistoryGame) == 0 then
+        local players = player.room:getOtherPlayers(player, false)
+        if #players < 2 then return false end
+        local x = players[1]:getHandcardNum()
+        for i = 2, #players, 1 do
+          if players[i]:getHandcardNum() ~= x then
+            return true
+          end
+        end
+      end
+    elseif event == fk.DrawNCards then
+      return player:hasSkill(self) and not target.dead and
+      (player:getMark("quxi_feng_target") == target.id or player:getMark("quxi_qian_target") == target.id)
+    elseif event == fk.RoundStart then
+      return player:hasSkill(self) and table.find(player.room.alive_players, function(p)
+        return player:getMark("quxi_feng_target") == p.id or player:getMark("quxi_qian_target") == p.id
+      end)
+    elseif event == fk.Death then
+      return player:hasSkill(self) and
+      (player:getMark("quxi_feng_target") == target.id or player:getMark("quxi_qian_target") == target.id)
     end
   end,
   on_cost = function(self, event, target, player, data)
     local room = player.room
     if event == fk.EventPhaseEnd then
-      return room:askForUseActiveSkill(player, "#quxi_active", "#quxi-invoke", true)
-    elseif event == fk.RoundStart then
-      local targets = {}
-      for _, p in ipairs(room:getAlivePlayers()) do
-        if p:getMark("@@duxi_feng") > 0 or p:getMark("@@duxi_qian") > 0 then
-          table.insert(targets, p.id)
+      local success, dat = room:askForUseActiveSkill(player, "quxi_active", "#quxi-invoke", true)
+      if dat then
+        local targets = dat.targets
+        if room:getPlayerById(targets[1]):getHandcardNum() > room:getPlayerById(targets[2]):getHandcardNum() then
+          targets = {targets[2], targets[1]}
         end
-      end
-      if #targets > 0 then
-        local to = room:askForChoosePlayers(player, targets, 1, 1, "#quxi1-choose", self.name, true)
-        if #to > 0 then
-          self.cost_data = to[1]
-          return true
-        end
-      end
-    elseif event == fk.Death then
-      if room:askForSkillInvoke(player, self.name, nil, "#quxi2-choose::"..target.id) then
-        self.cost_data = target.id
+        self.cost_data = targets
         return true
       end
+    else
+      return true
     end
   end,
   on_use = function(self, event, target, player, data)
+    local room = player.room
+    player:broadcastSkillInvoke(self.name)
     if event == fk.EventPhaseEnd then
+      room:notifySkillInvoked(player, self.name)
+      local targetA = room:getPlayerById(self.cost_data[1])
+      local targetB = room:getPlayerById(self.cost_data[2])
       player:skip(Player.Discard)
       if player.faceup then
         player:turnOver()
       end
-      return
-    end
-    local room = player.room
-    local to = room:getPlayerById(self.cost_data)
-    local choices = {"Cancel"}
-    for _, mark in ipairs({"@@duxi_feng", "@@duxi_qian"}) do
-      if to:getMark(mark) > 0 then
-        table.insert(choices, mark)
+      if targetA.dead or targetB.dead then return false end
+      if not targetB:isKongcheng() then
+        local cid = room:askForCardChosen(targetA, targetB, "h", self.name)
+        room:obtainCard(targetA, cid, false, fk.ReasonPrey)
       end
-    end
-    while true do
-      local choice = room:askForChoice(player, choices, self.name, "#quxi-choice")
-      if choice == "Cancel" then return end
-      table.removeOne(choices, choice)
-      local targets = table.map(room:getOtherPlayers(to), Util.IdMapper)
-      local dest
-      if #targets > 1 then
-        dest = room:askForChoosePlayers(player, targets, 1, 1, "#quxi-move:::"..choice, self.name, false)
-        if #dest > 0 then
-          dest = dest[1]
-        else
-          dest = table.random(targets)
+      if player.dead or not player:hasSkill(self, true) then return false end
+      if not targetA.dead then
+        room:setPlayerMark(player, "quxi_feng_target", targetA.id)
+        room:setPlayerMark(targetA, "@@duxi_feng", 1)
+      end
+      if not targetB.dead then
+        room:setPlayerMark(player, "quxi_qian_target", targetB.id)
+        room:setPlayerMark(targetB, "@@duxi_qian", 1)
+      end
+    elseif event == fk.DrawNCards then
+      if player:getMark("quxi_feng_target") == target.id then
+        room:notifySkillInvoked(player, self.name, "support")
+        data.n = data.n + 1
+      end
+      if player:getMark("quxi_qian_target") == target.id then
+        room:notifySkillInvoked(player, self.name, "control")
+        data.n = data.n - 1
+      end
+    elseif event == fk.RoundStart then
+      room:notifySkillInvoked(player, self.name, "special")
+      local _targets = table.map(room.alive_players, Util.IdMapper)
+      local to = room:getPlayerById(player:getMark("quxi_feng_target"))
+      if to and not to.dead then
+        local targets = table.simpleClone(_targets)
+        table.removeOne(targets, player:getMark("quxi_feng_target"))
+        table.removeOne(targets, player:getMark("quxi_qian_target"))
+        local tos = room:askForChoosePlayers(player, targets, 1, 1, "#quxi1-choose::" .. to.id, self.name, true)
+        if #tos > 0 then
+          room:setPlayerMark(player, "quxi_feng_target", tos[1])
+          room:setPlayerMark(room:getPlayerById(tos[1]), "@@duxi_feng", 1)
+          if table.every(room.alive_players, function (p)
+            return p:getMark("quxi_feng_target") ~= to.id
+          end) then
+            room:setPlayerMark(to, "@@duxi_feng", 0)
+          end
         end
-      else
-        dest = targets[1]
       end
-      dest = room:getPlayerById(dest)
-      room:setPlayerMark(to, choice, 0)
-      room:setPlayerMark(dest, choice, 1)
+      to = room:getPlayerById(player:getMark("quxi_qian_target"))
+      if to and not to.dead then
+        local targets = table.simpleClone(_targets)
+        table.removeOne(targets, player:getMark("quxi_feng_target"))
+        table.removeOne(targets, player:getMark("quxi_qian_target"))
+        local tos = room:askForChoosePlayers(player, targets, 1, 1, "#quxi2-choose::" .. to.id, self.name, true)
+        if #tos > 0 then
+          room:setPlayerMark(player, "quxi_qian_target", tos[1])
+          room:setPlayerMark(room:getPlayerById(tos[1]), "@@duxi_qian", 1)
+          if table.every(room.alive_players, function (p)
+            return p:getMark("quxi_qian_target") ~= to.id
+          end) then
+            room:setPlayerMark(to, "@@duxi_qian", 0)
+          end
+        end
+      end
+    elseif event == fk.Death then
+      room:notifySkillInvoked(player, self.name, "special")
+      local targets = table.map(room.alive_players, Util.IdMapper)
+      if player:getMark("quxi_feng_target") == target.id then
+        table.removeOne(targets, player:getMark("quxi_qian_target"))
+        local tos = room:askForChoosePlayers(player, targets, 1, 1, "#quxi1-choose::" .. target.id, self.name, true)
+        if #tos > 0 then
+          room:setPlayerMark(player, "quxi_feng_target", tos[1])
+          room:setPlayerMark(room:getPlayerById(tos[1]), "@@duxi_feng", 1)
+          if table.every(room.alive_players, function (p)
+            return p:getMark("quxi_feng_target") ~= target.id
+          end) then
+            room:setPlayerMark(target, "@@duxi_feng", 0)
+          end
+        end
+      end
+      if player:getMark("quxi_qian_target") == target.id then
+        table.removeOne(targets, player:getMark("quxi_feng_target"))
+        local tos = room:askForChoosePlayers(player, targets, 1, 1, "#quxi2-choose::" .. target.id, self.name, true)
+        if #tos > 0 then
+          room:setPlayerMark(player, "quxi_qian_target", tos[1])
+          room:setPlayerMark(room:getPlayerById(tos[1]), "@@duxi_qian", 1)
+          if table.every(room.alive_players, function (p)
+            return p:getMark("quxi_qian_target") ~= target.id
+          end) then
+            room:setPlayerMark(target, "@@duxi_qian", 0)
+          end
+        end
+      end
     end
   end,
 
-  refresh_events = {fk.DrawNCards},
-  can_refresh = function(self, event, target, player, data)
-    return target == player and (player:getMark("@@duxi_feng") > 0 or player:getMark("@@duxi_qian") > 0)
-  end,
-  on_refresh = function(self, event, target, player, data)
-    if player:getMark("@@duxi_feng") > 0 then
-      data.n = data.n + 1
-    else
-      data.n = data.n - 1
-    end
-  end,
 }
 local bixiong = fk.CreateTriggerSkill{
   name = "bixiong",
@@ -1155,57 +1197,43 @@ local bixiong = fk.CreateTriggerSkill{
   frequency = Skill.Compulsory,
   events = {fk.EventPhaseEnd},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self) and player.phase == Player.Discard
-  end,
-  on_use = function(self, event, target, player, data)
-    local room = player.room
-    if player:getMark(self.name) == 0 then
-      room:setPlayerMark(player, "@bixiong", 0)
-    else
-      local mark = {}
-      local suits = {"spade", "heart", "club", "diamond"}
-      local icons = {"♠", "♥", "♣", "♦"}
-      for i = 1, 4, 1 do
-        if table.contains(player:getMark(self.name), suits[i]) then
-          table.insert(mark, icons[i])
-        end
-      end
-      room:setPlayerMark(player, "@bixiong", table.concat(mark))
-    end
-  end,
-
-  refresh_events = {fk.AfterCardsMove, fk.TurnStart},
-  can_refresh = function(self, event, target, player, data)
-    if event == fk.AfterCardsMove then
-      return player:hasSkill(self) and player.phase == Player.Discard
-    else
-      return target == player and player:getMark("@bixiong") ~= 0
-    end
-  end,
-  on_refresh = function(self, event, target, player, data)
-    if event == fk.AfterCardsMove then
-      for _, move in ipairs(data) do
-        if move.from == player.id and move.moveReason == fk.ReasonDiscard then
-          local mark = {}
-          for _, info in ipairs(move.moveInfo) do
-            if info.fromArea == Card.PlayerHand then
-              table.insertIfNeed(mark, Fk:getCardById(info.cardId):getSuitString())
+    if target == player and player:hasSkill(self) and player.phase == Player.Discard then
+      local suits = {}
+      local logic = player.room.logic
+      logic:getEventsOfScope(GameEvent.MoveCards, 1, function(e)
+        for _, move in ipairs(e.data) do
+          if move.from == player.id and move.moveReason == fk.ReasonDiscard and move.skillName == "game_rule" then
+            for _, info in ipairs(move.moveInfo) do
+              table.insertIfNeed(suits, Fk:getCardById(info.cardId, true).suit)
             end
           end
-          if #mark == 0 then mark = 0 end
-          player.room:setPlayerMark(player, self.name, mark)
         end
+        return false
+      end, Player.HistoryTurn)
+      if #suits > 0 then
+        self.cost_data = suits
+        return true
       end
-    else
-      player.room:setPlayerMark(player, "@bixiong", 0)
-      player.room:setPlayerMark(player, "bixiong", 0)
     end
+  end,
+  on_use = function(self, event, target, player, data)
+    local suits = U.getMark(player, "@[suits]bixiong")
+    table.insertTableIfNeed(suits, self.cost_data)
+    player.room:setPlayerMark(player, "@[suits]bixiong", suits)
+  end,
+
+  refresh_events = {fk.TurnStart},
+  can_refresh = function(self, event, target, player, data)
+    return target == player and player:getMark("@[suits]bixiong") ~= 0
+  end,
+  on_refresh = function(self, event, target, player, data)
+    player.room:setPlayerMark(player, "@[suits]bixiong", 0)
   end,
 }
 local bixiong_prohibit = fk.CreateProhibitSkill{
   name = "#bixiong_prohibit",
   is_prohibited = function(self, from, to, card)
-    return to:getMark("bixiong") ~= 0 and from ~= to and table.contains(to:getMark("bixiong"), card:getSuitString())
+    return from ~= to and table.contains(U.getMark(to, "@[suits]bixiong"), card.suit)
   end,
 }
 Fk:addSkill(quxi_active)
@@ -1221,16 +1249,14 @@ Fk:loadTranslationTable{
   "另一名角色获得「歉」。<br>有「丰」的角色摸牌阶段摸牌数+1，有「歉」的角色摸牌阶段摸牌数-1。<br>当有「丰」或「歉」的角色死亡时或每轮开始时，"..
   "你可以转移「丰」「歉」。",
   ["bixiong"] = "避凶",
-  [":bixiong"] = "锁定技，若你于弃牌阶段弃置了手牌，直到你的下回合开始，其他角色不能使用与这些牌花色相同的牌指定你为目标。",
+  [":bixiong"] = "锁定技，弃牌阶段结束时，若你于此阶段内弃置过手牌，直到你的下回合开始之前，你不是其他角色使用的与这些牌花色相同的牌的合法目标。",
   ["#quxi-invoke"] = "驱徙：选择两名手牌数不同的其他角色，手牌少的角色获得多的角色一张牌并获得「丰」，手牌多的角色获得「歉」",
-  ["#quxi_active"] = "驱徙",
+  ["quxi_active"] = "驱徙",
   ["@@duxi_feng"] = "丰",
   ["@@duxi_qian"] = "歉",
-  ["#quxi1-choose"] = "驱徙：你可以移动「丰」、「歉」",
-  ["#quxi2-choose"] = "驱徙：你可以移动 %dest 的「丰」、「歉」",
-  ["#quxi-choice"] = "驱徙：请选择要移动的标记",
-  ["#quxi-move"] = "驱徙：请选择获得「%arg」的角色",
-  ["@bixiong"] = "避凶",
+  ["#quxi1-choose"] = "驱徙：你可以移动 %dest 的「丰」标记（摸牌数+1）",
+  ["#quxi2-choose"] = "驱徙：你可以移动 %dest 的「歉」标记（摸牌数-1）",
+  ["@[suits]bixiong"] = "避凶",
 
   ["$quxi1"] = "不自改悔，终须驱徙。",
   ["$quxi2"] = "奈何驱徙，不使存活。",

@@ -165,9 +165,7 @@ local ol__lijun = fk.CreateTriggerSkill{
     local cardList = data.card:isVirtual() and data.card.subcards or {data.card.id}
     local cards = table.filter(cardList, function(id) return not room:getCardOwner(id) end)
     if #cards == 0 then return end
-    local dummy = Fk:cloneCard("slash")
-    dummy:addSubcards(cards)
-    room:obtainCard(player, dummy, true, fk.ReasonJustMove)
+    room:obtainCard(player, cards, true, fk.ReasonJustMove)
     if not player.dead and not target.dead and room:askForSkillInvoke(player, self.name, data, "#ol__lijun-draw:"..target.id) then
       target:drawCards(1, self.name)
       room:addPlayerMark(target, "ol__lijun_slash-phase")

@@ -189,7 +189,8 @@ local ol_ex__zhaxiang = fk.CreateTriggerSkill{
 
   refresh_events = {fk.PreCardUse},
   can_refresh = function(self, event, target, player, data)
-    return data.card.trueName == "slash" and data.card.color == Card.Red and player:getMark("@@ol_ex__zhaxiang-turn") > 0
+    return player == target and data.card.trueName == "slash" and data.card.color == Card.Red and
+    player:getMark("@@ol_ex__zhaxiang-turn") > 0
   end,
   on_refresh = function(self, event, target, player, data)
     data.disresponsiveList = table.map(player.room.alive_players, Util.IdMapper)

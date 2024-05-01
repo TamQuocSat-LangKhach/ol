@@ -3489,7 +3489,7 @@ zhongyao:addSkill(jieli)
 zhongyao:addSkill("baozu")
 Fk:loadTranslationTable{
   ["olz__zhongyao"] = "族钟繇",
-  --["#olz__zhongyao"] = "",
+  ["#olz__zhongyao"] = "开达理干",
   --["designer:olz__zhongyao"] = "",
   ["illustrator:olz__zhongyao"] = "alien",
   ["chengqi"] = "承启",
