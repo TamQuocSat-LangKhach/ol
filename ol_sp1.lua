@@ -3822,6 +3822,8 @@ local xiying = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     room:setPlayerMark(player, "xiying_invoked-turn", 1)
+    room:doIndicate(player.id, table.map(room:getOtherPlayers(player), Util.IdMapper))
+    room:throwCard(self.cost_data, self.name, player, player)
     for _, p in ipairs(room:getOtherPlayers(player)) do
       if not p.dead and #room:askForDiscard(p, 1, 1, true, self.name, true, ".", "#xiying-discard") == 0 then
         room:addPlayerMark(p, "@@xiying-turn", 1)
