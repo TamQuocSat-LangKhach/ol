@@ -47,7 +47,8 @@ local shanzhuan = fk.CreateTriggerSkill{
   can_trigger = function(self, event, target, player, data)
     if target == player and player:hasSkill(self) then
       if event == fk.Damage then
-        return data.to ~= player and not data.to.dead and not data.to:isNude() and #data.to.player_cards[Player.Judge] == 0
+        return data.to ~= player and not data.to.dead and not data.to:isNude() and
+        not table.contains(data.to.sealedSlots, Player.JudgeSlot) and #data.to.player_cards[Player.Judge] == 0
       else
         return player.phase == Player.Finish and #U.getActualDamageEvents(player.room, 1, function(e) return e.data[1].from == player end) == 0
       end
@@ -1190,6 +1191,25 @@ local quxi = fk.CreateTriggerSkill{
     end
   end,
 
+  refresh_events = {fk.BuryVictim, fk.EventLoseSkill},
+  can_refresh = function(self, event, target, player, data)
+    return player == target and (event == fk.BuryVictim or data == self)
+  end,
+  on_refresh = function(self, event, target, player, data)
+    local room = player.room
+    local to = room:getPlayerById(player:getMark("quxi_feng_target"))
+    if to and table.every(room.alive_players, function (p)
+      return p:getMark("quxi_feng_target") ~= to.id
+    end) then
+      room:setPlayerMark(to, "@@duxi_feng", 0)
+    end
+    to = room:getPlayerById(player:getMark("quxi_qian_target"))
+    if to and table.every(room.alive_players, function (p)
+      return p:getMark("quxi_qian_target") ~= to.id
+    end) then
+      room:setPlayerMark(to, "@@duxi_qian", 0)
+    end
+  end,
 }
 local bixiong = fk.CreateTriggerSkill{
   name = "bixiong",
