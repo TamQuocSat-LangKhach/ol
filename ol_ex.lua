@@ -2376,7 +2376,7 @@ local ol_ex__haoshi_delay = fk.CreateTriggerSkill{
         end
       end
       local tos, cards = U.askForChooseCardsAndPlayers(room, player, x, x, targets, 1, 1,
-      ".", "#ol_ex__haoshi-give:::" .. x, "ol_ex__haoshi", false)
+      ".|.|.|hand", "#ol_ex__haoshi-give:::" .. x, "ol_ex__haoshi", false)
       local to = room:getPlayerById(tos[1])
       room:moveCardTo(cards, Card.PlayerHand, to, fk.ReasonGive, "ol_ex__haoshi", nil, false, player.id)
       if player.dead or to.dead then return false end

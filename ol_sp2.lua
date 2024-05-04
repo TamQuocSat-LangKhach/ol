@@ -4912,10 +4912,10 @@ local kanpod = fk.CreateViewAsSkill{
     return c
   end,
   enabled_at_play = function(self, player)
-    return not player:isKongcheng() and player:usedSkillTimes(self.name, Player.HistoryTurn) == 0
+    return player:usedSkillTimes(self.name, Player.HistoryTurn) == 0
   end,
   enabled_at_response = function(self, player, response)
-    return not response and not player:isKongcheng() and player:usedSkillTimes(self.name, Player.HistoryTurn) == 0
+    return not response and player:usedSkillTimes(self.name, Player.HistoryTurn) == 0
   end,
 }
 local kanpod_prey = fk.CreateTriggerSkill{
@@ -4931,6 +4931,8 @@ local kanpod_prey = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
+    player:broadcastSkillInvoke("kanpod")
+    room:doIndicate(player.id, {data.to.id})
     local cards = data.to.player_cards[Player.Hand]
     local hearts = table.filter(cards, function (id) return Fk:getCardById(id).suit == data.card.suit end)
     if #hearts == 0 then

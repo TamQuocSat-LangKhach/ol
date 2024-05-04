@@ -3446,7 +3446,7 @@ local fudao = fk.CreateTriggerSkill{
       if player.dead then return end
       local targets = table.map(room:getOtherPlayers(player), Util.IdMapper)
       if not player:isKongcheng() and #targets > 0 then
-        local tos, cards = U.askForChooseCardsAndPlayers(room, player, 1, 3, targets, 1, 1, nil, "#ol__fudao-give", self.name, true)
+        local tos, cards = U.askForChooseCardsAndPlayers(room, player, 1, 3, targets, 1, 1, ".|.|.|hand", "#ol__fudao-give", self.name, true)
         if #tos > 0 then
           local to = room:getPlayerById(tos[1])
           room:moveCardTo(cards, Card.PlayerHand, to, fk.ReasonGive, self.name, nil, false, player.id)
@@ -4518,7 +4518,7 @@ local xiangzuo = fk.CreateTriggerSkill{
     local gongjie_targets = U.getMark(player, "gongjie_targets")
     local xiangxu_targets = U.getMark(player, "xiangxu_targets")
     for _, p in ipairs(room.alive_players) do
-      if table.contains(gongjie_targets, p.id) and table.contains(gongjie_targets, p.id) then
+      if table.contains(gongjie_targets, p.id) and table.contains(xiangxu_targets, p.id) then
         room:setPlayerMark(p, "@@xiangzuo", 1)
       end
     end
