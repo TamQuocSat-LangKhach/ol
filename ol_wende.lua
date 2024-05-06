@@ -3334,8 +3334,12 @@ local yangkuang = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    room:useVirtualCard("analeptic", nil, player, player, self.name)
-    player:drawCards(1, self.name)
+    if player:canUse(Fk:cloneCard("analeptic")) then
+      room:useVirtualCard("analeptic", nil, player, player, self.name)
+    end
+    if not player.dead then
+      player:drawCards(1, self.name)
+    end
     if room.current and not room.current.dead then
       room.current:drawCards(1, self.name)
     end
@@ -3371,8 +3375,8 @@ local cihuang = fk.CreateTriggerSkill{
     local mark = U.getMark(player, "cihuang-round")
     for _, id in ipairs(Fk:getAllCardIds()) do
       local card = Fk:getCardById(id)
-      if not table.contains(mark, card.name) and card.name ~= "collateral" then
-        if not (card.skill.target_num == 0 and data.from ~= player.id) then
+      if not table.contains(mark, card.name) and card.skill:getMinTargetNum() < 2 then
+        if not (card.skill:getMinTargetNum() == 0 and data.from ~= player.id and not card.multiple_targets) then
           if not card.is_derived and card.skill:modTargetFilter(data.from, {}, player.id, card, true) then
             if (card.trueName == "slash" and card.name ~= "slash") or (card:isCommonTrick() and not card.multiple_targets) then
               table.insertIfNeed(names, card.name)
