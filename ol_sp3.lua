@@ -4374,11 +4374,11 @@ local gongjie = fk.CreateTriggerSkill{
     local room = player.room
     local turn_event = room.logic:getCurrentEvent()
     if not turn_event then return false end
-    local x = player:getMark("gongjie-turn")
+    local x = player:getMark("gongjie-round")
     if x == 0 then
       room.logic:getEventsOfScope(GameEvent.Turn, 1, function (e)
         x = e.id
-        room:setPlayerMark(player, "gongjie-turn", x)
+        room:setPlayerMark(player, "gongjie-round", x)
         return true
       end, Player.HistoryRound)
     end

@@ -866,46 +866,51 @@ local tadun = General(extension, "tadun", "qun", 4)
 local luanzhan = fk.CreateTriggerSkill{
   name = "luanzhan",
   anim_type = "offensive",
-  events = {fk.AfterCardTargetDeclared},
+  events = {fk.HpChanged, fk.TargetSpecified, fk.AfterCardTargetDeclared},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self) and (data.card.trueName == "slash" or
+    if event == fk.HpChanged then
+      return data.damageEvent and (data.damageEvent.from == player or data.damageEvent.to == player) and player:hasSkill(self)
+    elseif event == fk.TargetSpecified then
+      return player == target and data.firstTarget and player:hasSkill(self) and (data.card.trueName == "slash" or
+      (data.card.color == Card.Black and data.card:isCommonTrick())) and
+      data.targetGroup and #data.targetGroup < player:getMark("@luanzhan")
+    else
+      return target == player and player:hasSkill(self) and (data.card.trueName == "slash" or
       (data.card.color == Card.Black and data.card:isCommonTrick())) and
       player:getMark("@luanzhan") > 0 and #U.getUseExtraTargets(player.room, data, false) > 0
+    end
   end,
   on_cost = function(self, event, target, player, data)
-    local n = player:getMark("@luanzhan")
-    local tos = player.room:askForChoosePlayers(player, U.getUseExtraTargets(player.room, data, false), 1, n,
-    "#luanzhan-choose:::"..data.card:toLogString()..":"..n, self.name, true)
-    if #tos > 0 then
-      self.cost_data = tos
+    if event == fk.AfterCardTargetDeclared then
+      local n = player:getMark("@luanzhan")
+      local tos = player.room:askForChoosePlayers(player, U.getUseExtraTargets(player.room, data, false), 1, n,
+      "#luanzhan-choose:::"..data.card:toLogString()..":"..n, self.name, true)
+      if #tos > 0 then
+        self.cost_data = tos
+        return true
+      end
+    else
       return true
     end
   end,
   on_use = function(self, event, target, player, data)
-    for _, id in ipairs(self.cost_data) do
-      table.insert(data.tos, {id})
-    end
-  end,
-
-  refresh_events = {fk.Damage, fk.TargetSpecified},
-  can_refresh = function(self, event, target, player, data)
-    if target == player and player:hasSkill(self, true) then
-      if event == fk.Damage then
-        return true
-      else
-        return (data.card.trueName == "slash" or
-          (data.card.color == Card.Black and data.card:isCommonTrick())) and
-          data.targetGroup and #data.targetGroup < player:getMark("@luanzhan")
+    if event == fk.HpChanged then
+      player.room:addPlayerMark(player, "@luanzhan", 1)
+    elseif event == fk.TargetSpecified then
+      player.room:removePlayerMark(player, "@luanzhan", (player:getMark("@luanzhan") + 1) // 2)
+    else
+      for _, id in ipairs(self.cost_data) do
+        table.insert(data.tos, {id})
       end
     end
   end,
+
+  refresh_events = {fk.EventLoseSkill},
+  can_refresh = function(self, event, target, player, data)
+    return player == target and data == self and player:getMark("@luanzhan") > 0
+  end,
   on_refresh = function(self, event, target, player, data)
-    local room = player.room
-    if event == fk.Damage then
-      room:addPlayerMark(player, "@luanzhan", 1)
-    else
-      room:setPlayerMark(player, "@luanzhan", 0)
-    end
+    player.room:setPlayerMark(player, "@luanzhan", 0)
   end,
 }
 tadun:addSkill(luanzhan)
@@ -914,8 +919,10 @@ Fk:loadTranslationTable{
   ["#tadun"] = "北狄王",
   ["illustrator:tadun"] = "NOVART",
   ["luanzhan"] = "乱战",
-  [":luanzhan"] = "你使用【杀】或黑色非延时类锦囊牌可以额外选择X名角色为目标；当你使用【杀】或黑色非延时类锦囊牌指定目标后，"..
-  "若此牌的目标角色数小于X，则X减至0。（X为你于本局游戏内造成过伤害的次数）。",
+  [":luanzhan"] = "当一名角色因你造成或受到的伤害而扣减体力后，你获得1枚“乱战”。"..
+  "当【杀】或黑色普通锦囊牌指定第一个目标后，若使用者为你且目标角色数小于X，你弃一半数量的“乱战”（向上取整）。"..
+  "当【杀】或黑色普通锦囊牌选择目标后，若使用者为你，你可令至多X名角色也成为此牌的目标。（X为“乱战”数）",
+
   ["@luanzhan"] = "乱战",
   ["#luanzhan-choose"] = "乱战：你可以为%arg额外指定至多%arg2个目标",
 
@@ -2582,8 +2589,6 @@ local xianfu_delay = fk.CreateTriggerSkill{
     end
   end,
 }
-xianfu:addRelatedSkill(xianfu_delay)
-xizhicai:addSkill(xianfu)
 local chouce = fk.CreateTriggerSkill{
   name = "chouce",
   anim_type = "masochism",
@@ -2591,7 +2596,7 @@ local chouce = fk.CreateTriggerSkill{
   on_trigger = function(self, event, target, player, data)
     self.cancel_cost = false
     for i = 1, data.damage do
-      if self.cancel_cost or not player:hasSkill(self) then break end
+      if i > 1 and (self.cancel_cost or not player:hasSkill(self)) then break end
       self:doCost(event, target, player, data)
     end
   end,
@@ -2609,6 +2614,7 @@ local chouce = fk.CreateTriggerSkill{
       pattern = ".|.|^nosuit",
     }
     room:judge(judge)
+    if player.dead then return false end
     if judge.card.color == Card.Red then
       local targets = table.map(room.alive_players, Util.IdMapper)
       local tos = room:askForChoosePlayers(player, targets, 1, 1, "#chouce-draw", self.name, false)
@@ -2630,7 +2636,9 @@ local chouce = fk.CreateTriggerSkill{
     end
   end,
 }
+xianfu:addRelatedSkill(xianfu_delay)
 xizhicai:addSkill("tiandu")
+xizhicai:addSkill(xianfu)
 xizhicai:addSkill(chouce)
 Fk:loadTranslationTable{
   ["xizhicai"] = "戏志才",
