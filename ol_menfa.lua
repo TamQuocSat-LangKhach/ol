@@ -3372,7 +3372,7 @@ local chengqi = fk.CreateViewAsSkill{
     return true
   end,
   enabled_at_response = function(self, player, response)
-    if response then return false end
+    if response or player:getHandcardNum() < 2 then return false end
     local mark = U.getMark(player, "chengqi-turn")
     return #table.filter(U.getViewAsCardNames(player, self.name, U.getAllCardNames("bt")), function (name)
       return not table.contains(mark, Fk:cloneCard(name).trueName)
@@ -3478,9 +3478,18 @@ local jieli = fk.CreateTriggerSkill{
       end
     end
     local cards = room:getNCards(x)
-    local cardmap = U.askForArrangeCards(player, self.name,
-    {cards, handcards, "Top", "$Hand"}, "#jieli-exchange::" .. to.id)
-    U.swapCardsWithPile(to, cardmap[1], cardmap[2], self.name, "Top", false, player.id)
+    local results = U.askForExchange(player, "Top", "$Hand", cards, handcards, "#jieli-exchange::" .. to.id, x)
+    if #results > 0 then
+      local to_hand = {}
+      for i = x, 1, -1 do
+        if table.removeOne(results, cards[i]) then
+          table.insert(to_hand, cards[i])
+          table.remove(cards, i)
+        end
+      end
+      table.insertTable(results, cards)
+      U.swapCardsWithPile(to, results, to_hand, self.name, "Top", false, player.id)
+    end
   end,
 }
 chengqi:addRelatedSkill(chengqi_trigger)
@@ -3497,7 +3506,7 @@ Fk:loadTranslationTable{
   "你以此法使用的牌的名字数不能大于转化前的牌的牌名字数之和，若相等，你于此牌被使用时令一名角色摸一张牌。",
   ["jieli"] = "诫厉",
   [":jieli"] = "结束阶段，你可以选择一名角色，观看其手牌中牌名字数最大的所有牌和牌堆顶的X张牌"..
-  "（X为你于此回合内使用过的牌的牌名字数的最大值），然后你可以交换其中等量的牌。",
+  "（X为你于此回合内使用过的牌的牌名字数的最大值），然后你可以交换其中等量的牌（其中换入牌堆的牌将被置于牌堆顶）。",
 
   ["#chengqi-viewas"] = "发动 承启，将至少两张牌当牌名字数不小于这些牌的牌名字数之和的牌使用",
   ["#chengqi_trigger"] = "承启",

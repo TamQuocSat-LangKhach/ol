@@ -2336,11 +2336,11 @@ local ol_ex__haoshi = fk.CreateTriggerSkill{
 }
 local ol_ex__haoshi_delay = fk.CreateTriggerSkill{
   name = "#ol_ex__haoshi_delay",
-  events = {fk.EventPhaseEnd, fk.TargetConfirmed},
+  events = {fk.AfterDrawNCards, fk.TargetConfirmed},
   mute = true,
   can_trigger = function(self, event, target, player, data)
     if player.dead then return false end
-    if event == fk.EventPhaseEnd and player:usedSkillTimes(ol_ex__haoshi.name, Player.HistoryPhase) > 0 then
+    if event == fk.AfterDrawNCards and player:usedSkillTimes(ol_ex__haoshi.name, Player.HistoryPhase) > 0 then
       return #player.player_cards[Player.Hand] > 5 and #player.room.alive_players > 1
     elseif event == fk.TargetConfirmed and player == target and type(player:getMark("ol_ex__haoshi_target")) == "table" then
       if data.card.trueName == "slash" or data.card:isCommonTrick() then
@@ -2356,7 +2356,7 @@ local ol_ex__haoshi_delay = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     room:notifySkillInvoked(player, ol_ex__haoshi.name, "support")
-    if event == fk.EventPhaseEnd and not player:isKongcheng() then
+    if event == fk.AfterDrawNCards then
       local x = player:getHandcardNum() // 2
       local targets = {}
       local n = 0

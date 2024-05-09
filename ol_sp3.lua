@@ -5284,6 +5284,10 @@ Fk:loadTranslationTable{
   ["pijingl_target"] = "增加目标",
   ["@@AddTarget"] = "增加目标",
   ["@@CancelTarget"] = "取消目标",
+
+  ["$pijingl1"] = "今青锋在手，必破敌军于域外。",
+  ["$pijingl2"] = "荆楚多锦绣，安能丧于小儿之手！",
+  ["~liupan"] = "今袍泽离散，无以为战……",
 }
 Fk:addPoxiMethod{
   name = "yichengl",
