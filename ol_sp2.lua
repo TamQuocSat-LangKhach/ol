@@ -3394,6 +3394,12 @@ local manwang = fk.CreateActiveSkill{
   can_use = function(self, player)
     return not player:isNude()
   end,
+  card_filter = function(self, to_select, selected)
+    return not Self:prohibitDiscard(Fk:getCardById(to_select))
+  end,
+  prompt = function ()
+    return "#manwang-prompt:::"..(4-Self:getMark("@manwang"))
+  end,
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
     room:throwCard(effect.cards, self.name, player, player)
@@ -3466,6 +3472,7 @@ Fk:loadTranslationTable{
   ["panqin"] = "叛侵",
   [":panqin"] = "出牌阶段结束时，或弃牌阶段结束时，你可以将本阶段你因弃置进入弃牌堆且仍在弃牌堆的牌当【南蛮入侵】使用，然后若此牌目标数不小于这些牌的数量，你执行并移除〖蛮王〗的最后一项。",
   ["@manwang"] = "蛮王",
+  ["#manwang-prompt"] = "蛮王：弃置任意张牌，依次执行〖蛮王〗的前等量项（剩余 %arg 项）",
   ["#panqin-invoke"] = "叛侵：你可将弃牌堆中你弃置的牌当【南蛮入侵】使用",
   ["#panqin_delete-invoke"] = "叛侵：你可将弃牌堆中你弃置的牌当【南蛮入侵】使用，然后执行并移除〖蛮王〗的最后一项",
 
