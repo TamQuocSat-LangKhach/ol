@@ -110,7 +110,7 @@ local chuyuan = fk.CreateTriggerSkill{
     target:drawCards(1, self.name)
     if target:isKongcheng() then return end
     local card = room:askForCard(target, 1, 1, false, self.name, false, ".", "#chuyuan-card:"..player.id)
-    player:addToPile("caopi_chu", card, false, self.name)
+    player:addToPile("caopi_chu", card, true, self.name)
   end,
 }
 local dengji = fk.CreateTriggerSkill{
@@ -128,7 +128,7 @@ local dengji = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     room:changeMaxHp(player, -1)
-    room:obtainCard(player, player:getPile("caopi_chu"), false, fk.ReasonJustMove)
+    room:obtainCard(player, player:getPile("caopi_chu"), true, fk.ReasonJustMove)
     room:handleAddLoseSkills(player, "ex__jianxiong|tianxing", nil)
   end,
 }
@@ -146,7 +146,7 @@ local tianxing = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     room:changeMaxHp(player, -1)
-    room:obtainCard(player, player:getPile("caopi_chu"), false, fk.ReasonJustMove)
+    room:obtainCard(player, player:getPile("caopi_chu"), true, fk.ReasonJustMove)
     local choice = room:askForChoice(player, {"ex__rende", "ex__zhiheng", "ol_ex__luanji"}, self.name, "#tianxing-choice", true)
     room:handleAddLoseSkills(player, choice.."|-chuyuan", nil)
   end,

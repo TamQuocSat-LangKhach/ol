@@ -5827,26 +5827,27 @@ local shengzhi = fk.CreateTriggerSkill{
   mute = true,
   anim_type = "offensive",
   frequency = Skill.Compulsory,
-  events = {fk.AfterSkillEffect},
+  events = {fk.SkillEffect, fk.AfterSkillEffect},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self) and not data.cardSkill and
+    return target == player and player:hasSkill(self) and player:getMark("") == 0 and
     data.frequency ~= Skill.Compulsory and data.frequency ~= Skill.Wake and
-    not data.attached_equip and data.name[#data.name] ~= "&"
+    not (data.cardSkill or data.attached_equip or data.global) and data.name[#data.name] ~= "&"
     --FIXME："&"后缀技需要能区分规则技和其他角色发动的主动技
     --FIXME：重量级发动技能后的技能，转化类的技能根本没有办法判定
   end,
   on_use = function(self, event, target, player, data)
-    player.room:notifySkillInvoked(player, self.name)
     player.room:setPlayerMark(player, "@@shengzhi-turn", 1)
   end,
 
+  --不会和〖权道〗自选，暂定refresh吧
   refresh_events = {fk.AfterCardUseDeclared},
   can_refresh = function(self, event, target, player, data)
     return target == player and player:getMark("@@shengzhi-turn") > 0
   end,
   on_refresh = function(self, event, target, player, data)
-    player.room:setPlayerMark(player, "@@shengzhi-turn", 0)
+    player.room:notifySkillInvoked(player, self.name)
     player:broadcastSkillInvoke(self.name)
+    player.room:setPlayerMark(player, "@@shengzhi-turn", 0)
     if not data.extraUse then
       target:addCardUseHistory(data.card.trueName, -1)
       data.extraUse = true
