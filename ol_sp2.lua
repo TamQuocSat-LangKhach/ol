@@ -5873,24 +5873,20 @@ local quandao = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    if player:isKongcheng() then
-      player:drawCards(1, self.name)
-    else
+    if not player:isKongcheng() then
       local slash = table.filter(player.player_cards[Player.Hand], function(id) return Fk:getCardById(id).trueName == "slash" end)
       local trick = table.filter(player.player_cards[Player.Hand], function(id) return Fk:getCardById(id):isCommonTrick() end)
-      if #slash == #trick then
-        player:drawCards(1, self.name)
-      else
+      if #slash ~= #trick then
         local n = #slash - #trick
         if n > 0 then
           room:askForDiscard(player, n, n, false, self.name, false, "slash")
         else
-          room:askForDiscard(player, -n, -n, false, self.name, false, ".|.|.|.|.|trick")
-        end
-        if not player.dead then
-          player:drawCards(1, self.name)
+          room:askForDiscard(player, -n, -n, false, self.name, false, tostring(Exppattern{ id = trick }))
         end
       end
+    end
+    if not player.dead then
+      player:drawCards(1, self.name)
     end
   end,
 }
