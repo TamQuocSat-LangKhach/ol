@@ -2419,7 +2419,7 @@ Fk:loadTranslationTable{
   ["#sanchen-discard"] = "三陈：弃置三张牌，若类别各不相同则你摸一张牌且 %src 可以再发动“三陈”",
   ["@sanchen"] = "三陈",
 
-  ["$sanchen1"] = "陈书弼国，当一而再、再而三。	",
+  ["$sanchen1"] = "陈书弼国，当一而再、再而三。",
   ["$sanchen2"] = "勘除弼事，三陈而就。",
   ["$zhaotao1"] = "奉诏伐吴，定鼎东南！",
   ["$zhaotao2"] = "三陈方得诏，一股下孙吴！",

@@ -284,7 +284,7 @@ Fk:loadTranslationTable{
   ["#ziqu-give"] = "资取：你需要交给 %src 一张点数最大的牌",
 
   ["$mubing1"] = "兵者，不唯在精，亦在广。",
-	["$mubing2"] = "男儿当从军，功名马上取。",
+  ["$mubing2"] = "男儿当从军，功名马上取。",
   ["$ziqu1"] = "兵马已动，尔等速将粮草缴来。",
   ["$ziqu2"] = "留财不留命，留命不留财。",
   ["$diaoling1"] = "兵甲已足，当汇集三军。",
@@ -703,7 +703,7 @@ panshu:addSkill(jinzhi)
 Fk:loadTranslationTable{
   ["ol__panshu"] = "潘淑",
   ["#ol__panshu"] = "江东神女",
-	["designer:ol__panshu"] = "张浩",
+  ["designer:ol__panshu"] = "张浩",
   ["illustrator:ol__panshu"] = "君桓文化",
   ["weiyi"] = "威仪",
   [":weiyi"] = "每名角色限一次，当一名角色受到伤害后，若其体力值：1.不小于你，你可以令其失去1点体力；2.不大于你，你可以令其回复1点体力。",
@@ -3650,7 +3650,7 @@ Fk:loadTranslationTable{
   ["#qiaoli_delay"] = "巧力",
 
   ["$qiaoli1"] = "别跑，且吃我一斧！",
-	["$qiaoli2"] = "让我看看你的能耐。",
+  ["$qiaoli2"] = "让我看看你的能耐。",
   ["$qingliang1"] = "挥斧摇清风，笑颜比朝霞。",
   ["$qingliang2"] = "素手抚重斧，飞矢擦靓装。",
   ["~ruiji"] = "这斧头，怎么变这么重了……",

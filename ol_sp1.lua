@@ -2644,7 +2644,7 @@ Fk:loadTranslationTable{
   ["xizhicai"] = "戏志才",
   ["#xizhicai"] = "负俗的夭才",
   ["cv:xizhicai"] = "曹真",
-	["designer:xizhicai"] = "荼蘼",
+  ["designer:xizhicai"] = "荼蘼",
   ["illustrator:xizhicai"] = "眉毛子",
   ["xianfu"] = "先辅",
   ["@xianfu"] = "先辅",
