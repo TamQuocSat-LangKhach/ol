@@ -3001,10 +3001,10 @@ local xiaofan = fk.CreateViewAsSkill{
     player:throwAllCards(to_throw)
   end,
   enabled_at_play = function(self, player)
-    return #U.getMark(player, "xiaofan_view") > 0
+    return #U.getMark(player, "xiaofan_view") > 0 and player:getMark("@tuoshi-turn") < 3
   end,
   enabled_at_response = function(self, player, response)
-    return not response and #U.getMark(player, "xiaofan_view") > 0
+    return not response and #U.getMark(player, "xiaofan_view") > 0 and player:getMark("@tuoshi-turn") < 3
   end,
 }
 local xiaofan_trigger = fk.CreateTriggerSkill{
@@ -3087,17 +3087,26 @@ local tuoshi = fk.CreateTriggerSkill{
     player.room:setPlayerMark(player, "@@tuoshi", 1)
   end,
 
-  refresh_events = {fk.PreCardUse},
+  refresh_events = {fk.PreCardUse, fk.CardUseFinished},
   can_refresh = function (self, event, target, player, data)
-    if player ~= target or player:getMark("@@tuoshi") == 0 then return false end
-    local room = player.room
-    return table.find(TargetGroup:getRealTargets(data.tos), function (pid)
-      return room:getPlayerById(pid):getHandcardNum() < player:getHandcardNum()
-    end)
+    if event == fk.PreCardUse then
+      if player ~= target or player:getMark("@@tuoshi") == 0 then return false end
+      local room = player.room
+      return table.find(TargetGroup:getRealTargets(data.tos), function (pid)
+        return room:getPlayerById(pid):getHandcardNum() < player:getHandcardNum()
+      end)
+    else
+      return player == target and player:hasSkill(self) and player:getMark("@tuoshi-turn") < 3 and
+      data.card.is_damage_card and not data.damageDealt
+    end
   end,
   on_refresh = function (self, event, target, player, data)
-    data.extraUse = true
-    player.room:setPlayerMark(player, "@@tuoshi", 0)
+    if event == fk.PreCardUse then
+      data.extraUse = true
+      player.room:setPlayerMark(player, "@@tuoshi", 0)
+    else
+      player.room:addPlayerMark(player, "@tuoshi-turn")
+    end
   end,
 }
 local tuoshi_prohibit = fk.CreateProhibitSkill{
@@ -3131,9 +3140,19 @@ Fk:loadTranslationTable{
   "1.判定区；2.装备区；3.手牌区。（X为本回合你使用过牌的类别数）",
   ["tuoshi"] = "侻失",
   [":tuoshi"] = "锁定技，你不能使用【无懈可击】。"..
-  "你使用点数为字母的牌无效并摸一张牌，且下次对手牌数小于你的角色使用牌无距离和次数限制。",
+  "你使用点数为字母的牌无效并摸一张牌，且下次对手牌数小于你的角色使用牌无距离和次数限制。"..
+  "当你于一回合内使用了三张未造成伤害的伤害牌后，〖嚣翻〗于本回合内失效。",
   ["#xiaofan"] = "嚣翻：观看牌堆底%arg张牌，使用其中你需要的牌",
   ["@@tuoshi"] = "侻失",
+  ["@tuoshi-turn"] = "侻",
+
+  ["$xiaofan1"] = "吾得三顾之伯乐，必登九丈之高台。",
+  ["$xiaofan2"] = "诸君食肉而鄙，空有大腹作碍。",
+  ["$tuoshi1"] = "备者，久居行伍之丘八，何知礼仪？",
+  ["$tuoshi2"] = "老革荒悖，可复道邪。",
+  ["$cunmu_ol__pengyang1"] = "腹有锦绣千里，奈何偏居一隅。",
+  ["$cunmu_ol__pengyang2"] = "心大志广之人，必难以保安。",
+  ["~ol__pengyang"] = "羕酒后失言，主公勿怪……",
 }
 
 local qianzhao = General(extension, "ol__qianzhao", "wei", 4)
@@ -5397,6 +5416,10 @@ Fk:loadTranslationTable{
   ["#yichengl-active"] = "发动 易城，展示牌堆顶%arg张牌，并可以用手牌交换其中的牌",
   ["#yichengl-exchange"] = "易城：你可以用任意张手牌替换等量的牌堆顶牌，点数和超过%arg可全部交换",
   ["#yichengl-exchange2"] = "易城：你可以用所有手牌交换展示的牌，请排列手牌在牌堆顶的位置",
+
+  ["$yichengl1"] = "改帜易土，当奉玄德公为汝南之主。",
+  ["$yichengl2"] = "地无常主，人有恒志，其择木而栖。",
+  ["~ol__liupi"] = "玄德公速行，曹军某自当之！",
 }
 
 local sunce = General(extension, "ol_sp__sunce", "qun", 4)
@@ -5506,6 +5529,172 @@ Fk:loadTranslationTable{
   ["$liantao2"] = "征战无休，决胜千里。",
   ["~ol_sp__sunce"] = "身受百创，力难从心……",
 }
+
+local yadan = General(extension, "yadan", "qun", 4)
+local qingya = fk.CreateTriggerSkill{
+  name = "qingya",
+  anim_type = "control",
+  events = {fk.TargetSpecified, fk.EventPhaseEnd},
+  can_trigger = function(self, event, target, player, data)
+    if event == fk.TargetSpecified then
+      if target == player and player:hasSkill(self) and data.card.trueName == "slash" then
+        local to = player.room:getPlayerById(data.to)
+        if to.dead or not U.isOnlyTarget(to, data, event) then return false end
+        local left, right = 0, 0
+        if to.dead then return false end
+        local temp = player
+        while temp ~= to do
+          if not temp.dead then
+            right = right + 1
+          end
+          temp = temp.next
+        end
+        left = #Fk:currentRoom().alive_players - right
+        if math.min(left, right) > 1 then
+          self.cost_data = "both"
+          if left > right then
+            self.cost_data = "right"
+          elseif left < right then
+            self.cost_data = "left"
+          end
+          return true
+        end
+      end
+    else
+      if player:hasSkill(self) then
+        local mark = player:getMark("qingya-turn")
+        if type(mark) ~= "table" then return false end
+        local room = player.room
+        local cards = table.filter(mark[2], function (id)
+          return room:getCardArea(id) == Card.DiscardPile
+        end)
+        if #cards > 0 then
+          self.cost_data = cards
+          return true
+        end
+      end
+    end
+  end,
+  on_cost = function(self, event, target, player, data)
+    if event == fk.TargetSpecified then
+      local choices = {"left", "right", "Cancel"}
+      if self.cost_data == "left" then
+        table.removeOne(choices, "right")
+      elseif self.cost_data == "right" then
+        table.removeOne(choices, "left")
+      end
+      local choice = player.room:askForChoice(player, choices, self.name, "#qingya-invoke::"..data.to,
+      false, {"left", "right", "Cancel"})
+      if choice ~= "Cancel" then
+        self.cost_data = choice
+        return true
+      end
+    else
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    if event == fk.TargetSpecified then
+      local tos = {}
+      local room = player.room
+      if self.cost_data == "left" then
+        local temp = room:getPlayerById(data.to).next
+        while temp ~= player do
+          if not temp.dead then
+            table.insert(tos, temp)
+          end
+          temp = temp.next
+        end
+        tos = table.reverse(tos)
+      else
+        local temp = player.next
+        while temp.id ~= data.to do
+          if not temp.dead then
+            table.insert(tos, temp)
+          end
+          temp = temp.next
+        end
+      end
+      room:doIndicate(player.id, table.map(tos, Util.IdMapper))
+      local ids = player:getMark("qingya-turn")
+      if ids == 0 then
+        ids = {{}, {}}
+      end
+      for _, p in ipairs(tos) do
+        if not (p.dead or p:isNude()) then
+          local card = room:askForCardChosen(player, p, "he", self.name)
+          room:throwCard({card}, self.name, p, player)
+          --若弃置被防止了，待验证
+          table.insertIfNeed(ids[1], card)
+          if player.dead then return false end
+        end
+      end
+      room:setPlayerMark(player, "qingya-turn", ids)
+    else
+      U.askForUseRealCard(player.room, player, self.cost_data, ".", self.name, "#qingya-use",
+      {expand_pile = self.cost_data, bypass_times = true}, false, true)
+    end
+  end,
+
+  refresh_events = {fk.AfterPhaseEnd},
+  can_refresh = function(self, event, target, player, data)
+    return player:getMark("qingya-turn") ~= 0
+  end,
+  on_refresh = function(self, event, target, player, data)
+    local mark = player:getMark("qingya-turn")
+    if #mark[1] == 0 then
+      player.room:setPlayerMark(player, "qingya-turn", 0)
+    else
+      player.room:setPlayerMark(player, "qingya-turn", {{}, table.simpleClone(mark[1])})
+    end
+  end,
+}
+
+local tielun = fk.CreateDistanceSkill{
+  name = "tielun",
+  frequency = Skill.Compulsory,
+  correct_func = function(self, from, to)
+    if from:hasSkill(self) then
+      return -from:getMark("@tielun-round")
+    end
+  end,
+}
+local tielun_refresh = fk.CreateTriggerSkill{
+  name = "#tielun_refresh",
+
+  refresh_events = {fk.AfterCardUseDeclared},
+  can_refresh = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self, true)
+  end,
+  on_refresh = function(self, event, target, player, data)
+    player.room:addPlayerMark(player, "@tielun-round")
+  end,
+}
+tielun:addRelatedSkill(tielun_refresh)
+yadan:addSkill(qingya)
+yadan:addSkill(tielun)
+yadan:addSkill("test_zhenggong")
+Fk:loadTranslationTable{
+  ["yadan"] = "雅丹",
+  --["#yadan"] = "",
+
+  ["qingya"] = "倾轧",
+  [":qingya"] = "当【杀】指定目标后，若使用者为你且目标角色数为1，你可以弃置你与其之间的角色的各一张牌，"..
+  "当前回合内的下个阶段结束时，你可以使用其中一张牌。",
+  ["tielun"] = "铁轮",
+  [":tielun"] = "锁定技，你至其他角色的距离-X（X为你于此轮内使用过的牌数）。",
+
+  ["#qingya-invoke"] = "是否发动 倾轧，弃置你与 %dest 之间一个方向上所有角色的各一张牌",
+  ["#qingya-use"] = "倾轧：你可以使用其中一张牌",
+  ["@tielun-round"] = "铁轮",
+
+  ["$qingya1"] = "",
+  ["$qingya"] = "",
+  ["~yadan"] = "",
+}
+
+
+
 
 
 return extension

@@ -552,7 +552,6 @@ Fk:loadTranslationTable{
 }
 
 local yuanshao = General(extension, "olmou__yuanshao", "qun", 4)
-
 local hetao = fk.CreateTriggerSkill{
   name = "hetao",
   anim_type = "control",
@@ -803,6 +802,182 @@ Fk:loadTranslationTable{
   --["~olmou__yuanshao2"] = "",
 }
 
+local pangtong = General(extension, "olmou__pangtong", "shu", 3)
+local hongtu = fk.CreateTriggerSkill{
+  name = "hongtu",
+  anim_type = "control",
+  events = {fk.EventPhaseEnd},
+  can_trigger = function(self, event, target, player, data)
+    if player:hasSkill(self) and target.phase > 1 and target.phase < 8 then
+      local x = 0
+      local room = player.room
+      local phase_event = room.logic:getCurrentEvent():findParent(GameEvent.Phase, true)
+      if phase_event == nil then return false end
+      U.getEventsByRule(room, GameEvent.MoveCards, 1, function (e)
+        for _, move in ipairs(e.data) do
+          if move.to == player.id and move.toArea == Card.PlayerHand then
+            x = x + #move.moveInfo
+            if x > 1 then return true end
+          end
+        end
+      end, phase_event.id)
+      return x > 1
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    player:drawCards(3, self.name)
+    if player.dead or player:getHandcardNum() < 3 or #room.alive_players < 2 then return false end
+    local tos, ids = U.askForChooseCardsAndPlayers(room, player, 3, 3, table.map(room:getOtherPlayers(player, false),
+    Util.IdMapper), 1, 1, ".|.|.|hand", "#hongtu-give", self.name, false)
+    player:showCards(ids)
+    --不判位置了，展示牌后发动的技能还是去死好了
+    local to = room:getPlayerById(tos[1])
+    local use = U.askForUseRealCard(room, to, ids, ".", self.name, "#hongtu-use",
+    {expand_pile = ids, bypass_times = true}, true, true)
+    if use then
+      table.sort(ids, function (a, b)
+        return Fk:getCardById(a).number > Fk:getCardById(b).number
+      end)
+      local hongtuBig = (Fk:getCardById(ids[1]).number ~= Fk:getCardById(ids[2]).number)
+      local hongtuSmall = (Fk:getCardById(ids[2]).number ~= Fk:getCardById(ids[3]).number)
+      room:useCard(use)
+      if not player.dead then
+        local handcards = player:getCardIds(Player.Hand)
+        local to_discard = table.filter(ids, function (id)
+          return table.contains(handcards, id) and not player:prohibitDiscard(id)
+        end)
+        if #to_discard > 0 then
+          room:throwCard(table.random(to_discard), self.name, player)
+        end
+      end
+      if to.dead then return false end
+      if ids[1] == use.card.id and hongtuBig then
+        if room.current == to then
+          room:setPlayerMark(to, "hongtu1-turn", 1)
+        end
+        if not to:hasSkill("feijun", true) then
+          room:setPlayerMark(to, "hongtu1", 1)
+          room:handleAddLoseSkills(to, "feijun", nil, true, false)
+        end
+      elseif ids[3] == use.card.id and hongtuSmall then
+        room:setPlayerMark(to, "hongtu2", 1)
+        if room.current == to then
+          room:setPlayerMark(to, "hongtu2-turn", 1)
+        end
+      elseif ids[2] == use.card.id and hongtuBig and hongtuSmall then
+        if room.current == to then
+          room:setPlayerMark(to, "hongtu3-turn", 1)
+        end
+        if not to:hasSkill("qianxi", true) then
+          room:setPlayerMark(to, "hongtu3", 1)
+          room:handleAddLoseSkills(to, "qianxi", nil, true, false)
+        end
+      end
+    else
+      room:damage{
+        from = player,
+        to = to,
+        damage = 1,
+        damageType = fk.FireDamage,
+        skillName = self.name,
+      }
+      if not player.dead then
+        room:damage{
+          from = player,
+          to = to,
+          damage = 1,
+          damageType = fk.FireDamage,
+          skillName = self.name,
+        }
+      end
+    end
+  end,
+
+  refresh_events = {fk.AfterTurnEnd},
+  can_refresh = function(self, event, target, player, data)
+    return player == target and not target.dead
+  end,
+  on_refresh = function(self, event, target, player, data)
+    local room = player.room
+    local skills = {}
+    if player:getMark("hongtu1") > 0 and player:getMark("hongtu1-turn") == 0 then
+      if player:hasSkill("feijun", true) then
+        table.insert(skills, "-feijun")
+      end
+    end
+    if player:getMark("hongtu2") > 0 and player:getMark("hongtu2-turn") == 0 then
+      room:setPlayerMark(player, "hongtu2", 0)
+    end
+    if player:getMark("hongtu3") > 0 and player:getMark("hongtu3-turn") == 0 then
+      if player:hasSkill("qianxi", true) then
+        table.insert(skills, "-qianxi")
+      end
+    end
+    room:handleAddLoseSkills(player, table.concat(skills, "|"), nil, true, false)
+  end,
+}
+local hongtu_maxcards = fk.CreateMaxCardsSkill{
+  name = "#hongtu_maxcards",
+  correct_func = function(self, player)
+    if player:getMark("hongtu2") > 0 then
+      return 2
+    end
+  end,
+}
+local qiwu = fk.CreateTriggerSkill{
+  name = "qiwu",
+  events = {fk.DamageInflicted},
+  anim_type = "defensive",
+  can_trigger = function(self, event, target, player, data)
+    return player == target and player:hasSkill(self) and player:usedSkillTimes(self.name) == 0 and
+    data.from and (data.from == player or player:inMyAttackRange(data.from)) and player:getMark("qiangwu_record-turn") == 0 and
+    #U.getActualDamageEvents(player.room, 1, function(e)
+      if e.data[1].to == player then
+        player.room:setPlayerMark(player, "qiangwu_record-turn", 1)
+        return true
+      end
+    end) == 0
+  end,
+  on_cost = function(self, event, target, player, data)
+    local card = player.room:askForDiscard(player, 1, 1, false, self.name, true, ".|.|heart,diamond", "#qiwu-invoke", true)
+    if #card > 0 then
+      self.cost_data = card
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    player.room:throwCard(self.cost_data, self.name, player, player)
+    return true
+  end,
+}
+hongtu:addRelatedSkill(hongtu_maxcards)
+pangtong:addSkill(hongtu)
+pangtong:addSkill(qiwu)
+
+Fk:loadTranslationTable{
+  ["olmou__pangtong"] = "谋庞统",
+  --["#olmou__pangtong"] = "",
+  --["illustrator:olmou__pangtong"] = "",
+  ["hongtu"] = "鸿图",
+  [":hongtu"] = "一名角色的阶段结束时，若你于此阶段内得到过的牌数大于1，你可以摸三张牌，展示三张手牌并选择一名其他角色。"..
+  "其可以使用其中一张牌，随机弃置另一张牌，若其以此法使用的牌：为这三张牌中唯一点数最大的牌，其于其的下个回合结束之前拥有〖飞军〗；"..
+  "不为这三张牌中点数最大的牌且不为这三张牌中点数最小的牌，其于其的下个回合结束之前拥有〖潜袭〗；"..
+  "为这三张牌中唯一点数最小的牌，其于其的下个回合结束之前手牌上限+2。若其未以此法使用牌，你对其与你各造成1点火焰伤害。",
+  ["qiwu"] = "栖梧",
+  [":qiwu"] = "当你受到伤害时，若你于当前回合内未受到过伤害且你于此回合内未发动过此技能且来源为你或来源在你的攻击范围内，"..
+  "你可以弃置一张红色牌，你防止此伤害。",
+
+  ["#hongtu-give"] = "鸿图：选择三张手牌并选择一名其他角色，其可以使用其中一张",
+  ["#hongtu-use"] = "鸿图：选择一张牌使用",
+  ["#qiwu-invoke"] = "是否发动 栖梧，弃置一张红色牌来防止伤害",
+
+  ["$hongtu1"] = "",
+  ["$hongtu2"] = "",
+  ["$qiwu1"] = "",
+  ["$qiwu2"] = "",
+  ["~olmou__pangtong"] = "",
+}
 
 
 
