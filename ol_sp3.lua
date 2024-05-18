@@ -5673,7 +5673,6 @@ local tielun_refresh = fk.CreateTriggerSkill{
 tielun:addRelatedSkill(tielun_refresh)
 yadan:addSkill(qingya)
 yadan:addSkill(tielun)
-yadan:addSkill("test_zhenggong")
 Fk:loadTranslationTable{
   ["yadan"] = "雅丹",
   --["#yadan"] = "",
