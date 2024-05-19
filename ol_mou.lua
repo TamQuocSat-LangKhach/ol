@@ -869,9 +869,9 @@ local hongtu = fk.CreateTriggerSkill{
         if room.current == to then
           room:setPlayerMark(to, "hongtu3-turn", 1)
         end
-        if not to:hasSkill("qianxi", true) then
+        if not to:hasSkill("re__qianxi", true) then
           room:setPlayerMark(to, "hongtu3", 1)
-          room:handleAddLoseSkills(to, "qianxi", nil, true, false)
+          room:handleAddLoseSkills(to, "re__qianxi", nil, true, false)
         end
       end
     else
@@ -885,7 +885,7 @@ local hongtu = fk.CreateTriggerSkill{
       if not player.dead then
         room:damage{
           from = player,
-          to = to,
+          to = player,
           damage = 1,
           damageType = fk.FireDamage,
           skillName = self.name,
@@ -910,8 +910,8 @@ local hongtu = fk.CreateTriggerSkill{
       room:setPlayerMark(player, "hongtu2", 0)
     end
     if player:getMark("hongtu3") > 0 and player:getMark("hongtu3-turn") == 0 then
-      if player:hasSkill("qianxi", true) then
-        table.insert(skills, "-qianxi")
+      if player:hasSkill("re__qianxi", true) then
+        table.insert(skills, "-re__qianxi")
       end
     end
     room:handleAddLoseSkills(player, table.concat(skills, "|"), nil, true, false)
