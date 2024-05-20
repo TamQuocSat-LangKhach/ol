@@ -1878,4 +1878,302 @@ Fk:loadTranslationTable{
   ["~miyue"] = "年老色衰，繁华已逝……",
 }
 
+--- 〖同袍〗找防具
+---@param room Room @ 房间
+---@param card Card @ 目标防具牌
+---@return Card @ 找到/打印的牌
+local getTongpaoArmor = function(room, card)
+  local armor = table.find(table.map(room.void, Util.Id2CardMapper), function(c)
+    return c.name == card.name
+  end)
+  return armor or room:printCard(card.name, card.suit, card.number)
+end
+
+local tongpao = fk.CreateTriggerSkill{ -- 同袍
+  name = "qin__tongpao",
+  anim_type = "support",
+  frequency = Skill.Compulsory,
+  events = {fk.CardUseFinished},
+  can_trigger = function (self, event, target, player, data)
+    if player:hasSkill(self) then
+      local c = data.card
+      if target.kingdom == "qin" and c.type == Card.TypeEquip
+        and c.sub_type == Card.SubtypeArmor and player:hasEmptyEquipSlot(c.sub_type)
+        and player:canUse(Fk:cloneCard(c.name, c.suit, c.number)) then
+        return true
+      end
+    end
+  end,
+  on_use = function (self, event, target, player, data)
+    if player.dead then return end
+    local room = player.room
+    local armor = getTongpaoArmor(room, data.card)
+    room:setCardMark(armor, MarkEnum.DestructOutMyEquip, 1)
+    room:useCard{
+      from = player.id,
+      card = armor,
+      tos = { {player.id} }
+    }
+  end
+}
+Fk:loadTranslationTable{
+  [tongpao.name] = "同袍",
+  [":"..tongpao.name] = "锁定技，其他秦势力角色使用防具牌结算完成后，若你没有装备防具，你从游戏外使用一张相同的防具牌（离开你的装备区时销毁）。",
+  ["$"..tongpao.name] = "岂曰无衣，与子同袍！"
+}
+
+-- 弩手
+local nushou = General(extension, "qin__nushou", "qin", 3)
+nushou.hidden = true
+
+Fk:loadTranslationTable{
+  [nushou.name] = "秦军弩手"
+}
+
+local jingnu_qinnu = {"qin_crossbow", Card.Club, 1}
+
+--- 〖劲弩〗找秦弩
+---@param room Room @ 房间
+---@return Card @ 找到/打印的牌
+local getQinnu = function(room)
+  local qinnu = table.find(table.map(room.void, Util.Id2CardMapper), function(c)
+    return c.name == "qin_crossbow"
+  end)
+  return qinnu or room:printCard(table.unpack(jingnu_qinnu))
+end
+
+local jingnu = fk.CreateTriggerSkill{
+  name = "qin__jingnu",
+  anim_type = "offensive",
+  frequency = Skill.Compulsory,
+  events = {fk.TurnStart},
+  can_trigger = function(self, event, target, player, data)
+    if player:hasSkill(self) and target == player then
+      if not table.find(player:getEquipments(Card.SubtypeWeapon), function(id)
+        return Fk:getCardById(id).name == "qin_crossbow"
+      end) then
+        local qinnu = getQinnu(player.room)
+        if qinnu and player:canUse(qinnu) then
+          self.cost_data = qinnu.id
+          return true
+        end
+      end
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    if player.dead then return end
+    local card = Fk:getCardById(self.cost_data)
+    local room = player.room
+    room:setCardMark(card, MarkEnum.DestructOutMyEquip, 1)
+    room:useCard{
+      from = player.id,
+      card = card,
+      tos = { {player.id} }
+    }
+  end,
+}
+
+Fk:loadTranslationTable{
+  [jingnu.name] = "劲弩",
+  [":"..jingnu.name] = "锁定技，准备阶段，若你装备区里没有【秦弩】，你从游戏外使用一张【秦弩】。",
+  ["$"..jingnu.name] = "劲弩在手，百发皆中！"
+}
+
+nushou:addSkill(tongpao)
+nushou:addSkill(jingnu)
+
+-- 骑兵
+local jibing = General(extension, "qin__jibing", "qin", 3)
+jibing.hidden = true
+
+Fk:loadTranslationTable{
+  [jibing.name] = "秦军骑兵"
+}
+
+local changjian = fk.CreateTriggerSkill{
+  name = "qin__changjian",
+  anim_type = "offensive",
+  events = {fk.AfterCardTargetDeclared},
+  can_trigger = function(self, event, target, player, data)
+    if player:hasSkill(self) and target == player then
+      return data.card.trueName == "slash"
+    end
+  end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    local all_choices = {"changjian-exTG", "changjian-exDMG", "Cancel"}
+    local choices = table.clone(all_choices)
+    local tos = U.getUseExtraTargets(player.room, data, false)
+    tos = table.filter(table.map(tos, Util.Id2PlayerMapper), function (p)
+      return player:inMyAttackRange(p)
+    end)
+    if #tos == 0 then
+      table.removeOne(choices, "changjian-exTG")
+    end
+    local choice = room:askForChoice(player, choices, self.name, "#changjian-choose", false, all_choices)
+    if choice ~= "Cancel" then
+      self.cost_data = choice
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local choice = self.cost_data
+    if choice == "changjian-exTG" then
+      local tos = U.getUseExtraTargets(room, data, false)
+      tos = table.filter(table.map(tos, Util.Id2PlayerMapper), function (p)
+        return player:inMyAttackRange(p)
+      end)
+      local ex_to = room:askForChoosePlayers(player, tos, 1, 1, "#changjian-ex", self.name, false)
+      if #ex_to == 1 then
+        table.insertTable(data.tos, {ex_to})
+      end
+    else
+      data.additionalDamage = (data.additionalDamage or 0) + 1
+    end
+  end,
+}
+local changjian_attackrange = fk.CreateAttackRangeSkill{
+  name = "#changjian_attackrange",
+  frequency = Skill.Compulsory,
+  correct_func = function (self, from, to)
+    if from:hasSkill(changjian) then
+      return 1
+    end
+  end,
+}
+changjian:addRelatedSkill(changjian_attackrange)
+
+Fk:loadTranslationTable{
+  [changjian.name] = "长剑",
+  [":"..changjian.name] = "锁定技，你的攻击范围+1；当你使用【杀】指定目标时，你选择一项："
+  .."1.令攻击范围内的一名角色成为此【杀】的额外目标；2.令此【杀】造成的伤害+1。",
+  ["$"..changjian.name] = "长剑一出，所向披靡！",
+
+  [changjian_attackrange.name] = "长剑",
+  ["#changjian-choose"] = "长剑：请为此【杀】选择一项增益效果",
+  ["changjian-exTG"] = "令攻击范围内的一名角色成为此【杀】的额外目标",
+  ["changjian-exDMG"] = "令此【杀】造成的伤害+1",
+  ["#changjian-ex"] = "长剑：令一名角色成为此【杀】的额外目标",
+}
+
+local liangju = fk.CreateTriggerSkill{
+  name = "qin__liangju",
+  mute = true,
+  frequency = Skill.Compulsory,
+  events = {fk.TargetSpecified, fk.TargetConfirmed},
+  can_trigger = function(self, event, target, player, data)
+    if target == player and player:hasSkill(self) then
+      return data.card.trueName == "slash"
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    player:broadcastSkillInvoke(self.name)
+    if event == fk.TargetSpecified then -- offence!
+      room:notifySkillInvoked(player, self.name, "offensive")
+      local judge = {
+        who = room:getPlayerById(data.to),
+        reason = self.name,
+        pattern = ".|.|diamond",
+      }
+      room:judge(judge)
+      if judge.card.suit == Card.Diamond then
+        data.unoffsetable = true
+      end
+    else -- defence!
+      room:notifySkillInvoked(player, self.name, "defensive")
+      local judge = {
+        who = player,
+        reason = self.name,
+        pattern = ".|.|heart",
+      }
+      room:judge(judge)
+      if judge.card.suit == Card.Heart then
+        table.insertIfNeed(data.nullifiedTargets, player.id)
+      end
+    end
+  end,
+}
+
+Fk:loadTranslationTable{
+  [liangju.name] = "良驹",
+  [":"..liangju.name] = "锁定技，你使用【杀】指定一名目标后，其须判定：若结果为<font color='red'>♦</font>，其不能使用【闪】响应；"
+  .."当你成为【杀】的目标后，你须判定：若结果为<font color='red'>♥</font>，此【杀】对你无效。",
+  ["$"..liangju.name] = "良驹千里，踏遍河山"
+}
+
+jibing:addSkill(tongpao)
+jibing:addSkill(changjian)
+jibing:addSkill(liangju)
+
+-- 步兵
+local bubing = General(extension, "qin__bubing", "qin", 4)
+bubing.hidden = true
+
+Fk:loadTranslationTable{
+  [bubing.name] = "秦军步兵"
+}
+
+local fangzhen = fk.CreateTriggerSkill{
+  name = "qin__fangzhen",
+  anim_type = "offensive",
+  frequency = Skill.Compulsory,
+  events = {fk.TargetConfirming},
+  can_trigger = function(self, event, target, player, data)
+    local room = player.room
+    local from = room:getPlayerById(data.from)
+    if target == player and player:hasSkill(self) then
+      return (data.card:isCommonTrick() or data.card.trueName == "slash")
+        and from.kingdom ~= "qin" and player:inMyAttackRange(from)
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local from = room:getPlayerById(data.from)
+    local slash = Fk:cloneCard("slash")
+    slash.skillName = self.name
+    local judge = {
+      who = player,
+      reason = self.name,
+      pattern = ".|.|spade,club",
+    }
+    room:judge(judge)
+    if judge.card.color == Card.Black and player:canUseTo(slash, from, {bypass_times = true}) then
+      room:useCard{
+        from = player.id,
+        card = slash,
+        tos = {{from.id}},
+        extraUse = true,
+      }
+    end
+  end,
+}
+
+Fk:loadTranslationTable{
+  [fangzhen.name] = "方阵",
+  [":"..fangzhen.name] = "锁定技，当一名为非秦势力角色指定你为普通锦囊牌或【杀】的目标后，若其在你的攻击范围内，"
+  .."你判定：若结果为黑色，你视为对其使用一张【杀】。",
+  ["$"..fangzhen.name] = "步阵而走，方寸之间。"
+}
+
+local changbing = fk.CreateAttackRangeSkill{
+  name = "qin__changbing",
+  frequency = Skill.Compulsory,
+  correct_func = function (self, from, to)
+    if from:hasSkill(self) then
+      return 2
+    end
+  end,
+}
+
+Fk:loadTranslationTable{
+  [changbing.name] = "长兵",
+  [":"..changbing.name] = "锁定技，你的攻击范围+2。"
+}
+
+bubing:addSkill(tongpao)
+bubing:addSkill(fangzhen)
+bubing:addSkill(changbing)
+
 return extension

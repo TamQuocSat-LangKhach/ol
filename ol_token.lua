@@ -1018,4 +1018,64 @@ Fk:loadTranslationTable{
   "<b>武器技能</b>：锁定技，当你使用【杀】时，你令所有角色不能使用点数小于此【杀】的【闪】直到此【杀】结算结束。",
 }
 
+local qinnu_trigger = fk.CreateTriggerSkill{
+  name = "#qinnu_trigger",
+  attached_equip = "qin_crossbow",
+  frequency = Skill.Compulsory,
+  events = { fk.TargetSpecified },
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self) and
+      data.card and data.card.trueName == "slash"
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local to = room:getPlayerById(data.to)
+    room:broadcastPlaySound("./packages/standard_cards/_audio/card/crossbow")
+    room:setEmotion(player, "./packages/standard_cards/image/anim/crossbow")
+    room:sendLog{
+      type = "#InvokeSkill",
+      from = player.id,
+      arg = "qin_crossbow",
+    }
+    local use_event = room.logic:getCurrentEvent():findParent(GameEvent.UseCard, true)
+    if use_event == nil then return end
+    room:addPlayerMark(to, fk.MarkArmorNullified)
+    use_event:addCleaner(function()
+      room:removePlayerMark(to, fk.MarkArmorNullified)
+    end)
+  end,
+}
+local qin_crossbowSkill = fk.CreateTargetModSkill{
+  name = "#qin_crossbow_skill",
+  attached_equip = "qin_crossbow",
+  residue_func = function(self, player, skill, scope)
+    if player:hasSkill(self) and skill.trueName == "slash_skill" and scope == Player.HistoryPhase then
+      return 1
+    end
+  end,
+}
+qin_crossbowSkill:addRelatedSkill(qinnu_trigger)
+
+Fk:addSkill(qin_crossbowSkill)
+
+local qin_crossbow = fk.CreateWeapon{
+  name = "&qin_crossbow",
+  suit = Card.Club,
+  number = 1,
+  attack_range = 9,
+  equip_skill = qin_crossbowSkill,
+}
+
+Fk:loadTranslationTable{
+  [qin_crossbowSkill.name] = "秦弩",
+  [qinnu_trigger.name] = "秦弩",
+
+  [qin_crossbow.name] = "秦弩",
+  [":"..qin_crossbow.name] = "装备牌·武器<br />"
+  .."<b>攻击范围</b>：９<br />"
+  .."<b>武器技能</b>：锁定技，出牌阶段，你使用【杀】的次数+1；当你使用【杀】指定一名目标后，你令其防具无效直到此【杀】结算完成。",
+}
+
+extension:addCard(qin_crossbow)
+
 return extension
