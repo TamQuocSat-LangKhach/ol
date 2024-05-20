@@ -916,7 +916,9 @@ local hongtu = fk.CreateTriggerSkill{
         table.insert(skills, "-re__qianxi")
       end
     end
-    room:handleAddLoseSkills(player, table.concat(skills, "|"), nil, true, false)
+    if #skills > 0 then
+      room:handleAddLoseSkills(player, table.concat(skills, "|"), nil, true, false)
+    end
   end,
 }
 local hongtu_maxcards = fk.CreateMaxCardsSkill{
