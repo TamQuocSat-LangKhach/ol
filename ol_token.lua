@@ -647,20 +647,11 @@ local py_double_halberd_skill = fk.CreateTriggerSkill{
         moveReason = fk.ReasonJustMove,
       })
     end
-    if player.dead then return end 
+    if player.dead then return end
     player:drawCards(1, self.name)
-    room:addPlayerMark(player, "py_double_halberd-turn")
+    room:addPlayerMark(player, MarkEnum.SlashResidue.."-turn")
   end,
 }
-local py_double_halberd_targetmod = fk.CreateTargetModSkill{
-  name = "#py_double_halberd_targetmod",
-  residue_func = function(self, player, skill, scope, card)
-    if skill.trueName == "slash_skill" and scope == Player.HistoryPhase then
-      return player:getMark("py_double_halberd-turn")
-    end
-  end,
-}
-py_double_halberd_skill:addRelatedSkill(py_double_halberd_targetmod)
 Fk:addSkill(py_double_halberd_skill)
 local py_double_halberd = fk.CreateWeapon{
   name = "&py_double_halberd",
@@ -1032,11 +1023,6 @@ local qinnu_trigger = fk.CreateTriggerSkill{
     local to = room:getPlayerById(data.to)
     room:broadcastPlaySound("./packages/standard_cards/_audio/card/crossbow")
     room:setEmotion(player, "./packages/standard_cards/image/anim/crossbow")
-    room:sendLog{
-      type = "#InvokeSkill",
-      from = player.id,
-      arg = "qin_crossbow",
-    }
     local use_event = room.logic:getCurrentEvent():findParent(GameEvent.UseCard, true)
     if use_event == nil then return end
     room:addPlayerMark(to, fk.MarkArmorNullified)

@@ -1975,7 +1975,7 @@ local jingnu = fk.CreateTriggerSkill{
 
 Fk:loadTranslationTable{
   [jingnu.name] = "劲弩",
-  [":"..jingnu.name] = "锁定技，准备阶段，若你装备区里没有【秦弩】，你从游戏外使用一张【秦弩】。",
+  [":"..jingnu.name] = "锁定技，回合开始时，若你装备区里没有【秦弩】，你从游戏外使用一张【秦弩】。",
   ["$"..jingnu.name] = "劲弩在手，百发皆中！"
 }
 
