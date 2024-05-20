@@ -3136,12 +3136,12 @@ Fk:loadTranslationTable{
   ["ol__pengyang"] = "彭羕",
   ["#ol__pengyang"] = "翻然轻举",
   ["xiaofan"] = "嚣翻",
-  [":xiaofan"] = "当你需要使用牌时，你可以观看牌堆底X+1张牌，然后可以使用其中你需要的牌并弃置你前X区域里的牌："..
-  "1.判定区；2.装备区；3.手牌区。（X为本回合你使用过牌的类别数）",
+  [":xiaofan"] = "当你需要使用牌时，你可以观看牌堆底的X+1张牌，然后可以使用其中你需要的牌并弃置你的前X区域里的所有牌："..
+  "1.判定区；2.装备区；3.手牌区。（X为你于当前回合内使用过的牌的类别数）",
   ["tuoshi"] = "侻失",
   [":tuoshi"] = "锁定技，你不能使用【无懈可击】。"..
   "你使用点数为字母的牌无效并摸一张牌，且下次对手牌数小于你的角色使用牌无距离和次数限制。"..
-  "当你于一回合内使用了三张未造成伤害的伤害牌后，〖嚣翻〗于本回合内失效。",
+  "当你于一名角色的回合内使用过三张未造成过伤害的伤害类牌后，〖嚣翻〗于此回合内失效。",
   ["#xiaofan"] = "嚣翻：观看牌堆底%arg张牌，使用其中你需要的牌",
   ["@@tuoshi"] = "侻失",
   ["@tuoshi-turn"] = "侻",
@@ -5621,8 +5621,8 @@ local qingya = fk.CreateTriggerSkill{
         ids = {{}, {}}
       end
       for _, p in ipairs(tos) do
-        if not (p.dead or p:isNude()) then
-          local card = room:askForCardChosen(player, p, "he", self.name)
+        if not (p.dead or p:isKongcheng()) then
+          local card = room:askForCardChosen(player, p, "h", self.name)
           room:throwCard({card}, self.name, p, player)
           --若弃置被防止了，待验证
           table.insertIfNeed(ids[1], card)
@@ -5678,7 +5678,7 @@ Fk:loadTranslationTable{
   --["#yadan"] = "",
 
   ["qingya"] = "倾轧",
-  [":qingya"] = "当【杀】指定目标后，若使用者为你且目标角色数为1，你可以弃置你与其之间的角色的各一张牌，"..
+  [":qingya"] = "当【杀】指定目标后，若使用者为你且目标角色数为1，你可以弃置你与其之间的角色的各一张手牌，"..
   "当前回合内的下个阶段结束时，你可以使用其中一张牌。",
   ["tielun"] = "铁轮",
   [":tielun"] = "锁定技，你至其他角色的距离-X（X为你于此轮内使用过的牌数）。",

@@ -902,6 +902,7 @@ local hongtu = fk.CreateTriggerSkill{
     local room = player.room
     local skills = {}
     if player:getMark("hongtu1") > 0 and player:getMark("hongtu1-turn") == 0 then
+      room:setPlayerMark(player, "hongtu1", 0)
       if player:hasSkill("feijun", true) then
         table.insert(skills, "-feijun")
       end
@@ -910,6 +911,7 @@ local hongtu = fk.CreateTriggerSkill{
       room:setPlayerMark(player, "hongtu2", 0)
     end
     if player:getMark("hongtu3") > 0 and player:getMark("hongtu3-turn") == 0 then
+      room:setPlayerMark(player, "hongtu3", 0)
       if player:hasSkill("re__qianxi", true) then
         table.insert(skills, "-re__qianxi")
       end
