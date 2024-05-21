@@ -2103,7 +2103,7 @@ Fk:loadTranslationTable{
   ["$"..liangju.name] = "良驹千里，踏遍河山"
 }
 
-jibing:addSkill("tongpao")
+jibing:addSkill("qin__tongpao")
 jibing:addSkill(changjian)
 jibing:addSkill(liangju)
 
