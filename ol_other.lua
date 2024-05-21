@@ -2103,7 +2103,7 @@ Fk:loadTranslationTable{
   ["$"..liangju.name] = "良驹千里，踏遍河山"
 }
 
-jibing:addSkill(tongpao)
+jibing:addSkill("tongpao")
 jibing:addSkill(changjian)
 jibing:addSkill(liangju)
 
@@ -2172,7 +2172,7 @@ Fk:loadTranslationTable{
   [":"..changbing.name] = "锁定技，你的攻击范围+2。"
 }
 
-bubing:addSkill(tongpao)
+bubing:addSkill("tongpao")
 bubing:addSkill(fangzhen)
 bubing:addSkill(changbing)
 
