@@ -1917,9 +1917,9 @@ local tongpao = fk.CreateTriggerSkill{ -- 同袍
   end
 }
 Fk:loadTranslationTable{
-  [tongpao.name] = "同袍",
-  [":"..tongpao.name] = "锁定技，其他秦势力角色使用防具牌结算完成后，若你没有装备防具，你从游戏外使用一张相同的防具牌（离开你的装备区时销毁）。",
-  ["$"..tongpao.name] = "岂曰无衣，与子同袍！"
+  ["qin__tongpao"] = "同袍",
+  [":qin__tongpao"] = "锁定技，其他秦势力角色使用防具牌结算完成后，若你没有装备防具，你从游戏外使用一张相同的防具牌（离开你的装备区时销毁）。",
+  ["$qin__tongpao"] = "岂曰无衣，与子同袍！"
 }
 
 -- 弩手
@@ -1927,7 +1927,7 @@ local nushou = General(extension, "qin__nushou", "qin", 3)
 nushou.hidden = true
 
 Fk:loadTranslationTable{
-  [nushou.name] = "秦军弩手"
+  ["qin__nushou"] = "秦军弩手"
 }
 
 local jingnu_qinnu = {"qin_crossbow", Card.Club, 1}
@@ -1974,20 +1974,20 @@ local jingnu = fk.CreateTriggerSkill{
 }
 
 Fk:loadTranslationTable{
-  [jingnu.name] = "劲弩",
-  [":"..jingnu.name] = "锁定技，回合开始时，若你装备区里没有【秦弩】，你从游戏外使用一张【秦弩】。",
-  ["$"..jingnu.name] = "劲弩在手，百发皆中！"
+  ["qin__jingnu"] = "劲弩",
+  [":qin__jingnu"] = "锁定技，回合开始时，若你装备区里没有【秦弩】，你从游戏外使用一张【秦弩】。",
+  ["$qin__jingnu"] = "劲弩在手，百发皆中！"
 }
 
 nushou:addSkill(tongpao)
 nushou:addSkill(jingnu)
 
 -- 骑兵
-local jibing = General(extension, "qin__jibing", "qin", 3)
-jibing.hidden = true
+local qibing = General(extension, "qin__qibing", "qin", 3)
+qibing.hidden = true
 
 Fk:loadTranslationTable{
-  [jibing.name] = "秦军骑兵"
+  ["qin__qibing"] = "秦军骑兵"
 }
 
 local changjian = fk.CreateTriggerSkill{
@@ -2045,12 +2045,12 @@ local changjian_attackrange = fk.CreateAttackRangeSkill{
 changjian:addRelatedSkill(changjian_attackrange)
 
 Fk:loadTranslationTable{
-  [changjian.name] = "长剑",
-  [":"..changjian.name] = "锁定技，你的攻击范围+1；当你使用【杀】指定目标时，你选择一项："
+  ["qin__changjian"] = "长剑",
+  [":qin__changjian"] = "锁定技，你的攻击范围+1；当你使用【杀】指定目标时，你选择一项："
   .."1.令攻击范围内的一名角色成为此【杀】的额外目标；2.令此【杀】造成的伤害+1。",
-  ["$"..changjian.name] = "长剑一出，所向披靡！",
+  ["$qin__changjian"] = "长剑一出，所向披靡！",
 
-  [changjian_attackrange.name] = "长剑",
+  ["#changjian_attackrange"] = "长剑",
   ["#changjian-choose"] = "长剑：请为此【杀】选择一项增益效果",
   ["changjian-exTG"] = "令攻击范围内的一名角色成为此【杀】的额外目标",
   ["changjian-exDMG"] = "令此【杀】造成的伤害+1",
@@ -2097,22 +2097,22 @@ local liangju = fk.CreateTriggerSkill{
 }
 
 Fk:loadTranslationTable{
-  [liangju.name] = "良驹",
-  [":"..liangju.name] = "锁定技，你使用【杀】指定一名目标后，其须判定：若结果为<font color='red'>♦</font>，其不能使用【闪】响应；"
+  ["qin__liangju"] = "良驹",
+  [":qin__liangju"] = "锁定技，你使用【杀】指定一名目标后，其须判定：若结果为<font color='red'>♦</font>，其不能使用【闪】响应；"
   .."当你成为【杀】的目标后，你须判定：若结果为<font color='red'>♥</font>，此【杀】对你无效。",
-  ["$"..liangju.name] = "良驹千里，踏遍河山"
+  ["$qin__liangju"] = "良驹千里，踏遍河山"
 }
 
-jibing:addSkill("qin__tongpao")
-jibing:addSkill(changjian)
-jibing:addSkill(liangju)
+qibing:addSkill("qin__tongpao")
+qibing:addSkill(changjian)
+qibing:addSkill(liangju)
 
 -- 步兵
 local bubing = General(extension, "qin__bubing", "qin", 4)
 bubing.hidden = true
 
 Fk:loadTranslationTable{
-  [bubing.name] = "秦军步兵"
+  ["qin__bubing"] = "秦军步兵"
 }
 
 local fangzhen = fk.CreateTriggerSkill{
@@ -2151,10 +2151,10 @@ local fangzhen = fk.CreateTriggerSkill{
 }
 
 Fk:loadTranslationTable{
-  [fangzhen.name] = "方阵",
-  [":"..fangzhen.name] = "锁定技，当一名为非秦势力角色指定你为普通锦囊牌或【杀】的目标后，若其在你的攻击范围内，"
+  ["qin__fangzhen"] = "方阵",
+  [":qin__fangzhen"] = "锁定技，当一名为非秦势力角色指定你为普通锦囊牌或【杀】的目标后，若其在你的攻击范围内，"
   .."你判定：若结果为黑色，你视为对其使用一张【杀】。",
-  ["$"..fangzhen.name] = "步阵而走，方寸之间。"
+  ["$qin__fangzhen"] = "步阵而走，方寸之间。"
 }
 
 local changbing = fk.CreateAttackRangeSkill{
@@ -2168,8 +2168,8 @@ local changbing = fk.CreateAttackRangeSkill{
 }
 
 Fk:loadTranslationTable{
-  [changbing.name] = "长兵",
-  [":"..changbing.name] = "锁定技，你的攻击范围+2。"
+  ["qin__changbing"] = "长兵",
+  [":qin__changbing"] = "锁定技，你的攻击范围+2。"
 }
 
 bubing:addSkill("qin__tongpao")
