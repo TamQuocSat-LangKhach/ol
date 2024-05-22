@@ -4800,6 +4800,7 @@ local qiongshou = fk.CreateTriggerSkill{
       end
     end
     room:abortPlayerArea(player, slots)
+    if player.dead then return end
     player:drawCards(4, self.name)
   end,
 }
@@ -4807,7 +4808,7 @@ local qiongshou_maxcards = fk.CreateMaxCardsSkill{
   name = "#qiongshou_maxcards",
   frequency = Skill.Compulsory,
   correct_func = function(self, player)
-    if player:hasSkill("qiongshou") then
+    if player:hasSkill(qiongshou) then
       return 4
     else
       return 0
@@ -4816,47 +4817,37 @@ local qiongshou_maxcards = fk.CreateMaxCardsSkill{
 }
 local fenrui = fk.CreateTriggerSkill{
   name = "fenrui",
-  anim_type = "offensive",
+  anim_type = "defensive",
   events = {fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
     if target == player and player:hasSkill(self) and player.phase == Player.Finish and not player:isNude() then
       return table.find({Player.WeaponSlot, Player.ArmorSlot, Player.OffensiveRideSlot, Player.DefensiveRideSlot, Player.TreasureSlot},
-        function(slot) return table.contains(player.sealedSlots, slot) end)
+      function(slot) return table.contains(player.sealedSlots, slot) end)
     end
   end,
   on_cost = function(self, event, target, player, data)
-    local card = player.room:askForDiscard(player, 1, 1, false, self.name, true, ".", "#fenrui-invoke", true)
-    if #card > 0 then
-      self.cost_data = card
+    local _, dat = player.room:askForUseActiveSkill(player, "fenrui_active", "#fenrui-invoke", true)
+    if dat then
+      self.cost_data = dat
       return true
     end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local choices = {}
-    local slots = {Player.WeaponSlot, Player.ArmorSlot, Player.OffensiveRideSlot, Player.DefensiveRideSlot, Player.TreasureSlot}
-    local subtype = {"weapon", "armor", "offensive_horse", "defensive_horse", "treasure"}
-    for _, slot in ipairs(player.sealedSlots) do
-      if slot ~= Player.JudgeSlot then
-        table.insert(choices, subtype[table.indexOf(slots, slot)])
-      end
-    end
-    if #choices == 0 then return end
-    local choice = room:askForChoice(player, choices, self.name, "#fenrui-choice")
-    room:resumePlayerArea(player, slots[table.indexOf(subtype, choice)])
-    room:throwCard(self.cost_data, self.name, player, player)  --FIXME: 最好应该是用interaction来选
+    room:throwCard(self.cost_data.cards, self.name, player, player)
+    local choice = self.cost_data.interaction
+    room:resumePlayerArea(player, choice)
+    local sub_type = Util.convertSubtypeAndEquipSlot(choice)
     if player.dead then return end
-    if choice == "offensive_horse" then
-      choice = "offensive_ride"
-    elseif choice == "defensive_horse" then
-      choice = "defensive_ride"
-    end
-    local id = room:getCardsFromPileByRule(".|.|.|.|.|"..choice, 1, "allPiles")[1]
-    if id then
+    local equips = table.filter(table.connect(room.draw_pile, room.discard_pile), function (id)
+      local c = Fk:getCardById(id)
+      return c.sub_type == sub_type and player:canUseTo(c, player)
+    end)
+    if #equips > 0 then
       room:useCard({
         from = player.id,
         tos = {{player.id}},
-        card = Fk:getCardById(id),
+        card = Fk:getCardById(table.random(equips)),
       })
     end
     if not player.dead and player:getMark("@@fenrui") == 0 then
@@ -4877,6 +4868,18 @@ local fenrui = fk.CreateTriggerSkill{
     end
   end,
 }
+local fenrui_active = fk.CreateActiveSkill{
+  name = "fenrui_active",
+  card_num = 1,
+  target_num = 0,
+  interaction = function()
+    return UI.ComboBox { choices = table.filter({Player.WeaponSlot, Player.ArmorSlot, Player.OffensiveRideSlot, Player.DefensiveRideSlot, Player.TreasureSlot}, function(slot) return table.contains(Self.sealedSlots, slot) end) }
+  end,
+  card_filter = function(self, to_select, selected)
+    return #selected == 0 and not Self:prohibitDiscard(Fk:getCardById(to_select))
+  end,
+}
+Fk:addSkill(fenrui_active)
 qiongshou:addRelatedSkill(qiongshou_maxcards)
 huojun:addSkill(qiongshou)
 huojun:addSkill(fenrui)
@@ -4887,11 +4890,11 @@ Fk:loadTranslationTable{
   ["qiongshou"] = "穷守",
   [":qiongshou"] = "锁定技，游戏开始时，你废除所有装备栏并摸四张牌。你的手牌上限+4。",
   ["fenrui"] = "奋锐",
-  [":fenrui"] = "结束阶段，你可以弃置一张牌并复原一个装备栏，随机使用一张对应的装备牌，然后每局游戏限一次，你可以对一名装备区牌数小于"..
+  [":fenrui"] = "结束阶段，你可以弃置一张牌并复原一个装备栏，从牌堆或弃牌堆随机使用一张对应的装备牌，然后每局游戏限一次，你可以对一名装备区牌数小于"..
   "你的角色造成X点伤害（X为你与其装备区牌数之差）。",
   ["#fenrui-invoke"] = "奋锐：你可以弃置一张牌恢复一个装备栏，随机使用一张对应的装备牌",
-  ["#fenrui-choice"] = "奋锐：选择你要恢复的栏位",
-  ["@@fenrui"] = "奋锐",
+  ["@@fenrui"] = "已奋锐",
+  ["fenrui_active"] = "奋锐",
   ["#fenrui-choose"] = "奋锐：你可以对一名装备少于你的角色造成你与其装备数之差的伤害！（每局限一次）",
 
   ["$qiongshou1"] = "戍守孤城，其势不侵。",
