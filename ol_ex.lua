@@ -1144,8 +1144,7 @@ ol_ex__yuji:addSkill(ol_ex__guhuo)
 local ol_ex__chanyuan = fk.CreateInvaliditySkill {
   name = "ol_ex__chanyuan",
   invalidity_func = function(self, from, skill)
-    return from:hasSkill(self, true, true) and from.hp <= 1
-    and not (skill:isEquipmentSkill() or skill.name:endsWith("&"))
+    return from:hasSkill(self, true, true) and from.hp <= 1 and skill:isPlayerSkill(from)
   end
 }
 local ol_ex__chanyuan_audio = fk.CreateTriggerSkill{
@@ -2669,7 +2668,7 @@ local ol_ex__wansha_invalidity = fk.CreateInvaliditySkill {
   name = "#ol_ex__wansha_invalidity",
   invalidity_func = function(self, from, skill)
     if table.contains(from.player_skills, skill) and not from.dying and skill.frequency ~= Skill.Compulsory
-    and skill.frequency ~= Skill.Wake and not (skill.attached_equip or skill.name:endsWith("&")) then
+    and skill.frequency ~= Skill.Wake and skill:isPlayerSkill(from) then
       return table.find(Fk:currentRoom().players, function(p)
         return p.dying
       end) and table.find(Fk:currentRoom().alive_players, function(p)

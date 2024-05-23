@@ -5692,8 +5692,4 @@ Fk:loadTranslationTable{
   ["~yadan"] = "",
 }
 
-
-
-
-
 return extension

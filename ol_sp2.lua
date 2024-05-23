@@ -913,7 +913,7 @@ local yashi_invalidity = fk.CreateInvaliditySkill {
   invalidity_func = function(self, from, skill)
     return from:getMark("@@yashi") > 0 and
       (skill.frequency ~= Skill.Compulsory and skill.frequency ~= Skill.Wake) and
-      not (skill:isEquipmentSkill() or skill.name:endsWith("&"))
+      skill:isPlayerSkill(from)
   end
 }
 yashi:addRelatedSkill(yashi_invalidity)
@@ -2105,7 +2105,7 @@ local zhuling = General(extension, "ol__zhuling", "wei", 4)
 local function getTrueSkills(player)
   local skills = {}
   for _, s in ipairs(player.player_skills) do
-    if not (s.attached_equip or s.name[#s.name] == "&") then
+    if s:isPlayerSkill(player) then
       table.insertIfNeed(skills, s.name)
     end
   end
@@ -3526,7 +3526,7 @@ local qiaoli = fk.CreateViewAsSkill{
     room:setPlayerMark(player, self.interaction.data, 1)
     if self.interaction.data == "qiaoli1-phase" then
       use.extra_data = use.extra_data or {}
-      use.extra_data.qiaoli = {player.id, use.tos[1][1], Fk:getCardById(use.card.subcards[1]).attack_range}
+      use.extra_data.qiaoli = {player.id, use.tos[1][1], Fk:getCardById(use.card.subcards[1]):getAttackRange(player)}
     elseif self.interaction.data == "qiaoli2-phase" then
       room:addPlayerMark(player, "qiaoli2-turn")
       use.disresponsiveList = table.map(room.alive_players, Util.IdMapper)
@@ -5791,7 +5791,7 @@ local dili = fk.CreateTriggerSkill{
   can_wake = function(self, event, target, player, data)
     local n = 0
     for _, s in ipairs(player.player_skills) do
-      if not (s.attached_equip or s.name[#s.name] == "&") then
+      if s:isPlayerSkill(player) then
         n = n + 1
       end
     end
@@ -5803,7 +5803,7 @@ local dili = fk.CreateTriggerSkill{
     if player.dead then return false end
     local skills = {}
     for _, s in ipairs(player.player_skills) do
-      if not (s.attached_equip or s.name[#s.name] == "&" or s == self) then
+      if s:isPlayerSkill(player) and s ~= self then
         table.insertIfNeed(skills, s.name)
       end
     end
@@ -5834,7 +5834,7 @@ local shengzhi = fk.CreateTriggerSkill{
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(self) and player:getMark("") == 0 and
     data.frequency ~= Skill.Compulsory and data.frequency ~= Skill.Wake and
-    not (data.cardSkill or data.attached_equip or data.global) and data.name[#data.name] ~= "&"
+    not (data.cardSkill or data.global) and data:isPlayerSkill(target)
     --FIXME："&"后缀技需要能区分规则技和其他角色发动的主动技
     --FIXME：重量级发动技能后的技能，转化类的技能根本没有办法判定
   end,

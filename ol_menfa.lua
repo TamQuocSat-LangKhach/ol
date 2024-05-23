@@ -166,7 +166,7 @@ local daojie = fk.CreateTriggerSkill{
     local room = player.room
     local skills = {}
     for _, skill in ipairs(player.player_skills) do
-      if skill.frequency == Skill.Compulsory and not (skill:isEquipmentSkill() or skill.name:endsWith("&")) then
+      if skill.frequency == Skill.Compulsory and skill:isPlayerSkill(player) then
         table.insert(skills, skill.name)
       end
     end
@@ -1345,7 +1345,7 @@ local huanjia_delay = fk.CreateTriggerSkill{
       room:notifySkillInvoked(player, "huanjia", "negative")
       local skills = {}
       for _, skill in ipairs(player.player_skills) do
-        if not (skill.attached_equip or skill.name[#skill.name] == "&") then
+        if skill:isPlayerSkill(player) then
           table.insert(skills, skill.name)
         end
       end
@@ -2431,7 +2431,7 @@ local chenya = fk.CreateTriggerSkill{
     return player:hasSkill(self) and target and not target.dead and not target:isKongcheng() and
       ((data:isInstanceOf(ActiveSkill) or data:isInstanceOf(ViewAsSkill)) and
       table.find({"出牌阶段限一次", "阶段技", "每阶段限一次"}, function(str) return Fk:translate(":"..data.name):startsWith(str) end)) and
-      not data.attached_equip and data.name[#data.name] ~= "&"
+      data:isPlayerSkill(target)
   end,
   on_cost = function(self, event, target, player, data)
     return player.room:askForSkillInvoke(player, self.name, nil, "#chenya-invoke::"..target.id)
@@ -2714,7 +2714,7 @@ local jianyuan = fk.CreateTriggerSkill{
     return player:hasSkill(self) and target and not target.dead and not target:isNude() and
       ((data:isInstanceOf(ActiveSkill) or data:isInstanceOf(ViewAsSkill)) and
       table.find({"出牌阶段限一次", "阶段技", "每阶段限一次"}, function(str) return Fk:translate(":"..data.name):startsWith(str) end)) and
-      not data.attached_equip and data.name[#data.name] ~= "&"
+      data:isPlayerSkill(target)
   end,
   on_cost = function(self, event, target, player, data)
     return player.room:askForSkillInvoke(player, self.name, nil, "#jianyuan-invoke::"..target.id)
