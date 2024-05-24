@@ -3779,7 +3779,7 @@ local huashen_blacklist = {
   -- imba
   "zuoci", "ol_ex__zuoci", "qyt__dianwei", "starsp__xiahoudun", "mou__wolong",
   -- haven't available skill
-  "js__huangzhong", "liyixiejing", "olz__wangyun", "yanyan", "duanjiong", "wolongfengchu", "wuanguo", "os__wangling",
+  "js__huangzhong", "liyixiejing", "olz__wangyun", "yanyan", "duanjiong", "wolongfengchu", "wuanguo", "os__wangling", "tymou__jiaxu",
 }
 local function Gethuashen(player, n)
   local room = player.room
@@ -3907,7 +3907,7 @@ local ol_ex__xinsheng = fk.CreateTriggerSkill{
   on_trigger = function(self, event, target, player, data)
     self.cancel_cost = false
     for _ = 1, data.damage do
-      if self.cancel_cost then break end
+      if self.cancel_cost or not (player:hasSkill(self) and player:hasSkill(ol_ex__huashen, true)) then break end
       self:doCost(event, target, player, data)
     end
   end,
