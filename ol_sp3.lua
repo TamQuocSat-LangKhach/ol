@@ -5692,4 +5692,117 @@ Fk:loadTranslationTable{
   ["~yadan"] = "",
 }
 
+local caimao = General(extension, "caimao", "wei", 4)
+
+local zuolian = fk.CreateActiveSkill{
+  name = "zuolian",
+  anim_type = "support",
+  card_num = 0,
+  min_target_num = 1,
+  prompt = function()
+    return "#zuolian-active:::" .. Self.hp
+  end,
+  can_use = function(self, player)
+    return player:usedSkillTimes(self.name, Player.HistoryPhase) == 0
+  end,
+  card_filter = Util.FalseFunc,
+  target_filter = function(self, to_select, selected)
+    return #selected < Self.hp and not Fk:currentRoom():getPlayerById(to_select):isKongcheng()
+  end,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    room:sortPlayersByAction(effect.tos)
+    local showMap = {}
+    for _, pid in ipairs(effect.tos) do
+      local p = room:getPlayerById(pid)
+      if not (p.dead or p:isKongcheng()) then
+        local id = table.random(p:getCardIds(Player.Hand))
+        p:showCards(id)
+        table.insert(showMap, {pid, id})
+      end
+    end
+    if not room:askForSkillInvoke(player, self.name, nil, "#zuolian-exchange") then return end
+    for _, value in ipairs(showMap) do
+      local p = room:getPlayerById(value[1])
+      local id = value[2]
+      if not p.dead and table.contains(p:getCardIds(Player.Hand), id) then
+        local area_name = "Top"
+        local slashs = room:getCardsFromPileByRule(".|.|.|.|fire__slash", 1, "discardPile")
+        if #slashs == 0 then
+          slashs = room:getCardsFromPileByRule(".|.|.|.|fire__slash")
+          if #slashs == 0 then
+            slashs = room:getCardsFromPileByRule(".|.|.|.|thunder__slash", 1, "discardPile")
+            if #slashs == 0 then
+              slashs = room:getCardsFromPileByRule(".|.|.|.|thunder__slash")
+              if #slashs == 0 then
+                break
+              end
+            else
+              area_name = "discardPile"
+            end
+          end
+        else
+          area_name = "discardPile"
+        end
+        U.swapCardsWithPile(p, {id}, slashs, self.name, area_name, true, player.id)
+      end
+    end
+  end,
+}
+local jingzhou = fk.CreateTriggerSkill{
+  name = "jingzhou",
+  anim_type = "control",
+  events = {fk.DamageInflicted},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self) and player.hp > 0
+  end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    local targets = table.map(room.alive_players, Util.IdMapper)
+    local tos = room:askForChoosePlayers(player, targets, 1, player.hp, "#jingzhou-choose:::"..player.hp, self.name, true)
+    if #tos > 0 then
+      self.cost_data = tos
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local tos = table.simpleClone(self.cost_data)
+    room:sortPlayersByAction(tos)
+    local to
+    for _, pid in ipairs(tos) do
+      to = room:getPlayerById(pid)
+      if not to.dead then
+        to:setChainState(not to.chained)
+      end
+    end
+  end,
+}
+caimao:addSkill(zuolian)
+caimao:addSkill(jingzhou)
+
+Fk:loadTranslationTable{
+  ["caimao"] = "蔡瑁",
+  --["#caimao"] = "",
+
+  ["zuolian"] = "佐练",
+  [":zuolian"] = "出牌阶段限一次，你可以选择至多X名有手牌的角色（X为你的体力值），这些角色各随机展示一张手牌，"..
+  "你可以令这些角色各将展示的牌与弃牌堆或牌堆中的火【杀】或雷【杀】交换。",
+  ["jingzhou"] = "精舟",
+  [":jingzhou"] = "当你受到伤害时，你可以选择至多X名角色（X为你的体力值），这些角色各选择：1.横置；2.重置。",
+
+  ["#zuolian-active"] = "发动 佐练，选择至多%arg名有手牌的角色",
+  ["#zuolian-exchange"] = "佐练：是否将展示的牌与火【杀】或雷【杀】交换（优先检索火【杀】）",
+  ["#jingzhou-choose"] = "是否发动 精舟，选择至多%arg名角色，改变这些角色的“连环状态”",
+
+  ["$zuolian1"] = "",
+  ["$zuolian2"] = "",
+  ["$jingzhou1"] = "",
+  ["$jingzhou2"] = "",
+  ["~caimao"] = "",
+}
+
+
+
+
 return extension
