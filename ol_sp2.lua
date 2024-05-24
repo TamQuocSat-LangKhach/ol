@@ -4390,6 +4390,7 @@ zhouchu:addSkill(yilie)
 Fk:loadTranslationTable{
   ["ol__zhouchu"] = "周处",
   ["#ol__zhouchu"] = "忠烈果毅",
+  ["cv:ol__zhouchu"] = "陆泊云",
   ["illustrator:ol__zhouchu"] = "游漫美绘",
   ["shanduan"] = "善断",
   [":shanduan"] = "锁定技，你的阶段开始时，将数值1、2、3、4分配给以下项：<br>"..
@@ -5345,6 +5346,7 @@ xiahouxuan:addSkill(zeyue)
 Fk:loadTranslationTable{
   ["xiahouxuan"] = "夏侯玄",
   ["#xiahouxuan"] = "朗朗日月",
+  ["cv:xiahouxuan"] = "虞晓旭",
   ["illustrator:xiahouxuan"] = "君桓文化",
   ["huanfu"] = "宦浮",
   [":huanfu"] = "当你使用【杀】指定第一个目标后或成为【杀】的目标后，你可以弃置任意张牌（至多为你的体力上限），"..
