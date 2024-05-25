@@ -3180,7 +3180,7 @@ local wanyi = fk.CreateTriggerSkill{
     local room = player.room
     if event == fk.TargetSpecified then
       local id = room:askForCardChosen(player, room:getPlayerById(data.to), "he", self.name)
-      player:addToPile(self.name, id, false, self.name)
+      player:addToPile(self.name, id, true, self.name)
     else
       local _, dat = room:askForUseActiveSkill(player, "wanyi_select", "#wanyi-card", false, Util.DummyTable, true)
       if dat then
