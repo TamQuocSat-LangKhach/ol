@@ -5802,7 +5802,136 @@ Fk:loadTranslationTable{
   ["~caimao"] = "",
 }
 
+local peixiu = General(extension, "ol__peixiu", "wei", 4)
+Fk:loadTranslationTable{
+  ["ol__peixiu"] = "裴秀",
+  ["#ol__peixiu"] = "勋德茂著",
+  ["~ol__peixiu"] = "",
+}
 
+local maozhuo = fk.CreateTriggerSkill{
+  name = "maozhuo",
+  events = {fk.DamageCaused},
+  anim_type = "offensive",
+  frequency = Skill.Compulsory,
+  can_trigger = function(self, event, target, player, data)
+    return
+    player == target and
+    player:hasSkill(self) and
+    player.phase == Player.Play and
+    player:usedSkillTimes(self.name) == 0 and
+    player:getMark("maozhuo_record-turn") == 0 and
+    #table.filter(player.player_skills, function(skill) return skill:isPlayerSkill(player) end) >
+      #table.filter(data.to.player_skills, function(skill) return skill:isPlayerSkill(data.to) end) and
+    #U.getActualDamageEvents(
+      player.room,
+      1,
+      function(e)
+        if e.data[1].from == player then
+          player.room:setPlayerMark(player, "maozhuo_record-turn", 1)
+          return true
+        end
+      end,
+      Player.HistoryPhase
+    ) == 0
+  end,
+  on_use = function(self, event, target, player, data)
+    data.damage = data.damage + 1
+  end,
+}
+local maozhuoTargetMod = fk.CreateTargetModSkill{
+  name = "#maozhuo_targetmod",
+  frequency = Skill.Compulsory,
+  residue_func = function(self, player, skill, scope)
+    if player:hasSkill(maozhuo) and skill.trueName == "slash_skill" then
+      return
+        #table.filter(
+          player.player_skills,
+          function(skill) return skill:isPlayerSkill(player) and skill.visible end
+        )
+    end
+  end,
+}
+local maozhuoMaxCards = fk.CreateMaxCardsSkill{
+  name = "#maozhuo_maxcards",
+  frequency = Skill.Compulsory,
+  correct_func = function(self, player)
+    if player:hasSkill(maozhuo) then
+      return
+        #table.filter(
+          player.player_skills,
+          function(skill) return skill:isPlayerSkill(player) and skill.visible end
+        )
+    end
+  end,
+}
+Fk:loadTranslationTable{
+  ["maozhuo"] = "茂著",
+  [":maozhuo"] = "锁定技，你使用【杀】的次数上限和手牌上限+X（X为你的技能数）；当你于出牌阶段内首次造成伤害时，" ..
+  "若受伤角色的技能数少于你，则此伤害+1。",
+}
+
+maozhuo:addRelatedSkill(maozhuoTargetMod)
+maozhuo:addRelatedSkill(maozhuoMaxCards)
+peixiu:addSkill(maozhuo)
+
+local jinlan = fk.CreateActiveSkill{
+  name = "jinlan",
+  anim_type = "drawcard",
+  card_num = 0,
+  target_num = 0,
+  prompt = function()
+    local mostSkillNum = 0
+    for _, p in ipairs(Fk:currentRoom().alive_players) do
+      local skillNum = #table.filter(
+        p.player_skills,
+        function(skill) return skill:isPlayerSkill(p) and skill.visible end
+      )
+      if skillNum > mostSkillNum then
+        mostSkillNum = skillNum
+      end
+    end
+    return "#jinlan:::" .. mostSkillNum
+  end,
+  can_use = function(self, player)
+    if player:usedSkillTimes(self.name, Player.HistoryPhase) > 0 then
+      return false
+    end
+
+    local mostSkillNum = 0
+    for _, p in ipairs(Fk:currentRoom().alive_players) do
+      local skillNum = #table.filter(
+        p.player_skills,
+        function(skill) return skill:isPlayerSkill(p) and skill.visible end
+      )
+      if skillNum > mostSkillNum then
+        mostSkillNum = skillNum
+      end
+    end
+    return player:getHandcardNum() < mostSkillNum
+  end,
+  card_filter = Util.FalseFunc,
+  target_filter = Util.FalseFunc,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+
+    local mostSkillNum = 0
+    for _, p in ipairs(room.alive_players) do
+      local skillNum = #table.filter(p.player_skills, function(skill) return skill:isPlayerSkill(p) end)
+      if skillNum > mostSkillNum then
+        mostSkillNum = skillNum
+      end
+    end
+    player:drawCards(mostSkillNum - player:getHandcardNum(), self.name)
+  end,
+}
+Fk:loadTranslationTable{
+  ["jinlan"] = "尽览",
+  [":jinlan"] = "出牌阶段限一次，你可以将手牌摸至X张（X为存活角色中技能最多角色的技能数）。",
+  ["#jinlan"] = "尽览：你可将手牌摸至%arg张",
+}
+
+peixiu:addSkill(jinlan)
 
 
 return extension
