@@ -583,10 +583,13 @@ local ol_ex__tianxiang = fk.CreateTriggerSkill{
   anim_type = "defensive",
   events = {fk.DamageInflicted},
   can_trigger = function(self, event, target, player, data)
-    return player:hasSkill(self) and target == player
+    return player:hasSkill(self) and target == player and not player:isNude()
   end,
   on_cost = function(self, event, target, player, data)
-    local tar, card =  player.room:askForChooseCardAndPlayers(player, table.map(player.room:getOtherPlayers(player), Util.IdMapper), 1, 1, ".|.|heart|.", "#ol_ex__tianxiang-choose", self.name, true)
+    local ids = table.filter(player:getCardIds("he"), function(id)
+      return not player:prohibitDiscard(Fk:getCardById(id)) and Fk:getCardById(id).suit == Card.Heart
+    end)
+    local tar, card =  player.room:askForChooseCardAndPlayers(player, table.map(player.room:getOtherPlayers(player), Util.IdMapper), 1, 1, tostring(Exppattern{ id = ids }), "#ol_ex__tianxiang-choose", self.name, true)
     if #tar > 0 and card then
       self.cost_data = {tar[1], card}
       return true
