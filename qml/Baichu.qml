@@ -12,7 +12,7 @@ ColumnLayout {
     Layout.fillWidth: true
     Layout.preferredHeight: childrenRect.height + 4
 
-    text: Backend.translate(extra_data.name)
+    text: luatr(extra_data.name)
   }
 
   // 懒得起名，功能是根据index从对象中取得牌名
@@ -43,7 +43,7 @@ ColumnLayout {
           Text {
             anchors.centerIn: parent
             font.pixelSize: 24
-            text: Backend.translate(getNameFromIdx(index))
+            text: luatr(getNameFromIdx(index))
           }
         }
       }

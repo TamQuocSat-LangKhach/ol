@@ -2535,11 +2535,11 @@ local huanghan = fk.CreateTriggerSkill{
   end,
   on_cost = function(self, event, target, player, data)
     return player.room:askForSkillInvoke(player, self.name, nil,
-      "#huanghan-invoke:::"..(math.floor(Fk:translate(data.card.trueName):len()))..":"..player:getLostHp())
+      "#huanghan-invoke:::"..(math.floor(Fk:translate(data.card.trueName, "zh_CN"):len()))..":"..player:getLostHp())
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    player:drawCards(Fk:translate(data.card.trueName):len(), self.name)
+    player:drawCards(Fk:translate(data.card.trueName, "zh_CN"):len(), self.name)
     if not player.dead and player:isWounded() and not player:isNude() then
       local n = player:getLostHp()
       room:askForDiscard(player, n, n, true, self.name, false)
@@ -2713,7 +2713,7 @@ local jianyuan = fk.CreateTriggerSkill{
   can_trigger = function(self, event, target, player, data)
     return player:hasSkill(self) and target and not target.dead and not target:isNude() and
       ((data:isInstanceOf(ActiveSkill) or data:isInstanceOf(ViewAsSkill)) and
-      table.find({"出牌阶段限一次", "阶段技", "每阶段限一次"}, function(str) return Fk:translate(":"..data.name):startsWith(str) end)) and
+      table.find({"出牌阶段限一次", "阶段技", "每阶段限一次"}, function(str) return Fk:translate(":"..data.name, "zh_CN"):startsWith(str) end)) and
       data:isPlayerSkill(target)
   end,
   on_cost = function(self, event, target, player, data)

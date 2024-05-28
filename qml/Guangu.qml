@@ -12,7 +12,7 @@ GraphicsBox {
   property var cards: []
   property int result
 
-  title.text: Backend.translate("#guangu-choice")
+  title.text: luatr("#guangu-choice")
   width: 440
   height: 260
 
