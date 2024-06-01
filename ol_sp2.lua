@@ -4278,15 +4278,19 @@ local shanduan = fk.CreateTriggerSkill{
     else
       local choices = table.map(nums, function (i) return tostring(i) end)
       if #choices == 0 then return end
-      local choice = room:askForChoice(player, choices, self.name, "#shanduan"..(player.phase - 3).."-choice")
+      local value = "shanduan_ch"..(player.phase - 3)
+      local choice = room:askForChoice(player, choices, self.name, "#shanduan-choice:::"..value)
       room:setPlayerMark(player, "shanduan"..(player.phase - 3).."-turn", tonumber(choice))
       table.removeOne(nums, tonumber(choice))
       room:setPlayerMark(player, "@shanduan", nums)
+      table.removeOne(choices, choice)
+      room:sendLog{ type = "#shanduanDistribution", from = player.id, arg = value, arg2 = choice }
       if player.phase == Player.Play then
-        choice = room:askForChoice(player, table.map(nums, function (i) return tostring(i) end), self.name, "#shanduan4-choice")
+        choice = room:askForChoice(player, choices, self.name, "#shanduan-choice:::shanduan_ch4")
         room:setPlayerMark(player, "shanduan4-turn", tonumber(choice))
         table.removeOne(nums, tonumber(choice))
         room:setPlayerMark(player, "@shanduan", nums)
+        room:sendLog{ type = "#shanduanDistribution", from = player.id, arg = "shanduan_ch4", arg2 = choice }
       end
     end
   end,
@@ -4399,10 +4403,12 @@ Fk:loadTranslationTable{
   ["yilie"] = "义烈",
   [":yilie"] = "你可以将两张颜色相同的手牌当一张本轮未以此法使用过的基本牌使用。",
   ["@shanduan"] = "善断",
-  ["#shanduan1-choice"] = "善断：选择摸牌阶段摸牌数",
-  ["#shanduan2-choice"] = "善断：选择攻击范围",
-  ["#shanduan3-choice"] = "善断：选择手牌上限",
-  ["#shanduan4-choice"] = "善断：选择使用【杀】次数上限",
+  ["#shanduan-choice"] = "善断：选择本回合 %arg 的数值",
+  ["shanduan_ch1"] = "摸牌阶段摸牌数",
+  ["shanduan_ch2"] = "攻击范围",
+  ["shanduan_ch3"] = "手牌上限",
+  ["shanduan_ch4"] = "【杀】次数上限",
+  ["#shanduanDistribution"] = "%from 令 %arg 为 %arg2",
   ["#yilie-viewas"] = "义烈：你可将两张颜色相同的手牌转化为一张基本牌使用",
 
   ["$shanduan1"] = "浪子回头，其期未晚矣！",
