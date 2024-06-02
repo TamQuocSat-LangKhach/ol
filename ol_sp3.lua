@@ -5933,5 +5933,235 @@ Fk:loadTranslationTable{
 
 peixiu:addSkill(jinlan)
 
+local jiangwan = General(extension, "ol__jiangwan", "shu", 3)
+Fk:loadTranslationTable{
+  ["ol__jiangwan"] = "蒋琬",
+  -- ["#ol__jiangwan"] = "",
+  ["~ol__jiangwan"] = "",
+}
+
+Fk:addQmlMark{
+  name = "ziruo_cards",
+  qml_path = function(name, value, p)
+    if Self == p then
+      return "packages/ol/qml/ZiRuo"
+    end
+    return ""
+  end,
+  how_to_show = function(name, value, p)
+    return " "
+  end,
+}
+local ziruo = fk.CreateTriggerSkill{
+  name = "ziruo",
+  events = {fk.CardUsing},
+  anim_type = "drawcard",
+  frequency = Skill.Compulsory,
+  switch_skill_name = "ziruo",
+  can_trigger = function(self, event, target, player, data)
+    return
+      target == player and
+      player:hasSkill(self) and
+      (data.extra_data or {}).ziruoSideCards and
+      (
+        (
+          player:getSwitchSkillState(self.name) == fk.SwitchYang and
+          table.contains(Card:getIdList(data.card), data.extra_data.ziruoSideCards[1])
+        ) or
+        (
+          player:getSwitchSkillState(self.name) == fk.SwitchYin and
+          table.contains(Card:getIdList(data.card), data.extra_data.ziruoSideCards[2])
+        )
+      )
+  end,
+  on_use = function(self, event, target, player, data)
+    player:drawCards(1, self.name)
+  end,
+
+  refresh_events = {fk.AfterCardsMove, fk.EventAcquireSkill, fk.GameStart, fk.EventLoseSkill, fk.PreCardUse},
+  can_refresh = function(self, event, target, player, data)
+    if event == fk.EventLoseSkill then
+      return target == player and data == self
+    end
+    if not player:hasSkill(self, true) or player:isKongcheng() then
+      return false
+    end
+
+    if event == fk.AfterCardsMove then
+      return
+        table.find(
+          data,
+          function(move)
+            return
+              (move.to == player.id and move.toArea == Card.PlayerHand) or
+              (move.from == player.id and table.find(move.moveInfo, function(info) return info.fromArea == Card.PlayerHand end))
+          end
+        )
+    elseif event == fk.EventAcquireSkill then
+      return target == player and data == self and not player.room:getTag("FirstRound")
+    elseif event == fk.GameStart then
+      return true
+    end
+
+    return target == player
+  end,
+  on_refresh = function(self, event, target, player, data)
+    local room = player.room
+    local handcards = player:getCardIds("h")
+
+    if event == fk.PreCardUse then
+      data.extra_data = data.extra_data or {}
+      data.extra_data.ziruoSideCards = { handcards[1], handcards[#handcards] }
+    elseif event == fk.EventLoseSkill then
+      for _, id in ipairs(handcards) do
+        local card = Fk:getCardById(id)
+        if card:getMark("@@ziruo_left-inhand") ~= 0 then
+          room:setCardMark(card, "@@ziruo_left-inhand", 0)
+        end
+        if card:getMark("@@ziruo_right-inhand") ~= 0 then
+          room:setCardMark(card, "@@ziruo_right-inhand", 0)
+        end
+      end
+      room:setPlayerMark(player, "@[ziruo_cards]", 0)
+    else
+      for index, id in ipairs(handcards) do
+        local card = Fk:getCardById(id)
+        if index == 1 then
+          room:setCardMark(card, "@@ziruo_left-inhand", 1)
+        end
+        if index == #handcards then
+          room:setCardMark(card, "@@ziruo_right-inhand", 1)
+        end
+
+        if card:getMark("@@ziruo_left-inhand") ~= 0 and index > 1 then
+          room:setCardMark(card, "@@ziruo_left-inhand", 0)
+        end
+        if card:getMark("@@ziruo_right-inhand") ~= 0 and index < #handcards then
+          room:setCardMark(card, "@@ziruo_right-inhand", 0)
+        end
+      end
+
+      if player:getMark("@[ziruo_cards]") == 0 then
+        room:setPlayerMark(player, "@[ziruo_cards]", { value = player.id })
+      end
+    end
+  end,
+}
+Fk:loadTranslationTable{
+  ["ziruo"] = "自若",
+  [":ziruo"] = "转换技，锁定技，你不能调整手牌。当你使用，阳：最左侧的手牌时，你摸一张牌；阴：最右侧的手牌时，你摸一张牌。<br>" ..
+  "<font color='gray'>注：未做禁止排序，点击“牌序”按钮并不会更改实际牌序，若不小心使用则点击武将上的“自若”标记查看真实牌序。</font>",
+  ["@@ziruo_left-inhand"] = "最左",
+  ["@@ziruo_right-inhand"] = "最右",
+  ["@[ziruo_cards]"] = "自若",
+}
+
+jiangwan:addSkill(ziruo)
+
+local xufaViewAs = fk.CreateViewAsSkill{
+  name = "xufa_viewAs",
+  interaction = function()
+    return UI.ComboBox { choices = U.getMark(Self, "xufa_tricks") }
+  end,
+  card_filter = function(self, to_select, selected)
+    return #selected == 0
+  end,
+  view_as = function(self, cards)
+    if #cards ~= 1 or not self.interaction.data then return end
+    local card = Fk:cloneCard(self.interaction.data)
+    card:addSubcard(cards[1])
+    card.skillName = "xufa"
+    return card
+  end,
+}
+local xufa = fk.CreateActiveSkill{
+  name = "xufa",
+  anim_type = "offensive",
+  target_num = 0,
+  expand_pile = "ol__jiangwan_xufa",
+  min_card_num = function(self)
+    if self.interaction.data == "xufa_put" then
+      return math.max(math.ceil(#Self:getCardIds("h") / 2), 1)
+    end
+
+    return math.max(math.ceil(#Self:getPile("ol__jiangwan_xufa") / 2), 1)
+  end,
+  interaction = function()
+    local choices = table.filter(
+      { "xufa_put", "xufa_remove" },
+      function(choice) return not table.contains(U.getMark(Self, "xufaChosen-phase"), choice) end
+    )
+    return UI.ComboBox { choices = choices, all_choices = { "xufa_put", "xufa_remove" } }
+  end,
+  can_use = function(self, player)
+    return #U.getMark(Self, "xufaChosen-phase") < 2
+  end,
+  card_filter = function(self, to_select, selected)
+    if self.interaction.data == "xufa_put" then
+      return Fk:currentRoom():getCardArea(to_select) == Card.PlayerHand
+    end
+    
+    return Self:getPileNameOfId(to_select) == "ol__jiangwan_xufa"
+  end,
+  target_filter = Util.FalseFunc,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    local xufaChosen = U.getMark(player, "xufaChosen-phase")
+    table.insertIfNeed(xufaChosen, self.interaction.data)
+    room:setPlayerMark(player, "xufaChosen-phase", xufaChosen)
+
+    if self.interaction.data == "xufa_put" then
+      player:addToPile("ol__jiangwan_xufa", effect.cards, true, self.name, player.id)
+    else
+      room:moveCardTo(effect.cards, Card.DiscardPile, nil, fk.ReasonPutIntoDiscardPile, self.name, "ol__jiangwan_xufa", true, player.id)
+    end
+
+    local tricks = {}
+    for _, id in ipairs(effect.cards) do
+      local card = Fk:getCardById(id)
+      if card:isCommonTrick() and not table.contains(tricks, card.name) then
+        local trick = Fk:cloneCard(card.name)
+        if
+          trick.skill:canUse(player, trick) and
+          not player:prohibitUse(trick) and
+          table.find(room.alive_players, function (p)
+            return not player:isProhibited(p, trick) and card.skill:modTargetFilter(p.id, {}, player.id, trick)
+          end)
+        then
+          table.insert(tricks, card.name)
+        end
+      end
+    end
+
+    if #tricks > 0 then
+      room:setPlayerMark(player, "xufa_tricks", tricks)
+      local success, data = room:askForUseActiveSkill(player, "xufa_viewAs", "#xufa-use", true)
+      room:setPlayerMark(player, "xufa_tricks", 0)
+
+      if success then
+        local card = Fk.skills["xufa_viewAs"]:viewAs(data.cards)
+        room:useCard{
+          from = player.id,
+          tos = table.map(data.targets, function(id) return { id } end),
+          card = card,
+          extraUse = true,
+        }
+      end
+    end
+  end,
+}
+Fk:loadTranslationTable{
+  ["xufa"] = "蓄发",
+  [":xufa"] = "出牌阶段各限一次，你可以：1.将至少半数手牌置于你的武将牌上，称为“蓄发”，然后你可将一张牌当“蓄发”中的任意普通锦囊牌使用；" ..
+  "2.移去至少半数“蓄发”牌，然后你可将一张牌当移去牌中的任意普通锦囊牌使用。",
+  ["ol__jiangwan_xufa"] = "蓄发",
+  ["xufa_put"] = "置入蓄发",
+  ["xufa_remove"] = "移去蓄发",
+  ["xufa_viewAs"] = "蓄发",
+  ["#xufa-use"] = "蓄发：你可以将一张牌当其中一张普通锦囊牌使用",
+}
+
+Fk:addSkill(xufaViewAs)
+jiangwan:addSkill(xufa)
 
 return extension
