@@ -6110,14 +6110,16 @@ local xufa = fk.CreateActiveSkill{
     table.insertIfNeed(xufaChosen, self.interaction.data)
     room:setPlayerMark(player, "xufaChosen-phase", xufaChosen)
 
+    local cardsToSearch = effect.cards
     if self.interaction.data == "xufa_put" then
       player:addToPile("ol__jiangwan_xufa", effect.cards, true, self.name, player.id)
+      cardsToSearch = player:getPile("ol__jiangwan_xufa")
     else
       room:moveCardTo(effect.cards, Card.DiscardPile, nil, fk.ReasonPutIntoDiscardPile, self.name, "ol__jiangwan_xufa", true, player.id)
     end
 
     local tricks = {}
-    for _, id in ipairs(effect.cards) do
+    for _, id in ipairs(cardsToSearch) do
       local card = Fk:getCardById(id)
       if card:isCommonTrick() and not table.contains(tricks, card.name) then
         local trick = Fk:cloneCard(card.name)
