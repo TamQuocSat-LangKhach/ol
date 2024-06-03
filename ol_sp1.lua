@@ -1022,6 +1022,7 @@ local gushe = fk.CreateActiveSkill{
   card_num = 0,
   min_target_num = 1,
   max_target_num = 3,
+  prompt = "#gushe-prompt",
   can_use = function(self, player)
     return not player:isKongcheng() and player:usedSkillTimes(self.name, Player.HistoryPhase) == 0
   end,
@@ -1031,6 +1032,7 @@ local gushe = fk.CreateActiveSkill{
   end,
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
+    room:sortPlayersByAction(effect.tos)
     local targets = table.map(effect.tos, function(p) return room:getPlayerById(p) end)
     local pindian = player:pindian(targets, self.name)
     for _, target in ipairs(targets) do
@@ -1052,8 +1054,10 @@ local gushe = fk.CreateActiveSkill{
             room:killPlayer({who = player.id,})
           end
         end
-        if #room:askForDiscard(p, 1, 1, true, self.name, true, ".", "#gushe-discard::"..player.id) == 0 then
-          player:drawCards(1, self.name)
+        if not player.dead then
+          if p:isNude() or #room:askForDiscard(p, 1, 1, true, self.name, true, ".", "#gushe-discard::"..player.id) == 0 then
+            player:drawCards(1, self.name)
+          end
         end
       end
     end
@@ -1097,6 +1101,7 @@ Fk:loadTranslationTable{
   [":jici"] = "当你的拼点牌亮出后，若点数不大于X，你可令点数+X并视为此回合未发动过〖鼓舌〗。（X为你“饶舌”标记的数量）。",
   ["@raoshe"] = "饶舌",
   ["#gushe-discard"] = "鼓舌：你需弃置一张牌，否则 %dest 摸一张牌",
+  ["#gushe-prompt"] = "鼓舌：你可以与至多三名角色同时拼点",
 
   ["$gushe1"] = "公既知天命，识时务，为何要兴无名之师，犯我疆界？",
   ["$gushe2"] = "你若倒戈卸甲，以礼来降，仍不失封侯之位，国安民乐，岂不美哉？",
