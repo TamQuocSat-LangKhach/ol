@@ -7,6 +7,144 @@ Fk:loadTranslationTable{
   ["ol_exyj"] = "OL-界一将成名",
 }
 
+local fazheng = General(extension, "ol_ex__fazheng", "shu", 3)
+local ol_ex__xuanhuo = fk.CreateTriggerSkill{
+  name = "ol_ex__xuanhuo",
+  anim_type = "control",
+  events = {fk.EventPhaseEnd},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self) and player.phase == Player.Draw and player:getHandcardNum() > 1 and
+      #player.room.alive_players > 1
+  end,
+  on_cost = function(self, event, target, player, data)
+    local _, dat = player.room:askForUseActiveSkill(player, "ol_ex__xuanhuo_choose", "#ol_ex__xuanhuo-invoke", true)
+    if dat then
+      self.cost_data = dat
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local to = room:getPlayerById(self.cost_data.targets[1])
+    room:moveCardTo(self.cost_data.cards, Card.PlayerHand, to, fk.ReasonGive, self.name, nil, false, player.id)
+    if to.dead then return end
+    local victim = room:getPlayerById(self.cost_data.targets[2])
+    local use = room:askForUseCard(to, "slash", nil, "#ol_ex__xuanhuo-use:"..player.id..":"..victim.id, nil,
+      {must_targets = {victim.id}, bypass_times = true,})
+    if use then
+      use.extraUse = true
+      room:useCard(use)
+    else
+      if player.dead or to.dead or to:isNude() then return end
+      local cards = U.askforChooseCardsAndChoice(player, to:getCardIds("he"), {"OK"}, self.name,
+        "#ol_ex__xuanhuo-prey::"..to.id, {}, math.min(#to:getCardIds("he"), 2), 2)
+      room:moveCardTo(cards, Player.Hand, player, fk.ReasonPrey, self.name, nil, false)
+    end
+  end,
+}
+local ol_ex__xuanhuo_choose = fk.CreateActiveSkill{
+  name = "ol_ex__xuanhuo_choose",
+  card_num = 2,
+  target_num = 2,
+  card_filter = function(self, to_select, selected)
+    return #selected < 2 and Fk:currentRoom():getCardArea(to_select) ~= Player.Equip
+  end,
+  target_filter = function(self, to_select, selected, cards)
+    if #cards == 2 then
+      return #selected == 0 and to_select ~= Self.id or #selected == 1
+    end
+  end,
+}
+local ol_ex__enyuan = fk.CreateTriggerSkill{
+  name = "ol_ex__enyuan",
+  mute = true,
+  anim_type = "masochism",
+  events = {fk.AfterCardsMove, fk.Damaged},
+  can_trigger = function(self, event, target, player, data)
+    if not player:hasSkill(self) then return false end
+    if event == fk.AfterCardsMove then
+      for _, move in ipairs(data) do
+        if move.from and move.from ~= player.id and move.to == player.id and move.toArea == Card.PlayerHand and #move.moveInfo > 1 then
+          self.cost_data = move.from
+          return true
+        end
+      end
+    elseif target == player and data.from and not data.from.dead and not player.dead then
+      self.cost_data = data.from.id
+      return true
+    end
+  end,
+  on_trigger = function(self, event, target, player, data)
+    if event == fk.Damaged then
+      self.cancel_cost = false
+      for i = 1, data.damage do
+        if self.cancel_cost or player.dead or player.room:getPlayerById(self.cost_data).dead then
+          break
+        end
+        self:doCost(event, target, player, {self.cost_data})
+      end
+    else
+      self:doCost(event, target, player, {self.cost_data})
+    end
+  end,
+  on_cost = function(self, event, target, player, data)
+    local prompt = "#ol_ex__enyuan"
+    if event == fk.Damaged then
+      prompt = prompt.."2-invoke::"..data[1]
+    else
+      prompt = prompt.."1-invoke::"..data[1]
+    end
+    if player.room:askForSkillInvoke(player, self.name, data, prompt) then
+      self.cost_data = data[1]
+      return true
+    end
+    self.cancel_cost = true
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local to = room:getPlayerById(self.cost_data)
+    room:doIndicate(player.id, {self.cost_data})
+    if event ==  fk.AfterCardsMove then
+      player:broadcastSkillInvoke(self.name, 1)
+      room:notifySkillInvoked(player, self.name, "support")
+      to:drawCards(1, self.name)
+    else
+      player:broadcastSkillInvoke(self.name, 2)
+      room:notifySkillInvoked(player, self.name)
+      local card = room:askForCard(to, 1, 1, false, self.name, true, ".|.|heart,diamond|hand|.|.", "#ol_ex__enyuan-give:"..player.id)
+      if #card > 0 then
+        room:moveCardTo(card, Player.Hand, player, fk.ReasonGive, self.name, nil, false)
+      else
+        room:loseHp(to, 1, self.name)
+      end
+    end
+  end,
+}
+Fk:addSkill(ol_ex__xuanhuo_choose)
+fazheng:addSkill(ol_ex__xuanhuo)
+fazheng:addSkill(ol_ex__enyuan)
+Fk:loadTranslationTable{
+  ["ol_ex__fazheng"] = "界法正",
+  ["#ol_ex__fazheng"] = "蜀汉的辅翼",
+  --["designer:ol_ex__fazheng"] = "玄蝶既白",
+  --["illustrator:ol_ex__fazheng"] = "君桓文化",
+
+  ["ol_ex__xuanhuo"] = "眩惑",
+  [":ol_ex__xuanhuo"] = "摸牌阶段结束时，你可以交给一名其他角色两张牌，令其选择一项：1.对你指定的另一名角色使用一张【杀】；2.你观看其手牌并"..
+  "获得其两张牌。",
+  ["ol_ex__enyuan"] = "恩怨",
+  [":ol_ex__enyuan"] = "当你获得一名其他角色至少两张牌后，你可以令其摸一张牌。当你受到1点伤害后，你可以令伤害来源选择一项：1.交给你一张红色手牌；"..
+  "2.失去1点体力。",
+
+  ["ol_ex__xuanhuo_choose"] = "眩惑",
+  ["#ol_ex__xuanhuo-invoke"] = "眩惑：交给第一名角色两张手牌，令其选择对第二名角色使用【杀】或你获得其两张牌",
+  ["#ol_ex__xuanhuo-use"] = "眩惑：你需对 %dest 使用一张【杀】，否则 %src 观看你手牌并获得你两张牌",
+  ["#ol_ex__xuanhuo-prey"] = "眩惑：获得 %dest 两张牌",
+  ["#ol_ex__enyuan1-invoke"] = "恩怨：是否令 %dest 摸一张牌？",
+  ["#ol_ex__enyuan2-invoke"] = "恩怨：是否令 %dest 选择交给你牌或失去体力？",
+  ["#ol_ex__enyuan-give"] = "交给 %src 一张红色手牌，否则你失去1点体力",
+}
+
 local lingtong = General(extension, "ol_ex__lingtong", "wu", 4)
 local ol_ex__xuanfeng = fk.CreateTriggerSkill{
   name = "ol_ex__xuanfeng",
