@@ -610,7 +610,7 @@ local jinzhi = fk.CreateViewAsSkill{
   prompt = function ()
     return "#jinzhi-viewas:::" .. tostring(Self:usedSkillTimes("jinzhi", Player.HistoryRound) + 1)
   end,
-  pattern = "^nullification|.|.|.|.|basic",
+  pattern = ".|.|.|.|.|basic",
   interaction = function()
     local all_names = U.getAllCardNames("b")
     local names = U.getViewAsCardNames(Self, "jinzhi", all_names)
@@ -620,6 +620,7 @@ local jinzhi = fk.CreateViewAsSkill{
   end,
   card_filter = Util.FalseFunc,
   view_as = function(self, cards)
+    if not self.interaction.data then return nil end
     local card = Fk:cloneCard(self.interaction.data)
     card.skillName = self.name
     return card
