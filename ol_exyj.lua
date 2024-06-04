@@ -30,7 +30,7 @@ local ol_ex__xuanhuo = fk.CreateTriggerSkill{
     if to.dead then return end
     local victim = room:getPlayerById(self.cost_data.targets[2])
     local use = room:askForUseCard(to, "slash", nil, "#ol_ex__xuanhuo-use:"..player.id..":"..victim.id, nil,
-      {must_targets = {victim.id}, bypass_times = true,})
+      {must_targets = {victim.id}, bypass_times = true, bypass_distances = true})
     if use then
       use.extraUse = true
       room:useCard(use)
