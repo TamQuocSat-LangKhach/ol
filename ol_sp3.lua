@@ -3135,6 +3135,8 @@ pengyang:addSkill("cunmu")
 Fk:loadTranslationTable{
   ["ol__pengyang"] = "彭羕",
   ["#ol__pengyang"] = "翻然轻举",
+  ["designer:ol__pengyang"] = "玄蝶既白",
+  ["illustrator:ol__pengyang"] = "君桓文化",
   ["xiaofan"] = "嚣翻",
   [":xiaofan"] = "当你需要使用牌时，你可以观看牌堆底的X+1张牌，然后可以使用其中你需要的牌并弃置你的前X区域里的所有牌："..
   "1.判定区；2.装备区；3.手牌区。（X为你于当前回合内使用过的牌的类别数）",
@@ -3552,174 +3554,188 @@ Fk:loadTranslationTable{
 }
 
 local liwan = General(extension, "ol__liwan", "wei", 3, 3, General.Female)
+local silv = fk.CreateTriggerSkill{
+  name = "silv",
+  frequency = Skill.Compulsory,
+  events = {fk.Damaged},
+  anim_type = "drawcard",
+  on_use = function(self, event, target, player, data)
+    player:drawCards(1, self.name, "top", "@@silv")
+  end,
+}
+local silv_delay = fk.CreateTriggerSkill{
+  name = "#silv_delay",
+  events = {fk.AfterCardsMove},
+  mute = true,
+  can_trigger = function(self, event, target, player, data)
+    if player.dead then return false end
+    local silv_cards = (data.extra_data or {}).silv_cards or {}
+    if #silv_cards == 0 then return false end
+    local ids = {}
+    local room = player.room
+    for _, move in ipairs(data) do
+      if move.toArea == Card.DiscardPile and move.moveReason == fk.ReasonDiscard and move.from == player.id then
+        for _, info in ipairs(move.moveInfo) do
+          if info.fromArea == Card.PlayerHand and table.contains(silv_cards, info.cardId) and
+          room:getCardArea(info.cardId) == Card.DiscardPile then
+            table.insertIfNeed(ids, info.cardId)
+          end
+        end
+      end
+    end
+    ids = U.moveCardsHoldingAreaCheck(room, ids)
+    if #ids > 0 then
+      self.cost_data = ids
+      return true
+    end
+  end,
+  on_cost = Util.TrueFunc,
+  on_use = function(self, event, target, player, data)
+    player.room:moveCardTo(table.simpleClone(self.cost_data), Card.PlayerHand, player, fk.ReasonPrey, self.name)
+  end,
+
+  refresh_events = {fk.AfterCardsMove},
+  can_refresh = function(self, event, target, player, data)
+    return not player.dead
+  end,
+  on_refresh = function(self, event, target, player, data)
+    local room = player.room
+    local cards = {}
+    for _, move in ipairs(data) do
+      if move.from == player.id then
+        for _, info in ipairs(move.moveInfo) do
+          local card = Fk:getCardById(info.cardId)
+          if card:getMark("@@silv") > 0 then
+            room:setCardMark(card, "@@silv", 0)
+            if move.moveReason == fk.ReasonDiscard then
+              table.insert(cards, info.cardId)
+            end
+          end
+        end
+      end
+    end
+    if #cards > 0 then
+      data.extra_data = data.extra_data or {}
+      local silv_cards = data.extra_data.silv_cards or {}
+      table.insertTable(silv_cards, cards)
+      data.extra_data.silv_cards = silv_cards
+    end
+  end,
+}
+local lianju_active = fk.CreateActiveSkill{
+  name = "lianju_active",
+  min_card_num = 1,
+  max_card_num = 2,
+  target_num = 1,
+  card_filter = function(self, to_select, selected)
+    local cards = self.expand_pile
+    return #selected < 2 and type(cards) == "table" and table.contains(cards, to_select) and
+    table.every(selected, function(id)
+      return Fk:getCardById(to_select, true).color == Fk:getCardById(id, true).color
+    end)
+  end,
+  target_filter = function (self, to_select, selected)
+    return #selected == 0 and to_select ~= Self.id
+  end,
+  can_use = Util.FalseFunc,
+}
+Fk:addSkill(lianju_active)
 local lianju = fk.CreateTriggerSkill{
   name = "lianju",
   anim_type = "support",
   events = {fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
-    if not player:hasSkill(self) or player ~= target or player.phase ~= Player.Finish then return false end
+    if not player:hasSkill(self) or target.dead or target.phase ~= Player.Finish then return false end
     local room = player.room
-    local turn_event = room.logic:getCurrentEvent():findParent(GameEvent.Turn, false)
-    if turn_event == nil then return false end
-    local end_id = turn_event.id
-    local card = nil
-    U.getEventsByRule(room, GameEvent.UseCard, 1, function (e)
-      local use = e.data[1]
-      if use.from == player.id then
-        card = use.card
+    if player == target then
+      local turn_event = room.logic:getCurrentEvent():findParent(GameEvent.Turn, false)
+      if turn_event == nil then return false end
+      local end_id = turn_event.id
+      local cards = {}
+      U.getEventsByRule(room, GameEvent.UseCard, 1, function (e)
+        local use = e.data[1]
+        if use.from == target.id then
+          table.insertTableIfNeed(cards, Card:getIdList(use.card))
+        end
+        return false
+      end, end_id)
+      cards = table.filter(cards, function (id)
+        return room:getCardArea(id) == Card.DiscardPile
+      end)
+      if #cards > 0 then
+        self.cost_data = cards
         return true
       end
-      return false
-    end, end_id)
-    if card ~= nil and #room:getSubcardsByRule(card, { Card.DiscardPile }) > 0 then
-      self.cost_data = card
-      return true
+    elseif table.contains(U.getMark(target, "lianju_sources"), player.id) then
+      local color = target:getMark("@lianju")
+      local turn_event = room.logic:getCurrentEvent():findParent(GameEvent.Turn, false)
+      if turn_event == nil then return false end
+      local end_id = turn_event.id
+      local cards = {}
+      U.getEventsByRule(room, GameEvent.UseCard, 1, function (e)
+        local use = e.data[1]
+        if use.from == target.id then
+          table.insertTableIfNeed(cards, table.filter(Card:getIdList(use.card), function (id)
+            return Fk:getCardById(id, true):getColorString() ~= color
+          end))
+        end
+        return false
+      end, end_id)
+      cards = table.filter(cards, function (id)
+        return room:getCardArea(id) == Card.DiscardPile
+      end)
+      if #cards > 0 then
+        self.cost_data = cards
+        return true
+      end
     end
   end,
   on_cost = function(self, event, target, player, data)
-    local card = self.cost_data
-    local to = player.room:askForChoosePlayers(player, table.map(player.room:getOtherPlayers(player, true), Util.IdMapper),
-    1, 1, "#lianju-choose:::" .. card:toLogString(), self.name, true)
-    if #to > 0 then
-      self.cost_data = {card, to[1]}
+    local cards = self.cost_data
+    if player == target then
+      local success, dat = player.room:askForUseActiveSkill(player, "lianju_active", "#lianju-invoke",
+      true, {expand_pile = cards})
+      if success then
+        self.cost_data = {dat.targets[1], dat.cards}
+        return true
+      end
+    else
       return true
     end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local tar = room:getPlayerById(self.cost_data[2])
-    local card = self.cost_data[1]
-    local cards = room:getSubcardsByRule(card, { Card.DiscardPile })
-    if #cards > 0 then
-      room:moveCardTo(cards, Player.Hand, tar, fk.ReasonPrey, self.name, nil, true, player.id)
+    if player == target then
+      local tar = room:getPlayerById(self.cost_data[1])
+      local cards = self.cost_data[2]
+      room:setPlayerMark(tar, "@lianju", Fk:getCardById(cards[1], true):getColorString())
+      local mark = U.getMark(tar, "lianju_sources")
+      if table.insertIfNeed(mark, player.id) then
+        room:setPlayerMark(tar, "lianju_sources", mark)
+      end
+      room:moveCardTo(cards, Player.Hand, tar, fk.ReasonPrey, self.name, nil, true, player.id,
+      player:hasSkill(silv) and "@@silv" or nil)
+    else
+      local cards = self.cost_data
+      cards = player.room:askForCard(player, 1, 2, false, self.name, true,
+      tostring(Exppattern{ id = cards }), "#lianju-supply::".. target.id, cards)
+      if #cards > 0 then
+        room:moveCardTo(cards, Player.Hand, player, fk.ReasonPrey, self.name, nil, true, player.id,
+        player:hasSkill(silv) and "@@silv" or nil)
+      end
     end
-    room:setPlayerMark(player, "@lianju", card.trueName)
-    local mark = U.getMark(tar, "@@lianju")
-    table.insert(mark, player.id)
-    room:setPlayerMark(tar, "@@lianju", mark)
   end,
 
   refresh_events = {fk.AfterTurnEnd},
   can_refresh = function(self, event, target, player, data)
-    return target == player and player:getMark("@@lianju") ~= 0
+    return target == player and player:getMark("@lianju") ~= 0
   end,
   on_refresh = function(self, event, target, player, data)
-    player.room:setPlayerMark(player, "@@lianju", 0)
+    player.room:setPlayerMark(player, "@lianju", 0)
+    player.room:setPlayerMark(player, "lianju_sources", 0)
   end,
 }
-local lianju_viewas = fk.CreateViewAsSkill{
-  name = "lianju_viewas",
-  card_filter = Util.FalseFunc,
-  view_as = function(self, cards)
-    local card = Fk:cloneCard(Self:getMark("lianju"))
-    card.skillName = "lianju"
-    return card
-  end,
-}
-Fk:addSkill(lianju_viewas)
-local lianju_delay = fk.CreateTriggerSkill{
-  name = "#lianju_delay",
-  anim_type = "control",
-  events = {fk.EventPhaseStart},
-  can_trigger = function(self, event, target, player, data)
-    return target.phase == Player.Finish and not (target.dead or player.dead) and
-    table.contains(U.getMark(target, "@@lianju"), player.id)
-  end,
-  on_cost = Util.TrueFunc,
-  on_use = function(self, event, target, player, data)
-    local room = player.room
-    room:doIndicate(player.id, {target.id})
-    local turn_event = room.logic:getCurrentEvent():findParent(GameEvent.Turn, false)
-    if turn_event == nil then return false end
-    local end_id = turn_event.id
-    local card = nil
-    U.getEventsByRule(room, GameEvent.UseCard, 1, function (e)
-      local use = e.data[1]
-      if use.from == target.id then
-        card = use.card
-        return true
-      end
-      return false
-    end, end_id)
-    if card == nil then return false end
-    local cards = room:getSubcardsByRule(card, { Card.DiscardPile })
-    if #cards == 0 or not room:askForSkillInvoke(target, "#lianju_delay", nil,
-    "#lianju-supply:" .. player.id .. "::" .. card:toLogString()) then return false end
-    room:moveCardTo(cards, Player.Hand, player, fk.ReasonPrey, self.name, nil, true, player.id)
-    if player.dead then return false end
-    if card.trueName == player:getMark("@lianju") then
-      room:loseHp(player, 1, "lianju")
-    else
-      local to_use = Fk:cloneCard(card.name)
-      to_use.skillName = "lianju"
-      if not player:canUse(to_use) or player:prohibitUse(to_use) then return false end
-      room:setPlayerMark(player, "lianju", card.name)
-      local success, dat = player.room:askForUseViewAsSkill(player, "lianju_viewas", "#lianju-use:::"..card.name, true)
-      room:setPlayerMark(player, "lianju",0)
-      if success then
-        room:useCard{
-          from = player.id,
-          tos = table.map(dat.targets, function(p) return {p} end),
-          card = to_use,
-          extraUse = true,
-        }
-      end
-    end
-  end,
-}
-local silv = fk.CreateTriggerSkill{
-  name = "silv",
-  frequency = Skill.Compulsory,
-  events = {fk.AfterCardsMove},
-  anim_type = "drawcard",
-  can_trigger = function(self, event, target, player, data)
-    if player:hasSkill(self) then
-      local name = player:getMark("@lianju")
-      if type(name) ~= "string" then return false end
-      local silvgetCheck = function(move_data)
-        for _, move in ipairs(move_data) do
-          if move.from == player.id then
-            for _, info in ipairs(move.moveInfo) do
-              if info.fromArea == Card.PlayerHand and Fk:getCardById(info.cardId).trueName == name then
-                return true
-              end
-            end
-          end
-        end
-      end
-      local silvloseCheck = function(move_data)
-        for _, move in ipairs(move_data) do
-          if move.to == player.id and move.toArea == Player.Hand then
-            for _, info in ipairs(move.moveInfo) do
-              if Fk:getCardById(info.cardId).trueName == name then
-                return true
-              end
-            end
-          end
-        end
-      end
-      local branches = {}
-      if player:getMark("silv1-turn") == 0 and silvgetCheck(data) then
-        table.insert(branches, "silv1-turn")
-      end
-      if player:getMark("silv2-turn") == 0 and silvloseCheck(data) then
-        table.insert(branches, "silv2-turn")
-      end
-      if #branches > 0 then
-        self.cost_data = branches
-        return true
-      end
-    end
-  end,
-  on_use = function(self, event, target, player, data)
-    local room = player.room
-    for _, name in ipairs(self.cost_data) do
-      room:setPlayerMark(player, name, 1)
-    end
-    room:drawCards(player, #self.cost_data, self.name)
-  end,
-}
-lianju:addRelatedSkill(lianju_delay)
+silv:addRelatedSkill(silv_delay)
 liwan:addSkill(lianju)
 liwan:addSkill(silv)
 
@@ -3728,18 +3744,18 @@ Fk:loadTranslationTable{
   ["designer:ol__liwan"] = "对勾对勾w",
 
   ["lianju"] = "联句",
-  [":lianju"] = "结束阶段，你可以令一名其他角色获得弃牌堆中你本回合最后使用的牌并记录之，"..
-  "然后其下个结束阶段可以令你获得弃牌堆中其此回合最后使用的牌，若两者牌名相同，你失去1点体力；牌名不同，你视为使用之。",
+  [":lianju"] = "结束阶段，你可以令一名其他角色获得弃牌堆里你于此回合内使用过的至多两张颜色相同的牌（若你拥有〖思闾〗，这些牌称为“闾”），"..
+  "然后其下个结束阶段，你可以获得弃牌堆里其于此回合内使用过的另一种颜色的至多两张牌（若你拥有〖思闾〗，这些牌称为“闾”）。",
   ["silv"] = "思闾",
-  [":silv"] = "锁定技，每回合每项各限一次，当你获得或失去与〖联句〗最后记录牌同名的牌后，你摸一张牌。",
+  [":silv"] = "锁定技，当你受到伤害后，你摸一张牌并称为“闾”。当一名角色的“闾”因弃置而移至弃牌堆后，其获得之。",
 
-  ["#lianju-choose"] = "你可以发动 联句，令一名其他角色获得你使用过的 %arg",
+  ["#lianju-invoke"] = "你可以发动 联句，令一名其他角色获得你使用过的1-2张相同颜色的牌",
+  ["#lianju-supply"] = "你可以发动 联句，获得%dest使用过的1-2张相同颜色的牌",
   ["@lianju"] = "联句",
-  ["@@lianju"] = "联句",
-  ["#lianju_delay"] = "联句",
-  ["lianju_viewas"] = "联句",
-  ["#lianju-supply"] = "联句：你可以令 %src 获得你使用过的 %arg",
-  ["#lianju-use"] = "联句：你可以视为使用【%arg】",
+  ["lianju_active"] = "联句",
+
+  ["#silv_delay"] = "思闾",
+  ["@@silv"] = "闾",
 
   ["$lianju1"] = "",
   ["$lianju2"] = "",
@@ -4920,7 +4936,7 @@ local qingyuan = fk.CreateTriggerSkill{
         return p ~= player and not table.contains(mark, p.id)
       end), Util.IdMapper)
       if #tos == 0 then return false end
-      local tos = room:askForChoosePlayers(player, tos, 1, 1, "#qingyuan-choose", self.name, false)
+      tos = room:askForChoosePlayers(player, tos, 1, 1, "#qingyuan-choose", self.name, false)
       table.insert(mark, tos[1])
       room:setPlayerMark(player, "qingyuan_target", mark)
       room:setPlayerMark(room:getPlayerById(tos[1]), "@@qingyuan", 1)
@@ -5675,7 +5691,7 @@ yadan:addSkill(qingya)
 yadan:addSkill(tielun)
 Fk:loadTranslationTable{
   ["yadan"] = "雅丹",
-  --["#yadan"] = "",
+  ["#yadan"] = "西羌相",
 
   ["qingya"] = "倾轧",
   [":qingya"] = "当【杀】指定目标后，若使用者为你且目标角色数为1，你可以弃置你与其之间的角色的各一张手牌，"..
@@ -5687,13 +5703,12 @@ Fk:loadTranslationTable{
   ["#qingya-use"] = "倾轧：你可以使用其中一张牌",
   ["@tielun-round"] = "铁轮",
 
-  ["$qingya1"] = "",
-  ["$qingya"] = "",
-  ["~yadan"] = "",
+  ["$qingya1"] = "罡风从虎，威震四方。",
+  ["$qingya2"] = "铁车过处，寸草不生。",
+  ["~yadan"] = "多谢丞相不杀之恩……",
 }
 
 local caimao = General(extension, "caimao", "wei", 4)
-
 local zuolian = fk.CreateActiveSkill{
   name = "zuolian",
   anim_type = "support",
@@ -5780,7 +5795,6 @@ local jingzhou = fk.CreateTriggerSkill{
 }
 caimao:addSkill(zuolian)
 caimao:addSkill(jingzhou)
-
 Fk:loadTranslationTable{
   ["caimao"] = "蔡瑁",
   --["#caimao"] = "",
