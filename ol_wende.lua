@@ -2433,40 +2433,57 @@ local zhongyun = fk.CreateTriggerSkill{
   name = "zhongyun",
   anim_type = "control",
   frequency = Skill.Compulsory,
-  events = {fk.Damaged, fk.HpRecover},
+  events = {fk.Damaged, fk.HpRecover, fk.AfterCardsMove},
   can_trigger = function(self, event, target, player, data)
-    if target == player and player:hasSkill(self) and player.hp == player:getHandcardNum() and
-      player:usedSkillTimes(self.name) == 0 then
-      return player:isWounded() or not table.every(player.room:getOtherPlayers(player), function (p)
-        return not player:inMyAttackRange(p)
-      end)
+    if event == fk.AfterCardsMove then
+      if player:hasSkill(self) and player.hp == player:getHandcardNum() and player:getMark("zhongyun2-turn") == 0 then
+        for _, move in ipairs(data) do
+          if move.to == player.id and move.toArea == Card.PlayerHand then
+            return true
+          end
+          for _, info in ipairs(move.moveInfo) do
+            if move.from == player.id and info.fromArea == Card.PlayerHand then
+              return true
+            end
+          end
+        end
+      end
+    else
+      return target == player and player:hasSkill(self) and player.hp == player:getHandcardNum() and
+      player:getMark("zhongyun1-turn") == 0
     end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    if table.every(room:getOtherPlayers(player), function (p) return not player:inMyAttackRange(p) end) then
-      room:recover({
-        who = player,
-        num = 1,
-        recoverBy = player,
-        skillName = self.name
-      })
-    else
-      local targets = table.map(table.filter(room:getOtherPlayers(player), function (p)
-        return player:inMyAttackRange(p) end), Util.IdMapper)
-      local cancelable = false
-      if player:isWounded() then
-        cancelable = true
+    if event == fk.AfterCardsMove then
+      room:setPlayerMark(player, "zhongyun2-turn", 1)
+      local targets = table.filter(room:getOtherPlayers(player), function (p) return not p:isNude() end)
+      if #targets > 0 then
+        local to = room:askForChoosePlayers(player, table.map(targets, Util.IdMapper), 1, 1, "#zhongyun-discard", self.name, true)
+        if #to > 0 then
+          local id = room:askForCardChosen(player, room:getPlayerById(to[1]), "he", self.name)
+          room:throwCard({id}, self.name, room:getPlayerById(to[1]), player)
+          return
+        end
       end
-      local to = room:askForChoosePlayers(player, targets, 1, 1, "#zhongyun-damage", self.name, cancelable)
-      if #to > 0 then
-        room:damage{
-          from = player,
-          to = room:getPlayerById(to[1]),
-          damage = 1,
-          skillName = self.name,
-        }
-      else
+      player:drawCards(1, self.name)
+    else
+      room:setPlayerMark(player, "zhongyun1-turn", 1)
+      local targets = table.filter(room:getOtherPlayers(player), function (p) return player:inMyAttackRange(p) end)
+      if #targets > 0 then
+        local to = room:askForChoosePlayers(player, table.map(targets, Util.IdMapper), 1, 1, "#zhongyun-damage", self.name,
+        player:isWounded())
+        if #to > 0 then
+          room:damage{
+            from = player,
+            to = room:getPlayerById(to[1]),
+            damage = 1,
+            skillName = self.name,
+          }
+          return
+        end
+      end
+      if player:isWounded() then
         room:recover({
           who = player,
           num = 1,
@@ -2477,71 +2494,25 @@ local zhongyun = fk.CreateTriggerSkill{
     end
   end,
 }
-local zhongyun2 = fk.CreateTriggerSkill{
-  name = "#zhongyun2",
-  mute = true,
-  frequency = Skill.Compulsory,
-  events = {fk.AfterCardsMove},
-  can_trigger = function(self, event, target, player, data)
-    if player:hasSkill(self) and player.hp == player:getHandcardNum() and player:usedSkillTimes(self.name) == 0 then
-      for _, move in ipairs(data) do
-        if move.to == player.id and move.toArea == Card.PlayerHand then
-          return true
-        end
-        for _, info in ipairs(move.moveInfo) do
-          if move.from == player.id and info.fromArea == Card.PlayerHand then
-            return true
-          end
-        end
-      end
-    end
-  end,
-  on_use = function(self, event, target, player, data)
-    local room = player.room
-    player:broadcastSkillInvoke("zhongyun")
-    room:notifySkillInvoked(player, "zhongyun")
-    if table.every(room:getOtherPlayers(player), function(p) return p:isNude() end) then
-      player:drawCards(1, "zhongyun")
-    else
-      local targets = table.map(table.filter(room:getOtherPlayers(player), function (p)
-        return not p:isNude() end), Util.IdMapper)
-      local to = room:askForChoosePlayers(player, targets, 1, 1, "#zhongyun-discard", "zhongyun", true)
-      if #to > 0 then
-        local id = room:askForCardChosen(player, room:getPlayerById(to[1]), "he", "zhongyun")
-        room:throwCard({id}, "zhongyun", room:getPlayerById(to[1]), player)
-      else
-        player:drawCards(1, "zhongyun")
-      end
-    end
-  end,
-}
 local shenpin = fk.CreateTriggerSkill{
   name = "shenpin",
   anim_type = "control",
   events = {fk.AskForRetrial},
   can_trigger = function(self, event, target, player, data)
-    return player:hasSkill(self) and not player:isNude()
+    return player:hasSkill(self) and not player:isNude() and data.card.color ~= Card.NoColor
   end,
   on_cost = function(self, event, target, player, data)
-    local pattern
-    if data.card:getColorString() == "black" then
-      pattern = "heart,diamond"
-    elseif data.card:getColorString() == "red" then
-      pattern = "spade,club"
-    else
-      return
-    end
-    local card = player.room:askForResponse(player, self.name, ".|.|"..pattern.."|hand,equip", "#shenpin-invoke::"..target.id, true)
-    if card then
-      self.cost_data = card
+    local pattern = data.card.color == Card.Black and "heart,diamond" or "spade,club"
+    local card = player.room:askForCard(player, 1, 1, false, self.name, true, ".|.|"..pattern.."|hand,equip", "#shenpin-invoke::"..target.id)
+    if #card > 0 then
+      self.cost_data = card[1]
       return true
     end
   end,
   on_use = function(self, event, target, player, data)
-    player.room:retrial(self.cost_data, player, data, self.name, false)
+    player.room:retrial(Fk:getCardById(self.cost_data), player, data, self.name, false)
   end,
 }
-zhongyun:addRelatedSkill(zhongyun2)
 weiguan:addSkill(zhongyun)
 weiguan:addSkill(shenpin)
 Fk:loadTranslationTable{
