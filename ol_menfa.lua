@@ -1508,7 +1508,7 @@ local lianzhuw_active = fk.CreateActiveSkill{
   mute = true,
   card_num = function()
     for _, p in ipairs(Fk:currentRoom().alive_players) do
-      if p:hasSkill("lianzhuw") then
+      if p:hasSkill(lianzhuw) then
         if p:getSwitchSkillState("lianzhuw", false) == fk.SwitchYang then
           return 1
         else
@@ -1524,7 +1524,7 @@ local lianzhuw_active = fk.CreateActiveSkill{
   end,
   card_filter = function(self, to_select, selected)
     for _, p in ipairs(Fk:currentRoom().alive_players) do
-      if p:hasSkill("lianzhuw", true) then
+      if p:hasSkill(lianzhuw, true) then
         if p:getSwitchSkillState("lianzhuw", false) == fk.SwitchYang then
           return #selected == 0
         else
@@ -1538,7 +1538,7 @@ local lianzhuw_active = fk.CreateActiveSkill{
     local player = room:getPlayerById(effect.from)
     local src
     for _, p in ipairs(room:getOtherPlayers(player)) do
-      if p:hasSkill("lianzhuw") then
+      if p:hasSkill(lianzhuw) then
         src = p
         break
       end
@@ -2230,7 +2230,7 @@ local yuzhi = fk.CreateTriggerSkill{
         end, round_event.id)
         if #use_events >= x then return false end
       end
-      if player:hasSkill("baozu", true) and room:askForChoice(player, {"yuzhi1", "yuzhi2"}, self.name) == "yuzhi2" then
+      if player:hasSkill(baozu, true) and room:askForChoice(player, {"yuzhi1", "yuzhi2"}, self.name) == "yuzhi2" then
         room:handleAddLoseSkills(player, "-baozu", nil, true, false)
       else
         room:damage{

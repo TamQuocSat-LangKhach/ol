@@ -2545,7 +2545,7 @@ local xieju_record = fk.CreateTriggerSkill{
 
   refresh_events = {fk.TargetConfirmed},
   can_refresh = function(self, event, target, player, data)
-    return player:hasSkill("xieju", true)
+    return player:hasSkill(xieju, true)
   end,
   on_refresh = function(self, event, target, player, data)
     local mark = player:getMark("xieju-turn")
@@ -3436,11 +3436,11 @@ Fk:loadTranslationTable{
   ["runwei1"] = "令其摸一张牌且手牌上限-1",
   ["runwei2"] = "令其弃置一张牌且手牌上限+1",
 
-  ["$cangxin1"] = "",
-  ["$cangxin2"] = "",
-  ["$runwei1"] = "",
-  ["$runwei2"] = "",
-  ["~ol__luyusheng"] = "",
+  ["$cangxin1"] = "世间百味，品在唇而味在心。",
+  ["$cangxin2"] = "我藏风雨于心，故而衣不沾雨。",
+  ["$runwei1"] = "流水不言，泽德万物。",
+  ["$runwei2"] = "生如春雨，润物无声。",
+  ["~ol__luyusheng"] = "郁生既为张妇，誓不再许……",
 }
 
 local dingfuren = General(extension, "ol__dingfuren", "wei", 3, 3, General.Female)
@@ -5797,7 +5797,7 @@ caimao:addSkill(zuolian)
 caimao:addSkill(jingzhou)
 Fk:loadTranslationTable{
   ["caimao"] = "蔡瑁",
-  --["#caimao"] = "",
+  ["#caimao"] = "蛟海腾云",
 
   ["zuolian"] = "佐练",
   [":zuolian"] = "出牌阶段限一次，你可以选择至多X名有手牌的角色（X为你的体力值），这些角色各随机展示一张手牌，"..
@@ -5809,11 +5809,11 @@ Fk:loadTranslationTable{
   ["#zuolian-exchange"] = "佐练：是否将展示的牌与火【杀】或雷【杀】交换（优先检索火【杀】）",
   ["#jingzhou-choose"] = "是否发动 精舟，选择至多%arg名角色，改变这些角色的“连环状态”",
 
-  ["$zuolian1"] = "",
-  ["$zuolian2"] = "",
-  ["$jingzhou1"] = "",
-  ["$jingzhou2"] = "",
-  ["~caimao"] = "",
+  ["$zuolian1"] = "有我操练水军，曹公大可放心！",
+  ["$zuolian2"] = "好！儿郎们很有精神！",
+  ["$jingzhou1"] = "艨艟连江，敌必不战自退。",
+  ["$jingzhou2"] = "精舟锐进，直捣孙家老巢。",
+  ["~caimao"] = "丞相！末将忠心耿耿呀！",
 }
 
 local peixiu = General(extension, "ol__peixiu", "wei", 4)

@@ -66,7 +66,7 @@ local zhuri = fk.CreateTriggerSkill{
           room:loseHp(player, 1, self.name)
         else
           local turn = room.logic:getCurrentEvent():findParent(GameEvent.Turn)
-          if turn ~= nil and player:hasSkill("zhuri", true) then
+          if turn ~= nil and player:hasSkill(self, true) then
             room:handleAddLoseSkills(player, "-zhuri", nil, true, false)
             turn:addCleaner(function()
               room:handleAddLoseSkills(player, "zhuri", nil, true, false)

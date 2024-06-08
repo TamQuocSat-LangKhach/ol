@@ -772,7 +772,7 @@ local ol_ex__buqu = fk.CreateTriggerSkill{
 local ol_ex__buqu_maxcards = fk.CreateMaxCardsSkill{
   name = "#ol_ex__buqu_maxcards",
   fixed_func = function (self, player)
-    if player:hasSkill("ol_ex__buqu") and #player:getPile("ol_ex__buqu_scar") > 0 then
+    if player:hasSkill(ol_ex__buqu) and #player:getPile("ol_ex__buqu_scar") > 0 then
       return #player:getPile("ol_ex__buqu_scar")
     end
   end,
@@ -1901,9 +1901,10 @@ local ol_ex__luanji_trigger = fk.CreateTriggerSkill{
   name = "#ol_ex__luanji_trigger",
   anim_type = "control",
   events = {fk.AfterCardTargetDeclared},
+  main_skill = ol_ex__luanji,
   mute = true,
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill("ol_ex__luanji") and data.card.name == "archery_attack" and #data.tos > 0
+    return target == player and player:hasSkill(ol_ex__luanji) and data.card.name == "archery_attack" and #data.tos > 0
   end,
   on_cost = function(self, event, target, player, data)
     if #data.tos == 0 then return false end
@@ -1959,7 +1960,7 @@ local ol_ex__xueyi = fk.CreateTriggerSkill{
 local ol_ex__xueyi_maxcards = fk.CreateMaxCardsSkill{
   name = "#ol_ex__xueyi_maxcards",
   correct_func = function(self, player)
-    if player:hasSkill("ol_ex__xueyi") then
+    if player:hasSkill(ol_ex__xueyi) then
       return player:getMark("@ol_ex__xueyi_yi")
     else
       return 0
@@ -3863,16 +3864,16 @@ local function Recasthuashen(player)
 end
 local ol_ex__huashen = fk.CreateTriggerSkill{
   name = "ol_ex__huashen",
-  events = {fk.GamePrepared, fk.TurnStart, fk.TurnEnd},
+  events = {fk.GameStart, fk.TurnStart, fk.TurnEnd},
   can_trigger = function(self, event, target, player, data)
-    if event == fk.GamePrepared then
+    if event == fk.GameStart then
       return player:hasSkill(self)
     else
       return player:hasSkill(self) and target == player and #U.getPrivateMark(player, "&ol_ex__huashen") > 0
     end
   end,
   on_cost = function(self, event, target, player, data)
-    if event == fk.GamePrepared then return true end
+    if event == fk.GameStart then return true end
     local choice = player.room:askForChoice(player, {"ol_ex__huashen_re", "ol_ex__huashen_recast", "Cancel"},self.name)
     if choice ~= "Cancel" then
       self.cost_data = choice
@@ -3880,7 +3881,7 @@ local ol_ex__huashen = fk.CreateTriggerSkill{
     end
   end,
   on_use = function(self, event, target, player, data)
-    if event == fk.GamePrepared then
+    if event == fk.GameStart then
       Gethuashen(player, 3)
       Dohuashen(player)
     else

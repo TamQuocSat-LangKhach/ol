@@ -2770,7 +2770,7 @@ local juesheng_record = fk.CreateTriggerSkill{
     if event == fk.CardUseFinished then
       for _, id in ipairs(TargetGroup:getRealTargets(data.tos)) do
         local p = room:getPlayerById(id)
-        if not p.dead and not p:hasSkill("juesheng", true) then
+        if not p.dead and not p:hasSkill(juesheng, true) then
           room:setPlayerMark(p, "juesheng", 1)
           room:handleAddLoseSkills(p, "juesheng", nil, true, false)
         end
@@ -2850,7 +2850,7 @@ local huaiyuan_effect = fk.CreateTriggerSkill{
   mute = true,
   events = {fk.AfterCardsMove},
   can_trigger = function(self, event, target, player, data)
-    if player:hasSkill("huaiyuan") then
+    if player:hasSkill(huaiyuan) then
       if data.extra_data and data.extra_data.huaiyuan_effect then
         local n = data.extra_data.huaiyuan_effect[tostring(player.id)]
         if n then
@@ -2863,7 +2863,7 @@ local huaiyuan_effect = fk.CreateTriggerSkill{
   on_trigger = function(self, event, target, player, data)
     local ret
     for i = 1, self.trigger_times do
-      if not player:hasSkill("huaiyuan") then break end
+      if not player:hasSkill(huaiyuan) then break end
       self:doCost(event, target, player, data)
     end
   end,
@@ -5548,7 +5548,7 @@ local bixin_trigger = fk.CreateTriggerSkill{
   refresh_events = {fk.AfterCardUseDeclared, fk.EventAcquireSkill},
   can_refresh = function(self, event, target, player, data)
     if event == fk.AfterCardUseDeclared then
-      return target == player and player:hasSkill("bixin", true)
+      return target == player and player:hasSkill(bixin, true)
     else
       return target == player and data == bixin and player.room:getTag("RoundCount")
     end

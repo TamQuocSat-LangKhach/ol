@@ -1476,7 +1476,7 @@ local ruilue_active = fk.CreateActiveSkill{
   prompt = "#ruilue",
   can_use = function(self, player)
     if player:usedSkillTimes(self.name, Player.HistoryPhase) == 0 and player.kingdom == "jin" then
-      return table.find(Fk:currentRoom().alive_players, function(p) return p:hasSkill("ruilue") and p ~= player end)
+      return table.find(Fk:currentRoom().alive_players, function(p) return p:hasSkill(ruilue) and p ~= player end)
     end
   end,
   card_filter = function(self, to_select, selected)
@@ -1484,7 +1484,7 @@ local ruilue_active = fk.CreateActiveSkill{
   end,
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
-    local targets = table.filter(room.alive_players, function(p) return p:hasSkill("ruilue") and p ~= player end)
+    local targets = table.filter(room.alive_players, function(p) return p:hasSkill(ruilue) and p ~= player end)
     local target
     if #targets == 1 then
       target = targets[1]
@@ -2654,7 +2654,7 @@ local bolan_active = fk.CreateActiveSkill{
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
     local target = table.find(room:getOtherPlayers(player), function(p)
-      return p:hasSkill("bolan", true)
+      return p:hasSkill(bolan, true)
     end)
     if not target then return end
     target:broadcastSkillInvoke("bolan")
