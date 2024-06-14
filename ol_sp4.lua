@@ -18,6 +18,7 @@ mawan:addSkill("mashu")
 local hunjiang = fk.CreateActiveSkill{
   name = "hunjiang",
   anim_type = "offensive",
+  prompt = "#hunjiang-active",
   min_target_num = 1,
   card_num = 0,
   can_use = function(self, player)
@@ -138,6 +139,7 @@ Fk:loadTranslationTable{
   ["hunjiang"] = "浑疆",
   [":hunjiang"] = "出牌阶段限一次，你可以令攻击范围内至少一名角色同时选择一项：1.令你于本阶段内使用【杀】可指定其为额外目标；" ..
   "2.令你摸一张牌。若这些角色均选择同一项，则依次执行另一项。",
+  ["#hunjiang-active"] = "浑疆：令任意角色选择你可以使用【杀】额外指定其为目标或令你摸牌",
   ["#hunjiang_target"] = "浑疆",
   ["@@hunjiang-phase"] = "浑疆",
   ["hunjiang_extra_target"] = "本阶段 %src 使用【杀】可指定你为额外目标",
