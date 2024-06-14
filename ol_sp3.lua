@@ -3741,6 +3741,7 @@ liwan:addSkill(silv)
 
 Fk:loadTranslationTable{
   ["ol__liwan"] = "李婉",
+  ["#ol__liwan"] = "遐雁归迩",
   ["designer:ol__liwan"] = "对勾对勾w",
 
   ["lianju"] = "联句",
@@ -3757,11 +3758,11 @@ Fk:loadTranslationTable{
   ["#silv_delay"] = "思闾",
   ["@@silv"] = "闾",
 
-  ["$lianju1"] = "",
-  ["$lianju2"] = "",
-  ["$silv1"] = "",
-  ["$silv2"] = "",
-  ["~ol__liwan"] = "",
+  ["$lianju1"] = "室中是阿谁？叹息声正悲。",
+  ["$lianju2"] = "叹息亦何为？但恐大义亏。",
+  ["$silv1"] = "大义同胶漆，匪石心不移。",
+  ["$silv2"] = "人谁不虑终，日月有合离。",
+  ["~ol__liwan"] = "及尔偕老，老使我怨……",
 }
 local zhangyan = General(extension, "zhangyan", "qun", 4)
 local suji = fk.CreateTriggerSkill{
@@ -5692,6 +5693,7 @@ yadan:addSkill(tielun)
 Fk:loadTranslationTable{
   ["yadan"] = "雅丹",
   ["#yadan"] = "西羌相",
+  ["illustrator:yadan"] = "匠人绘",
 
   ["qingya"] = "倾轧",
   [":qingya"] = "当【杀】指定目标后，若使用者为你且目标角色数为1，你可以弃置你与其之间的角色的各一张手牌，"..
