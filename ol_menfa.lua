@@ -2362,7 +2362,7 @@ local fuxun = fk.CreateActiveSkill{
         skillName = self.name,
       })
     end
-    if player:getHandcardNum() == target:getHandcardNum() and not player.dead then
+    if player:getHandcardNum() == target:getHandcardNum() and not player.dead and not player:isNude() then
       local events = room.logic:getEventsOfScope(GameEvent.MoveCards, 1, function(e)
         for _, move in ipairs(e.data) do
           if move.skillName ~= self.name then
@@ -2396,15 +2396,10 @@ local fuxun = fk.CreateActiveSkill{
 local fuxun_viewas = fk.CreateViewAsSkill{
   name = "fuxun_viewas",
   interaction = function()
-    local names = {}
-    for _, id in ipairs(Fk:getAllCardIds()) do
-      local card = Fk:getCardById(id)
-      if card.type == Card.TypeBasic and not card.is_derived then
-        table.insertIfNeed(names, card.name)
-      end
+    local names = U.getViewAsCardNames(Self, "fuxun", U.getAllCardNames("b"))
+    if #names > 0 then
+      return UI.ComboBox { choices = names }
     end
-    if #names == 0 then return end
-    return UI.ComboBox {choices = names}
   end,
   card_filter = function(self, to_select, selected)
     return #selected == 0
