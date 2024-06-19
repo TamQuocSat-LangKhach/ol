@@ -613,7 +613,7 @@ ol_ex__jianyong:addSkill("zongshij")
 Fk:loadTranslationTable{
   ["ol_ex__jianyong"] = "界简雍",
   ["#ol_ex__jianyong"] = "悠游风议",
-  
+
   ["ol_ex__qiaoshui"] = "巧说",
   [":ol_ex__qiaoshui"] = "出牌阶段，你可以与一名角色拼点。若你赢，本回合你使用下一张基本牌或普通锦囊牌可以多或少选择一个目标（无距离限制）；若你没赢，此技能失效且你不能使用锦囊牌直到回合结束。",
   ["#ol_ex__qiaoshui-choose"] = "巧说：你可以为%arg增加/减少一个目标",
@@ -621,8 +621,78 @@ Fk:loadTranslationTable{
   ["#ol_ex__qiaoshui-prompt"] = "巧说:与一名角色拼点，若赢，下一张基本牌或普通锦囊牌可增加或取消一个目标",
 }
 
+-- yj2014
+local ol_ex__caifuren = General(extension, "ol_ex__caifuren", "qun", 3, 3, General.Female)
+local ol_ex__qieting = fk.CreateTriggerSkill{
+  name = "ol_ex__qieting",
+  anim_type = "control",
+  events = {fk.EventPhaseStart},
+  can_trigger = function(self, event, target, player, data)
+    return player:hasSkill(self) and target ~= player and target.phase == Player.Finish
+  end,
+  on_trigger = function (self, event, target, player, data)
+    local room = player.room
+    local n = 0
+    if #room.logic:getEventsOfScope(GameEvent.Damage, 1, function(e)
+      local damage = e.data[1]
+      return damage.from and damage.from == target
+    end, Player.HistoryTurn) == 0 then
+      n = 1
+    end
+    if #room.logic:getEventsOfScope(GameEvent.UseCard, 1, function(e)
+      local use = e.data[1]
+      if use.from == target.id and use.tos then
+        if table.find(TargetGroup:getRealTargets(use.tos), function(pid) return pid ~= target.id end) then
+          return true
+        end
+      end
+      return false
+    end, Player.HistoryTurn) == 0 then
+      n = 2
+    end
+    if n > 0 then
+      local all_choices = {"ol_ex__qieting_move::"..target.id, "draw1", "Cancel"}
+      local choices = table.simpleClone(all_choices)
+      self.cost_data = ""
+      self.cancel_cost = false
+      for i = 1, n, 1 do
+        table.removeOne(choices, self.cost_data)
+        if #choices == 3 and not target:canMoveCardsInBoardTo(player, "e") then
+          table.remove(choices, 1)
+        end
+        if player.dead or #choices < 2 or self.cancel_cost then return end
+        self:doCost(event, target, player, {choices, all_choices, n})
+      end
+    end
+  end,
+  on_cost = function (self, event, target, player, data)
+    local choice = player.room:askForChoice(player, data[1], self.name, "#ol_ex__qieting-invoke:::"..data[3], false, data[2])
+    if choice ~= "Cancel" then
+      self.cost_data = choice
+      return true
+    end
+    self.cancel_cost = true
+  end,
+  on_use = function(self, event, target, player, data)
+    if self.cost_data == "draw1" then
+      player:drawCards(1, self.name)
+    else
+      player.room:askForMoveCardInBoard(player, target, player, self.name, "e", target)
+    end
+  end,
+}
+ol_ex__caifuren:addSkill(ol_ex__qieting)
+ol_ex__caifuren:addSkill("xianzhou")  --辣鸡策划真摆
+Fk:loadTranslationTable{
+  ["ol_ex__caifuren"] = "界蔡夫人",
+  ["#ol_ex__caifuren"] = "襄江的蒲苇",
 
-
+  ["ol_ex__qieting"] = "窃听",
+  [":ol_ex__qieting"] = "其他角色的回合结束后，若其本回合未对其他角色造成伤害，你可以选择一项；若其本回合未对其他角色使用过牌，你可以选择两项："..
+  "1.将其装备区的一张牌置入你的装备区；2.摸一张牌。",
+  ["ol_ex__qieting_move"] = "将%dest一张装备移动给你",
+  ["#ol_ex__qieting-invoke"] = "窃听：你可以选择%arg项",
+}
 
 
 
