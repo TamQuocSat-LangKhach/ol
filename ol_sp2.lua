@@ -2478,9 +2478,9 @@ local chendeng = General(extension, "ol__chendeng", "qun", 4)
 local fengji = fk.CreateTriggerSkill{
   name = "fengji",
   anim_type = "support",
-  events = {fk.EventPhaseStart},
+  events = {fk.RoundStart},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self) and player.phase == Player.Draw
+    return player:hasSkill(self)
   end,
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
@@ -2492,64 +2492,111 @@ local fengji = fk.CreateTriggerSkill{
       if choice == "Cancel" then
         break
       else
-        room:setPlayerMark(player, "@"..choice, -1)
-        local to = room:askForChoosePlayers(player, table.map(room:getOtherPlayers(player), Util.IdMapper), 1, 1, "#fengji-choose:::"..choice, self.name, true)
+        room:setPlayerMark(player, "@"..choice.."-round", -1)
+        local to = room:askForChoosePlayers(player, table.map(room:getOtherPlayers(player), Util.IdMapper),
+          1, 1, "#fengji-choose:::"..choice, self.name, true)
         if #to > 0 then
-          room:addPlayerMark(room:getPlayerById(to[1]), "@"..choice, 2)
+          room:addPlayerMark(room:getPlayerById(to[1]), "@"..choice.."-round", 2)
         end
       end
     end
     if #choices > 0 then
       for _, choice in ipairs(choices) do
-        room:addPlayerMark(player, "@"..choice, 1)
+        room:addPlayerMark(player, "@"..choice.."-round", 1)
       end
     end
   end,
-
-  refresh_events = {fk.DrawNCards, fk.TurnEnd},
-  can_refresh = function(self, event, target, player, data)
-    if target == player then
-      if event == fk.DrawNCards then
-        return player:getMark("@fengji_draw") ~= 0
-      else
-        return player:getMark("@fengji_draw") ~= 0 or player:getMark("@fengji_slash") ~= 0
-      end
-    end
+}
+local fengji_delay = fk.CreateTriggerSkill{
+  name = "#fengji_delay",
+  mute = true,
+  events = {fk.DrawNCards},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:getMark("@fengji_draw-round") ~= 0
   end,
-  on_refresh = function(self, event, target, player, data)
-    local room = player.room
-    if event == fk.DrawNCards then
-      data.n = data.n + player:getMark("@fengji_draw")
-      room:setPlayerMark(player, "@fengji_draw", 0)
-    else
-      room:setPlayerMark(player, "@fengji_draw", 0)
-      room:setPlayerMark(player, "@fengji_slash", 0)
-    end
+  on_cost = Util.TrueFunc,
+  on_use = function(self, event, target, player, data)
+    data.n = data.n + player:getMark("@fengji_draw-round")
   end,
 }
 local fengji_targetmod = fk.CreateTargetModSkill{
   name = "#fengji_targetmod",
   residue_func = function(self, player, skill, scope)
-    if skill.trueName == "slash_skill" and player:getMark("@fengji_slash") ~= 0 and scope == Player.HistoryPhase then
-      return player:getMark("@fengji_slash")
+    if skill.trueName == "slash_skill" and player:getMark("@fengji_slash-round") ~= 0 and scope == Player.HistoryPhase then
+      return player:getMark("@fengji_slash-round")
     end
   end,
 }
+local xuanhui = fk.CreateTriggerSkill{
+  name = "xuanhui",
+  anim_type = "control",
+  events = {fk.EventPhaseStart},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self) and player.phase == Player.Start and player:getMark("@@xuanhui") == 0 and
+      (player:getMark("@fengji_draw-round") ~= 0 or player:getMark("@fengji_slash-round") ~= 0) and
+      table.find(player.room:getOtherPlayers(player), function(p)
+        return p:getMark("@fengji_draw-round") ~= 0 or p:getMark("@fengji_slash-round") ~= 0
+      end)
+  end,
+  on_cost = function (self, event, target, player, data)
+    local room = player.room
+    local targets = table.filter(room:getOtherPlayers(player), function(p)
+      return p:getMark("@fengji_draw-round") ~= 0 or p:getMark("@fengji_slash-round") ~= 0
+    end)
+    if #targets == 1 then
+      if room:askForSkillInvoke(player, self.name, nil, "#xuanhui-invoke::"..targets[1].id) then
+        self.cost_data = targets[1].id
+        return true
+      end
+    else
+      local to = room:askForChoosePlayers(player, table.map(targets, Util.IdMapper), 1, 1, "#xuanhui-choose", self.name, true)
+      if #to > 0 then
+        self.cost_data = to[1]
+        return true
+      end
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    room:setPlayerMark(player, "@@xuanhui", 1)
+    local to = room:getPlayerById(self.cost_data)
+    local n1, n2 = player:getMark("@fengji_draw-round"), player:getMark("@fengji_slash-round")
+    room:setPlayerMark(player, "@fengji_draw-round", to:getMark("@fengji_draw-round"))
+    room:setPlayerMark(player, "@fengji_slash-round", to:getMark("@fengji_slash-round"))
+    room:setPlayerMark(to, "@fengji_draw-round", n1)
+    room:setPlayerMark(to, "@fengji_slash-round", n2)
+  end,
+
+  refresh_events = {fk.Deathed},
+  can_refresh = function(self, event, target, player, data)
+    return player:getMark("@@xuanhui") ~= 0
+  end,
+  on_refresh = function(self, event, target, player, data)
+    player.room:setPlayerMark(player, "@@xuanhui", 0)
+  end,
+}
+fengji:addRelatedSkill(fengji_delay)
 fengji:addRelatedSkill(fengji_targetmod)
 chendeng:addSkill(fengji)
+chendeng:addSkill(xuanhui)
 Fk:loadTranslationTable{
   ["ol__chendeng"] = "陈登",
   ["#ol__chendeng"] = "湖海豪气",
   ["illustrator:ol__chendeng"] = "君桓文化",
   ["fengji"] = "丰积",
-  [":fengji"] = "摸牌阶段开始时，你可以令你本回合以下任意项数值-1，令一名其他角色下回合对应项数值+2，令你本回合未选择选项的数值+1：<br>"..
+  [":fengji"] = "每轮开始时，你可以令你本轮以下任意项数值-1，令一名其他角色本轮对应项数值+2，令你本轮未选择选项的数值+1：<br>"..
   "1.摸牌阶段摸牌数；2.出牌阶段使用【杀】次数上限。",
-  ["#fengji-choice"] = "丰积：令你本回合-1，令一名其他角色下回合+2，令你本回合未选择的+1",
+  ["xuanhui"] = "旋回",
+  [":xuanhui"] = "准备阶段，你可以令本轮其他丰积角色与你交换对应丰积项效果，若如此做，本技能失效直到有角色死亡。",
+  ["#fengji-choice"] = "丰积：令你本轮-1，令一名其他角色本轮+2，令你本轮未选择的+1",
   ["fengji_draw"] = "摸牌阶段摸牌数",
   ["fengji_slash"] = "出牌阶段使用【杀】次数",
-  ["@fengji_draw"] = "丰积:摸牌",
-  ["@fengji_slash"] = "丰积:使用杀",
-  ["#fengji-choose"] = "丰积：你可以令一名其他角色下回合%arg+2",
+  ["@fengji_draw-round"] = "丰积:摸牌",
+  ["@fengji_slash-round"] = "丰积:使用杀",
+  ["#fengji-choose"] = "丰积：你可以令一名其他角色本轮%arg+2",
+  ["@@xuanhui"] = "旋回失效",
+  ["#xuanhui-invoke"] = "旋回：是否与 %dest 交换丰积效果？",
+  ["#xuanhui-choose"] = "旋回：你可以与一名角色交换丰积效果",
 
   ["$fengji1"] = "取舍有道，待机而赢。",
   ["$fengji2"] = "此退彼进，月亏待盈。",
@@ -2745,7 +2792,7 @@ local juesheng = fk.CreateViewAsSkill{
     local num = #room.logic:getEventsOfScope(GameEvent.UseCard, 999, function(e)
       return e.data[1].from == to.id and e.data[1].card.trueName == "slash"
     end, Player.HistoryGame)
-    use.additionalDamage = (use.additionalDamage or 0) + math.max(num, 1) - 1
+    use.additionalDamage = (use.additionalDamage or 0) + math.max(num, 1)
   end,
   enabled_at_play = function(self, player)
     return player:usedSkillTimes(self.name, Player.HistoryGame) == 0
@@ -2794,8 +2841,8 @@ Fk:loadTranslationTable{
   ["yuanchou"] = "怨仇",
   [":yuanchou"] = "锁定技，你使用的黑色【杀】无视目标角色防具，其他角色对你使用的黑色【杀】无视你的防具。",
   ["juesheng"] = "决生",
-  [":juesheng"] = "限定技，你可以视为使用一张伤害为X的【决斗】（X为第一个目标角色本局使用【杀】的数量且至少为1），然后其获得本技能直到其下回合结束。",
-  ["#juesheng-prompt"] = "视为使用【决斗】，伤害值为目标本局使用【杀】的数量！",
+  [":juesheng"] = "限定技，你可以视为使用一张伤害为X的【决斗】（X为第一个目标角色本局使用【杀】的数量+1），然后其获得本技能直到其下回合结束。",
+  ["#juesheng-prompt"] = "视为使用【决斗】，伤害值为目标本局使用【杀】的数量+1！",
 
   ["$yuanchou1"] = "鞭挞之仇，不共戴天！",
   ["$yuanchou2"] = "三将军怎可如此对待我二人！",

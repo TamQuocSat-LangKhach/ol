@@ -380,6 +380,102 @@ Fk:loadTranslationTable{
   ["~ol_ex__wangyi"] = "",
 }
 
+local liubiao = General(extension, "ol_ex__liubiao", "qun", 3, 3)
+local ol_ex__zishou = fk.CreateTriggerSkill{
+  name = "ol_ex__zishou",
+  anim_type = "drawcard",
+  events = {fk.DrawNCards, fk.EventPhaseEnd},
+  can_trigger = function(self, event, target, player, data)
+    if target == player then
+      if event == fk.DrawNCards then
+        return player:hasSkill(self)
+      else
+        return player.phase == Player.Finish and
+          player:usedSkillTimes(self.name, Player.HistoryTurn) > 0 and
+          #player.room.logic:getEventsOfScope(GameEvent.Damage, 1, function(e)
+            local damage = e.data[1]
+            return damage.from and damage.from == target and damage.to ~= target
+          end, Player.HistoryTurn) > 0
+      end
+    end
+  end,
+  on_cost = function (self, event, target, player, data)
+    if event == fk.DrawNCards then
+      return player.room:askForSkillInvoke(player, self.name)
+    else
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local kingdoms = {}
+    for _, p in ipairs(Fk:currentRoom().alive_players) do
+      table.insertIfNeed(kingdoms, p.kingdom)
+    end
+    if event == fk.DrawNCards then
+      data.n = data.n + #kingdoms
+    else
+      player.room:askForDiscard(player, #kingdoms, #kingdoms, true, self.name, false)
+    end
+  end,
+}
+local ol_ex__zongshi = fk.CreateTriggerSkill{
+  name = "ol_ex__zongshi",
+  anim_type = "defensive",
+  events = {fk.DamageInflicted},
+  frequency = Skill.Compulsory,
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self) and data.from and data.from ~= player and
+      not table.contains(U.getMark(player, "@ol_ex__zongshi"), data.from.kingdom)
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local mark = U.getMark(player, "@ol_ex__zongshi")
+    table.insert(mark, data.from.kingdom)
+    room:setPlayerMark(player, "@ol_ex__zongshi", mark)
+    if not data.from.dead then
+      room:doIndicate(player.id, {data.from.id})
+      data.from:drawCards(1, self.name)
+    end
+    return true
+  end,
+}
+local ol_ex__zongshi_maxcards = fk.CreateMaxCardsSkill{
+  name = "#ol_ex__zongshi_maxcards",
+  main_skill = ol_ex__zongshi,
+  correct_func = function(self, player)
+    if player:hasSkill(ol_ex__zongshi) then
+      local kingdoms = {}
+      for _, p in ipairs(Fk:currentRoom().alive_players) do
+        table.insertIfNeed(kingdoms, p.kingdom)
+      end
+      return #kingdoms
+    else
+      return 0
+    end
+  end,
+}
+ol_ex__zongshi:addRelatedSkill(ol_ex__zongshi_maxcards)
+liubiao:addSkill(ol_ex__zishou)
+liubiao:addSkill(ol_ex__zongshi)
+Fk:loadTranslationTable{
+  ["ol_ex__liubiao"] = "界刘表",
+  ["#ol_ex__liubiao"] = "跨蹈汉南",
+  --["designer:ol_ex__liubiao"] = "",
+  --["illustrator:ol_ex__liubiao"] = "",
+
+  ["ol_ex__zishou"] = "自守",
+  [":ol_ex__zishou"] = "摸牌阶段，你可以多摸X张牌，若如此做，本回合结束阶段，若你本回合对其他角色造成过伤害，你弃置X张牌（X为全场势力数）。",
+  ["ol_ex__zongshi"] = "宗室",
+  [":ol_ex__zongshi"] = "锁定技，你的手牌上限+X（X为全场势力数）。其他角色对你造成伤害时，防止此伤害并令其摸一张牌，每个势力限一次。",
+  ["@ol_ex__zongshi"] = "宗室",
+
+  ["$ol_ex__zishou1"] = "",
+  ["$ol_ex__zishou2"] = "",
+  ["$ol_ex__zongshi1"] = "",
+  ["$ol_ex__zongshi2"] = "",
+  ["~ol_ex__liubiao"] = "",
+}
+
 -- yj2013
 local yufan = General(extension, "ol_ex__yufan", "wu", 3)
 local zongxuan = fk.CreateTriggerSkill{
@@ -626,9 +722,9 @@ local ol_ex__caifuren = General(extension, "ol_ex__caifuren", "qun", 3, 3, Gener
 local ol_ex__qieting = fk.CreateTriggerSkill{
   name = "ol_ex__qieting",
   anim_type = "control",
-  events = {fk.EventPhaseStart},
+  events = {fk.TurnEnd},
   can_trigger = function(self, event, target, player, data)
-    return player:hasSkill(self) and target ~= player and target.phase == Player.Finish
+    return player:hasSkill(self) and target ~= player
   end,
   on_trigger = function (self, event, target, player, data)
     local room = player.room
