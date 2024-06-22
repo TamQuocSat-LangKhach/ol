@@ -306,7 +306,14 @@ local miji = fk.CreateTriggerSkill{
   anim_type = "drawcard",
   events = {fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self) and player.phase == Player.Finish and player:isWounded()
+    return player:hasSkill(self) and target.phase == Player.Finish and player:isWounded() and
+    (target == player or player:getMark("@@ol_ex__zhenlie-turn") > 0)
+  end,
+  on_cost = function(self, event, target, player, data)
+    if target == player then
+      return player.room:askForSkillInvoke(player, self.name)
+    end
+    return true
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
@@ -343,7 +350,7 @@ local zhenlie = fk.CreateTriggerSkill{
     if not (to.dead or to:isNude()) then
       table.insert(choices, "ol_ex__zhenlie_prey")
     end
-    if player:isWounded() and player:hasSkill(miji) then
+    if player:isWounded() and player:hasSkill(miji, true) then
       table.insert(choices, "ol_ex__zhenlie_miji")
     end
     if #choices == 0 then return false end
@@ -352,9 +359,7 @@ local zhenlie = fk.CreateTriggerSkill{
       local id = room:askForCardChosen(player, to, "he", self.name)
       room:obtainCard(player.id, id, false, fk.ReasonPrey, player.id)
     elseif choice == "ol_ex__zhenlie_miji" then
-      room:notifySkillInvoked(player, "ol_ex__miji")
-      player:broadcastSkillInvoke("ol_ex__miji")
-      miji:use(event, target, player, data)
+      room:setPlayerMark(player, "@@ol_ex__zhenlie-turn", 1)
     end
   end,
 }
@@ -366,12 +371,14 @@ Fk:loadTranslationTable{
   --["designer:ol_ex__wangyi"] = "",
   --["illustrator:ol_ex__wangyi"] = "",
   ["ol_ex__zhenlie"] = "贞烈",
-  [":ol_ex__zhenlie"] = "当你成为【杀】或普通锦囊牌的目标后，若使用者不为你，你可以失去1点体力，令此牌对你无效，你选择：1.获得使用者的一张牌；2.发动〖秘计〗。",
+  [":ol_ex__zhenlie"] = "当你成为【杀】或普通锦囊牌的目标后，若使用者不为你，你可以失去1点体力，令此牌对你无效，"..
+  "你选择：1.获得使用者的一张牌；2.于当前回合（你的回合除外）的结束阶段发动〖秘计〗。",
   ["ol_ex__miji"] = "秘计",
   [":ol_ex__miji"] = "结束阶段，若你已受伤，你可以摸X张牌，然后可以将至多X张牌交给其他角色。（X为你已损失的体力值）",
   ["#ol_ex__zhenlie-invoke"] = "是否对%src发动 贞烈，令其使用的%arg对你无效",
-  ["ol_ex__zhenlie_prey"] = "获得使用者一张牌",
-  ["ol_ex__zhenlie_miji"] = "发动一次“秘计”",
+  ["ol_ex__zhenlie_prey"] = "获得使用者的一张牌",
+  ["ol_ex__zhenlie_miji"] = "于结束阶段发动〖秘计〗",
+  ["@@ol_ex__zhenlie-turn"] = "贞烈",
 
   ["$ol_ex__zhenlie1"] = "",
   ["$ol_ex__zhenlie2"] = "",

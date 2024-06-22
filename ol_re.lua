@@ -843,7 +843,7 @@ local ol__mingzhe = fk.CreateTriggerSkill{
         if move.from == player.id and (move.to ~= player.id or (move.toArea ~= Card.PlayerHand and move.toArea ~= Card.PlayerEquip)) then
           for _, info in ipairs(move.moveInfo) do
             if (info.fromArea == Card.PlayerHand or info.fromArea == Card.PlayerEquip) and
-            Fk:getCardById(info.cardId).color == Card.Red then
+            Fk:getCardById(info.cardId, true).color == Card.Red then
               return true
             end
           end
@@ -852,6 +852,28 @@ local ol__mingzhe = fk.CreateTriggerSkill{
     end
   end,
   on_use = function(self, event, target, player, data)
+    local room = player.room
+    local cards = {}
+    for _, move in ipairs(data) do
+      if move.from == player.id and (move.to ~= player.id or (move.toArea ~= Card.PlayerHand and move.toArea ~= Card.PlayerEquip)) then
+        for _, info in ipairs(move.moveInfo) do
+          if (info.fromArea == Card.PlayerHand or info.fromArea == Card.PlayerEquip) and
+          Fk:getCardById(info.cardId, true).color == Card.Red and room:getCardArea(info.cardId) == Card.PlayerHand then
+            table.insert(cards, info.cardId)
+          end
+        end
+      end
+    end
+    if #cards > 0 then
+      for _, p in ipairs(player.room.alive_players) do
+        local to_show = table.filter(cards, function(id)
+          return room:getCardOwner(id) == p
+        end)
+        if #to_show > 0 then
+          p:showCards(to_show)
+        end
+      end
+    end
     player:drawCards(1, self.name)
   end,
 }
@@ -864,12 +886,12 @@ Fk:loadTranslationTable{
   ["designer:ol__zhugejin"] = "玄蝶既白",
   ["illustrator:ol__zhugejin"] = "G.G.G.",
 
-  ["ol__huanshi"] = "缓释",
-  [":ol__huanshi"] = "当一名角色的判定牌生效前，你可以令其观看你的牌并用其中一张牌代替判定牌。",
+  --["ol__huanshi"] = "缓释",
+  --[":ol__huanshi"] = "当一名角色的判定结果确定前，你可以令其观看你的牌并用其中一张牌代替判定牌，然后你可以重铸任意张牌。",
   ["ol__hongyuan"] = "弘援",
-  [":ol__hongyuan"] = "每阶段限一次，当你一次获得至少两张牌后，你可以交给至多两名其他角色各一张牌。",
+  [":ol__hongyuan"] = "当你得到牌后，若这些牌数大于1且你于当前阶段内未发动过此技能，你可以依次将至多两张牌交给等量的角色。",
   ["ol__mingzhe"] = "明哲",
-  [":ol__mingzhe"] = "锁定技，当你于出牌阶段外失去红色牌后，你摸一张牌。",
+  [":ol__mingzhe"] = "锁定技，当你于出牌阶段外失去红色牌后，你令手牌区里有这些牌的角色各展示之且你摸一张牌。",
 
   ["#ol__hongyuan-give"] = "弘援：你可以选择一张牌交给一名角色",
 
