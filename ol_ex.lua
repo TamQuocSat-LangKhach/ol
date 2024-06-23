@@ -1035,17 +1035,11 @@ local ol_ex__guhuo = fk.CreateViewAsSkill{
   name = "ol_ex__guhuo",
   pattern = ".",
   interaction = function()
-    local names = {}
-    for _, id in ipairs(Fk:getAllCardIds()) do
-      local card = Fk:getCardById(id)
-      if (card.type == Card.TypeBasic or card:isCommonTrick()) and not card.is_derived and
-      ((Fk.currentResponsePattern == nil and Self:canUse(card)) or
-      (Fk.currentResponsePattern and Exppattern:Parse(Fk.currentResponsePattern):match(card))) then
-        table.insertIfNeed(names, card.name)
-      end
+    local all_names = U.getAllCardNames("bt")
+    local names = U.getViewAsCardNames(Self, "ol_ex__guhuo", all_names)
+    if #names > 0 then
+      return UI.ComboBox { choices = names, all_choices = all_names }
     end
-    if #names == 0 then return false end
-    return UI.ComboBox { choices = names }
   end,
   card_filter = function(self, to_select, selected)
     return #selected == 0 and Fk:currentRoom():getCardArea(to_select) ~= Card.PlayerEquip

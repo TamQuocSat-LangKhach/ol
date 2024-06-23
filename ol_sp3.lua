@@ -3424,6 +3424,7 @@ Fk:loadTranslationTable{
   ["ol__luyusheng"] = "陆郁生",
   ["#ol__luyusheng"] = "义姑",
   ["designer:ol__luyusheng"] = "zzccll朱古力",
+  ["illustrator:ol__luyusheng"] = "土豆",
 
   ["cangxin"] = "藏心",
   [":cangxin"] = "锁定技，摸牌阶段开始时，你展示牌堆底三张牌并摸与其中<font color='red'>♥</font>牌数等量张牌。"..
@@ -3533,6 +3534,7 @@ Fk:loadTranslationTable{
   ["#ol__dingfuren"] = "我心匪席",
   ["cv:ol__dingfuren"] = "闲踏梧桐",
   ["designer:ol__dingfuren"] = "幽蝶化烬",
+  ["illustrator:ol__dingfuren"] = "匠人绘",
   ["ol__fudao"] = "抚悼",
   [":ol__fudao"] = "游戏开始时，你摸三张牌，交给一名其他角色至多三张手牌，弃置任意张手牌，然后记录你的手牌数。每回合结束时，若当前回合角色的手牌数为此数值，你可以与其各摸一张牌。",
   ["ol__fengyan"] = "讽言",
@@ -3743,6 +3745,7 @@ Fk:loadTranslationTable{
   ["ol__liwan"] = "李婉",
   ["#ol__liwan"] = "遐雁归迩",
   ["designer:ol__liwan"] = "对勾对勾w",
+  ["illustrator:ol__liwan"] = "游卡",
 
   ["lianju"] = "联句",
   [":lianju"] = "结束阶段，你可以令一名其他角色获得弃牌堆里你于此回合内使用过的至多两张颜色相同的牌（若你拥有〖思闾〗，这些牌称为“闾”），"..
@@ -4258,7 +4261,7 @@ local xuanzhu = fk.CreateViewAsSkill{
       all_names = U.getAllCardNames("b")
     else
       for _, id in ipairs(Fk:getAllCardIds()) do
-        local card = Fk:getCardById(id)
+        local card = Fk:getCardById(id, true)
         if card:isCommonTrick() and not (card.is_derived or card.multiple_targets or card.is_passive) then
           table.insertIfNeed(all_names, card.name)
         end

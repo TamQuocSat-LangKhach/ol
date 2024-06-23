@@ -2952,22 +2952,13 @@ Fk:loadTranslationTable{
 local wangxiang = General(extension, "wangxiang", "jin", 3)
 local bingxin = fk.CreateViewAsSkill{
   name = "bingxin",
-  pattern = "^nullification|.|.|.|.|basic|.",
+  pattern = ".|.|.|.|.|basic|.",
   interaction = function()
-    local names = {}
-    local mark = Self:getMark("bingxin-turn")
-    for _, id in ipairs(Fk:getAllCardIds()) do
-      local card = Fk:getCardById(id)
-      if card.type == Card.TypeBasic and
-        ((Fk.currentResponsePattern == nil and Self:canUse(card)) or
-        (Fk.currentResponsePattern and Exppattern:Parse(Fk.currentResponsePattern):match(card))) then
-        if mark == 0 or (not table.contains(mark, card.trueName)) then
-          table.insertIfNeed(names, card.name)
-        end
-      end
+    local all_names = U.getAllCardNames("b")
+    local names = U.getViewAsCardNames(Self, "bingxin", all_names, {}, U.getMark(Self, "bingxin-turn"))
+    if #names > 0 then
+      return UI.ComboBox { choices = names, all_choices = all_names }
     end
-    if #names == 0 then return end
-    return UI.ComboBox {choices = names}
   end,
   card_filter = Util.FalseFunc,
   view_as = function(self, cards)
@@ -2998,6 +2989,7 @@ wangxiang:addSkill(bingxin)
 Fk:loadTranslationTable{
   ["wangxiang"] = "王祥",
   ["#wangxiang"] = "沂川跃鲤",
+  ["illustrator:wangxiang"] = "KY",
   ["bingxin"] = "冰心",
   [":bingxin"] = "若你手牌的数量等于体力值且颜色相同，你可以摸一张牌视为使用一张与本回合以此法使用过的牌牌名不同的基本牌。",
 

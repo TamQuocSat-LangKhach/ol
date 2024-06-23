@@ -432,23 +432,11 @@ local youlong = fk.CreateViewAsSkill{
   anim_type = "switch",
   pattern = ".",
   interaction = function()
-    local names = {}
-    local mark = Self:getMark("@$youlong")
-    local isYang = Self:getSwitchSkillState("youlong") == fk.SwitchYang
-    for _, id in ipairs(Fk:getAllCardIds()) do
-      local card = Fk:getCardById(id)
-      if ((card.type == Card.TypeBasic and not isYang) or
-        (card:isCommonTrick() and isYang)) and
-        not card.is_derived and
-        ((Fk.currentResponsePattern == nil and Self:canUse(card)) or
-        (Fk.currentResponsePattern and Exppattern:Parse(Fk.currentResponsePattern):match(card))) then
-        if mark == 0 or (not table.contains(mark, card.trueName)) then
-          table.insertIfNeed(names, card.name)
-        end
-      end
+    local all_names = U.getAllCardNames((Self:getSwitchSkillState("youlong") == fk.SwitchYang) and "t" or "b")
+    local names = U.getViewAsCardNames(Self, "youlong", all_names, {}, U.getMark(Self, "@$youlong"))
+    if #names > 0 then
+      return UI.ComboBox { choices = names, all_choices = all_names }
     end
-    if #names == 0 then return end
-    return UI.ComboBox {choices = names}
   end,
   card_filter = Util.FalseFunc,
   view_as = function(self, cards)
@@ -484,6 +472,10 @@ local youlong = fk.CreateViewAsSkill{
   end,
   enabled_at_response = function(self, player, response)
     local state = player:getSwitchSkillState(self.name, false, true)
+    if Fk.currentResponsePattern == "nullification" then
+      --FIXME:没有enabled_at_nullification，只能姑且这么写了……
+      if state == "yin" or table.contains(U.getMark(Self, "@$youlong"), "nullification") then return false end
+    end
     return (not response) and player:getMark("youlong_" .. state .. "-round") == 0 and #player:getAvailableEquipSlots() > 0
   end,
 }

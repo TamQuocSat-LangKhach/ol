@@ -404,6 +404,7 @@ Fk:loadTranslationTable{
   ["ol__zhoufei"] = "周妃",
   ["#ol__zhoufei"] = "软玉温香",
   ["designer:ol__zhoufei"] = "玄蝶既白",
+  ["illustrator:ol__zhoufei"] = "圆子",
 
   ["ol__liangyin"] = "良姻",
   [":ol__liangyin"] = "当每回合首次有牌移出/移入游戏后，你可以与一名其他角色各摸/弃置一张牌，然后你可以令其中一名手牌数为X的角色回复1点体力（X为“箜”数）。",

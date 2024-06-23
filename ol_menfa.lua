@@ -2294,6 +2294,7 @@ Fk:loadTranslationTable{
   ["olz__zhonghui"] = "族钟会",
   ["#olz__zhonghui"] = "百巧惎",
   ["designer:olz__zhonghui"] = "玄蝶既白",
+  ["illustrator:olz__zhonghui"] = "黯荧岛",
   ["yuzhi"] = "迂志",
   [":yuzhi"] = "锁定技，每轮开始时，你展示一张手牌，摸X张牌。此轮结束时，你弃置此牌，若你于此轮内使用过的牌数或上轮以此法摸牌数小于X，"..
   "你受到1点雷电伤害或失去〖保族〗。（X为此牌牌名字数）",
@@ -2396,9 +2397,10 @@ local fuxun = fk.CreateActiveSkill{
 local fuxun_viewas = fk.CreateViewAsSkill{
   name = "fuxun_viewas",
   interaction = function()
-    local names = U.getViewAsCardNames(Self, "fuxun", U.getAllCardNames("b"))
+    local all_names = U.getAllCardNames("b")
+    local names = U.getViewAsCardNames(Self, "fuxun", all_names)
     if #names > 0 then
-      return UI.ComboBox { choices = names }
+      return UI.ComboBox { choices = names, all_choices = all_names }
     end
   end,
   card_filter = function(self, to_select, selected)
@@ -2934,7 +2936,7 @@ Fk:loadTranslationTable{
   ["olz__wuqiao"] = "族吴乔",
   ["#olz__wuqiao"] = "孤节卅岁",
   ["designer:olz__wuqiao"] = "玄蝶既白",
-  --["illustrator:olz__wuqiao"] = "",
+  ["illustrator:olz__wuqiao"] = "君桓文化",
   ["qiajue"] = "跒倔",
   [":qiajue"] = "摸牌阶段开始时，你可以弃置一张黑色牌并于本阶段结束时展示所有手牌，若点数和大于30，你的手牌上限-2，"..
   "否则你执行一个额外的摸牌阶段。",

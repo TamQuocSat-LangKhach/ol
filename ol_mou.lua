@@ -253,7 +253,7 @@ local weilingy = fk.CreateViewAsSkill{
     local names, all_names = {} , {}
     local pat = Fk.currentResponsePattern
     for _, id in ipairs(Fk:getAllCardIds()) do
-      local card = Fk:getCardById(id)
+      local card = Fk:getCardById(id, true)
       if (card.trueName == "slash" or card.trueName == "analeptic") and
       not card.is_derived and not table.contains(all_names, card.name) then
         table.insert(all_names, card.name)
