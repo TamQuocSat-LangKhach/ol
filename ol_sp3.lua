@@ -296,7 +296,7 @@ local ol__zhubi_trigger = fk.CreateTriggerSkill{
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local piles = U.askForArrangeCards(player, "ol__zhubi",
+    local piles = room:askForArrangeCards(player, "ol__zhubi",
     {"Bottom", room:getNCards(5, "bottom"), "@@ol__zhubi-inhand", self.cost_data}, "#ol__zhubi-exchange")
     U.swapCardsWithPile(player, piles[1], piles[2], "ol__zhubi", "Bottom")
   end,
@@ -1838,7 +1838,7 @@ local tianhou = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     local top_cards = room:getNCards(1)
-    local piles = U.askForArrangeCards(player, self.name,
+    local piles = room:askForArrangeCards(player, self.name,
     {"Top", top_cards, player.general, player:getCardIds{Player.Hand, Player.Equip}}, "#tianhou-exchange")
     U.swapCardsWithPile(player, piles[1], piles[2], self.name, "Top")
     top_cards = room:getNCards(1)
@@ -5364,7 +5364,7 @@ local yichengl = fk.CreateActiveSkill{
     for _, id in ipairs(cards) do
       n = n + Fk:getCardById(id).number
     end
-    local cardmap = U.askForArrangeCards(player, self.name,
+    local cardmap = room:askForArrangeCards(player, self.name,
     {cards, player:getCardIds(Player.Hand), "Top", "$Hand"}, "#yichengl-exchange:::" .. tostring(n), false)
     local topile = table.filter(cardmap[1], function (id)
       return not table.contains(cards, id)
@@ -5384,7 +5384,7 @@ local yichengl = fk.CreateActiveSkill{
           end
           if n < 0 then
             local handcards = player:getCardIds(Player.Hand)
-            local top = U.askForArrangeCards(player, self.name,
+            local top = room:askForArrangeCards(player, self.name,
             {cardmap[1], handcards, "Top", "$Hand"}, "#yichengl-exchange2", false, nil, nil, nil, "", "yichengl")[2]
             if #top > 0 then
               top = table.reverse(top)

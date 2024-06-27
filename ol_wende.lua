@@ -140,7 +140,7 @@ local quanbian = fk.CreateTriggerSkill{
     local all_cards = room:getNCards(player.maxHp)
     local suits = {"spade", "club", "heart", "diamond"}
     table.remove(suits, data.card.suit)
-    local cardmap = U.askForArrangeCards(player, self.name, {all_cards, "Top", "toObtain"}, "", true, 0,
+    local cardmap = room:askForArrangeCards(player, self.name, {all_cards, "Top", "toObtain"}, "", true, 0,
     {#all_cards, 1}, {0, 0}, ".|.|"..table.concat(suits, ","))
     for i = #cardmap[1], 1, -1 do
       table.insert(room.draw_pile, 1, cardmap[1][i])

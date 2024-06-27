@@ -56,7 +56,6 @@ Fk:addSkill(ol__kuizhu_active)
 local ol__kuizhu = fk.CreateTriggerSkill{
   name = "ol__kuizhu",
   events = {fk.EventPhaseEnd},
-  frequency = Skill.Compulsory,
   mute = true,
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(self) and player.phase == Player.Discard and #player.room.logic:getEventsOfScope(GameEvent.MoveCards, 1, function(e)

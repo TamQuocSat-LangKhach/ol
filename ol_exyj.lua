@@ -557,7 +557,7 @@ local zongxuan = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local top = U.askForArrangeCards(player, self.name, {self.cost_data, "pile_discard","Top"},
+    local top = room:askForArrangeCards(player, self.name, {self.cost_data, "pile_discard","Top"},
     "#ol_ex__zongxuan-invoke", true, 7, nil, {0, 1})[2]
     room:sendLog{
       type = "#PutKnownCardtoDrawPile",
