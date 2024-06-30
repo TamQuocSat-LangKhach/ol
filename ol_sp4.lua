@@ -160,9 +160,12 @@ local kouchao = fk.CreateViewAsSkill{
     local all_names = U.getMark(Self, "@$kouchao")
     local names = {}
     for i = 1, 3, 1 do
-      all_names[i] = "kouchao_index:::"..i..":"..all_names[i]
+      local card_name = all_names[i]
+      all_names[i] = "kouchao_index:::"..i..":"..card_name
       if Self:getMark("kouchao"..i.."-round") == 0 then
-        table.insert(names, all_names[i])
+        if Fk.currentResponsePattern == nil or Exppattern:Parse(Fk.currentResponsePattern):match(Fk:cloneCard(card_name)) then
+          table.insert(names, all_names[i])
+        end
       end
     end
     if #names > 0 then
@@ -209,7 +212,18 @@ local kouchao = fk.CreateViewAsSkill{
       room:setPlayerMark(player, "@$kouchao", mark)
     end
   end,
-  enabled_at_response = Util.FalseFunc,
+  enabled_at_response = function(self, player, resp)
+    if not resp and not player:isNude() and Fk.currentResponsePattern then
+      local mark = U.getMark(Self, "@$kouchao")
+      for i = 1, 3, 1 do
+        if player:getMark("kouchao"..i.."-round") == 0 then
+          if Exppattern:Parse(Fk.currentResponsePattern):match(Fk:cloneCard(mark[i])) then
+            return true
+          end
+        end
+      end
+    end
+  end,
 }
 local kouchao_trigger = fk.CreateTriggerSkill{
   name = "#kouchao_trigger",
