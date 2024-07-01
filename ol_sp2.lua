@@ -1310,6 +1310,7 @@ local liehou = fk.CreateActiveSkill{
   anim_type = "control",
   card_num = 0,
   target_num = 1,
+  prompt = "#liehou-prompt",
   can_use = function(self, player)
     return player:usedSkillTimes(self.name) == 0
   end,
@@ -1346,6 +1347,7 @@ Fk:loadTranslationTable{
   ["#qigong-use"] = "齐攻：你可以对 %dest 使用一张【杀】（无距离限制且不可被响应）",
   ["#liehou-give"] = "列侯：你需交给 %src 一张手牌",
   ["#liehou-choose"] = "列侯：将一张手牌交给攻击范围内另一名角色",
+  ["#liehou-prompt"] = "列侯：令你攻击范围内一名角色交给你一张手牌，然后你将一张手牌交给攻击范围内另一名角色",
 
   ["$qigong1"] = "打虎亲兄弟！",
   ["$qigong2"] = "兄弟齐心，其利断金！",
