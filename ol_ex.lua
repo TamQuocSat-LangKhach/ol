@@ -2372,7 +2372,7 @@ local ol_ex__haoshi_delay = fk.CreateTriggerSkill{
           end
         end
       end
-      local tos, cards = U.askForChooseCardsAndPlayers(room, player, x, x, targets, 1, 1,
+      local tos, cards = room:askForChooseCardsAndPlayers(player, x, x, targets, 1, 1,
       ".|.|.|hand", "#ol_ex__haoshi-give:::" .. x, "ol_ex__haoshi", false)
       local to = room:getPlayerById(tos[1])
       room:moveCardTo(cards, Card.PlayerHand, to, fk.ReasonGive, "ol_ex__haoshi", nil, false, player.id)

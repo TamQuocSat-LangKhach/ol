@@ -828,7 +828,7 @@ local hongtu = fk.CreateTriggerSkill{
     local room = player.room
     player:drawCards(3, self.name)
     if player.dead or player:getHandcardNum() < 3 or #room.alive_players < 2 then return false end
-    local tos, ids = U.askForChooseCardsAndPlayers(room, player, 3, 3, table.map(room:getOtherPlayers(player, false),
+    local tos, ids = room:askForChooseCardsAndPlayers(player, 3, 3, table.map(room:getOtherPlayers(player, false),
     Util.IdMapper), 1, 1, ".|.|.|hand", "#hongtu-give", self.name, false)
     player:showCards(ids)
     --不判位置了，展示牌后发动的技能还是去死好了

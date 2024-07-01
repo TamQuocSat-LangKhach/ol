@@ -3468,7 +3468,7 @@ local fudao = fk.CreateTriggerSkill{
       if player.dead then return end
       local targets = table.map(room:getOtherPlayers(player), Util.IdMapper)
       if not player:isKongcheng() and #targets > 0 then
-        local tos, cards = U.askForChooseCardsAndPlayers(room, player, 1, 3, targets, 1, 1, ".|.|.|hand", "#ol__fudao-give", self.name, true)
+        local tos, cards = room:askForChooseCardsAndPlayers(player, 1, 3, targets, 1, 1, ".|.|.|hand", "#ol__fudao-give", self.name, true)
         if #tos > 0 then
           local to = room:getPlayerById(tos[1])
           room:moveCardTo(cards, Card.PlayerHand, to, fk.ReasonGive, self.name, nil, false, player.id)
@@ -4561,7 +4561,7 @@ local xiangzuo = fk.CreateTriggerSkill{
         room:setPlayerMark(p, "@@xiangzuo", 1)
       end
     end
-    local tos, cards = U.askForChooseCardsAndPlayers(room, player, 1, 999,
+    local tos, cards = room:askForChooseCardsAndPlayers(player, 1, 999,
     table.map(room:getOtherPlayers(player, false), Util.IdMapper), 1, 1, ".",
     "#xiangzuo-invoke", self.name, true, false)
     for _, p in ipairs(room.alive_players) do
