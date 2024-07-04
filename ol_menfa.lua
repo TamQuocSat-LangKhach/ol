@@ -3476,7 +3476,12 @@ local jieli = fk.CreateTriggerSkill{
     end
     local cards = room:getNCards(x)
     local results = U.askForExchange(player, "Top", "$Hand", cards, handcards, "#jieli-exchange::" .. to.id, x)
-    if #results > 0 then
+    if #results == 0 then
+      for i = #cards, 1, -1 do
+        table.insert(room.draw_pile, 1, cards[i])
+      end
+      room:doBroadcastNotify("UpdateDrawPile", tostring(#room.draw_pile))
+    else
       local to_hand = {}
       for i = x, 1, -1 do
         if table.removeOne(results, cards[i]) then
