@@ -2256,15 +2256,39 @@ local huyi = fk.CreateTriggerSkill {
       room:handleAddLoseSkills(player, "-"..self.cost_data, nil, true, false)
     else
       local skills = {}
+      local skill = ""
       if event == fk.GameStart then
-        skills = GetWuhuSkills(player)
+        skills = table.random(GetWuhuSkills(player), 3)
+        if #skills == 0 then return end
+        local generals = {}
+        for i = 1, #skills, 1 do
+          for _, general in pairs(Fk.generals) do
+            if table.contains(general:getSkillNameList(true), skills[i]) then
+              table.insert(generals, general.name)
+              break
+            end
+          end
+        end
+        local result = room:askForCustomDialog(player, self.name,
+        "packages/utility/qml/ChooseSkillBox.qml", {
+          skills, 1, 1, "#huyi-choose", generals,
+        })
+        if result == "" then
+          skill = table.random(skills)
+        end
+        local choice = json.decode(result)
+        if #choice > 0 then
+          skill = choice[1]
+        else
+          skill = table.random(skills)
+        end
       else
         skills = table.filter(GetWuhuSkills(player), function(s)
           return string.find(Fk:translate(":"..s, "zh_CN"), "【"..Fk:translate(data.card.trueName, "zh_CN").."】")
         end)
+        if #skills == 0 then return end
+        skill = table.random(skills)
       end
-      if #skills == 0 then return end
-      local skill = table.random(skills)
       table.insertIfNeed(mark, skill)
       room:setPlayerMark(player, self.name, mark)
       room:handleAddLoseSkills(player, skill, nil, true, false)
@@ -2279,6 +2303,7 @@ Fk:loadTranslationTable{
   ["huyi"] = "虎翼",
   [":huyi"] = "游戏开始时，你从三个五虎将技能中选择一个获得。当你使用或打出一张基本牌后，若你因本技能获得的技能总数小于5，你随机获得一个"..
   "描述中包含此牌名的五虎将技能。回合结束时，你可以选择失去一个以此法获得的技能。",
+  ["#huyi-choose"] = "虎翼：选择获得一个五虎技能",
   ["#huyi-invoke"] = "虎翼：你可以失去一个五虎技能",
 }
 
