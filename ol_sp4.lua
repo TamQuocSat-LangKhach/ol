@@ -10,6 +10,7 @@ local mawan = General(extension, "mawan", "qun", 4)
 Fk:loadTranslationTable{
   ["mawan"] = "马玩",
   -- ["#mawan"] = "",
+  ["designer:mawan"] = "大宝",
   ["~mawan"] = "",
 }
 

@@ -4387,6 +4387,7 @@ lukai:addSkill(jiane)
 Fk:loadTranslationTable{
   ["ol__lukai"] = "陆凯",
   ["#ol__lukai"] = "节概梗梗",
+  ["designer:ol__lukai"] = "扬林",
 
   ["xuanzhu"] = "玄注",
   [":xuanzhu"] = "转换技，每回合限一次，阳：你可以将一张牌移出游戏，视为使用任意基本牌；阴：你可以将一张牌移出游戏，视为使用仅指定唯一角色为目标的普通锦囊牌。"..
@@ -4868,6 +4869,8 @@ Fk:loadTranslationTable{
   ["tianchou"] = "田畴",
   ["#tianchou"] = "乱世族隐",
   --["illustrator:tianchou"] = "",
+  ["designer:tianchou"] = "扬林",
+
   ["shandao"] = "善刀",
   [":shandao"] = "出牌阶段限一次，你可以将任意名角色的各一张牌置于牌堆顶，视为对这些角色使用一张【五谷丰登】，"..
   "然后视为对除这些角色外的其他角色使用一张【万箭齐发】。",
@@ -5429,6 +5432,7 @@ liupi:addSkill(yichengl)
 Fk:loadTranslationTable{
   ["ol__liupi"] = "刘辟",
   ["#ol__liupi"] = "易城报君",
+  ["designer:ol__liupi"] = "那个背影",
 
   ["yichengl"] = "易城",
   [":yichengl"] = "出牌阶段限一次，你可以展示牌堆顶X张牌（X为你的体力上限），然后可以用任意张手牌交换其中等量张，"..
@@ -5696,6 +5700,7 @@ yadan:addSkill(tielun)
 Fk:loadTranslationTable{
   ["yadan"] = "雅丹",
   ["#yadan"] = "西羌相",
+  ["designer:yadan"] = "CYC",
   ["illustrator:yadan"] = "匠人绘",
 
   ["qingya"] = "倾轧",

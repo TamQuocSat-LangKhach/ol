@@ -3303,7 +3303,7 @@ wangmingshan:addSkill("zhongliu")
 Fk:loadTranslationTable{
   ["olz__wangmingshan"] = "族王明山",
   ["#olz__wangmingshan"] = "擅书多艺",
-  --["designer:olz__wangmingshan"] = "",
+  ["designer:olz__wangmingshan"] = "那个背影",
   --["illustrator:olz__wangmingshan"] = "",
   ["tanque"] = "弹雀",
   [":tanque"] = "当你使用的牌结算结束后，若你于当前回合内未发动过此技能，"..
