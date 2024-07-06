@@ -2176,4 +2176,110 @@ bubing:addSkill("qin__tongpao")
 bubing:addSkill(fangzhen)
 bubing:addSkill(changbing)
 
+local wuhushangjiang = General(extension, "wuhushangjiang", "shu", 5)
+local function GetWuhuSkills(player)
+  local skills = {}
+  local generals = {}
+  for name, general in pairs(Fk.generals) do
+    if general.package.name ~= "hegemony" and
+      (table.find({"guanyu", "zhangfei", "zhaoyun", "machao", "huangzhong"}, function(s)
+        return name:endsWith(s)
+      end) or name == "gundam") then  --高达！
+      table.insert(generals, general)
+    end
+  end
+  if #generals == 0 then return {} end
+  for _, general in ipairs(generals) do
+    local list = general:getSkillNameList(true)
+    for _, skill in ipairs(list) do
+      if not player:hasSkill(skill, true) then
+        table.insert(skills, skill)
+      end
+    end
+  end
+  return skills
+end
+local huyi = fk.CreateTriggerSkill {
+  name = "huyi",
+  anim_type = "special",
+  events = {fk.GameStart, fk.CardUseFinished, fk.CardRespondFinished, fk.TurnEnd},
+  can_trigger = function(self, event, target, player, data)
+    if player:hasSkill(self) then
+      if event == fk.GameStart then
+        return true
+      else
+        if target == player then
+          if event == fk.TurnEnd then
+            return #U.getMark(player, self.name) > 0
+          else
+            return data.card.type == Card.TypeBasic and #U.getMark(player, self.name) < 5 and
+              table.find(GetWuhuSkills(player), function(s)
+                return string.find(Fk:translate(":"..s, "zh_CN"), "【"..Fk:translate(data.card.trueName, "zh_CN").."】")
+              end)
+          end
+        end
+      end
+    end
+  end,
+  on_cost = function(self, event, target, player, data)
+    if event == fk.TurnEnd then
+      local skills = U.getMark(player, self.name)
+      local generals = {}
+      for i = 1, #skills, 1 do
+        for _, general in pairs(Fk.generals) do
+          if table.contains(general:getSkillNameList(true), skills[i]) then
+            table.insert(generals, general.name)
+            break
+          end
+        end
+      end
+      local result = player.room:askForCustomDialog(player, self.name,
+      "packages/utility/qml/ChooseSkillBox.qml", {
+        skills, 0, 1, "#huyi-invoke", generals,
+      })
+      if result == "" then return false end
+      local choice = json.decode(result)
+      if #choice > 0 then
+        self.cost_data = choice[1]
+        return true
+      end
+    else
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local mark = U.getMark(player, self.name)
+    if event == fk.TurnEnd then
+      table.removeOne(mark, self.cost_data)
+      room:setPlayerMark(player, self.name, mark)
+      room:handleAddLoseSkills(player, "-"..self.cost_data, nil, true, false)
+    else
+      local skills = {}
+      if event == fk.GameStart then
+        skills = GetWuhuSkills(player)
+      else
+        skills = table.filter(GetWuhuSkills(player), function(s)
+          return string.find(Fk:translate(":"..s, "zh_CN"), "【"..Fk:translate(data.card.trueName, "zh_CN").."】")
+        end)
+      end
+      if #skills == 0 then return end
+      local skill = table.random(skills)
+      table.insertIfNeed(mark, skill)
+      room:setPlayerMark(player, self.name, mark)
+      room:handleAddLoseSkills(player, skill, nil, true, false)
+    end
+  end,
+}
+wuhushangjiang:addSkill(huyi)
+Fk:loadTranslationTable{
+  ["wuhushangjiang"] = "魂·五虎",
+  --["#wuhushangjiang"] = ""
+
+  ["huyi"] = "虎翼",
+  [":huyi"] = "游戏开始时，你从三个五虎将技能中选择一个获得。当你使用或打出一张基本牌后，若你因本技能获得的技能总数小于5，你随机获得一个"..
+  "描述中包含此牌名的五虎将技能。回合结束时，你可以选择失去一个以此法获得的技能。",
+  ["#huyi-invoke"] = "虎翼：你可以失去一个五虎技能",
+}
+
 return extension
