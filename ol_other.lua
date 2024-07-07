@@ -2181,7 +2181,7 @@ local function GetWuhuSkills(player)
   local skills = {}
   local generals = {}
   for name, general in pairs(Fk.generals) do
-    if general.package.name ~= "hegemony" and
+    if general.package.extensionName ~= "hegemony" and
       (table.find({"guanyu", "zhangfei", "zhaoyun", "machao", "huangzhong"}, function(s)
         return name:endsWith(s)
       end) or name == "gundam") then  --高达！
