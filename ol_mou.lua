@@ -799,7 +799,6 @@ Fk:loadTranslationTable{
   ["$shishouy5"] = "今秉七尺之躯，不负三尺之剑！",
   ["$shishouy6"] = "拔剑四顾，诸位识得我袁本初？",
   ["~olmou__yuanshao"] = "众人合而无力，徒负大义也……",
-  --["~olmou__yuanshao2"] = "",
 }
 
 local pangtong = General(extension, "olmou__pangtong", "shu", 3)
@@ -962,7 +961,7 @@ pangtong:addSkill(qiwu)
 Fk:loadTranslationTable{
   ["olmou__pangtong"] = "谋庞统",
   --["#olmou__pangtong"] = "",
-  --["illustrator:olmou__pangtong"] = "",
+  ["illustrator:olmou__pangtong"] = "黯荧岛工作室",
   ["hongtu"] = "鸿图",
   [":hongtu"] = "一名角色的阶段结束时，若你于此阶段内得到过的牌数大于1，你可以摸三张牌，展示三张手牌并选择一名其他角色。"..
   "其可以使用其中一张牌，随机弃置另一张牌，若其以此法使用的牌：为这三张牌中唯一点数最大的牌，其于其的下个回合结束之前拥有〖飞军〗；"..
@@ -976,11 +975,11 @@ Fk:loadTranslationTable{
   ["#hongtu-use"] = "鸿图：选择一张牌使用",
   ["#qiwu-invoke"] = "是否发动 栖梧，弃置一张红色牌来防止伤害",
 
-  ["$hongtu1"] = "",
-  ["$hongtu2"] = "",
-  ["$qiwu1"] = "",
-  ["$qiwu2"] = "",
-  ["~olmou__pangtong"] = "",
+  ["$hongtu1"] = "当下春风正好，君可扶摇而上。",
+  ["$hongtu2"] = "得卧龙凤雏相助，主公大业可成。",
+  ["$qiwu1"] = "诶~没打着~",
+  ["$qiwu2"] = "除了飞来的暗箭，无物可伤我。",
+  ["~olmou__pangtong"] = "未与孔明把酒锦官城，恨也，恨也……",
 }
 
 
