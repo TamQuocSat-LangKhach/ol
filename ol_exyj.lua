@@ -731,56 +731,56 @@ local ol_ex__qieting = fk.CreateTriggerSkill{
   anim_type = "control",
   events = {fk.TurnEnd},
   can_trigger = function(self, event, target, player, data)
-    return player:hasSkill(self) and target ~= player
-  end,
-  on_trigger = function (self, event, target, player, data)
-    local room = player.room
-    local n = 0
-    if #room.logic:getEventsOfScope(GameEvent.Damage, 1, function(e)
-      local damage = e.data[1]
-      return damage.from and damage.from == target
-    end, Player.HistoryTurn) == 0 then
-      n = 1
-    end
-    if #room.logic:getEventsOfScope(GameEvent.UseCard, 1, function(e)
-      local use = e.data[1]
-      if use.from == target.id and use.tos then
-        if table.find(TargetGroup:getRealTargets(use.tos), function(pid) return pid ~= target.id end) then
-          return true
-        end
+    if player:hasSkill(self) and target ~= player then
+      local room = player.room
+      local n = 0
+      local turn_event = room.logic:getCurrentEvent():findParent(GameEvent.Turn, true)
+      if turn_event == nil then return false end
+      if #U.getActualDamageEvents(room, 1, function (e)
+        local damage = e.data[1]
+        return damage.from == target and damage.to ~= target
+      end, nil, turn_event.id) == 0 then
+        n = n + 1
       end
-      return false
-    end, Player.HistoryTurn) == 0 then
-      n = 2
-    end
-    if n > 0 then
-      local all_choices = {"ol_ex__qieting_move::"..target.id, "draw1", "Cancel"}
-      local choices = table.simpleClone(all_choices)
-      self.cost_data = ""
-      self.cancel_cost = false
-      for i = 1, n, 1 do
-        table.removeOne(choices, self.cost_data)
-        if #choices == 3 and not target:canMoveCardsInBoardTo(player, "e") then
-          table.remove(choices, 1)
+      if #U.getEventsByRule(room, GameEvent.UseCard, 1, function (e)
+        local use = e.data[1]
+        if use.from == target.id and use.tos then
+          if table.find(TargetGroup:getRealTargets(use.tos), function(pid) return pid ~= target.id end) then
+            return true
+          end
         end
-        if player.dead or #choices < 2 or self.cancel_cost then return end
-        self:doCost(event, target, player, {choices, all_choices, n})
+        return false
+      end, turn_event.id) == 0 then
+        n = n + 1
+      end
+      if n > 0 then
+        self.cost_data = n
+        return true
       end
     end
   end,
   on_cost = function (self, event, target, player, data)
-    local choice = player.room:askForChoice(player, data[1], self.name, "#ol_ex__qieting-invoke:::"..data[3], false, data[2])
-    if choice ~= "Cancel" then
-      self.cost_data = choice
+    local n = self.cost_data
+    local all_choices = {"ol_ex__qieting_move::"..target.id, "draw1"}
+    local choices = table.simpleClone(all_choices)
+    if not target:canMoveCardsInBoardTo(player, "e") then
+      table.remove(choices, 1)
+    end
+    choices = player.room:askForChoices(player, choices, 1, n, self.name, "#ol_ex__qieting-invoke:::" .. tostring(n), true, false, all_choices)
+    --实际上应该分两次进行选择，在on_cost中先选择一项，若能选2项则on_use选另一项
+    --这里暂且简化，选2项的提示不明显，容易误操作，只能说这个设计就这么别扭
+    if #choices > 0 then
+      self.cost_data = choices
       return true
     end
-    self.cancel_cost = true
   end,
   on_use = function(self, event, target, player, data)
-    if self.cost_data == "draw1" then
-      player:drawCards(1, self.name)
-    else
+    local choices = table.simpleClone(self.cost_data)
+    if table.contains(choices, "ol_ex__qieting_move::"..target.id) then
       player.room:askForMoveCardInBoard(player, target, player, self.name, "e", target)
+    end
+    if table.contains(choices, "draw1") and not player.dead then
+      player:drawCards(1, self.name)
     end
   end,
 }
@@ -793,8 +793,8 @@ Fk:loadTranslationTable{
   ["ol_ex__qieting"] = "窃听",
   [":ol_ex__qieting"] = "其他角色的回合结束后，若其本回合未对其他角色造成伤害，你可以选择一项；若其本回合未对其他角色使用过牌，你可以选择两项："..
   "1.将其装备区的一张牌置入你的装备区；2.摸一张牌。",
+  ["#ol_ex__qieting-invoke"] = "你可以发动 窃听，选择至多%arg个选项",
   ["ol_ex__qieting_move"] = "将%dest一张装备移动给你",
-  ["#ol_ex__qieting-invoke"] = "窃听：你可以选择%arg项",
 }
 
 

@@ -337,10 +337,10 @@ local qiaoyan = fk.CreateTriggerSkill{
       player:drawCards(1, self.name)
       if player:isNude() or player.dead then return end
       local card = room:askForCard(player, 1, 1, true, self.name, false, ".", "#qiaoyan-card")
-      player:addToPile("ol__lisu_zhu", card[1], false, self.name)
+      player:addToPile("ol__lisu_zhu", card[1], true, self.name)
       return true
     else
-      room:obtainCard(data.from.id, player:getPile("ol__lisu_zhu")[1], false, fk.ReasonPrey)
+      room:obtainCard(data.from.id, player:getPile("ol__lisu_zhu")[1], true, fk.ReasonPrey)
     end
   end,
 }
