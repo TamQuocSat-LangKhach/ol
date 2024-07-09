@@ -143,6 +143,12 @@ Fk:loadTranslationTable{
   ["#ol_ex__enyuan1-invoke"] = "恩怨：是否令 %dest 摸一张牌？",
   ["#ol_ex__enyuan2-invoke"] = "恩怨：是否令 %dest 选择交给你牌或失去体力？",
   ["#ol_ex__enyuan-give"] = "交给 %src 一张红色手牌，否则你失去1点体力",
+
+  ["$ol_ex__xuanhuo1"] = "眩惑之术，非为迷惑，乃为明辨贤愚。",
+  ["$ol_ex__xuanhuo2"] = "以眩惑试人心，以真情待贤才，方能得天下。",
+  ["$ol_ex__enyuan1"] = "恩重如山，必报之以雷霆之势！",
+  ["$ol_ex__enyuan2"] = "怨深似海，必还之以烈火之怒！",
+  ["~ol_ex__fazheng"] = "孝直不忠，不能佑主公复汉室了……",
 }
 
 local lingtong = General(extension, "ol_ex__lingtong", "wu", 4)
@@ -733,15 +739,42 @@ local ol_ex__qieting = fk.CreateTriggerSkill{
   can_trigger = function(self, event, target, player, data)
     if player:hasSkill(self) and target ~= player then
       local room = player.room
-      local n = 0
       local turn_event = room.logic:getCurrentEvent():findParent(GameEvent.Turn, true)
       if turn_event == nil then return false end
-      if #U.getActualDamageEvents(room, 1, function (e)
+      return #U.getActualDamageEvents(room, 1, function (e)
         local damage = e.data[1]
         return damage.from == target and damage.to ~= target
-      end, nil, turn_event.id) == 0 then
-        n = n + 1
-      end
+      end, nil, turn_event.id) == 0 or #U.getEventsByRule(room, GameEvent.UseCard, 1, function (e)
+        local use = e.data[1]
+        if use.from == target.id and use.tos then
+          if table.find(TargetGroup:getRealTargets(use.tos), function(pid) return pid ~= target.id end) then
+            return true
+          end
+        end
+        return false
+      end, turn_event.id) == 0
+    end
+  end,
+  on_cost = function (self, event, target, player, data)
+    local all_choices = {"ol_ex__qieting_move::"..target.id, "draw1", "Cancel"}
+    local choices = table.simpleClone(all_choices)
+    if not target:canMoveCardsInBoardTo(player, "e") then
+      table.remove(choices, 1)
+    end
+    local choice = player.room:askForChoice(player, choices, self.name, "#ol_ex__qieting-invoke", false, all_choices)
+    if choice ~= "Cancel" then
+      self.cost_data = choice
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local all_choices = {"ol_ex__qieting_move::"..target.id, "draw1", "Cancel"}
+    if self.cost_data == "draw1" then
+      player:drawCards(1, self.name)
+      if player.dead or target.dead or not target:canMoveCardsInBoardTo(player, "e") then return false end
+      local turn_event = room.logic:getCurrentEvent():findParent(GameEvent.Turn, true)
+      if turn_event == nil then return false end
       if #U.getEventsByRule(room, GameEvent.UseCard, 1, function (e)
         local use = e.data[1]
         if use.from == target.id and use.tos then
@@ -751,36 +784,29 @@ local ol_ex__qieting = fk.CreateTriggerSkill{
         end
         return false
       end, turn_event.id) == 0 then
-        n = n + 1
+        if room:askForChoice(player, {"ol_ex__qieting_move::"..target.id, "Cancel"}, self.name, "#ol_ex__qieting-invoke",
+        false, all_choices) ~= "Cancel" then
+          room:askForMoveCardInBoard(player, target, player, self.name, "e", target)
+        end
       end
-      if n > 0 then
-        self.cost_data = n
-        return true
+    else
+      room:askForMoveCardInBoard(player, target, player, self.name, "e", target)
+      if player.dead then return false end
+      local turn_event = room.logic:getCurrentEvent():findParent(GameEvent.Turn, true)
+      if turn_event == nil then return false end
+      if #U.getEventsByRule(room, GameEvent.UseCard, 1, function (e)
+        local use = e.data[1]
+        if use.from == target.id and use.tos then
+          if table.find(TargetGroup:getRealTargets(use.tos), function(pid) return pid ~= target.id end) then
+            return true
+          end
+        end
+        return false
+      end, turn_event.id) == 0 then
+        if room:askForChoice(player, {"draw1", "Cancel"}, self.name, "#ol_ex__qieting-invoke", false, all_choices) == "draw1" then
+          player:drawCards(1, self.name)
+        end
       end
-    end
-  end,
-  on_cost = function (self, event, target, player, data)
-    local n = self.cost_data
-    local all_choices = {"ol_ex__qieting_move::"..target.id, "draw1"}
-    local choices = table.simpleClone(all_choices)
-    if not target:canMoveCardsInBoardTo(player, "e") then
-      table.remove(choices, 1)
-    end
-    choices = player.room:askForChoices(player, choices, 1, n, self.name, "#ol_ex__qieting-invoke:::" .. tostring(n), true, false, all_choices)
-    --实际上应该分两次进行选择，在on_cost中先选择一项，若能选2项则on_use选另一项
-    --这里暂且简化，选2项的提示不明显，容易误操作，只能说这个设计就这么别扭
-    if #choices > 0 then
-      self.cost_data = choices
-      return true
-    end
-  end,
-  on_use = function(self, event, target, player, data)
-    local choices = table.simpleClone(self.cost_data)
-    if table.contains(choices, "ol_ex__qieting_move::"..target.id) then
-      player.room:askForMoveCardInBoard(player, target, player, self.name, "e", target)
-    end
-    if table.contains(choices, "draw1") and not player.dead then
-      player:drawCards(1, self.name)
     end
   end,
 }
@@ -791,9 +817,9 @@ Fk:loadTranslationTable{
   ["#ol_ex__caifuren"] = "襄江的蒲苇",
 
   ["ol_ex__qieting"] = "窃听",
-  [":ol_ex__qieting"] = "其他角色的回合结束后，若其本回合未对其他角色造成伤害，你可以选择一项；若其本回合未对其他角色使用过牌，你可以选择两项："..
-  "1.将其装备区的一张牌置入你的装备区；2.摸一张牌。",
-  ["#ol_ex__qieting-invoke"] = "你可以发动 窃听，选择至多%arg个选项",
+  [":ol_ex__qieting"] = "其他角色的回合结束后，若其于此回合内未对其他角色造成过伤害或未对其他角色使用过牌，你可以选择："..
+  "1.将其装备区的一张牌置入你的装备区；2.摸一张牌。若其于此回合内未对其他角色其他角色使用过牌，你可以执行另一项。",
+  ["#ol_ex__qieting-invoke"] = "你可以发动 窃听，选择一项效果执行",
   ["ol_ex__qieting_move"] = "将%dest一张装备移动给你",
 }
 

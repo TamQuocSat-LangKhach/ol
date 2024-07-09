@@ -2305,6 +2305,17 @@ Fk:loadTranslationTable{
   "描述中包含此牌名的五虎将技能。回合结束时，你可以选择失去一个以此法获得的技能。",
   ["#huyi-choose"] = "虎翼：选择获得一个五虎技能",
   ["#huyi-invoke"] = "虎翼：你可以失去一个五虎技能",
+
+  ["$huyi1"] = "青龙啸赤月，长刀行千里。",
+  ["$huyi2"] = "矛取敌将首，声震当阳桥。",
+  ["$huyi3"] = "身跨白玉鞍，铁骑踏冰河。",
+  ["$huyi4"] = "满弓望西北，弦惊夜行之虎。",
+  ["$huyi5"] = "游龙战长坂，可复七进七出。",
+  --["~wuhushangjiang"] = "麦城残阳……洗长刀……",
+  --["~wuhushangjiang"] = "当阳……空余声……",
+  --["~wuhushangjiang"] = "西风寒……冷铁衣……",
+  --["~wuhushangjiang"] = "年老力衰……不复当年勇……",
+  ["~wuhushangjiang"] = "亢龙……有悔……",
 }
 
 return extension

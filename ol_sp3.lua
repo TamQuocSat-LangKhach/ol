@@ -5961,7 +5961,7 @@ local jiangwan = General(extension, "ol__jiangwan", "shu", 3)
 Fk:loadTranslationTable{
   ["ol__jiangwan"] = "蒋琬",
   -- ["#ol__jiangwan"] = "",
-  ["~ol__jiangwan"] = "",
+  ["~ol__jiangwan"] = "臣既暗弱，加婴疾疢，规方无成。",
 }
 
 Fk:addQmlMark{
@@ -6078,6 +6078,9 @@ Fk:loadTranslationTable{
   ["@@ziruo_left-inhand"] = "最左",
   ["@@ziruo_right-inhand"] = "最右",
   ["@[ziruo_cards]"] = "自若",
+
+  ["$ziruo1"] = "泰山虽崩于前，我亦风清云淡。",
+  ["$ziruo2"] = "诸君勿忧，一切尽在掌握。",
 }
 
 jiangwan:addSkill(ziruo)
@@ -6185,6 +6188,9 @@ Fk:loadTranslationTable{
   ["xufa_remove"] = "移去蓄发",
   ["xufa_viewAs"] = "蓄发",
   ["#xufa-use"] = "蓄发：你可以将一张牌当其中一张普通锦囊牌使用",
+
+  ["$xufa1"] = "常言道，积善之家必有余庆。",
+  ["$xufa2"] = "蓄势待发，一鸣惊天下。",
 }
 
 Fk:addSkill(xufaViewAs)
