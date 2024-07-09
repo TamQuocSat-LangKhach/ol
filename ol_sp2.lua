@@ -4995,7 +4995,7 @@ local kanpod_prey = fk.CreateTriggerSkill{
     local cards = data.to.player_cards[Player.Hand]
     local hearts = table.filter(cards, function (id) return Fk:getCardById(id).suit == data.card.suit end)
     if #hearts == 0 then
-      U.viewCards(player, cards, self.name)
+      U.viewCards(player, cards, self.name, "$ViewCardsFrom:"..data.to.id)
     else
       local get,_ = U.askforChooseCardsAndChoice(player, hearts, {"OK"}, self.name, "#kanpod-card", {}, 1, 1, cards)
       if #get > 0 then

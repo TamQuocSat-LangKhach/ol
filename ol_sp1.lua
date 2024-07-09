@@ -3090,6 +3090,7 @@ local jianji = fk.CreateActiveSkill{
   anim_type = "support",
   card_num = 0,
   target_num = 1,
+  prompt = "#jianji-prompt",
   can_use = function(self, player)
     return player:usedSkillTimes(self.name, Player.HistoryPhase) == 0
   end,
@@ -3121,6 +3122,7 @@ Fk:loadTranslationTable{
   ["@@dianhu"] = "点虎",
   ["#dianhu-choose"] = "点虎：指定一名角色，本局当你对其造成伤害或其回复体力后，你摸一张牌",
   ["#jianji-invoke"] = "谏计：你可以使用这张牌",
+  ["#jianji-prompt"] = "谏计：你可令一名其他角色摸一张牌，且其可以使用之",
 
   ["$dianhu1"] = "预则立，不预则废！",
   ["$dianhu2"] = "就用你，给我军祭旗！",
@@ -3164,15 +3166,19 @@ local qingzhong_delay = fk.CreateTriggerSkill{
         table.insert(targets, p.id)
       end
     end
+    if #targets == 0 then return end
+    local cancelable = (n == player:getHandcardNum())
     local to
-    if #targets == 0 then
-      return
-    elseif #targets == 1 then
+    if #targets == 1 and not cancelable then
       to = targets[1]
     else
-      to = room:askForChoosePlayers(player, targets, 1, 1, "#qingzhong-choose", qingzhong.name, false)[1]
+      to = room:askForChoosePlayers(player, targets, 1, 1, "#qingzhong-choose", qingzhong.name, cancelable)[1]
     end
-    U.swapHandCards(room, player, player, room:getPlayerById(to), qingzhong.name)
+    if to then
+      player:broadcastSkillInvoke(qingzhong.name)
+      room:notifySkillInvoked(player, qingzhong.name, "support")
+      U.swapHandCards(room, player, player, room:getPlayerById(to), qingzhong.name)
+    end
   end,
 }
 qingzhong:addRelatedSkill(qingzhong_delay)
@@ -3213,7 +3219,7 @@ Fk:loadTranslationTable{
   ["designer:luzhiw"] = "世外高v狼",
   ["illustrator:luzhiw"] = "秋呆呆",
   ["qingzhong"] = "清忠",
-  [":qingzhong"] = "出牌阶段开始时，你可以摸两张牌，然后本阶段结束时，你与一名全场手牌数最少的其他角色交换手牌。",
+  [":qingzhong"] = "出牌阶段开始时，你可以摸两张牌，然后本阶段结束时，若有其他角色：和你一起并列场上手牌数最少，你可与这些角色中的一名交换手牌；比你手牌数少，你须与这些角色中手牌数最少的任意一名交换手牌。",
   ["weijing"] = "卫境",
   [":weijing"] = "每轮限一次，当你需要使用【杀】或【闪】时，你可以视为使用之。",
   ["#qingzhong-choose"] = "清忠：选择一名手牌数最少的其他角色，与其交换手牌",

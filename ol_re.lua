@@ -1933,7 +1933,7 @@ local weikui = fk.CreateActiveSkill{
     room:loseHp(player, 1, self.name)
     if player.dead or target:isKongcheng() then return end
     if table.find(target:getCardIds("h"), function(id) return Fk:getCardById(id).trueName == "jink" end) then
-      U.viewCards(player, target:getCardIds("h"), self.name)
+      U.viewCards(player, target:getCardIds("h"), self.name, "$ViewCardsFrom:"..target.id)
       local mark = U.getMark(player, "weikui-turn")
       table.insert(mark, target.id)
       room:setPlayerMark(player, "weikui-turn", mark)
