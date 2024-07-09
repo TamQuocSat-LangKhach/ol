@@ -960,7 +960,7 @@ pangtong:addSkill(qiwu)
 
 Fk:loadTranslationTable{
   ["olmou__pangtong"] = "谋庞统",
-  --["#olmou__pangtong"] = "",
+  ["#olmou__pangtong"] = "定鼎巴蜀",
   ["illustrator:olmou__pangtong"] = "黯荧岛工作室",
   ["hongtu"] = "鸿图",
   [":hongtu"] = "一名角色的阶段结束时，若你于此阶段内得到过的牌数大于1，你可以摸三张牌，展示三张手牌并选择一名其他角色。"..

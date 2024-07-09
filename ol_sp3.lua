@@ -5960,8 +5960,8 @@ peixiu:addSkill(jinlan)
 local jiangwan = General(extension, "ol__jiangwan", "shu", 3)
 Fk:loadTranslationTable{
   ["ol__jiangwan"] = "蒋琬",
-  -- ["#ol__jiangwan"] = "",
-  ["~ol__jiangwan"] = "臣既暗弱，加婴疾疢，规方无成。",
+  ["#ol__jiangwan"] = "社稷之器",
+  ["~ol__jiangwan"] = "臣既暗弱，加婴疾疢，规方无成……",
 }
 
 Fk:addQmlMark{

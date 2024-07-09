@@ -9,7 +9,7 @@ Fk:loadTranslationTable{
 local mawan = General(extension, "mawan", "qun", 4)
 Fk:loadTranslationTable{
   ["mawan"] = "马玩",
-  -- ["#mawan"] = "",
+  ["#mawan"] = "驱率羌胡",
   ["designer:mawan"] = "大宝",
   ["~mawan"] = "",
 }
@@ -252,7 +252,7 @@ kouchao:addRelatedSkill(kouchao_trigger)
 budugen:addSkill(kouchao)
 Fk:loadTranslationTable{
   ["budugen"] = "步度根",
-  --["#budugen"] = "",
+  ["#budugen"] = "秋城雁阵",
 
   ["kouchao"] = "寇钞",
   [":kouchao"] = "每轮每项限一次，你可以将一张牌当【杀】/【火攻】/【过河拆桥】使用，然后将此项改为最后不因使用而置入弃牌堆的基本牌或普通锦囊牌，" ..
