@@ -2176,7 +2176,7 @@ bubing:addSkill("qin__tongpao")
 bubing:addSkill(fangzhen)
 bubing:addSkill(changbing)
 
-local wuhushangjiang = General(extension, "wuhushangjiang", "shu", 5)
+local wuhushangjiang = General(extension, "wuhushangjiang", "shu", 4)
 local function GetWuhuSkills(player)
   local skills = {}
   local generals = {}
