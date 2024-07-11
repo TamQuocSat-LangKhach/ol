@@ -821,6 +821,12 @@ Fk:loadTranslationTable{
   "1.将其装备区的一张牌置入你的装备区；2.摸一张牌。若其于此回合内未对其以外的角色使用过牌，你可以执行另一项。",
   ["#ol_ex__qieting-invoke"] = "你可以发动 窃听，选择一项效果执行",
   ["ol_ex__qieting_move"] = "将%dest一张装备移动给你",
+
+  ["$ol_ex__qieting1"] = "好你个刘玄德，敢坏我儿大事。",
+  ["$ol_ex__qieting2"] = "两个大男人窃窃私语，定没有好事。",
+  ["$xianzhou_ol_ex__caifuren1"] = "今献州以降，请丞相善待我孤儿寡母。",
+  ["$xianzhou_ol_ex__caifuren2"] = "我儿志短才疏，只求方寸之地安享富贵。",
+  ["~ol_ex__caifuren"] = "这哪里是荆州，分明是黄泉……",
 }
 
 
