@@ -264,4 +264,148 @@ Fk:loadTranslationTable{
   ["~budugen"] = "",
 }
 
+local caoteng = General(extension, "caoteng", "qun", 3)
+local function DoYongzu(player, choices, all_choices)
+  local room = player.room
+  local choice = room:askForChoice(player, choices, "yongzu", "#yongzu-choice", false, all_choices)
+  if choice == "draw2" then
+    player:drawCards(2, "yongzu")
+  elseif choice == "recover" then
+    room:recover({
+      who = player,
+      num = 1,
+      recoverBy = player,
+      skillName = "yongzu",
+    })
+  elseif choice == "reset" then
+    player:reset()
+  elseif choice == "maxcards1" then
+    room:addPlayerMark(player, MarkEnum.AddMaxCards, 1)
+    room:broadcastProperty(player, "MaxCards")
+  else
+    local skill = ""
+    if player.kingdom == "wei" then
+      skill = "ex__jianxiong"
+    elseif player.kingdom == "qun" then
+      skill = "tianming"
+    end
+    if not player:hasSkill(skill, true) then
+      room:setPlayerMark(player, "yongzu", skill)
+      room:handleAddLoseSkills(player, skill, nil, true, false)
+    end
+  end
+  return choice
+end
+local yongzu = fk.CreateTriggerSkill{
+  name = "yongzu",
+  anim_type = "support",
+  events = {fk.EventPhaseStart},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self) and player.phase == Player.Start and #player.room.alive_players > 1
+  end,
+  on_cost = function (self, event, target, player, data)
+    local room = player.room
+    local to = room:askForChoosePlayers(player, table.map(room:getOtherPlayers(player), Util.IdMapper), 1, 1,
+      "#yongzu-choose", self.name, true)
+    if #to > 0 then
+      self.cost_data = to[1]
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local to = room:getPlayerById(self.cost_data)
+    local all_choices = {"draw2", "recover", "reset"}
+    if player.kingdom == to.kingdom then
+      local prompt = "yongzu_skill:::"
+      if player.kingdom == "wei" then
+        prompt = prompt.."ex__jianxiong"
+      elseif player.kingdom == "qun" then
+        prompt = prompt.."tianming"
+      else
+        prompt = prompt.."skill"
+      end
+      table.insertTable(all_choices, {"maxcards1", prompt})
+    end
+    local choices = table.simpleClone(all_choices)
+    if not player:isWounded() then
+      table.remove(choices, 2)
+    end
+    if #all_choices == 5 and player.kingdom ~= "wei" and player.kingdom ~= "qun" then
+      table.remove(choices, -1)
+    end
+    local choice = DoYongzu(player, choices, all_choices)
+    if to.dead then return end
+    choices = table.simpleClone(all_choices)
+    table.removeOne(choices, choice)
+    if not to:isWounded() then
+      table.removeOne(choices, "recover")
+    end
+    DoYongzu(to, choices, all_choices)
+  end,
+
+  refresh_events = {fk.TurnStart},
+  can_refresh = function(self, event, target, player, data)
+    return target == player and player:getMark(self.name) ~= 0
+  end,
+  on_refresh = function(self, event, target, player, data)
+    local room = player.room
+    local skill = player:getMark(self.name)
+    room:setPlayerMark(player, self.name, 0)
+    room:handleAddLoseSkills(player, "-"..skill, nil, true, false)
+  end,
+}
+local qingliu = fk.CreateTriggerSkill{
+  name = "qingliu",
+  anim_type = "special",
+  frequency = Skill.Compulsory,
+  events = {fk.GameStart, fk.AfterDying},
+  can_trigger = function(self, event, target, player, data)
+    if player:hasSkill(self) then
+      if event == fk.GameStart then
+        return true
+      elseif event == fk.AfterDying then
+        return target == player and #player.room.logic:getEventsOfScope(GameEvent.Dying, 2, function(e)
+          return e.data[1].who == player.id
+        end, Player.HistoryGame) == 1
+      end
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local kingdoms = {"qun", "wei"}
+    if event == fk.AfterDying then
+      table.removeOne(kingdoms, player.kingdom)
+    end
+    local kingdom = room:askForChoice(player, kingdoms, self.name, "AskForKingdom")
+    if kingdom ~= player.kingdom then
+      room:changeKingdom(player, kingdom, true)
+    end
+  end,
+}
+caoteng:addSkill(yongzu)
+caoteng:addSkill(qingliu)
+caoteng:addRelatedSkill("ex__jianxiong")
+caoteng:addRelatedSkill("tianming")
+Fk:loadTranslationTable{
+  ["caoteng"] = "曹腾",
+  ["#caoteng"] = "",
+
+  ["yongzu"] = "拥族",
+  [":yongzu"] = "准备阶段，你可以选择一名其他角色，你与其依次选择不同的一项：<br>1.摸两张牌；<br>2.回复1点体力；<br>3.复原武将牌。<br>"..
+  "若选择的角色与你势力相同，则增加选项：<br>4.手牌上限+1；<br>5.根据势力获得技能直到下回合开始：<br>"..
+  "<font color=\"blue\">魏〖奸雄〗</font><font color=\"grey\">群〖天命〗</font>。",
+  ["qingliu"] = "清流",
+  [":qingliu"] = "锁定技，游戏开始时，你选择变为群或魏势力。你首次脱离濒死状态被救回后，你变更为另一个势力。",
+
+  ["#yongzu-choose"] = "拥族：你可以选择一名角色，与其依次执行一项（若双方势力相同则增加选项）",
+  ["yongzu_skill"] = "获得%arg",
+  ["#yongzu-choice"] = "拥族：选择执行的一项",
+  ["skill"] = "技能",  --很难想象这个居然没有翻译
+  ["reset"] = "复原武将牌",  --很难想象这个居然没有翻译×2
+  ["maxcards1"] = "手牌上限+1",  --这个感觉可以有翻译
+
+  ["~caoteng"] = "",
+}
+
 return extension
