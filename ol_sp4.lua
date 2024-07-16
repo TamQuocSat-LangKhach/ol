@@ -283,12 +283,7 @@ local function DoYongzu(player, choices, all_choices)
     room:addPlayerMark(player, MarkEnum.AddMaxCards, 1)
     room:broadcastProperty(player, "MaxCards")
   else
-    local skill = ""
-    if player.kingdom == "wei" then
-      skill = "ex__jianxiong"
-    elseif player.kingdom == "qun" then
-      skill = "tianming"
-    end
+    local skill = string.sub(choice, 16)
     if not player:hasSkill(skill, true) then
       room:setPlayerMark(player, "yongzu", skill)
       room:handleAddLoseSkills(player, skill, nil, true, false)
@@ -336,11 +331,10 @@ local yongzu = fk.CreateTriggerSkill{
     end
     local choice = DoYongzu(player, choices, all_choices)
     if to.dead then return end
-    choices = table.simpleClone(all_choices)
-    table.removeOne(choices, choice)
-    if not to:isWounded() then
-      table.removeOne(choices, "recover")
+    if choices[2] ~= "recover" and to:isWounded() then
+      table.insert(choices, 2, "recover")
     end
+    table.removeOne(choices, choice)
     DoYongzu(to, choices, all_choices)
   end,
 
