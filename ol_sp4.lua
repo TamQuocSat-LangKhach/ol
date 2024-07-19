@@ -413,12 +413,10 @@ local chishi = fk.CreateTriggerSkill{
       for _, move in ipairs(data) do
         if move.from and move.from == player.room.current.id then
           for _, info in ipairs(move.moveInfo) do
-            if info.fromArea == Card.PlayerHand then
-              return player.room.current:isKongcheng()
-            elseif info.fromArea == Card.PlayerEquip then
-              return #player.room.current:getCardIds("e") == 0
-            elseif info.fromArea == Card.PlayerJudge then
-              return #player.room.current:getCardIds("j") == 0
+            if (info.fromArea == Card.PlayerHand and player.room.current:isKongcheng()) or
+              (info.fromArea == Card.PlayerEquip and #player.room.current:getCardIds("e") == 0) or
+              (info.fromArea == Card.PlayerJudge and #player.room.current:getCardIds("j") == 0) then
+              return true
             end
           end
         end
