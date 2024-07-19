@@ -2178,26 +2178,31 @@ bubing:addSkill(changbing)
 
 local wuhushangjiang = General(extension, "wuhushangjiang", "shu", 4)
 local function GetWuhuSkills(player)
-  local skills = {}
-  local generals = {}
-  for name, general in pairs(Fk.generals) do
-    if general.package.extensionName ~= "hegemony" and
-      (table.find({"guanyu", "zhangfei", "zhaoyun", "machao", "huangzhong"}, function(s)
-        return name:endsWith(s)
-      end) or name == "gundam") then  --高达！
-      table.insert(generals, general)
-    end
-  end
-  if #generals == 0 then return {} end
-  for _, general in ipairs(generals) do
-    local list = general:getSkillNameList(true)
-    for _, skill in ipairs(list) do
-      if not player:hasSkill(skill, true) then
-        table.insert(skills, skill)
+  local mappers = Fk:currentRoom():getBanner("huyi_wuhushangjiang")
+  if mappers == nil then
+    local skills = {}
+    local generals = {}
+    local SGmapper = {}
+    for name, general in pairs(Fk.generals) do
+      if general.package.extensionName ~= "hegemony" and
+        (table.find({"guanyu", "zhangfei", "zhaoyun", "machao", "huangzhong"}, function(s)
+          return name:endsWith(s)
+        end) or name == "gundam") then  --高达！
+        table.insert(generals, general)
       end
     end
+    if #generals == 0 then return {} end
+    for _, general in ipairs(generals) do
+      local list = general:getSkillNameList(true)
+      for _, skill in ipairs(list) do
+        table.insert(skills, skill)
+        SGmapper[skill] = general.name
+      end
+    end
+    mappers = {skills, SGmapper}
+    Fk:currentRoom():setBanner("huyi_wuhushangjiang", mappers)
   end
-  return skills
+  return table.filter(mappers[1], function(s) return not player:hasSkill(s, true) end)
 end
 local huyi = fk.CreateTriggerSkill {
   name = "huyi",
@@ -2214,7 +2219,7 @@ local huyi = fk.CreateTriggerSkill {
           else
             return data.card.type == Card.TypeBasic and #U.getMark(player, self.name) < 5 and
               table.find(GetWuhuSkills(player), function(s)
-                return string.find(Fk:translate(":"..s, "zh_CN"), "【"..Fk:translate(data.card.trueName, "zh_CN").."】")
+                return string.find(Fk:getDescription(s, "zh_CN"), "【"..Fk:translate(data.card.trueName, "zh_CN").."】")
               end)
           end
         end
@@ -2224,15 +2229,7 @@ local huyi = fk.CreateTriggerSkill {
   on_cost = function(self, event, target, player, data)
     if event == fk.TurnEnd then
       local skills = U.getMark(player, self.name)
-      local generals = {}
-      for i = 1, #skills, 1 do
-        for _, general in pairs(Fk.generals) do
-          if table.contains(general:getSkillNameList(true), skills[i]) then
-            table.insert(generals, general.name)
-            break
-          end
-        end
-      end
+      local generals = table.map(skills, function(s) return player.room:getBanner("huyi_wuhushangjiang")[2][s] end)
       local result = player.room:askForCustomDialog(player, self.name,
       "packages/utility/qml/ChooseSkillBox.qml", {
         skills, 0, 1, "#huyi-invoke", generals,
@@ -2260,15 +2257,7 @@ local huyi = fk.CreateTriggerSkill {
       if event == fk.GameStart then
         skills = table.random(GetWuhuSkills(player), 3)
         if #skills == 0 then return end
-        local generals = {}
-        for i = 1, #skills, 1 do
-          for _, general in pairs(Fk.generals) do
-            if table.contains(general:getSkillNameList(true), skills[i]) then
-              table.insert(generals, general.name)
-              break
-            end
-          end
-        end
+        local generals = table.map(skills, function(s) return player.room:getBanner("huyi_wuhushangjiang")[2][s] end)
         local result = room:askForCustomDialog(player, self.name,
         "packages/utility/qml/ChooseSkillBox.qml", {
           skills, 1, 1, "#huyi-choose", generals,
@@ -2284,7 +2273,7 @@ local huyi = fk.CreateTriggerSkill {
         end
       else
         skills = table.filter(GetWuhuSkills(player), function(s)
-          return string.find(Fk:translate(":"..s, "zh_CN"), "【"..Fk:translate(data.card.trueName, "zh_CN").."】")
+          return string.find(Fk:getDescription(s, "zh_CN"), "【"..Fk:translate(data.card.trueName, "zh_CN").."】")
         end)
         if #skills == 0 then return end
         skill = table.random(skills)
