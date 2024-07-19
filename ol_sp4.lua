@@ -402,4 +402,115 @@ Fk:loadTranslationTable{
   ["~caoteng"] = "",
 }
 
+local sunru = General(extension, "ol__sunru", "wu", 3, 3, General.Female)
+local chishi = fk.CreateTriggerSkill{
+  name = "chishi",
+  anim_type = "support",
+  events = {fk.AfterCardsMove},
+  can_trigger = function(self, event, target, player, data)
+    if player:hasSkill(self) and player:usedSkillTimes(self.name, Player.HistoryTurn) == 0
+      and player.room.current and not player.room.current.dead then
+      for _, move in ipairs(data) do
+        if move.from and move.from == player.room.current.id then
+          for _, info in ipairs(move.moveInfo) do
+            if info.fromArea == Card.PlayerHand then
+              return player:isKongcheng()
+            elseif info.fromArea == Card.PlayerEquip then
+              return #player:getCardIds("e") == 0
+            elseif info.fromArea == Card.PlayerJudge then
+              return #player:getCardIds("j") == 0
+            end
+          end
+        end
+      end
+    end
+  end,
+  on_cost = function (self, event, target, player, data)
+    return player.room:askForSkillInvoke(player, self.name, nil, "#chishi-invoke::"..player.room.current.id)
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    room:doIndicate(player.id, {room.current.id})
+    room:addPlayerMark(room.current, MarkEnum.AddMaxCardsInTurn, 2)
+    room.current:drawCards(2, self.name)
+  end,
+}
+local weimian = fk.CreateActiveSkill{
+  name = "weimian",
+  anim_type = "support",
+  card_num = 0,
+  target_num = 0,
+  prompt = "#weimian",
+  can_use = function(self, player)
+    return player:usedSkillTimes(self.name, Player.HistoryPhase) == 0 and
+      #player:getAvailableEquipSlots() > 0
+  end,
+  card_filter = Util.FalseFunc,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    local choice = room:askForChoices(player, player:getAvailableEquipSlots(), 1, 3, self.name, "#weimian-abort", false)
+    room:abortPlayerArea(player, choice)
+    if player.dead then return end
+    local n = #choice
+    local to = room:askForChoosePlayers(player, table.map(room.alive_players, Util.IdMapper), 1, 1,
+      "#weimian-choose:::"..n, self.name, false)
+    to = room:getPlayerById(to[1])
+    local selected = {}
+    for i = 1, n, 1 do
+      if to.dead then return end
+      local choices = {}
+      if #to.sealedSlots > 0 and not table.contains(selected, "weimian1") then
+        table.insert(choices, "weimian1")
+      end
+      if to:isWounded() and not table.contains(selected, "recover") then
+        table.insert(choices, "recover")
+      end
+      if not table.contains(selected, "weimian3") then
+        --假设可以不弃手牌
+        table.insert(choices, "weimian3")
+      end
+      if #choices == 0 then return end
+      choice = room:askForChoice(to, choices, self.name, nil, false, {"weimian1", "recover", "weimian3"})
+      table.insert(selected, choice)
+      if choice == "weimian1" then
+        local slots = table.simpleClone(to.sealedSlots)
+        table.removeOne(slots, Player.JudgeSlot)
+        local weimian_resume = room:askForChoice(player, slots, self.name, "#weimian-resume")
+        room:resumePlayerArea(player, {weimian_resume})
+      elseif choice == "recover" then
+        room:recover{
+          who = to,
+          num = 1,
+          recoverBy = player,
+          skillName = self.name,
+        }
+      elseif choice == "weimian3" then
+        to:throwAllCards("h")
+        if not to.dead then
+          to:drawCards(4, self.name)
+        end
+      end
+    end
+  end,
+}
+sunru:addSkill(chishi)
+sunru:addSkill(weimian)
+Fk:loadTranslationTable{
+  ["ol__sunru"] = "孙茹",
+  ["#ol__sunru"] = "",
+
+  ["chishi"] = "持室",
+  [":chishi"] = "每回合限一次，当前回合角色失去其一个区域内最后一张牌后，你可以令其摸两张牌且本回合手牌上限+2。",
+  ["weimian"] = "慰勉",
+  [":weimian"] = "出牌阶段限一次，你可以废除至多三个装备栏，然后令一名角色选择等量项：1.恢复一个被废除的装备栏；2.回复1点体力；"..
+  "3.弃置所有手牌，摸四张牌。",
+  ["#chishi-invoke"] = "持室：是否令 %dest 摸两张牌且本回合手牌上限+2？",
+  ["#weimian"] = "慰勉：废除至多三个装备栏，令一名角色执行等量效果",
+  ["#weimian-abort"] = "慰勉：请选择要废除的至多三个装备栏",
+  ["#weimian-choose"] = "慰勉：选择一名角色执行%arg项效果",
+  ["weimian1"] = "恢复一个装备栏",
+  ["weimian3"] = "弃置所有手牌，摸四张牌",
+  ["#weimian-resume"] = "慰勉：选择要恢复的装备栏",
+}
+
 return extension
