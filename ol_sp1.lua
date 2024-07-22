@@ -788,6 +788,7 @@ cuiyan:addSkill(xunzhi)
 Fk:loadTranslationTable{
   ["cuiyan"] = "崔琰",
   ["#cuiyan"] = "伯夷之风",
+  ["designer:cuiyan"] = "凌天翼",
   ["yawang"] = "雅望",
   [":yawang"] = "锁定技，摸牌阶段开始时，你放弃摸牌，改为摸X张牌，然后你于出牌阶段内至多使用X张牌（X为与你体力值相等的角色数）。",
   ["xunzhi"] = "殉志",
@@ -1765,7 +1766,7 @@ mazhong:addSkill(fuman)
 Fk:loadTranslationTable{
   ["mazhong"] = "马忠",
   ["#mazhong"] = "笑合南中",
-  ["designer:mazhong"] = "VirgoPaladin",
+  ["designer:mazhong"] = "Virgopaladin",
   ["illustrator:mazhong"] = "Thinking",
   ["fuman"] = "抚蛮",
   [":fuman"] = "出牌阶段，你可以将一张【杀】交给一名本回合未获得过“抚蛮”牌的其他角色，然后其于下个回合结束之前使用“抚蛮”牌时，你摸一张牌。",
@@ -2957,8 +2958,6 @@ Fk:loadTranslationTable{
   ["~ol__xunchen"] = "吾欲赴死，断不做背主之事……",
 }
 
---刘晔
-
 local sufei = General(extension, "ol__sufei", "wu", 4)
 sufei.subkingdom = "qun"
 local lianpian = fk.CreateTriggerSkill{
@@ -3130,8 +3129,6 @@ Fk:loadTranslationTable{
   ["$jianji2"] = "密计交于将军，可解燃眉之困。",
   ["~ol__huangquan"] = "魏王厚待于我，降魏又有何错？",
 }
-
---卑弥呼 2018.6.8
 
 local luzhi = General(extension, "luzhiw", "wei", 3)
 local qingzhong = fk.CreateTriggerSkill{
@@ -3588,6 +3585,7 @@ xujing:addSkill(shijian)
 Fk:loadTranslationTable{
   ["ol__xujing"] = "许靖",
   ["#ol__xujing"] = "品评名士",
+  ["designer:ol__xujing"] = "pui980178",
   ["illustrator:ol__xujing"] = "君桓文化",
   ["yuxu"] = "誉虚",
   [":yuxu"] = "当你于出牌阶段内使用牌结算结束后，若你于此阶段内发动过本技能的次数为：偶数，你可以摸一张牌；奇数，你弃置一张牌。",

@@ -3076,7 +3076,7 @@ wangguang:addSkill("zhongliu")
 Fk:loadTranslationTable{
   ["olz__wangguang"] = "族王广",
   ["#olz__wangguang"] = "才性离异",
-  --["designer:olz__wangguang"] = "",
+  ["designer:olz__wangguang"] = "廷玉",
   --["illustrator:olz__wangguang"] = "",
   ["lilun"] = "离论",
   [":lilun"] = "出牌阶段限一次，你可以重铸两张牌名相同的牌（不能是本回合以此法重铸过的牌名）并可以使用其中一张牌。",

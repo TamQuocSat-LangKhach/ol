@@ -112,7 +112,7 @@ huban:addSkill(huiyun)
 Fk:loadTranslationTable{
   ["ol__huban"] = "胡班",
   ["#ol__huban"] = "险误忠良",
-  ["designer:ol__huban"] = "cyc",
+  ["designer:ol__huban"] = "CYC",
   ["illustrator:ol__huban"] = "鬼画府",
 
   ["huiyun"] = "晖云",
@@ -526,7 +526,7 @@ macheng:addSkill(chenglie)
 Fk:loadTranslationTable{
   ["macheng"] = "马承",
   ["#macheng"] = "孤蹄踏乱",
-  ["designer:macheng"] = "cyc",
+  ["designer:macheng"] = "CYC",
   ["illustrator:macheng"] = "君桓文化",
   ["chenglie"] = "骋烈",
   [":chenglie"] = "你使用【杀】可以多指定至多两个目标，然后展示牌堆顶与目标数等量张牌，秘密将一张手牌与其中一张牌交换，将之分别暗置于"..
@@ -2104,16 +2104,6 @@ Fk:loadTranslationTable{
   ["~ol__zhouqun"] = "知万物而不知己命，大谬也……",
 }
 
-Fk:loadTranslationTable{
-  ["ol__liuyan"] = "刘焉",
-  ["pianan"] = "偏安",
-  [":pianan"] = "锁定技，游戏开始时和你的弃牌阶段结束时，你弃置不为【闪】的手牌并从牌堆或弃牌堆获得【闪】至你的体力值。",
-  ["yinji"] = "殷积",
-  [":yinji"] = "锁定技，结束阶段，若你不是体力值唯一最大的角色，你回复1点体力或增加1点体力上限。",
-  ["kuisi"] = "窥伺",
-  [":kuisi"] = "锁定技，你跳过摸牌阶段，改为观看牌堆顶的4张牌并使用其中任意张，若你以此法使用的牌数不为2或3，你减少1点体力上限。",
-}
-
 local haopu = General(extension, "haopu", "shu", 4)
 local zhenying = fk.CreateActiveSkill{
   name = "zhenying",
@@ -3292,7 +3282,7 @@ qianzhao:addSkill(kuansai)
 Fk:loadTranslationTable{
   ["ol__qianzhao"] = "牵招",
   ["#ol__qianzhao"] = "雁门无烟",
-  ["designer:ol__qianzhao"] = "cyc",
+  ["designer:ol__qianzhao"] = "CYC",
   ["illustrator:ol__qianzhao"] = "匠人绘",
   ["weifu"] = "威抚",
   [":weifu"] = "出牌阶段，你可以弃置一张牌并判定，你本回合下次使用与判定牌类别相同的牌无距离限制且可以多指定一个目标；若弃置牌与判定牌类别相同，你摸一张牌。",
@@ -5312,6 +5302,7 @@ liupan:addSkill(pijingl)
 Fk:loadTranslationTable{
   ["liupan"] = "刘磐",
   ["#liupan"] = "骁隽悍勇",
+  ["designer:liupan"] = "CYC",
 
   ["pijingl"] = "披荆",
   [":pijingl"] = "当你使用【杀】或普通锦囊牌指定第一个目标时，若你于当前回合内未发动过此技能，"..

@@ -1098,7 +1098,7 @@ local ol__zhengyi = fk.CreateTriggerSkill{
       local choices = {"yes", "no"}
       p.request_data = json.encode({choices, choices, self.name, "#ol__zhengyi-choice::"..target.id..":"..data.damage})
     end
-    room:notifyMoveFocus(room.alive_players, self.name)
+    room:notifyMoveFocus(targets, self.name)
     room:doBroadcastRequest("AskForChoice", targets)
     for _, p in ipairs(targets) do
       local choice
