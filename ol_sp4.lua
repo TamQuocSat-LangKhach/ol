@@ -467,8 +467,10 @@ local weimian = fk.CreateActiveSkill{
         --假设可以不弃手牌
         table.insert(choices, "weimian3")
       end
+      table.insert(choices, "Cancel")
       if #choices == 0 then return end
       choice = room:askForChoice(to, choices, self.name, nil, false, {"weimian1", "recover", "weimian3"})
+      if choice == "Cancel" then return end
       table.insert(selected, choice)
       if choice == "weimian1" then
         local slots = table.simpleClone(to.sealedSlots)
