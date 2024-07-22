@@ -1031,7 +1031,7 @@ local liwen = fk.CreateTriggerSkill{
       end
       local targets = {}
       for i = 3, 1, -1 do
-        for _, p in ipairs(room:getAlivePlayers()) do
+        for _, p in ipairs(room:getAlivePlayers(false)) do
           if p:getMark("@kongrong_virtuous") == i then
             table.insert(targets, p)
           end
