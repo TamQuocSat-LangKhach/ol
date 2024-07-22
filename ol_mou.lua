@@ -982,7 +982,180 @@ Fk:loadTranslationTable{
   ["~olmou__pangtong"] = "未与孔明把酒锦官城，恨也，恨也……",
 }
 
+local kongrong = General(extension, "olmou__kongrong", "qun", 4)
+local liwen = fk.CreateTriggerSkill{
+  name = "liwen",
+  events = {fk.CardUsing, fk.TurnEnd},
+  mute = true,
+  can_trigger = function(self, event, target, player, data)
+    if target == player and player:hasSkill(self) then
+      if event == fk.CardUsing then
+        return player.phase ~= Player.NotActive and
+          data.extra_data and data.extra_data.liwen_triggerable and player:getMark("@kongrong_virtuous") < 3
+      else
+        return player:getMark("@kongrong_virtuous") > 0 and
+          table.find(player.room:getOtherPlayers(player), function (p)
+            return p:getMark("@kongrong_virtuous") < 3
+          end)
+      end
+    end
+  end,
+  on_cost = function (self, event, target, player, data)
+    if event == fk.CardUsing then
+      return true
+    else
+      local room = player.room
+      local targets = table.map(table.filter(room:getOtherPlayers(player), function (p)
+        return p:getMark("@kongrong_virtuous") < 3
+      end), Util.IdMapper)
+      local tos = room:askForChoosePlayers(player, targets, 1, 3, "#liwen-choose", self.name, true)
+      if #tos > 0 then
+        self.cost_data = tos
+        return true
+      end
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    player:broadcastSkillInvoke(self.name)
+    if event == fk.CardUsing then
+      room:notifySkillInvoked(player, self.name, "special")
+      room:addPlayerMark(player, "@kongrong_virtuous", 1)
+    else
+      room:notifySkillInvoked(player, self.name, "support")
+      room:sortPlayersByAction(self.cost_data)
+      for _, id in ipairs(self.cost_data) do
+        local to = room:getPlayerById(id)
+        room:removePlayerMark(player, "@kongrong_virtuous", 1)
+        room:addPlayerMark(to, "@kongrong_virtuous", 1)
+      end
+      local targets = {}
+      for i = 3, 1, -1 do
+        for _, p in ipairs(room:getAlivePlayers()) do
+          if p:getMark("@kongrong_virtuous") == i then
+            table.insert(targets, p)
+          end
+        end
+      end
+      for _, p in ipairs(targets) do
+        if not p.dead then
+          local use = nil
+          if not p:isKongcheng() then
+            use = U.askForUseRealCard(room, p, p:getCardIds("h"), ".|.|.|.|.|^equip", self.name,
+              "#liwen-use:"..player.id, {bypass_times = true}, true, true)
+          end
+          if use then
+            use.extraUse = true
+            room:useCard(use)
+          else
+            local n = p:getMark("@kongrong_virtuous")
+            room:setPlayerMark(p, "@kongrong_virtuous", 0)
+            if not player.dead then
+              player:drawCards(n, self.name)
+            end
+          end
+        end
+      end
+    end
+  end,
 
+  refresh_events = {fk.AfterCardUseDeclared},
+  can_refresh = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self, true) and player.phase ~= Player.NotActive
+  end,
+  on_refresh = function(self, event, target, player, data)
+    local room = player.room
+    if data.card:getSuitString() == player:getMark("liwen_suit-turn") or
+        (data.card.number == player:getMark("liwen_number-turn") and data.card.number ~= 0) then
+      data.extra_data = data.extra_data or {}
+      data.extra_data.liwen_triggerable = true
+    end
+    if data.card.suit == Card.NoSuit then
+      room:setPlayerMark(player, "liwen_suit-turn", 0)
+    else
+      room:setPlayerMark(player, "liwen_suit-turn", data.card:getSuitString())
+    end
+    room:setPlayerMark(player, "liwen_number-turn", data.card.number)
+    room:setPlayerMark(player, "@liwen_record-turn", {data.card:getSuitString(true), data.card:getNumberStr()})
+  end,
+}
+local ol__zhengyi = fk.CreateTriggerSkill{
+  name = "ol__zhengyi",
+  anim_type = "support",
+  events = {fk.DamageInflicted},
+  can_trigger = function(self, event, target, player, data)
+    return player:hasSkill(self) and target:getMark("@kongrong_virtuous") > 0 and data.damageType == fk.NormalDamage and
+      table.find(player.room:getOtherPlayers(target), function (p)
+        return p:getMark("@kongrong_virtuous") > 0
+      end)
+  end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    local targets = table.filter(room:getOtherPlayers(target, false), function (p)
+      return p:getMark("@kongrong_virtuous") > 0
+    end)
+    for _, p in ipairs(targets) do
+      local choices = {"yes", "no"}
+      p.request_data = json.encode({choices, choices, self.name, "#ol__zhengyi-choice::"..target.id..":"..data.damage})
+    end
+    room:notifyMoveFocus(room.alive_players, self.name)
+    room:doBroadcastRequest("AskForChoice", targets)
+    for _, p in ipairs(targets) do
+      local choice
+      if p.reply_ready then
+        choice = p.client_reply
+      else
+        p.client_reply = "yes"
+        choice = "yes"
+      end
+      room:sendLog{
+        type = "#ol__zhengyi-quest",
+        from = p.id,
+        arg = choice,
+      }
+    end
+    local n = 0
+    for _, p in ipairs(targets) do
+      if p.client_reply == "yes" and p.hp > n then
+        n = p.hp
+      end
+    end
+    if n == 0 then return end
+    for _, p in ipairs(room:getAlivePlayers(false)) do
+      if p.client_reply and p.client_reply == "yes" and p.hp == n then
+        self.cost_data = p
+        return true
+      end
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    room:doIndicate(self.cost_data.id, {target.id})
+    room:loseHp(self.cost_data, data.damage, self.name)
+    return true
+  end,
+}
+kongrong:addSkill(liwen)
+kongrong:addSkill(ol__zhengyi)
+Fk:loadTranslationTable{
+  ["olmou__kongrong"] = "谋孔融",
+  ["#olmou__kongrong"] = "",
+  ["illustrator:olmou__kongrong"] = "",
+
+  ["liwen"] = "立文",
+  [":liwen"] = "当你于回合内使用牌时，若此牌与你本回合使用的上一张牌花色或点数相同，你获得一枚“贤”标记；回合结束时，你可以将任意个“贤”标记"..
+  "分配给等量的角色（每名角色“贤”标记上限为3个），然后有“贤”标记的角色按照标记从多到少的顺序，依次使用一张非装备手牌，若其不使用，移去其"..
+  "“贤”标记，你摸等量的牌。",
+  ["ol__zhengyi"] = "争义",
+  [":ol__zhengyi"] = "当有“贤”标记的角色受到非属性伤害时，其他有“贤”标记的角色同时选择是否失去体力，若有角色同意，则防止此伤害，同意的"..
+  "角色中体力值最大的角色失去等同于此伤害值的体力。",
+  ["@kongrong_virtuous"] = "贤",
+  ["@liwen_record-turn"] = "立文",
+  ["#liwen-choose"] = "立文：你可以将“贤”标记交给其他角色各一枚（每名角色至多三枚）",
+  ["#liwen-use"] = "立文：请使用一张非装备手牌，否则你弃置所有“贤”标记，%src 摸牌",
+  ["#ol__zhengyi-choice"] = "争义：是否失去%arg点体力，防止 %dest 受到的伤害？（只有选“是”的体力值最大的角色会失去体力）",
+  ["#ol__zhengyi-quest"] = "%from 选择 %arg",
+}
 
 
 
