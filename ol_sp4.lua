@@ -469,7 +469,7 @@ local weimian = fk.CreateActiveSkill{
       end
       table.insert(choices, "Cancel")
       if #choices == 0 then return end
-      choice = room:askForChoice(to, choices, self.name, nil, false, {"weimian1", "recover", "weimian3"})
+      choice = room:askForChoice(to, choices, self.name, nil, false, {"weimian1", "recover", "weimian3", "Cancel"})
       if choice == "Cancel" then return end
       table.insert(selected, choice)
       if choice == "weimian1" then
