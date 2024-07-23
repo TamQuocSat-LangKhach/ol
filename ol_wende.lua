@@ -2503,7 +2503,7 @@ local shenpin = fk.CreateTriggerSkill{
   end,
   on_cost = function(self, event, target, player, data)
     local pattern = data.card.color == Card.Black and "heart,diamond" or "spade,club"
-    local card = player.room:askForCard(player, 1, 1, false, self.name, true, ".|.|"..pattern.."|hand,equip", "#shenpin-invoke::"..target.id)
+    local card = player.room:askForCard(player, 1, 1, true, self.name, true, ".|.|"..pattern, "#shenpin-invoke::"..target.id)
     if #card > 0 then
       self.cost_data = card[1]
       return true
