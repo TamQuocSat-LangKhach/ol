@@ -1061,12 +1061,12 @@ local liwen = fk.CreateTriggerSkill{
 
   refresh_events = {fk.AfterCardUseDeclared},
   can_refresh = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self, true) and player.phase ~= Player.NotActive
+    return player:hasSkill(self, true) and player.phase ~= Player.NotActive
   end,
   on_refresh = function(self, event, target, player, data)
     local room = player.room
-    if data.card:getSuitString() == player:getMark("liwen_suit-turn") or
-        (data.card.number == player:getMark("liwen_number-turn") and data.card.number ~= 0) then
+    if target == player and (data.card:getSuitString() == player:getMark("liwen_suit-turn") or
+        (data.card.number == player:getMark("liwen_number-turn") and data.card.number ~= 0)) then
       data.extra_data = data.extra_data or {}
       data.extra_data.liwen_triggerable = true
     end
@@ -1143,7 +1143,7 @@ Fk:loadTranslationTable{
   ["illustrator:olmou__kongrong"] = "",
 
   ["liwen"] = "立文",
-  [":liwen"] = "当你于回合内使用牌时，若此牌与你本回合使用的上一张牌花色或点数相同，你获得一枚“贤”标记；回合结束时，你可以将任意个“贤”标记"..
+  [":liwen"] = "当你于回合内使用牌时，若此牌与本回合被使用的上一张牌花色或点数相同，你获得一枚“贤”标记；回合结束时，你可以将任意个“贤”标记"..
   "分配给等量的角色（每名角色“贤”标记上限为3个），然后有“贤”标记的角色按照标记从多到少的顺序，依次使用一张非装备手牌，若其不使用，移去其"..
   "“贤”标记，你摸等量的牌。",
   ["ol__zhengyi"] = "争义",
