@@ -7,6 +7,100 @@ Fk:loadTranslationTable{
   ["ol_exyj"] = "OL-界一将成名",
 }
 
+local zhangchunhua = General(extension, "ol_ex__zhangchunhua", "wei", 3, 3, General.Female)
+local jianmie = fk.CreateActiveSkill{
+  name = "jianmie",
+  anim_type = "offensive",
+  prompt = "#jianmie",
+  card_num = 0,
+  target_num = 1,
+  can_use = function(self, player)
+    return player:usedSkillTimes(self.name, Player.HistoryPhase) == 0
+  end,
+  card_filter = Util.FalseFunc,
+  target_filter = function(self, to_select, selected)
+    return #selected == 0 and to_select ~= Self.id
+  end,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    local target = room:getPlayerById(effect.tos[1])
+
+    local choices = {"red", "black"}
+    player.request_data = json.encode({choices, choices, self.name, "#jianmie-choice::"..target.id})
+    target.request_data = json.encode({choices, choices, self.name, "#jianmie-choice::"..player.id})
+    room:notifyMoveFocus({player, target}, self.name)
+    room:doBroadcastRequest("AskForChoice", {player, target})
+    for _, p in ipairs({player, target}) do
+      local choice
+      if p.reply_ready then
+        choice = p.client_reply
+      else
+        local color = table.random(choices)
+        p.client_reply = color
+        choice = color
+      end
+      room:sendLog{
+        type = "#jianmie-quest",
+        from = p.id,
+        arg = choice,
+      }
+    end
+    local cards1 = table.filter(player:getCardIds("h"), function (id)
+      return Fk:getCardById(id):getColorString() == player.client_reply
+    end)
+    local cards2 = table.filter(target:getCardIds("h"), function (id)
+      return Fk:getCardById(id):getColorString() == target.client_reply
+    end)
+    local moves = {}
+    if #cards1 > 0 then
+      table.insert(moves, {
+        ids = cards1,
+        from = player.id,
+        toArea = Card.DiscardPile,
+        moveReason = fk.ReasonDiscard,
+        proposer = player.id,
+        skillName = self.name,
+      })
+    end
+    if #cards2 > 0 then
+      table.insert(moves, {
+        ids = cards2,
+        from = target.id,
+        toArea = Card.DiscardPile,
+        moveReason = fk.ReasonDiscard,
+        proposer = target.id,
+        skillName = self.name,
+      })
+    end
+    room:moveCards(table.unpack(moves))
+    local src, to = player, player
+    if #cards1 > #cards2 then
+      src, to = player, target
+    elseif #cards1 < #cards2 then
+      src, to = target, player
+    end
+    if src ~= to and not to.dead then
+      room:useVirtualCard("duel", nil, src, to, self.name)
+    end
+  end,
+}
+zhangchunhua:addSkill(jianmie)
+zhangchunhua:addSkill("jueqing")
+zhangchunhua:addSkill("shangshi")
+Fk:loadTranslationTable{
+  ["ol_ex__zhangchunhua"] = "界张春华",
+  ["#ol_ex__zhangchunhua"] = "冷血皇后",
+  --["designer:ol_ex__zhangchunhua"] = "",
+  --["illustrator:ol_ex__zhangchunhua"] = "",
+
+  ["jianmie"] = "翦灭",
+  [":jianmie"] = "出牌阶段限一次，你可以选择一名其他角色，你与其同时选择一种颜色，弃置所有各自选择颜色的手牌，然后弃置牌数较多的角色视为对"..
+  "另一名角色使用【决斗】。",
+  ["#jianmie"] = "翦灭：与一名角色同时选择一种颜色的手牌弃置，弃牌数多的角色视为对对方使用【决斗】",
+  ["#jianmie-choice"] = "翦灭：与 %dest 同时选择一种颜色的手牌弃置，弃牌数多的角色视为对对方使用【决斗】",
+  ["#jianmie-quest"] = "%from 选择弃置 %arg 手牌",
+}
+
 local fazheng = General(extension, "ol_ex__fazheng", "shu", 3)
 local ol_ex__xuanhuo = fk.CreateTriggerSkill{
   name = "ol_ex__xuanhuo",
