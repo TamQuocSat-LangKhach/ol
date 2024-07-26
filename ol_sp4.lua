@@ -383,7 +383,7 @@ caoteng:addRelatedSkill("ex__jianxiong")
 caoteng:addRelatedSkill("tianming")
 Fk:loadTranslationTable{
   ["caoteng"] = "曹腾",
-  ["#caoteng"] = "",
+  ["#caoteng"] = "魏高帝",
 
   ["yongzu"] = "拥族",
   [":yongzu"] = "准备阶段，你可以选择一名其他角色，你与其依次选择不同的一项：<br>1.摸两张牌；<br>2.回复1点体力；<br>3.复原武将牌。<br>"..
@@ -399,7 +399,13 @@ Fk:loadTranslationTable{
   ["reset"] = "复原武将牌",  --很难想象这个居然没有翻译×2
   ["maxcards1"] = "手牌上限+1",  --这个感觉可以有翻译
 
-  ["~caoteng"] = "",
+  ["$yongzu1"] = "既拜我为父，咱家当视汝为骨肉。",
+  ["$yongzu2"] = "天地君亲师，此五者最须尊崇。",
+  ["$qingliu1"] = "谁说这宦官，皆是大奸大恶之人？",
+  ["$qingliu2"] = "咱家要让这天下人知道，宦亦有贤。",
+  --["$ex__jianxiong_caoteng"] = "",
+  --["$tianming_caoteng"] = "",
+  ["~caoteng"] = "种暠害我，望陛下明鉴！",
 }
 
 local sunru = General(extension, "ol__sunru", "wu", 3, 3, General.Female)
