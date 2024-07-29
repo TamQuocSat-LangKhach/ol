@@ -403,8 +403,8 @@ Fk:loadTranslationTable{
   ["$yongzu2"] = "天地君亲师，此五者最须尊崇。",
   ["$qingliu1"] = "谁说这宦官，皆是大奸大恶之人？",
   ["$qingliu2"] = "咱家要让这天下人知道，宦亦有贤。",
-  --["$ex__jianxiong_caoteng"] = "",
-  --["$tianming_caoteng"] = "",
+  ["$ex__jianxiong_caoteng"] = "躬行禁闱，不敢争一时之气。",
+  ["$tianming_caoteng"] = "天命在彼，事莫强为。",
   ["~caoteng"] = "种暠害我，望陛下明鉴！",
 }
 

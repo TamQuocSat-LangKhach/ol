@@ -933,7 +933,7 @@ local qiwu = fk.CreateTriggerSkill{
   events = {fk.DamageInflicted},
   anim_type = "defensive",
   can_trigger = function(self, event, target, player, data)
-    return player == target and player:hasSkill(self) and player:usedSkillTimes(self.name) == 0 and
+    return player == target and player:hasSkill(self) and player:usedSkillTimes(self.name) == 0 and not player:isNude() and
     data.from and (data.from == player or player:inMyAttackRange(data.from)) and player:getMark("qiangwu_record-turn") == 0 and
     #U.getActualDamageEvents(player.room, 1, function(e)
       if e.data[1].to == player then
@@ -943,7 +943,7 @@ local qiwu = fk.CreateTriggerSkill{
     end) == 0
   end,
   on_cost = function(self, event, target, player, data)
-    local card = player.room:askForDiscard(player, 1, 1, false, self.name, true, ".|.|heart,diamond", "#qiwu-invoke", true)
+    local card = player.room:askForDiscard(player, 1, 1, true, self.name, true, ".|.|heart,diamond", "#qiwu-invoke", true)
     if #card > 0 then
       self.cost_data = card
       return true
