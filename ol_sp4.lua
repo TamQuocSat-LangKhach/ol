@@ -550,9 +550,8 @@ local pingduan = fk.CreateActiveSkill{
       else
         return
       end
-    else
-      return
     end
+    if target:isNude() then return end
     local card = room:askForCard(target, 1, 1, false, self.name, true, ".|.|.|.|.|trick", "#pingduan-recast")
     if #card > 0 then
       room:recastCard(card, target, self.name)
@@ -561,8 +560,6 @@ local pingduan = fk.CreateActiveSkill{
       else
         return
       end
-    else
-      return
     end
     if player.dead or #target:getCardIds("e") == 0 then return end
     if room:askForSkillInvoke(target, self.name, nil, "#pingduan-equip:"..player.id) then
@@ -649,11 +646,13 @@ local jieyan_delay = fk.CreateTriggerSkill{
   mute = true,
   events = {fk.EventPhaseChanging, fk.EventPhaseEnd},
   can_trigger = function(self, event, target, player, data)
-    if target == player then
-      if event == fk.EventPhaseChanging then
-        return data.to == Player.Discard and player:getMark("@@jieyan1") > 0
+    if event == fk.EventPhaseChanging then
+      return target == player and data.to == Player.Discard and player:getMark("@@jieyan1") > 0
+    elseif target.phase == Player.Discard then
+      if target == player then
+        return player:getMark("@@jieyan2") > 0
       else
-        return player.phase == Player.Discard and player:getMark("@@jieyan2") > 0
+        return table.contains(U.getMark(player, "jieyan"), target.id)
       end
     end
   end,
@@ -664,41 +663,37 @@ local jieyan_delay = fk.CreateTriggerSkill{
       room:setPlayerMark(player, "@@jieyan1", 0)
       return true
     else
-      room:setPlayerMark(player, "@@jieyan2", 0)
-      for _, p in ipairs(room:getOtherPlayers(player)) do
-        local mark = U.getMark(p, "jieyan")
-        if table.contains(mark, player.id) then
-          table.removeOne(mark, player.id)
-          room:setPlayerMark(p, "jieyan", mark)
-
-          local cards = {}
-          local phase_event = room.logic:getCurrentEvent():findParent(GameEvent.Phase, true)
-          if phase_event == nil then
-            --continue
-          else
-            local end_id = phase_event.id
-            U.getEventsByRule(room, GameEvent.MoveCards, 1, function (e)
-              for _, move in ipairs(e.data) do
-                if move.from == target.id and move.toArea == Card.DiscardPile and move.moveReason == fk.ReasonDiscard then
-                  for _, info in ipairs(move.moveInfo) do
-                    if room:getCardArea(info.cardId) == Card.DiscardPile then
-                      table.insertIfNeed(cards, info.cardId)
-                    end
+      if target == player then
+        room:setPlayerMark(player, "@@jieyan2", 0)
+      else
+        local mark = U.getMark(player, "jieyan")
+        table.removeOne(mark, target.id)
+        room:setPlayerMark(player, "jieyan", mark)
+        local cards = {}
+        local phase_event = room.logic:getCurrentEvent():findParent(GameEvent.Phase, true)
+        if phase_event ~= nil then
+          local end_id = phase_event.id
+          U.getEventsByRule(room, GameEvent.MoveCards, 1, function (e)
+            for _, move in ipairs(e.data) do
+              if move.from == target.id and move.toArea == Card.DiscardPile and move.moveReason == fk.ReasonDiscard then
+                for _, info in ipairs(move.moveInfo) do
+                  if room:getCardArea(info.cardId) == Card.DiscardPile then
+                    table.insertIfNeed(cards, info.cardId)
                   end
                 end
               end
-              return false
-            end, end_id)
-            if #cards > 0 then
-              p:broadcastSkillInvoke("jieyan")
-              room:notifySkillInvoked(p, "jieyan", "support")
-              local choice = U.askforViewCardsAndChoice(p, cards, {"OK", "Cancel"}, "jieyan", "#jieyan-choice")
-              if choice == "OK" then
-                local to = room:askForChoosePlayers(p, table.map(room:getOtherPlayers(target), Util.IdMapper), 1, 1,
-                  "#jieyan-give", "jieyan", false)
-                to = room:getPlayerById(to[1])
-                room:moveCardTo(cards, Card.PlayerHand, to, fk.ReasonGive, "jieyan", nil, true, p.id)
-              end
+            end
+            return false
+          end, end_id)
+          if #cards > 0 then
+            player:broadcastSkillInvoke("jieyan")
+            room:notifySkillInvoked(player, "jieyan", "support")
+            local choice = U.askforViewCardsAndChoice(player, cards, {"OK", "Cancel"}, "jieyan", "#jieyan-choice")
+            if choice == "OK" then
+              local to = room:askForChoosePlayers(player, table.map(room:getOtherPlayers(target), Util.IdMapper), 1, 1,
+                "#jieyan-give", "jieyan", false)
+              to = room:getPlayerById(to[1])
+              room:moveCardTo(cards, Card.PlayerHand, to, fk.ReasonGive, "jieyan", nil, true, player.id)
             end
           end
         end
@@ -838,8 +833,7 @@ Fk:loadTranslationTable{
   ["jinghua"] = "镜花",
   [":jinghua"] = "其他角色获得你的牌后，其回复1点体力。当你失去最后一张手牌时，你可以将此技能的“回复”改为“失去”。",
   ["shuiyue"] = "水月",
-  [":shuiyue"] = "其他角色受到你的伤害后，其摸一张牌。当你令其他角色进入濒死状态后，你可以将此技能的“摸”改为“弃”。" ..
-  '<br/><font color="red">（注：根据描述目前无法确定〖镜花〗失去体力能否触发〖水月〗“令其他角色进入濒死状态后”，待线上测试后再进行修改）</font>',
+  [":shuiyue"] = "其他角色受到你的伤害后，其摸一张牌。当你令其他角色进入濒死状态后，你可以将此技能的“摸”改为“弃”。",
   ["#jieyan-choose"] = "节言：对一名角色造成1点伤害，令其选择跳过下个弃牌阶段或回复体力",
   ["jieyan1"] = "跳过你下个弃牌阶段",
   ["jieyan2"] = "回复1点体力，下个弃牌阶段手牌上限-2，弃牌交给其他角色",
