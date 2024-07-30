@@ -519,4 +519,339 @@ Fk:loadTranslationTable{
   ["#weimian-resume"] = "慰勉：选择要恢复的装备栏",
 }
 
+local kebineng = General(extension, "ol__kebineng", "qun", 4)
+local pingduan = fk.CreateActiveSkill{
+  name = "pingduan",
+  anim_type = "support",
+  card_num = 0,
+  target_num = 1,
+  prompt = "#pingduan",
+  can_use = function(self, player)
+    return player:usedSkillTimes(self.name, Player.HistoryPhase) == 0
+  end,
+  card_filter = Util.FalseFunc,
+  target_filter = function(self, to_select, selected, selected_cards)
+    return #selected == 0
+  end,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    local target = room:getPlayerById(effect.tos[1])
+    local all_names = U.getAllCardNames("b")
+    local names = table.filter(all_names, function (name)
+      local card = Fk:cloneCard(name)
+      return target:canUse(card, {bypass_times = true}) and not target:prohibitUse(card)
+    end)
+    local use = room:askForUseCard(target, self.name, table.concat(names, ","), "#pingduan-use", true, {bypass_times = true})
+    if use then
+      use.extraUse = true
+      room:useCard(use)
+      if not target.dead then
+        target:drawCards(1, self.name)
+      else
+        return
+      end
+    else
+      return
+    end
+    local card = room:askForCard(target, 1, 1, false, self.name, true, ".|.|.|.|.|trick", "#pingduan-recast")
+    if #card > 0 then
+      room:recastCard(card, target, self.name)
+      if not target.dead then
+        target:drawCards(1, self.name)
+      else
+        return
+      end
+    else
+      return
+    end
+    if player.dead or #target:getCardIds("e") == 0 then return end
+    if room:askForSkillInvoke(target, self.name, nil, "#pingduan-equip:"..player.id) then
+      card = room:askForCardChosen(player, target, "e", self.name, "#pingduan-prey::"..target.id)
+      room:moveCardTo(card, Card.PlayerHand, player, fk.ReasonPrey, self.name, nil, true, player.id)
+      if not target.dead then
+        target:drawCards(1, self.name)
+      end
+    end
+  end,
+}
+kebineng:addSkill(pingduan)
+Fk:loadTranslationTable{
+  ["ol__kebineng"] = "轲比能",
+  ["#ol__kebineng"] = "",
+
+  ["pingduan"] = "平端",
+  [":pingduan"] = "出牌阶段限一次，你可以令一名角色依次执行：1.使用一张基本牌；2.重铸一张锦囊牌；3.令你获得其装备区一张牌。其每执行一项"..
+  "便摸一张牌。",
+  ["#pingduan"] = "平端：令一名角色依次执行选项，其每执行一项摸一张牌",
+  ["#pingduan-use"] = "平端：你可以使用一张基本牌，摸一张牌",
+  ["#pingduan-recast"] = "平端：你可以重铸一张锦囊牌，摸一张牌",
+  ["#pingduan-equip"] = "平端：你可以令 %src 获得你装备区一张牌，你摸一张牌",
+  ["#pingduan-prey"] = "平端：获得 %dest 装备区一张牌",
+}
+
+local yuanji = General(extension, "ol__yuanji", "wu", 3, 3, General.Female)
+local jieyan = fk.CreateTriggerSkill{
+  name = "jieyan",
+  anim_type = "control",
+  events = {fk.EventPhaseStart},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self) and player.phase == Player.Start
+  end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    local to = room:askForChoosePlayers(player, table.map(room.alive_players, Util.IdMapper), 1, 1,
+      "#jieyan-choose", self.name, true)
+    if #to > 0 then
+      self.cost_data = to[1]
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local to = room:getPlayerById(self.cost_data)
+    room:damage({
+      from = player,
+      to = to,
+      damage = 1,
+      skillName = self.name,
+    })
+    if to.dead then return end
+    local choice = room:askForChoice(to, {"jieyan1", "jieyan2"}, self.name)
+    room:setPlayerMark(to, "@@"..choice, 1)
+    if choice == "jieyan2" then
+      if to:isWounded() then
+        room:recover{
+          who = to,
+          num = 1,
+          recoverBy = player,
+          skillName = self.name,
+        }
+      end
+      if not player.dead and not to.dead then
+        local mark = U.getMark(player, self.name)
+        table.insertIfNeed(mark, to.id)
+        room:setPlayerMark(player, self.name, mark)
+      end
+    end
+  end,
+
+  refresh_events = {fk.EventPhaseStart},
+  can_refresh = function(self, event, target, player, data)
+    return target == player and player.phase == Player.Discard and player:getMark("@@jieyan1") > 0
+  end,
+  on_refresh = function(self, event, target, player, data)
+    player.room:setPlayerMark(player, "@@jieyan1", 0)
+    player:skip(Player.Discard)
+  end,
+}
+local jieyan_delay = fk.CreateTriggerSkill{
+  name = "#jieyan_delay",
+  mute = true,
+  events = {fk.EventPhaseChanging, fk.EventPhaseEnd},
+  can_trigger = function(self, event, target, player, data)
+    if target == player then
+      if event == fk.EventPhaseChanging then
+        return data.to == Player.Discard and player:getMark("@@jieyan1") > 0
+      else
+        return player.phase == Player.Discard and player:getMark("@@jieyan2") > 0
+      end
+    end
+  end,
+  on_cost = Util.TrueFunc,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    if event == fk.EventPhaseChanging then
+      room:setPlayerMark(player, "@@jieyan1", 0)
+      return true
+    else
+      room:setPlayerMark(player, "@@jieyan2", 0)
+      for _, p in ipairs(room:getOtherPlayers(player)) do
+        local mark = U.getMark(p, "jieyan")
+        if table.contains(mark, player.id) then
+          table.removeOne(mark, player.id)
+          room:setPlayerMark(p, "jieyan", mark)
+
+          local cards = {}
+          local phase_event = room.logic:getCurrentEvent():findParent(GameEvent.Phase, true)
+          if phase_event == nil then
+            --continue
+          else
+            local end_id = phase_event.id
+            U.getEventsByRule(room, GameEvent.MoveCards, 1, function (e)
+              for _, move in ipairs(e.data) do
+                if move.from == target.id and move.toArea == Card.DiscardPile and move.moveReason == fk.ReasonDiscard then
+                  for _, info in ipairs(move.moveInfo) do
+                    if room:getCardArea(info.cardId) == Card.DiscardPile then
+                      table.insertIfNeed(cards, info.cardId)
+                    end
+                  end
+                end
+              end
+              return false
+            end, end_id)
+            if #cards > 0 then
+              p:broadcastSkillInvoke("jieyan")
+              room:notifySkillInvoked(p, "jieyan", "support")
+              local choice = U.askforViewCardsAndChoice(p, cards, {"OK", "Cancel"}, "jieyan", "#jieyan-choice")
+              if choice == "OK" then
+                local to = room:askForChoosePlayers(p, table.map(room:getOtherPlayers(target), Util.IdMapper), 1, 1,
+                  "#jieyan-give", "jieyan", false)
+                to = room:getPlayerById(to[1])
+                room:moveCardTo(cards, Card.PlayerHand, to, fk.ReasonGive, "jieyan", nil, true, p.id)
+              end
+            end
+          end
+        end
+      end
+    end
+  end,
+}
+local jieyan_maxcards = fk.CreateMaxCardsSkill{
+  name = "#jieyan_maxcards",
+  correct_func = function(self, player)
+    if player:getMark("@@jieyan2") > 0 and player.phase == Player.Discard then
+      return -2
+    else
+      return 0
+    end
+  end,
+}
+local jinghua = fk.CreateTriggerSkill{
+  name = "jinghua",
+  mute = true,
+  events = {fk.AfterCardsMove, fk.BeforeCardsMove},
+  can_trigger = function(self, event, target, player, data)
+    if player:hasSkill(self) then
+      local room = player.room
+      if event == fk.AfterCardsMove then
+        for _, move in ipairs(data) do
+          if move.from == player.id and move.to and move.to ~= player.id and move.toArea == Card.PlayerHand and
+            not room:getPlayerById(move.to).dead then
+            if player:getMark("@@jinghua") > 0 or room:getPlayerById(move.to):isWounded() then
+              self.cost_data = move.to
+              return true
+            end
+          end
+        end
+      elseif event == fk.BeforeCardsMove and player:getMark("@@jinghua") == 0 then
+        local n = 0
+        for _, move in ipairs(data) do
+          if move.from == player.id then
+            for _, info in ipairs(move.moveInfo) do
+              if info.fromArea == Card.PlayerHand then
+                n = n + 1
+              end
+            end
+          end
+        end
+        return player:getHandcardNum() == n
+      end
+    end
+  end,
+  on_cost = function(self, event, target, player, data)
+    if event == fk.AfterCardsMove then
+      return true
+    else
+      return player.room:askForSkillInvoke(player, self.name, nil, "#jinghua-invoke")
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    player:broadcastSkillInvoke(self.name)
+    if event == fk.AfterCardsMove then
+      room:doIndicate(player.id, {self.cost_data})
+      if player:getMark("@@jinghua") == 0 then
+        room:notifySkillInvoked(player, self.name, "support")
+        room:recover({
+          who = room:getPlayerById(self.cost_data),
+          num = 1,
+          recoverBy = player,
+          skillName = self.name,
+        })
+      else
+        room:notifySkillInvoked(player, self.name, "offensive")
+        room:loseHp(room:getPlayerById(self.cost_data), 1, self.name)
+      end
+    else
+      room:notifySkillInvoked(player, self.name, "special")
+      room:setPlayerMark(player, "@@jinghua", 1)
+    end
+  end,
+}
+local shuiyue = fk.CreateTriggerSkill{
+  name = "shuiyue",
+  events = {fk.Damaged, fk.EnterDying},
+  mute = true,
+  can_trigger = function(self, event, target, player, data)
+    if player:hasSkill(self) then
+      if event == fk.Damaged then
+        if target ~= player and data.from and data.from == player and not target.dead then
+          if player:getMark("@@shuiyue") == 0 then
+            return true
+          else
+            return not target:isNude()
+          end
+        end
+      elseif event == fk.EnterDying and player:getMark("@@shuiyue") == 0 then
+        return target ~= player and data.damage and data.damage.from and data.damage.from == player
+      end
+    end
+  end,
+  on_cost = function(self, event, target, player, data)
+    if event == fk.Damaged then
+      return true
+    else
+      return player.room:askForSkillInvoke(player, self.name, nil, "#shuiyue-invoke")
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    player:broadcastSkillInvoke(self.name)
+    if event == fk.Damaged then
+      room:doIndicate(player.id, {target.id})
+      if player:getMark("@@shuiyue") == 0 then
+        room:notifySkillInvoked(player, self.name, "support")
+        target:drawCards(1, self.name)
+      else
+        room:notifySkillInvoked(player, self.name, "control")
+        room:askForDiscard(target, 1, 1, true, self.name, false)
+      end
+    else
+      room:notifySkillInvoked(player, self.name, "special")
+      room:setPlayerMark(player, "@@shuiyue", 1)
+    end
+  end,
+}
+jieyan:addRelatedSkill(jieyan_delay)
+jieyan:addRelatedSkill(jieyan_maxcards)
+yuanji:addSkill(jieyan)
+yuanji:addSkill(jinghua)
+yuanji:addSkill(shuiyue)
+Fk:loadTranslationTable{
+  ["ol__yuanji"] = "袁姬",
+  ["#ol__yuanji"] = "",
+
+  ["jieyan"] = "节言",
+  [":jieyan"] = "准备阶段，你可以对一名角色造成1点伤害，然后其选择一项：1.跳过其下个弃牌阶段；2.回复1点体力，其下个弃牌阶段手牌上限-2，此阶段"..
+  "结束时，你可以将其此阶段弃置的牌交给除其以外的一名角色。" ..
+  '<br/><font color="red">（注：根据描述目前无法确定〖节言〗交出牌能否触发〖镜花〗“其他角色获得你的牌后”，待线上测试后再进行修改）</font>',
+  ["jinghua"] = "镜花",
+  [":jinghua"] = "其他角色获得你的牌后，其回复1点体力。当你失去最后一张手牌时，你可以将此技能的“回复”改为“失去”。",
+  ["shuiyue"] = "水月",
+  [":shuiyue"] = "其他角色受到你的伤害后，其摸一张牌。当你令其他角色进入濒死状态后，你可以将此技能的“摸”改为“弃”。" ..
+  '<br/><font color="red">（注：根据描述目前无法确定〖镜花〗失去体力能否触发〖水月〗“令其他角色进入濒死状态后”，待线上测试后再进行修改）</font>',
+  ["#jieyan-choose"] = "节言：对一名角色造成1点伤害，令其选择跳过下个弃牌阶段或回复体力",
+  ["jieyan1"] = "跳过你下个弃牌阶段",
+  ["jieyan2"] = "回复1点体力，下个弃牌阶段手牌上限-2，弃牌交给其他角色",
+  ["@@jieyan1"] = "跳过弃牌阶段",
+  ["@@jieyan2"] = "节言",
+  ["#jieyan_delay"] = "节言",
+  ["#jieyan-choice"] = "节言：你可以将这些牌交给一名角色",
+  ["#jieyan-give"] = "节言：选择获得这些牌的角色",
+  ["@@jinghua"] = "镜花",
+  ["#jinghua-invoke"] = "镜花：是否将本技能的“回复1点体力”改为“失去1点体力”？",
+  ["@@shuiyue"] = "水月",
+  ["#shuiyue-invoke"] = "水月：是否将本技能的“摸一张牌”改为“弃一张牌”？",
+}
+
 return extension
