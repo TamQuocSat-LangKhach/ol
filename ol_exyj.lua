@@ -312,6 +312,114 @@ Fk:loadTranslationTable{
   ["~ol_ex__lingtong"] = "先……停一下吧……",
 }
 
+local wuguotai = General(extension, "ol_ex__wuguotai", "wu", 3, 3, General.Female)
+local ol_ex__ganlu = fk.CreateActiveSkill{
+  name = "ol_ex__ganlu",
+  anim_type = "control",
+  target_num = 2,
+  min_card_num = 0,
+  prompt = function(self, selected_cards, selected_targets)
+    if #selected_targets < 2 then
+      return "#ol_ex__ganlu0:::"..Self:getLostHp()
+    else
+      local n1 = #Fk:currentRoom():getPlayerById(selected_targets[1]):getCardIds("e")
+      local n2 = #Fk:currentRoom():getPlayerById(selected_targets[2]):getCardIds("e")
+      if math.abs(n1 - n2) <= Self:getLostHp() then
+        return "#ol_ex__ganlu1:"..selected_targets[1]..":"..selected_targets[2]
+      else
+        return "#ol_ex__ganlu2:"..selected_targets[1]..":"..selected_targets[2]..":"..math.abs(n1 - n2)
+      end
+    end
+  end,
+  can_use = function(self, player)
+    return player:usedSkillTimes(self.name, Player.HistoryPhase) == 0
+  end,
+  card_filter = function (self, to_select, selected, selected_targets)
+    return not Self:prohibitDiscard(to_select) and Fk:currentRoom():getCardArea(to_select) == Card.PlayerHand
+  end,
+  target_filter = function(self, to_select, selected)
+    if #selected == 0 then
+      return true
+    elseif #selected == 1 then
+      return not (#Fk:currentRoom():getPlayerById(to_select):getCardIds("e") == 0 and
+        #Fk:currentRoom():getPlayerById(selected[1]):getCardIds("e") == 0)
+    else
+      return false
+    end
+  end,
+  feasible = function (self, selected, selected_cards)
+    if #selected == 2 then
+      local n1 = #Fk:currentRoom():getPlayerById(selected[1]):getCardIds("e")
+      local n2 = #Fk:currentRoom():getPlayerById(selected[2]):getCardIds("e")
+      if math.abs(n1 - n2) <= Self:getLostHp() then
+        return #selected_cards == 0
+      else
+        return #selected_cards == math.abs(n1 - n2)
+      end
+    end
+  end,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    if #effect.cards > 0 then
+      room:throwCard(effect.cards, self.name, player, player)
+    end
+    local target1 = room:getPlayerById(effect.tos[1])
+    local target2 = room:getPlayerById(effect.tos[2])
+    if target1.dead or target2.dead then return end
+    local cards1 = table.clone(target1:getCardIds("e"))
+    local cards2 = table.clone(target2:getCardIds("e"))
+    U.swapCards(room, player, target1, target2, cards1, cards2, self.name, Card.PlayerEquip)
+  end,
+}
+local ol_ex__buyi = fk.CreateTriggerSkill{
+  name = "ol_ex__buyi",
+  anim_type = "support",
+  events = {fk.EnterDying},
+  can_trigger = function(self, event, target, player, data)
+    return player:hasSkill(self) and not target:isNude()
+  end,
+  on_cost = function(self, event, target, player, data)
+    return player.room:askForSkillInvoke(player, self.name, data, "#ol_ex__buyi-invoke::"..target.id)
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    room:doIndicate(player.id, {target.id})
+    local id = room:askForCardChosen(player, target, "he", self.name)
+    if table.contains(target:getCardIds("h"), id) then
+      target:showCards({id})
+    end
+    if target.dead then return end
+    if Fk:getCardById(id).type ~= Card.TypeBasic then
+      room:throwCard({id}, self.name, target, target)
+      if not target.dead and target:isWounded() then
+        room:recover{
+          who = target,
+          num = 1,
+          recoverBy = player,
+          skillName = self.name,
+        }
+      end
+    end
+  end,
+}
+wuguotai:addSkill(ol_ex__ganlu)
+wuguotai:addSkill(ol_ex__buyi)
+Fk:loadTranslationTable{
+  ["ol_ex__wuguotai"] = "界吴国太",
+  ["#ol_ex__wuguotai"] = "武烈皇后",
+  --["designer:ol_ex__wuguotai"] = "",
+  --["illustrator:ol_ex__wuguotai"] = "",
+
+  ["ol_ex__ganlu"] = "甘露",
+  [":ol_ex__ganlu"] = "出牌阶段限一次，你可以令两名角色交换装备区里的牌。若X大于你已损失体力值，你须先弃置X张手牌。（X为其装备区牌数之差）",
+  ["ol_ex__buyi"] = "补益",
+  [":ol_ex__buyi"] = "当一名角色进入濒死状态时，你可以选择其一张牌，若此牌不为基本牌，其弃置此牌，然后回复1点体力。",
+  ["#ol_ex__ganlu0"] = "甘露：令两名角色交换装备区里的牌，若牌数之差大于%arg，须先弃置手牌",
+  ["#ol_ex__ganlu1"] = "甘露：令 %src 和 %dest 交换装备区里的牌",
+  ["#ol_ex__ganlu2"] = "甘露：弃置%arg张手牌，令 %src 和 %dest 交换装备区里的牌",
+  ["#ol_ex__buyi-invoke"] = "补益：选择 %dest 的一张牌，若为非基本牌，其弃置之并回复1点体力",
+}
+
 -- yj2012
 local ol_ex__caozhang = General(extension, "ol_ex__caozhang", "wei", 4)
 local ol_ex__jiangchi_select = fk.CreateActiveSkill{
