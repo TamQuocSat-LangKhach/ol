@@ -3795,40 +3795,46 @@ local function Gethuashen(player, n)
 end
 local function Dohuashen(player)
   local room = player.room
-  local mark = U.getPrivateMark(player, "&ol_ex__huashen")
-  if #mark == 0 then return end
-  local name = room:askForGeneral(player, mark, 1, true)
-  local general = Fk.generals[name]
-  room:setPlayerMark(player, "ol_ex__huashen_general", name)
-  local original_general = player.general
-  player.general = name
-  room:broadcastProperty(player, "general")
-  player.gender = general.gender
-  room:broadcastProperty(player, "gender")
-  player.kingdom = general.kingdom
-  room:askForChooseKingdom({player})
-  room:broadcastProperty(player, "kingdom")
-  local old_skill = player:getMark("@ol_ex__huashen_skill")
-  if old_skill ~= 0 then room:handleAddLoseSkills(player, "-"..old_skill) end
-  local skills = {}
-  for _, skillName in ipairs(general:getSkillNameList()) do
-    local s = Fk.skills[skillName]
-    if not (s.lordSkill or s.switchSkillName or s.frequency > 3 ) then
-      if #s.attachedKingdom == 0 or table.contains(s.attachedKingdom, player.kingdom) then
+  local generals = U.getPrivateMark(player, "&ol_ex__huashen")
+  if #generals == 0 then return end
+  local skillList = {}
+  for _, g in ipairs(generals) do
+    local general = Fk.generals[g]
+    local skills = {}
+    for _, skillName in ipairs(general:getSkillNameList()) do
+      local s = Fk.skills[skillName]
+      if not (s.lordSkill or s.switchSkillName or s.frequency > 3) and #s.attachedKingdom == 0 then
         table.insert(skills, skillName)
       end
     end
+    table.insert(skillList, skills)
   end
-  if #skills > 0 then
-    local choice = room:askForChoice(player, skills, "ol_ex__huashen", "#ol_ex__huashen-skill", true)
-    room:setPlayerMark(player, "@ol_ex__huashen_skill", choice)
-    room:handleAddLoseSkills(player, choice)
-  else
-    room:setPlayerMark(player, "@ol_ex__huashen_skill", 0)
+  local result = room:askForCustomDialog(
+    player, "ol_ex__huashen",
+    "packages/utility/qml/ChooseSkillFromGeneralBox.qml",
+    { generals, skillList, "#ol_ex__huashen-skill" }
+  )
+  if result ~= "" then
+    result = json.decode(result)
+    local generalName, skill = table.unpack(result)
+    local general = Fk.generals[generalName]
+    room:setPlayerMark(player, "ol_ex__huashen_general", generalName)
+    if player:getMark("HuashenOrignalProperty") == 0 then
+      room:setPlayerMark(player, "HuashenOrignalProperty", {player.gender, player.kingdom})
+    end
+    player.gender = general.gender
+    room:broadcastProperty(player, "gender")
+    player.kingdom = general.kingdom
+    room:askForChooseKingdom({player})
+    room:broadcastProperty(player, "kingdom")
+    local old_mark = player:getMark("@ol_ex__huashen_skill")
+    if old_mark ~= 0 then
+      room:handleAddLoseSkills(player, "-"..old_mark[2])
+    end
+    room:setPlayerMark(player, "@ol_ex__huashen_skill", {generalName, skill})
+    room:handleAddLoseSkills(player, skill)
+    room:delay(500)
   end
-  room:delay(500)
-  player.general = original_general
-  room:broadcastProperty(player, "general")
 end
 local function Recasthuashen(player)
   local room = player.room
@@ -3892,7 +3898,16 @@ local ol_ex__huashen = fk.CreateTriggerSkill{
     return player == target and data == self
   end,
   on_refresh = function(self, event, target, player, data)
-    player.room:setPlayerMark(player, "@[private]&ol_ex__huashen", 0)
+    local room = player.room
+    room:setPlayerMark(player, "@[private]&ol_ex__huashen", 0)
+    local pro = player:getMark("HuashenOrignalProperty")
+    if pro ~= 0 then
+      player.gender = pro[1]
+      room:broadcastProperty(player, "gender")
+      player.kingdom = pro[2]
+      room:broadcastProperty(player, "kingdom")
+      room:setPlayerMark(player, "HuashenOrignalProperty", 0)
+    end
   end,
 }
 local ol_ex__xinsheng = fk.CreateTriggerSkill{
@@ -3925,14 +3940,14 @@ Fk:loadTranslationTable{
   ["#ol_ex__zuoci"] = "迷之仙人",
   ["illustrator:ol_ex__zuoci"] = "波子",
   ["ol_ex__huashen"] = "化身",
-  [":ol_ex__huashen"] = "①游戏开始时，你随机获得三张武将牌作为“化身”牌，然后你选择其中一张“化身”牌的一个技能（主公技/限定技/觉醒技/转换技除外），你视为拥有此技能，且性别和势力视为与此“化身”牌相同。<br>"..
+  [":ol_ex__huashen"] = "①游戏开始时，你随机获得三张武将牌作为“化身”牌，然后你选择其中一张“化身”牌的一个技能（主公技/限定技/觉醒技/转换技/势力技除外），你视为拥有此技能，且性别和势力视为与此“化身”牌相同。<br>"..
   "②回合开始或结束时，你可以选择一项：1.重新进行一次“化身”；2.移去至多两张不为亮出的“化身”牌，然后获得等量的新“化身”牌。",
   ["@[private]&ol_ex__huashen"] = "化身",
   ["@ol_ex__huashen_skill"] = "化身",
   ["ol_ex__huashen_re"] = "进行一次“化身”",
   ["ol_ex__huashen_recast"] = "移去至多两张“化身”，获得等量新“化身”",
   ["#ol_ex__huashen-recast"] = "移去至多两张“化身”，获得等量新“化身”",
-  ["#ol_ex__huashen-skill"] = "化身：选择获得的技能",
+  ["#ol_ex__huashen-skill"] = "化身：选择一个武将，再选择一个要获得的技能",
   ["ol_ex__xinsheng"] = "新生",
   [":ol_ex__xinsheng"] = "当你受到1点伤害后，若你有技能“化身”，你可以随机获得一张新的“化身”牌。",
 
