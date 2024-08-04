@@ -189,7 +189,8 @@ Fk:loadTranslationTable{
   ["~godcaopi"] = "曹魏锦绣，孤还未看尽……",
 }
 
-local lvbu3 = General(extension, "hulao__godlvbu3", "god", 4)
+local lvbu3 = General(extension, "hulao3__godlvbu", "god", 4)
+lvbu3.hulao_status = 2
 --lvbu3.hidden = true
 
 local shenqu = fk.CreateTriggerSkill{
@@ -265,33 +266,34 @@ lvbu3:addRelatedSkill("ty_ex__xuanfeng")
 lvbu3:addRelatedSkill("ol_ex__wansha")
 
 Fk:loadTranslationTable{
-  ["hulao__godlvbu3"] = "神吕布",
-  ["#hulao__godlvbu3"] = "神鬼无前",
-  ["illustrator:hulao__godlvbu3"] = "LiuHeng",
+  ["hulao3__godlvbu"] = "神吕布",
+  ["#hulao3__godlvbu"] = "神鬼无前",
+  ["illustrator:hulao3__godlvbu"] = "LiuHeng",
   ["shenqu"] = "神躯",
   [":shenqu"] = "一名角色的准备阶段，若你的手牌数不大于你的体力上限，你可以摸两张牌。当你受到伤害后，你可以使用一张【桃】。",
   ["jiwu"] = "极武",
   [":jiwu"] = "出牌阶段，你可以弃置一张牌，然后本回合你拥有以下其中一个技能：〖强袭〗、〖铁骑〗、〖旋风〗、〖完杀〗。",
 
+  ["hulao3"] = "虎牢关",
   ["#shenqu-invoke"] = "是否使用神躯，摸两张牌",
   ["#shenqu-use"] = "神躯：你可以使用一张【桃】",
   ["#jiwu-active"] = "发动 极武，弃置一张牌来获得一项技能",
 
-  ["$wushuang_hulao__godlvbu31"] = "此天下，还有挡我者？",
-  ["$wushuang_hulao__godlvbu32"] = "画戟扫沙场，无双立万世。",
+  ["$wushuang_hulao3__godlvbu1"] = "此天下，还有挡我者？",
+  ["$wushuang_hulao3__godlvbu2"] = "画戟扫沙场，无双立万世。",
   ["$shenqu1"] = "别心怀侥幸了，你们不可能赢！",
   ["$shenqu2"] = "虎牢关，我一人镇守足矣。",
   ["$jiwu1"] = "我！是不可战胜的！",
   ["$jiwu2"] = "今天！就让你们感受一下真正的绝望！",
-  ["$ol_ex__qiangxi_hulao__godlvbu31"] = "这么想死，那我就成全你！",
-  ["$ol_ex__qiangxi_hulao__godlvbu32"] = "项上人头，待我来取！",
-  ["$ex__tieji_hulao__godlvbu31"] = "哈哈哈！破绽百出！",
-  ["$ex__tieji_hulao__godlvbu32"] = "我要让这虎牢关下，血流成河！",
-  ["$ty_ex__xuanfeng_hulao__godlvbu31"] = "千钧之势，力贯苍穹！",
-  ["$ty_ex__xuanfeng_hulao__godlvbu32"] = "风扫六合，威震八荒！",
-  ["$ol_ex__wansha_hulao__godlvbu31"] = "蝼蚁！怎容偷生！",
-  ["$ol_ex__wansha_hulao__godlvbu32"] = "沉沦吧！在这无边的恐惧！",
-  ["~hulao__godlvbu3"] = "你们的项上人头，我改日再取！",
+  ["$ol_ex__qiangxi_hulao3__godlvbu1"] = "这么想死，那我就成全你！",
+  ["$ol_ex__qiangxi_hulao3__godlvbu2"] = "项上人头，待我来取！",
+  ["$ex__tieji_hulao3__godlvbu1"] = "哈哈哈！破绽百出！",
+  ["$ex__tieji_hulao3__godlvbu2"] = "我要让这虎牢关下，血流成河！",
+  ["$ty_ex__xuanfeng_hulao3__godlvbu1"] = "千钧之势，力贯苍穹！",
+  ["$ty_ex__xuanfeng_hulao3__godlvbu2"] = "风扫六合，威震八荒！",
+  ["$ol_ex__wansha_hulao3__godlvbu1"] = "蝼蚁！怎容偷生！",
+  ["$ol_ex__wansha_hulao3__godlvbu2"] = "沉沦吧！在这无边的恐惧！",
+  ["~hulao3__godlvbu"] = "你们的项上人头，我改日再取！",
 }
 
 local hanba = General(extension, "hanba", "qun", 4, 4, General.Female)
