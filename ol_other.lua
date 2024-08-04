@@ -2021,8 +2021,8 @@ local changjian = fk.CreateTriggerSkill{
     local choice = self.cost_data
     if choice == "changjian-exTG" then
       local tos = U.getUseExtraTargets(room, data, false)
-      tos = table.filter(table.map(tos, Util.Id2PlayerMapper), function (p)
-        return player:inMyAttackRange(p)
+      tos = table.filter(tos, function (id)
+        return player:inMyAttackRange(room:getPlayerById(id))
       end)
       local ex_to = room:askForChoosePlayers(player, tos, 1, 1, "#changjian-ex", self.name, false)
       if #ex_to == 1 then
