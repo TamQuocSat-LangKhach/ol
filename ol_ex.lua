@@ -3797,6 +3797,7 @@ local function Dohuashen(player)
   local room = player.room
   local generals = U.getPrivateMark(player, "&ol_ex__huashen")
   if #generals == 0 then return end
+  local default = {}
   local skillList = {}
   for _, g in ipairs(generals) do
     local general = Fk.generals[g]
@@ -3805,6 +3806,9 @@ local function Dohuashen(player)
       local s = Fk.skills[skillName]
       if not (s.lordSkill or s.switchSkillName or s.frequency > 3) and #s.attachedKingdom == 0 then
         table.insert(skills, skillName)
+        if #default == 0 then
+          default = {g, skillName}
+        end
       end
     end
     table.insert(skillList, skills)
@@ -3814,27 +3818,30 @@ local function Dohuashen(player)
     "packages/utility/qml/ChooseSkillFromGeneralBox.qml",
     { generals, skillList, "#ol_ex__huashen-skill" }
   )
-  if result ~= "" then
+  if result == "" then
+    if #default == 0 then return end
+    result = default
+  else
     result = json.decode(result)
-    local generalName, skill = table.unpack(result)
-    local general = Fk.generals[generalName]
-    room:setPlayerMark(player, "ol_ex__huashen_general", generalName)
-    if player:getMark("HuashenOrignalProperty") == 0 then
-      room:setPlayerMark(player, "HuashenOrignalProperty", {player.gender, player.kingdom})
-    end
-    player.gender = general.gender
-    room:broadcastProperty(player, "gender")
-    player.kingdom = general.kingdom
-    room:askForChooseKingdom({player})
-    room:broadcastProperty(player, "kingdom")
-    local old_mark = player:getMark("@ol_ex__huashen_skill")
-    if old_mark ~= 0 then
-      room:handleAddLoseSkills(player, "-"..old_mark[2])
-    end
-    room:setPlayerMark(player, "@ol_ex__huashen_skill", {generalName, skill})
-    room:handleAddLoseSkills(player, skill)
-    room:delay(500)
   end
+  local generalName, skill = table.unpack(result)
+  local general = Fk.generals[generalName]
+  room:setPlayerMark(player, "ol_ex__huashen_general", generalName)
+  if player:getMark("HuashenOrignalProperty") == 0 then
+    room:setPlayerMark(player, "HuashenOrignalProperty", {player.gender, player.kingdom})
+  end
+  player.gender = general.gender
+  room:broadcastProperty(player, "gender")
+  player.kingdom = general.kingdom
+  room:askForChooseKingdom({player})
+  room:broadcastProperty(player, "kingdom")
+  local old_mark = player:getMark("@ol_ex__huashen_skill")
+  if old_mark ~= 0 then
+    room:handleAddLoseSkills(player, "-"..old_mark[2])
+  end
+  room:setPlayerMark(player, "@ol_ex__huashen_skill", {generalName, skill})
+  room:handleAddLoseSkills(player, skill)
+  room:delay(500)
 end
 local function Recasthuashen(player)
   local room = player.room
@@ -3874,7 +3881,7 @@ local ol_ex__huashen = fk.CreateTriggerSkill{
   end,
   on_cost = function(self, event, target, player, data)
     if event == fk.GameStart then return true end
-    local choice = player.room:askForChoice(player, {"ol_ex__huashen_re", "ol_ex__huashen_recast", "Cancel"},self.name)
+    local choice = player.room:askForChoice(player, {"ol_ex__huashen_re", "ol_ex__huashen_recast", "Cancel"}, self.name)
     if choice ~= "Cancel" then
       self.cost_data = choice
       return true
