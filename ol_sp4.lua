@@ -714,37 +714,27 @@ local jieyan_maxcards = fk.CreateMaxCardsSkill{
 local jinghua = fk.CreateTriggerSkill{
   name = "jinghua",
   mute = true,
-  events = {fk.AfterCardsMove, fk.BeforeCardsMove},
+  events = {fk.AfterCardsMove},
   can_trigger = function(self, event, target, player, data)
     if player:hasSkill(self) then
-      local room = player.room
-      if event == fk.AfterCardsMove then
-        for _, move in ipairs(data) do
-          if move.from == player.id and move.to and move.to ~= player.id and move.toArea == Card.PlayerHand and
-            not room:getPlayerById(move.to).dead then
-            if player:getMark("@@jinghua") > 0 or room:getPlayerById(move.to):isWounded() then
+      self.cost_data = 0
+      for _, move in ipairs(data) do
+        if move.from == player.id then
+          if move.to and move.to ~= player.id and move.toArea == Card.PlayerHand and not player.room:getPlayerById(move.to).dead then
+            if player:getMark("@@jinghua") > 0 or player.room:getPlayerById(move.to):isWounded() then
               self.cost_data = move.to
               return true
             end
           end
-        end
-      elseif event == fk.BeforeCardsMove and player:getMark("@@jinghua") == 0 then
-        local n = 0
-        for _, move in ipairs(data) do
-          if move.from == player.id then
-            for _, info in ipairs(move.moveInfo) do
-              if info.fromArea == Card.PlayerHand then
-                n = n + 1
-              end
-            end
+          if player:isKongcheng() and player:getMark("@@jinghua") == 0 then
+            return true
           end
         end
-        return player:getHandcardNum() == n
       end
     end
   end,
   on_cost = function(self, event, target, player, data)
-    if event == fk.AfterCardsMove then
+    if self.cost_data ~= 0 then
       return true
     else
       return player.room:askForSkillInvoke(player, self.name, nil, "#jinghua-invoke")
@@ -753,7 +743,7 @@ local jinghua = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     player:broadcastSkillInvoke(self.name)
-    if event == fk.AfterCardsMove then
+    if self.cost_data ~= 0 then
       room:doIndicate(player.id, {self.cost_data})
       if player:getMark("@@jinghua") == 0 then
         room:notifySkillInvoked(player, self.name, "support")
@@ -766,6 +756,10 @@ local jinghua = fk.CreateTriggerSkill{
       else
         room:notifySkillInvoked(player, self.name, "offensive")
         room:loseHp(room:getPlayerById(self.cost_data), 1, self.name)
+      end
+      if player:isKongcheng() and player:getMark("@@jinghua") == 0 then
+        self.cost_data = 0
+        self:trigger(event, target, player, data)
       end
     else
       room:notifySkillInvoked(player, self.name, "special")
@@ -828,16 +822,15 @@ Fk:loadTranslationTable{
 
   ["jieyan"] = "节言",
   [":jieyan"] = "准备阶段，你可以对一名角色造成1点伤害，然后其选择一项：1.跳过其下个弃牌阶段；2.回复1点体力，其下个弃牌阶段手牌上限-2，此阶段"..
-  "结束时，你可以将其此阶段弃置的牌交给除其以外的一名角色。" ..
-  '<br/><font color="red">（注：根据描述目前无法确定〖节言〗交出牌能否触发〖镜花〗“其他角色获得你的牌后”，待线上测试后再进行修改）</font>',
+  "结束时，你可以将其此阶段弃置的牌交给除其以外的一名角色。",
   ["jinghua"] = "镜花",
-  [":jinghua"] = "其他角色获得你的牌后，其回复1点体力。当你失去最后一张手牌时，你可以将此技能的“回复”改为“失去”。",
+  [":jinghua"] = "其他角色获得你的牌后，其回复1点体力。当你失去最后一张手牌后，你可以将此技能的“回复”改为“失去”。",
   ["shuiyue"] = "水月",
   [":shuiyue"] = "其他角色受到你的伤害后，其摸一张牌。当你令其他角色进入濒死状态后，你可以将此技能的“摸”改为“弃”。",
   ["#jieyan-choose"] = "节言：对一名角色造成1点伤害，令其选择跳过下个弃牌阶段或回复体力",
   ["jieyan1"] = "跳过你下个弃牌阶段",
   ["jieyan2"] = "回复1点体力，下个弃牌阶段手牌上限-2，弃牌交给其他角色",
-  ["@@jieyan1"] = "跳过弃牌阶段",
+  ["@@jieyan1"] = "跳过弃牌",
   ["@@jieyan2"] = "节言",
   ["#jieyan_delay"] = "节言",
   ["#jieyan-choice"] = "节言：你可以将这些牌交给一名角色",
