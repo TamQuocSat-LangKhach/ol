@@ -503,7 +503,7 @@ sunru:addSkill(chishi)
 sunru:addSkill(weimian)
 Fk:loadTranslationTable{
   ["ol__sunru"] = "孙茹",
-  ["#ol__sunru"] = "",
+  ["#ol__sunru"] = "淑慎温良",
 
   ["chishi"] = "持室",
   [":chishi"] = "每回合限一次，当前回合角色失去其一个区域内最后一张牌后，你可以令其摸两张牌且本回合手牌上限+2。",
@@ -517,6 +517,12 @@ Fk:loadTranslationTable{
   ["weimian1"] = "恢复一个装备栏",
   ["weimian3"] = "弃置所有手牌，摸四张牌",
   ["#weimian-resume"] = "慰勉：选择要恢复的装备栏",
+
+  ["$chishi1"] = "柴米油盐之细，不逊兵家之谋。",
+  ["$chishi2"] = "治大家如烹小鲜，须面面俱到。",
+  ["$weimian1"] = "不过二三小事，夫君何须烦恼。",
+  ["$weimian2"] = "宦海疾风大浪，家为避风之塘。",
+  ["~ol__sunru"] = "从来无情者，皆出帝王家……",
 }
 
 local kebineng = General(extension, "ol__kebineng", "qun", 4)
