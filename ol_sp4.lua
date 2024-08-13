@@ -847,4 +847,188 @@ Fk:loadTranslationTable{
   ["#shuiyue-invoke"] = "水月：是否将本技能的“摸一张牌”改为“弃一张牌”？",
 }
 
+--local kongshu = General(extension, "kongshu", "qun", 3, 3, General.Female)
+local leiluan = fk.CreateViewAsSkill{
+  name = "leiluan",
+  pattern = ".|.|.|.|.|basic",
+  prompt = function ()
+    return "#leiluan:::"..math.max(Self:getMark("leiluan_count"), 1)
+  end,
+  interaction = function()
+    local names = {}
+    local mark = U.getMark(Self, "leiluan-round")
+    for _, id in ipairs(Fk:getAllCardIds()) do
+      local card = Fk:getCardById(id)
+      if ((Fk.currentResponsePattern == nil and Self:canUse(card)) or
+      (Fk.currentResponsePattern and Exppattern:Parse(Fk.currentResponsePattern):match(card))) then
+        if card.type == Card.TypeBasic and not table.contains(mark, card.trueName) then
+          table.insertIfNeed(names, card.name)
+        end
+      end
+    end
+    if #names == 0 then return false end
+    return UI.ComboBox {choices = names}
+  end,
+  card_filter = function (self, to_select, selected)
+    return #selected < math.max(Self:getMark("leiluan_count"), 1)
+  end,
+  view_as = function(self, cards)
+    if not self.interaction.data or #cards ~= math.max(Self:getMark("leiluan_count"), 1) then return end
+    local card = Fk:cloneCard(self.interaction.data)
+    card:addSubcards(cards)
+    card.skillName = self.name
+    return card
+  end,
+  before_use = function (self, player, use)
+    player.room:setPlayerMark(player, "leiluan_use-turn", 1)
+  end,
+  enabled_at_play = function(self, player)
+    return not player:isNude() and player:getMark("leiluan_use-turn") == 0
+  end,
+  enabled_at_response = function(self, player, response)
+    return not response and not player:isNude() and player:getMark("leiluan_use-turn") == 0
+  end,
+}
+local leiluan_trigger = fk.CreateTriggerSkill{
+  name = "#leiluan_trigger",
+  mute = true,
+  main_skill = leiluan,
+  events = {fk.RoundEnd},
+  can_trigger = function (self, event, target, player, data)
+    if player:hasSkill(leiluan) then
+      if #player.room.logic:getEventsOfScope(GameEvent.UseCard, 99, function(e)
+        local use = e.data[1]
+        return use.from == player.id and use.card.type == Card.TypeBasic
+      end, Player.HistoryRound) >= math.max(player:getMark("leiluan_count"), 1) then
+        return true
+      else
+        player.room:setPlayerMark(player, "leiluan_count", 0)
+      end
+    end
+  end,
+  on_cost = function (self, event, target, player, data)
+    local room = player.room
+    if room:askForSkillInvoke(player, "leiluan") then
+      return true
+    end
+    room:setPlayerMark(player, "leiluan_count", 0)
+  end,
+  on_use = function (self, event, target, player, data)
+    local room = player.room
+    local n = math.max(player:getMark("leiluan_count"), 1)
+    room:addPlayerMark(player, "leiluan_count", 1)
+    player:drawCards(n, "leiluan")
+    if player.dead then return end
+    local cards = {}
+    room.logic:getEventsOfScope(GameEvent.MoveCards, 1, function(e)
+      for _, move in ipairs(e.data) do
+        if move.toArea == Card.DiscardPile then
+          for _, info in ipairs(move.moveInfo) do
+            if Fk:getCardById(info.cardId):isCommonTrick() and table.contains(room.discard_pile, info.cardId) then
+              table.insertIfNeed(cards, info.cardId)
+            end
+          end
+        end
+      end
+      return false
+    end, Player.HistoryRound)
+    if #cards == 0 then return end
+    U.askForUseRealCard(room, player, cards, ".", "leiluan", "#leiluan-use", {expand_pile = cards})
+  end,
+
+  refresh_events = {fk.AfterCardUseDeclared, fk.EventAcquireSkill},
+  can_refresh = function(self, event, target, player, data)
+    if event == fk.AfterCardUseDeclared then
+      return target == player and player:hasSkill("leiluan", true)
+    else
+      return target == player and data == leiluan and player.room:getTag("RoundCount")
+    end
+  end,
+  on_refresh = function(self, event, target, player, data)
+    local room = player.room
+    if event == fk.AfterCardUseDeclared then
+      local mark = U.getMark(player, "leiluan-round")
+      table.insert(mark, data.card.trueName)
+      room:setPlayerMark(player, "leiluan-round", mark)
+    else
+      if room.logic:getCurrentEvent() then
+        local names = {}
+        room.logic:getEventsOfScope(GameEvent.UseCard, 1, function(e)
+          local use = e.data[1]
+          if use.from == player.id then
+            table.insertIfNeed(names, use.card.trueName)
+          end
+          return false
+        end, Player.HistoryRound)
+        room:setPlayerMark(player, "leiluan-round", names)
+      end
+    end
+  end,
+}
+local fuchao = fk.CreateTriggerSkill{
+  name = "fuchao",
+  anim_type = "control",
+  frequency = Skill.Compulsory,
+  events = {fk.CardUseFinished, fk.CardRespondFinished},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self) and data.responseToEvent and data.responseToEvent.from ~= player.id and
+      data.responseToEvent.card
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local use = nil
+    U.getEventsByRule(room, GameEvent.UseCard, 1, function (e)
+      local u = e.data[1]
+      if u.from == data.responseToEvent.from and u.card == data.responseToEvent.card then
+        use = u
+        return true
+      end
+    end, 1)
+    if use == nil then return end
+    local to = room:getPlayerById(use.from)
+    local all_choices = {"fuchao1::"..to.id, "fuchao2"}
+    --[[if to.dead or to:isNude() or player:isNude() then
+      table.remove(choices, 1)
+    end]]--  盲猜可以空发
+    local choice = room:askForChoice(player, all_choices, self.name,
+      "#fuchao-choice::"..to.id..":"..use.card:toLogString(), false, all_choices)
+    if choice == "fuchao2" then
+      if use.tos then  --抵消无懈
+        use.nullifiedTargets = table.map(room:getOtherPlayers(player), Util.IdMapper)
+        --use.additionalEffect = (use.additionalEffect or 0) + 1
+      end
+    else
+      if not player:isNude() then
+        room:askForDiscard(player, 1, 1, true, self.name, false)
+      end
+      if not player.dead and not to.dead and not to:isNude() then
+        local card = room:askForCardChosen(player, to, "he", self.name, "#fuchao-discard::"..to.id)
+        room:throwCard(card, self.name, to, player)
+      end
+      --use.disresponsiveList = table.map(room.alive_players, Util.IdMapper)
+    end
+  end,
+}
+leiluan:addRelatedSkill(leiluan_trigger)
+--kongshu:addSkill(leiluan)
+--kongshu:addSkill(fuchao)
+Fk:loadTranslationTable{
+  ["kongshu"] = "孔淑",
+  ["#kongshu"] = "",
+
+  ["leiluan"] = "累卵",
+  [":leiluan"] = "每回合限一次，你可以将X张牌当一张你本轮未使用过的基本牌使用。每轮结束时，若你此轮至少使用过X张基本牌，你可以摸X张牌并视为使用"..
+  "一张本轮进入弃牌堆的普通锦囊牌（X为你连续发动此技能的轮数，至少为1）。",
+  ["fuchao"] = "覆巢",
+  [":fuchao"] = "锁定技，你响应其他角色使用的牌后，你选择一项：1.弃置你与其各一张牌，然后其他角色不能响应此牌；2.令此牌对其他角色无效，然后对你"..
+  "额外结算一次。",
+  ["#leiluan"] = "累卵：你可以将%arg张牌当基本牌使用",
+  ["#leiluan_trigger"] = "累卵",
+  ["#leiluan-use"] = "累卵：你可以使用其中一张牌",
+  ["#fuchao-choice"] = "覆巢：你抵消了 %dest 使用的%arg，请选择一项",
+  ["fuchao1"] = "弃置你与%dest各一张牌，其他角色不能响应此牌",
+  ["fuchao2"] = "此牌对其他角色无效，对你额外结算一次",
+  ["#fuchao-discard"] = "覆巢：弃置 %dest 一张牌",
+}
+
 return extension
