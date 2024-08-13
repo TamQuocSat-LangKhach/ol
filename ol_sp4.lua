@@ -996,12 +996,7 @@ local fuchao = fk.CreateTriggerSkill{
     if choice == "fuchao2" then
       if use.tos then  --抵消无懈
         use.nullifiedTargets = table.map(room:getOtherPlayers(player), Util.IdMapper)
-        --use.extra_data = use.extra_data or {}
-        --use.extra_data.fuchao_additionalEffect = use.extra_data.fuchao_additionalEffect or {}
-        --table.insert(use.extra_data.fuchao_additionalEffect, player.id)
-        local new_use = table.simpleClone(use)
-        new_use.tos = {{player.id}}
-        room:useCard(new_use)  --FIXME: 这样肯定是不对的
+        use.additionalEffect = (use.additionalEffect or 0) + 1
       end
     else
       if not player:isNude() then
@@ -1011,24 +1006,13 @@ local fuchao = fk.CreateTriggerSkill{
         local card = room:askForCardChosen(player, to, "he", self.name, "#fuchao-discard::"..to.id)
         room:throwCard(card, self.name, to, player)
       end
-      room:setBanner("fuchao_disresponsive", 1)
-      use_event:addExitFunc(function()
-        room:setBanner("fuchao_disresponsive", 0)  --FIXME: 这样肯定也是不对的
-      end)
+
+      use.disresponsiveList = use.disresponsiveList or {}
+      table.insertTableIfNeed(use.disresponsiveList, table.map(room:getOtherPlayers(player), Util.IdMapper))
     end
   end,
 }
-local fuchao_prohibit = fk.CreateProhibitSkill{
-  name = "#fuchao_prohibit",
-  prohibit_use = function(self, player, card)
-    return Fk:currentRoom():getBanner("fuchao_disresponsive")
-  end,
-  prohibit_response = function(self, player, card)
-    return Fk:currentRoom():getBanner("fuchao_disresponsive")
-  end,
-}
 leiluan:addRelatedSkill(leiluan_trigger)
-fuchao:addRelatedSkill(fuchao_prohibit)
 kongshu:addSkill(leiluan)
 kongshu:addSkill(fuchao)
 Fk:loadTranslationTable{
