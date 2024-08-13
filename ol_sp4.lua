@@ -847,7 +847,7 @@ Fk:loadTranslationTable{
   ["#shuiyue-invoke"] = "水月：是否将本技能的“摸一张牌”改为“弃一张牌”？",
 }
 
---local kongshu = General(extension, "kongshu", "qun", 3, 3, General.Female)
+local kongshu = General(extension, "kongshu", "qun", 3, 3, General.Female)
 local leiluan = fk.CreateViewAsSkill{
   name = "leiluan",
   pattern = ".|.|.|.|.|basic",
@@ -976,15 +976,16 @@ local fuchao = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local use = nil
+    local use_event = nil
     U.getEventsByRule(room, GameEvent.UseCard, 1, function (e)
       local u = e.data[1]
       if u.from == data.responseToEvent.from and u.card == data.responseToEvent.card then
-        use = u
+        use_event = e
         return true
       end
     end, 1)
-    if use == nil then return end
+    if use_event == nil then return end
+    local use = use_event.data[1]
     local to = room:getPlayerById(use.from)
     local all_choices = {"fuchao1::"..to.id, "fuchao2"}
     --[[if to.dead or to:isNude() or player:isNude() then
@@ -995,7 +996,12 @@ local fuchao = fk.CreateTriggerSkill{
     if choice == "fuchao2" then
       if use.tos then  --抵消无懈
         use.nullifiedTargets = table.map(room:getOtherPlayers(player), Util.IdMapper)
-        --use.additionalEffect = (use.additionalEffect or 0) + 1
+        --use.extra_data = use.extra_data or {}
+        --use.extra_data.fuchao_additionalEffect = use.extra_data.fuchao_additionalEffect or {}
+        --table.insert(use.extra_data.fuchao_additionalEffect, player.id)
+        local new_use = table.simpleClone(use)
+        new_use.tos = {{player.id}}
+        room:useCard(new_use)  --FIXME: 这样肯定是不对的
       end
     else
       if not player:isNude() then
@@ -1005,13 +1011,26 @@ local fuchao = fk.CreateTriggerSkill{
         local card = room:askForCardChosen(player, to, "he", self.name, "#fuchao-discard::"..to.id)
         room:throwCard(card, self.name, to, player)
       end
-      --use.disresponsiveList = table.map(room.alive_players, Util.IdMapper)
+      room:setBanner("fuchao_disresponsive", 1)
+      use_event:addExitFunc(function()
+        room:setBanner("fuchao_disresponsive", 0)  --FIXME: 这样肯定也是不对的
+      end)
     end
   end,
 }
+local fuchao_prohibit = fk.CreateProhibitSkill{
+  name = "#fuchao_prohibit",
+  prohibit_use = function(self, player, card)
+    return Fk:currentRoom():getBanner("fuchao_disresponsive")
+  end,
+  prohibit_response = function(self, player, card)
+    return Fk:currentRoom():getBanner("fuchao_disresponsive")
+  end,
+}
 leiluan:addRelatedSkill(leiluan_trigger)
---kongshu:addSkill(leiluan)
---kongshu:addSkill(fuchao)
+fuchao:addRelatedSkill(fuchao_prohibit)
+kongshu:addSkill(leiluan)
+kongshu:addSkill(fuchao)
 Fk:loadTranslationTable{
   ["kongshu"] = "孔淑",
   ["#kongshu"] = "",
