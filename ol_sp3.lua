@@ -1103,31 +1103,27 @@ local kenshang = fk.CreateViewAsSkill{
       end
     end
   end,
+  after_use = function (self, player, use)
+    if not player.dead then
+      if use.damageDealt then
+        local n = 0
+        for _, p in ipairs(player.room.players) do
+          if use.damageDealt[p.id] then
+            n = n + use.damageDealt[p.id]
+          end
+        end
+        if #use.card.subcards > n then
+          player:drawCards(1, self.name)
+        end
+      else
+        player:drawCards(1, self.name)
+      end
+    end
+  end,
   enabled_at_response = function(self, player, response)
     return player:hasSkill(self) and not response
   end,
 }
-local kenshang_delay = fk.CreateTriggerSkill{
-  name = "#kenshang_delay",
-  mute = true,
-  events = {fk.CardUseFinished},
-  can_trigger = function(self, event, target, player, data)
-    if target == player and table.contains(data.card.skillNames, "kenshang") and data.damageDealt then
-      local n = 0
-      for _, p in ipairs(player.room.players) do
-        if data.damageDealt[p.id] then
-          n = n + data.damageDealt[p.id]
-        end
-      end
-      return #data.card.subcards > n
-    end
-  end,
-  on_cost = Util.TrueFunc,
-  on_use = function(self, event, target, player, data)
-    player:drawCards(1, "kenshang")
-  end,
-}
-kenshang:addRelatedSkill(kenshang_delay)
 maxiumatie:addSkill("mashu")
 maxiumatie:addSkill(kenshang)
 Fk:loadTranslationTable{

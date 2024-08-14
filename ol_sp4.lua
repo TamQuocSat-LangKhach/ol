@@ -463,7 +463,9 @@ local weimian = fk.CreateActiveSkill{
     for i = 1, n, 1 do
       if to.dead then return end
       local choices = {}
-      if #to.sealedSlots > 0 and not table.contains(selected, "weimian1") then
+      if #to.sealedSlots > 0 and table.find(to.sealedSlots, function (slot)
+        return slot ~= Player.JudgeSlot
+      end) and not table.contains(selected, "weimian1") then
         table.insert(choices, "weimian1")
       end
       if to:isWounded() and not table.contains(selected, "recover") then
@@ -901,7 +903,7 @@ local leiluan_trigger = fk.CreateTriggerSkill{
         return use.from == player.id and use.card.type == Card.TypeBasic
       end, Player.HistoryRound) >= math.max(player:getMark("leiluan_count"), 1) then
         return true
-      else
+      elseif player:usedSkillTimes("leiluan", Player.HistoryRound) == 0 then
         player.room:setPlayerMark(player, "leiluan_count", 0)
       end
     end
@@ -911,12 +913,16 @@ local leiluan_trigger = fk.CreateTriggerSkill{
     if room:askForSkillInvoke(player, "leiluan") then
       return true
     end
-    room:setPlayerMark(player, "leiluan_count", 0)
+    if player:usedSkillTimes("leiluan", Player.HistoryRound) == 0 then
+      room:setPlayerMark(player, "leiluan_count", 0)
+    end
   end,
   on_use = function (self, event, target, player, data)
     local room = player.room
     local n = math.max(player:getMark("leiluan_count"), 1)
-    room:addPlayerMark(player, "leiluan_count", 1)
+    if player:usedSkillTimes("leiluan", Player.HistoryRound) == 0 then
+      room:addPlayerMark(player, "leiluan_count", 1)
+    end
     player:drawCards(n, "leiluan")
     if player.dead then return end
     local cards = {}
@@ -936,12 +942,14 @@ local leiluan_trigger = fk.CreateTriggerSkill{
     U.askForUseRealCard(room, player, cards, ".", "leiluan", "#leiluan-use", {expand_pile = cards})
   end,
 
-  refresh_events = {fk.AfterCardUseDeclared, fk.EventAcquireSkill},
+  refresh_events = {fk.AfterCardUseDeclared, fk.EventAcquireSkill, fk.RoundEnd},
   can_refresh = function(self, event, target, player, data)
     if event == fk.AfterCardUseDeclared then
       return target == player and player:hasSkill("leiluan", true)
-    else
+    elseif event == fk.EventAcquireSkill then
       return target == player and data == leiluan and player.room:getTag("RoundCount")
+    elseif event == fk.RoundEnd then
+      return player:usedSkillTimes("leiluan", Player.HistoryRound) > 0
     end
   end,
   on_refresh = function(self, event, target, player, data)
@@ -950,7 +958,7 @@ local leiluan_trigger = fk.CreateTriggerSkill{
       local mark = U.getMark(player, "leiluan-round")
       table.insert(mark, data.card.trueName)
       room:setPlayerMark(player, "leiluan-round", mark)
-    else
+    elseif event == fk.EventAcquireSkill then
       if room.logic:getCurrentEvent() then
         local names = {}
         room.logic:getEventsOfScope(GameEvent.UseCard, 1, function(e)
@@ -962,6 +970,8 @@ local leiluan_trigger = fk.CreateTriggerSkill{
         end, Player.HistoryRound)
         room:setPlayerMark(player, "leiluan-round", names)
       end
+    elseif event == fk.RoundEnd then
+      room:addPlayerMark(player, "leiluan_count", 1)
     end
   end,
 }
