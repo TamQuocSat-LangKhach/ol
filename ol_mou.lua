@@ -1157,8 +1157,135 @@ Fk:loadTranslationTable{
   ["#ol__zhengyi-quest"] = "%from 选择 %arg",
 }
 
+local sunjian = General(extension, "olmou__sunjian", "wu", 4)
+local hulie = fk.CreateTriggerSkill{
+  name = "hulie",
+  anim_type = "offensive",
+  events ={fk.TargetSpecified},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self) and (data.card.trueName == "slash" or data.card.trueName == "duel") and
+      #AimGroup:getAllTargets(data.tos) == 1 and player:getMark("hulie_"..data.card.trueName.."-turn") == 0
+  end,
+  on_cost = function(self, event, target, player, data)
+    return player.room:askForSkillInvoke(player, self.name, nil, "#hulie-invoke:::"..data.card:toLogString())
+  end,
+  on_use = function(self, event, target, player, data)
+    player.room:addPlayerMark(player, "hulie_"..data.card.trueName.."-turn", 1)
+    data.extra_data = data.extra_data or {}
+    data.extra_data.hulie = player.id
+    data.additionalDamage = (data.additionalDamage or 0) + 1
+  end,
+}
+local hulie_delay = fk.CreateTriggerSkill{
+  name = "#hulie_delay",
+  mute = true,
+  events ={fk.CardUseFinished},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and not data.damageDealt and data.extra_data and data.extra_data.hulie == player.id and
+      table.find(TargetGroup:getRealTargets(data.tos), function (id)
+        local p = player.room:getPlayerById(id)
+        return not p.dead and not p:isProhibited(player, Fk:cloneCard("slash")) and p ~= player
+      end)
+  end,
+  on_trigger = function (self, event, target, player, data)
+    for _, id in ipairs(TargetGroup:getRealTargets(data.tos)) do
+      if player.dead then break end
+      local p = player.room:getPlayerById(id)
+      if not p.dead and not p:isProhibited(player, Fk:cloneCard("slash")) and p ~= player then
+        self:doCost(event, p, player, data)
+      end
+    end
+  end,
+  on_cost = function(self, event, target, player, data)
+    return player.room:askForSkillInvoke(player, "hulie", nil, "#hulie-slash::"..target.id)
+  end,
+  on_use = function(self, event, target, player, data)
+    player.room:useVirtualCard("slash", nil, target, player, self.name, true)
+  end,
+}
+local yipo = fk.CreateTriggerSkill{
+  name = "yipo",
+  events = {fk.HpChanged},
+  can_trigger = function (self, event, target, player, data)
+    return target == player and player:hasSkill(self) and player.hp > 0 and
+      data.extra_data and data.extra_data.yipo
+  end,
+  on_cost = function (self, event, target, player, data)
+    local n = math.max(player:getLostHp(), 1)
+    local success, dat = player.room:askForUseActiveSkill(player, "yipo_active", "#yipo-invoke:::"..n, true, nil, false)
+    if success and dat then
+      self.cost_data = dat
+      return true
+    end
+  end,
+  on_use = function (self, event, target, player, data)
+    local room = player.room
+    local to = room:getPlayerById(self.cost_data.targets[1])
+    local n = math.max(player:getLostHp(), 1)
+    if self.cost_data.interaction[11] == "r" then
+      to:drawCards(n, self.name)
+      if not to.dead then
+        room:askForDiscard(to, 1, 1, true, self.name, false)
+      end
+    else
+      to:drawCards(1, self.name)
+      if not to.dead then
+        room:askForDiscard(to, n, n, true, self.name, false)
+      end
+    end
+  end,
 
+  refresh_events = {fk.HpChanged},
+  can_refresh = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self, true) and player.hp > 0
+  end,
+  on_refresh = function(self, event, target, player, data)
+    local mark = U.getMark(player, self.name)
+    if not table.contains(mark, player.hp) then
+      data.extra_data = data.extra_data or {}
+      data.extra_data.yipo = true
+      table.insert(mark, player.hp)
+      player.room:setPlayerMark(player, self.name, mark)
+    end
+  end,
+}
+local yipo_active = fk.CreateActiveSkill{
+  name = "yipo_active",
+  card_num = 0,
+  target_num = 1,
+  interaction = function(self)
+    local n = math.max(Self:getLostHp(), 1)
+    local choices = {"#yinghun-draw:::"..n}
+    if n > 1 then
+      choices = {"#yinghun-draw:::"..n, "#yinghun-discard:::"..n}
+    end
+    return UI.ComboBox { choices = choices }
+  end,
+  card_filter = Util.FalseFunc,
+  target_filter = function(self, to_select, selected, selected_cards)
+    return #selected == 0
+  end,
+}
+hulie:addRelatedSkill(hulie_delay)
+Fk:addSkill(yipo_active)
+sunjian:addSkill(hulie)
+sunjian:addSkill(yipo)
+Fk:loadTranslationTable{
+  ["olmou__sunjian"] = "谋孙坚",
+  ["#olmou__sunjian"] = "",
+  ["illustrator:olmou__sunjian"] = "",
 
+  ["hulie"] = "虎烈",
+  [":hulie"] = "每回合各限一次，当你使用【杀】或【决斗】指定唯一目标后，你可以令此牌伤害+1。此牌结算后，若未造成伤害，你可以令目标角色视为"..
+  "对你使用一张【杀】。",
+  ["yipo"] = "毅魄",
+  [":yipo"] = "当你的体力值变化后，若当前体力值大于0且本局游戏未变化到过，你可以选择一名角色并选择一项：1.其摸X张牌，然后弃置一张牌；2.其摸"..
+  "一张牌，然后弃置X张牌。（X为你已损失体力值，至少为1）",
+  ["#hulie-invoke"] = "虎烈：是否令此%arg伤害+1？",
+  ["#hulie-slash"] = "虎烈：是否令 %dest 视为对你使用【杀】？",
+  ["yipo_active"] = "毅魄",
+  ["#yipo-invoke"] = "毅魄：你可以令一名角色：摸%arg张牌然后弃一张牌，或摸一张牌然后弃%arg张牌",
+}
 
 
 
