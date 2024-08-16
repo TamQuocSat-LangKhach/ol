@@ -865,10 +865,22 @@ local ol_ex__chengxiang = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local cards = room:getNCards(4)
+    local num = 4
+    if player:getMark(self.name) > 0 then
+      num = 5
+      room:setPlayerMark(player, self.name, 0)
+    end
+    local cards = room:getNCards(num)
     room:moveCardTo(cards, Card.Processing, nil, fk.ReasonJustMove, self.name, nil, true, player.id)
     local get = room:askForArrangeCards(player, self.name, {cards},
-    "#chengxiang-choose", false, 0, {4, 4}, {0, 1}, ".", "chengxiang_count", {{}, {cards[1]}})[2]
+      "#chengxiang-choose", false, 0, {num, num}, {0, 1}, ".", "chengxiang_count", {{}, {cards[1]}})[2]
+    local n = 0
+    for _, id in ipairs(get) do
+      n = n + Fk:getCardById(id).number
+    end
+    if n == 13 then
+      room:setPlayerMark(player, self.name, 1)
+    end
     room:moveCardTo(get, Player.Hand, player, fk.ReasonJustMove, self.name, "", true, player.id)
     cards = table.filter(cards, function(id) return room:getCardArea(id) == Card.Processing end)
     if #cards > 0 then
@@ -902,7 +914,7 @@ local ol_ex__renxin = fk.CreateTriggerSkill{
         who = target,
         num = 1 - target.hp,
         recoverBy = player,
-        skillName = self.name
+        skillName = self.name,
       }
     end
   end,
@@ -916,7 +928,8 @@ Fk:loadTranslationTable{
   --["illustrator:ol_ex__caochong"] = "",
 
   ["ol_ex__chengxiang"] = "称象",
-  [":ol_ex__chengxiang"] = "当你受到1点伤害后，你可以亮出牌堆顶四张牌，获得其中任意张数量点数之和不大于13的牌，将其余的牌置入弃牌堆。",
+  [":ol_ex__chengxiang"] = "当你受到1点伤害后，你可以亮出牌堆顶四张牌，获得其中任意张数量点数之和不大于13的牌，将其余的牌置入弃牌堆。"..
+  "若获得的牌点数之和恰好为13，你下次发动〖称象〗时多亮出一张牌。",
   ["ol_ex__renxin"] = "仁心",
   [":ol_ex__renxin"] = "当一名其他角色进入濒死状态时，你可以弃置一张装备牌并翻面，然后令其回复至1点体力。",
   ["#ol_ex__renxin-invoke"] = "仁心：你可以弃置一张装备牌并翻面，令 %dest 回复至1点体力",
@@ -1055,7 +1068,7 @@ local zhiyan = fk.CreateTriggerSkill{
           })
         end
       end
-    elseif to.hp >= player.hp then
+    elseif to.hp ~= player.hp then
       room:loseHp(to, 1, self.name)
     end
   end,
@@ -1072,7 +1085,7 @@ Fk:loadTranslationTable{
   "你可以将其中任意张牌置于牌堆顶。",
   ["ol_ex__zhiyan"] = "直言",
   [":ol_ex__zhiyan"] = "你或你上家的结束阶段，你可以令一名角色摸一张牌并展示之，若此牌：为装备牌，其使用此牌并回复1点体力；"..
-  "不为装备牌且其体力值不小于你，其失去1点体力。",
+  "不为装备牌且其体力值不等于你，其失去1点体力。",
 
   ["#ol_ex__zongxuan-invoke"] = "纵玄：将任意数量的弃牌置于牌堆顶",
   ["#ol_ex__zhiyan-choose"] = "是否发动 直言，令一名角色摸一张牌",
