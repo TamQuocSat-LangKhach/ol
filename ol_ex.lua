@@ -1377,6 +1377,7 @@ local ol_ex__huoji__fireAttackSkill = fk.CreateActiveSkill{
     end
   end,
 }
+ol_ex__huoji__fireAttackSkill.cardSkill = true
 Fk:addSkill(ol_ex__huoji__fireAttackSkill)
 local ol_ex__huoji = fk.CreateViewAsSkill{
   name = "ol_ex__huoji",
