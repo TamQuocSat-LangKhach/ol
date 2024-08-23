@@ -738,6 +738,13 @@ local jinghua = fk.CreateTriggerSkill{
             return true
           end
         end
+        if move.skillName == "jieyan" and move.to and move.to ~= player.id and move.toArea == Card.PlayerHand and
+          not player.room:getPlayerById(move.to).dead then
+          if player:getMark("@@jinghua") > 0 or player.room:getPlayerById(move.to):isWounded() then
+            self.cost_data = move.to
+            return true
+          end
+        end
       end
     end
   end,
@@ -832,7 +839,7 @@ Fk:loadTranslationTable{
   [":jieyan"] = "准备阶段，你可以对一名角色造成1点伤害，然后其选择一项：1.跳过其下个弃牌阶段；2.回复1点体力，其下个弃牌阶段手牌上限-2，此阶段"..
   "结束时，你可以将其此阶段弃置的牌交给除其以外的一名角色。",
   ["jinghua"] = "镜花",
-  [":jinghua"] = "其他角色获得你的牌后，其回复1点体力。当你失去最后一张手牌后，你可以将此技能的“回复”改为“失去”。",
+  [":jinghua"] = "其他角色获得你的牌或你发动〖节言〗交给其的牌后，其回复1点体力。当你失去最后一张手牌后，你可以将此技能的“回复”改为“失去”。",
   ["shuiyue"] = "水月",
   [":shuiyue"] = "其他角色受到你的伤害后，其摸一张牌。当你令其他角色进入濒死状态后，你可以将此技能的“摸”改为“弃”。",
   ["#jieyan-choose"] = "节言：对一名角色造成1点伤害，令其选择跳过下个弃牌阶段或回复体力",

@@ -1156,7 +1156,7 @@ Fk:loadTranslationTable{
   ["#ol__zhengyi-quest"] = "%from 选择 %arg",
 }
 
-local sunjian = General(extension, "olmou__sunjian", "wu", 4)
+local sunjian = General(extension, "olmou__sunjian", "wu", 4, 5)
 local hulie = fk.CreateTriggerSkill{
   name = "hulie",
   anim_type = "offensive",
