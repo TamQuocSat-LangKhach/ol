@@ -2573,6 +2573,7 @@ Fk:loadTranslationTable{
 }
 
 local wanglun = General(extension, "olz__wanglun", "wei", 3)
+wanglun.subkingdom = "jin"
 local qiuxin = fk.CreateActiveSkill{
   name = "qiuxin",
   anim_type = "control",

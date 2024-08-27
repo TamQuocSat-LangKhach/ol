@@ -945,24 +945,60 @@ local zhidao = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     room:doIndicate(player.id, {data.to.id})
-    local flag = {"h", "e", "j"}
-    local areas = {Player.Hand, Player.Equip, Player.Judge}
-    local cards = {}
-    for i = 1, 3, 1 do
-      if #data.to.player_cards[areas[i]] > 0 then
-        table.insert(cards, room:askForCardChosen(player, data.to, flag[i], self.name))
+    local card_data = {}
+    if data.to:getHandcardNum() > 0 then
+      local handcards = {}
+      for i = 1, data.to:getHandcardNum(), 1 do
+        table.insert(handcards, -1) -- 手牌不可见
+      end
+      table.insert(card_data, {"$Hand", handcards})
+    end
+    local areas = {["$Equip"] = Player.Equip, ["$Judge"] = Player.Judge}
+    for k, v in pairs(areas) do
+      if #data.to.player_cards[v] > 0 then
+        table.insert(card_data, {k, data.to:getCardIds(v)})
       end
     end
-    if #cards > 0 then
-      room:obtainCard(player, cards, false, fk.ReasonPrey)
+    local ret = room:askForPoxi(player, "zhidao_get", card_data, nil, false)
+    local cards = table.filter(ret, function(id) return id ~= -1 end)
+    local hand_num = #ret - #cards
+    if hand_num > 0 and data.to ~= player then
+      table.insertTable(cards, table.random(data.to:getCardIds("h"), hand_num))
     end
-    room:addPlayerMark(player, "@@zhidao-turn")
+    if #cards > 0 then
+      room:moveCardTo(cards, Card.PlayerHand, player, fk.ReasonPrey, self.name, nil, false, player.id)
+    end
+    room:setPlayerMark(player, "@@zhidao-turn", 1)
   end,
 }
 local zhidao_prohibit = fk.CreateProhibitSkill{
   name = "#zhidao_prohibit",
   is_prohibited = function(self, from, to, card)
-    return from:getMark("@@zhidao-turn") > 0 and from ~= to
+    return from:getMark("@@zhidao-turn") > 0 and card and from ~= to
+  end,
+}
+Fk:addPoxiMethod{
+  name = "zhidao_get",
+  card_filter = Util.TrueFunc,
+  feasible = function(selected, data)
+    if data and #data == #selected then
+      local areas = {}
+      for _, id in ipairs(selected) do
+        for _, v in ipairs(data) do
+          if table.contains(v[2], id) then
+            table.insertIfNeed(areas, v[2])
+            break
+          end
+        end
+      end
+      return #areas == #selected
+    end
+  end,
+  prompt = "#zhidao_get",
+  default_choice = function(data)
+    if not data then return {} end
+    local cids = table.map(data, function(v) return v[2][1] end)
+    return cids
   end,
 }
 local jili = fk.CreateTriggerSkill{
@@ -1008,6 +1044,8 @@ Fk:loadTranslationTable{
   [":jili"] = "锁定技，当一名其他角色成为红色基本牌或红色普通锦囊牌的目标时，若其与你的距离为1且"..
   "你既不是此牌的使用者也不是目标，你也成为此牌的目标。",
   ["@@zhidao-turn"] = "雉盗",
+  ["zhidao_get"] = "雉盗",
+  ["#zhidao_get"] = "雉盗：获得其每个区域各一张牌",
 
   ["$zhidao1"] = "谁有地盘，谁是老大！",
   ["$zhidao2"] = "乱世之中，能者为王！",
@@ -1287,9 +1325,10 @@ local hongde = fk.CreateTriggerSkill{
     end
   end,
   on_cost = function(self, event, target, player, data)
-    local p = player.room:askForChoosePlayers(player, table.map(player.room:getOtherPlayers(player), Util.IdMapper), 1, 1, "#hongde-choose", self.name, true)
-    if #p > 0 then
-      self.cost_data = p[1]
+    local to = player.room:askForChoosePlayers(player, table.map(player.room:getOtherPlayers(player), Util.IdMapper), 1, 1,
+      "#hongde-choose", self.name, true)
+    if #to > 0 then
+      self.cost_data = to[1]
       return true
     end
   end,
@@ -1302,53 +1341,48 @@ local dingpan = fk.CreateActiveSkill{
   anim_type = "offensive",
   card_num = 0,
   target_num = 1,
+  prompt = "#dingpan",
   can_use = function(self, player)
-    return player:usedSkillTimes(self.name, Player.HistoryPhase) < player:getMark(self.name)
+    return player:usedSkillTimes(self.name, Player.HistoryPhase) < player:getMark("dingpan-phase")
   end,
   card_filter = Util.FalseFunc,
   target_filter = function(self, to_select, selected)
-    return #selected == 0 and #Fk:currentRoom():getPlayerById(to_select).player_cards[Player.Equip] > 0
+    return #selected == 0 and #Fk:currentRoom():getPlayerById(to_select):getCardIds("e") > 0
   end,
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
     local target = room:getPlayerById(effect.tos[1])
     target:drawCards(1, self.name)
-    local choice = room:askForChoice(target, {"dingpan_discard", "dingpan_damage"}, self.name)
-    if choice == "dingpan_discard" then
+    local choice = room:askForChoice(target, {"dingpan_discard:"..player.id, "dingpan_damage:"..player.id}, self.name)
+    if choice[10] == "i" then
       local id = room:askForCardChosen(player, target, "e", self.name)
       room:throwCard({id}, self.name, target, player)
     else
-      room:obtainCard(target, target:getCardIds(Player.Equip), true, fk.ReasonPrey)
-      room:damage{
-        from = player,
-        to = target,
-        damage = 1,
-        skillName = self.name,
-      }
+      room:moveCardTo(target:getCardIds("e"), Card.PlayerHand, target, fk.ReasonJustMove, self.name, nil, true, target.id)
+      if not target.dead then
+        room:damage{
+          from = player,
+          to = target,
+          damage = 1,
+          skillName = self.name,
+        }
+      end
     end
   end,
 }
 local dingpan_record = fk.CreateTriggerSkill{
   name = "#dingpan_record",
-  refresh_events = {fk.Deathed, fk.EventPhaseStart, fk.EventAcquireSkill},
-  can_refresh = function (self, event, target, player, data)
-    if event == fk.EventPhaseStart then
-      return player:hasSkill(self,true) and target == player and player.phase == Player.Play
-    elseif event == fk.EventAcquireSkill then
-      return player:hasSkill(self,true) and data == dingpan
-    else
-      return player:hasSkill(self,true)
-    end
+
+  refresh_events = {fk.StartPlayCard},
+  can_refresh = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self, true)
   end,
-  on_refresh = function(_, _, _, player, _)
+  on_refresh = function(self, event, target, player, data)
     local room = player.room
-    local n = 0
-    for _, p in ipairs(room.alive_players) do
-      if p.role == "rebel" then n = n + 1 end
-    end
-    if n ~= player:getMark("dingpan") then
-      room:setPlayerMark(player, "dingpan", n)
-    end
+    local rebel = table.filter(room.alive_players, function (p)
+      return p.role == "rebel"
+    end)
+    room:setPlayerMark(player, "dingpan-phase", #rebel)
   end,
 }
 dingpan:addRelatedSkill(dingpan_record)
@@ -1364,8 +1398,9 @@ Fk:loadTranslationTable{
   [":dingpan"] = "出牌阶段限X次，你可以令一名装备区里有牌的角色摸一张牌，然后其选择一项：1.令你弃置其装备区里的一张牌；"..
   "2.获得其装备区里的所有牌，若如此做，你对其造成1点伤害（X为场上存活的反贼数）。",
   ["#hongde-choose"] = "弘德：你可以令一名其他角色摸一张牌",
-  ["dingpan_discard"] = "其弃置你装备区里的一张牌",
-  ["dingpan_damage"] = "收回所有装备，其对你造成1点伤害",
+  ["#dingpan"] = "定叛：令一名装备区里有牌的角色摸一张牌，然后其选择弃置装备或收回装备并受到你造成的伤害",
+  ["dingpan_discard"] = "%src弃置你装备区里的一张牌",
+  ["dingpan_damage"] = "收回所有装备，%src对你造成1点伤害",
 
   ["$hongde1"] = "江南重义，东吴尚德。",
   ["$hongde2"] = "德无单行，福必双至。",
