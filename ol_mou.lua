@@ -957,7 +957,8 @@ local qiwu = fk.CreateTriggerSkill{
 hongtu:addRelatedSkill(hongtu_maxcards)
 pangtong:addSkill(hongtu)
 pangtong:addSkill(qiwu)
-
+pangtong:addRelatedSkill("feijun")
+pangtong:addRelatedSkill("re__qianxi")
 Fk:loadTranslationTable{
   ["olmou__pangtong"] = "谋庞统",
   ["#olmou__pangtong"] = "定鼎巴蜀",
@@ -1060,12 +1061,11 @@ local liwen = fk.CreateTriggerSkill{
 
   refresh_events = {fk.AfterCardUseDeclared},  --FIXME: 该改成记录器了
   can_refresh = function(self, event, target, player, data)
-    return player:hasSkill(self, true)
+    return target == player and player:hasSkill(self, true)
   end,
   on_refresh = function(self, event, target, player, data)
     local room = player.room
-    if target == player and (data.card:getSuitString() == player:getMark("liwen_suit") or
-        data.card.type == player:getMark("liwen_type")) then
+    if data.card:getSuitString() == player:getMark("liwen_suit") or data.card.type == player:getMark("liwen_type") then
       data.extra_data = data.extra_data or {}
       data.extra_data.liwen_triggerable = true
     end
@@ -1142,7 +1142,7 @@ Fk:loadTranslationTable{
   ["illustrator:olmou__kongrong"] = "",
 
   ["liwen"] = "立文",
-  [":liwen"] = "当你使用牌时，若此牌与被使用的上一张牌花色或类别相同，你获得一枚“贤”标记；回合结束时，你可以将任意个“贤”标记分配给"..
+  [":liwen"] = "当你使用牌时，若此牌与你使用的上一张牌花色或类别相同，你获得一枚“贤”标记；回合结束时，你可以将任意个“贤”标记分配给"..
   "等量的角色（每名角色“贤”标记上限为5个），然后有“贤”标记的角色按照标记从多到少的顺序，依次使用一张手牌，若其不使用，移去其"..
   "“贤”标记，你摸等量的牌。",
   ["ol__zhengyi"] = "争义",
@@ -1278,15 +1278,213 @@ Fk:loadTranslationTable{
   [":hulie"] = "每回合各限一次，当你使用【杀】或【决斗】指定唯一目标后，你可以令此牌伤害+1。此牌结算后，若未造成伤害，你可以令目标角色视为"..
   "对你使用一张【杀】。",
   ["yipo"] = "毅魄",
-  [":yipo"] = "当你的体力值变化后，若当前体力值大于0且本局游戏未变化到过，你可以选择一名角色并选择一项：1.其摸X张牌，然后弃置一张牌；2.其摸"..
-  "一张牌，然后弃置X张牌。（X为你已损失体力值，至少为1）",
+  [":yipo"] = "当你的体力值变化后，若当前体力值大于0且为本局游戏首次变化到，你可以选择一名角色并选择一项：1.其摸X张牌，然后弃置一张牌；"..
+  "2.其摸一张牌，然后弃置X张牌。（X为你已损失体力值，至少为1）",
   ["#hulie-invoke"] = "虎烈：是否令此%arg伤害+1？",
   ["#hulie-slash"] = "虎烈：是否令 %dest 视为对你使用【杀】？",
   ["yipo_active"] = "毅魄",
   ["#yipo-invoke"] = "毅魄：你可以令一名角色：摸%arg张牌然后弃一张牌，或摸一张牌然后弃%arg张牌",
 }
 
+local yuanshu = General(extension, "olmou__yuanshu", "qun", 4)
+local jinming = fk.CreateTriggerSkill{
+  name = "jinming",
+  anim_type = "special",
+  events = {fk.TurnStart, fk.TurnEnd},
+  can_trigger = function(self, event, target, player, data)
+    if target == player then
+      if event == fk.TurnStart then
+        return player:hasSkill(self) and #player:getTableMark(self.name) < 4
+      elseif event == fk.TurnEnd then
+        return player:getMark("@jinming-turn") > 0
+      end
+    end
+  end,
+  on_cost = function(self, event, target, player, data)
+    if event == fk.TurnStart then
+      local all_choices = {"jinming1", "jinming2", "jinming3", "jinming4", "Cancel"}
+      local choices = table.simpleClone(all_choices)
+      for _, n in ipairs(player:getTableMark(self.name)) do
+        table.removeOne(choices, "jinming"..n)
+      end
+      local choice = player.room:askForChoice(player, choices, self.name, "#jinming-choice", false, all_choices)
+      if choice ~= "Cancel" then
+        self.cost_data = table.indexOf(all_choices, choice)
+        return true
+      end
+    elseif event == fk.TurnEnd then
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    if event == fk.TurnStart then
+      room:setPlayerMark(player, "@jinming-turn", self.cost_data)
+    elseif event == fk.TurnEnd then
+      local n = player:getMark("@jinming-turn")
+      room:setPlayerMark(player, "@jinming-turn", 0)
+      player:drawCards(n, self.name)
+      local count = 0
+      if n == 1 then
+        room.logic:getEventsOfScope(GameEvent.Recover, 1, function(e)
+          local recover = e.data[1]
+          if recover.who.id == player.id then
+            count = count + recover.num
+            return true
+          end
+        end, Player.HistoryTurn)
+      elseif n == 2 then
+        U.getActualDamageEvents(player.room, 1, function(e)
+          local damage = e.data[1]
+          if damage.from == player then
+            count = count + damage.damage
+            if count > 1 then
+              return true
+            end
+          end
+        end)
+      elseif n == 3 then
+        local types = {}
+        room.logic:getEventsOfScope(GameEvent.UseCard, 1, function(e)
+          local use = e.data[1]
+          if use.from == player.id then
+            table.insertIfNeed(types, use.card.type)
+            if #types > 2 then
+              return true
+            end
+          end
+        end, Player.HistoryTurn)
+        count = #types
+      elseif n == 4 then
+        room.logic:getEventsOfScope(GameEvent.MoveCards, 1, function (e)
+          for _, move in ipairs(e.data) do
+            if move.from == player.id and move.moveReason == fk.ReasonDiscard then
+              count = count + #move.moveInfo
+              if count > 3 then
+                return true
+              end
+            end
+          end
+        end, Player.HistoryTurn)
+      end
+      if count < n then
+        local mark = player:getTableMark(self.name)
+        table.insert(mark, n)
+        room:setPlayerMark(player, self.name, mark)
+        room:loseHp(player, 1, self.name)
+      end
+    end
+  end,
+}
+local xiaoshi = fk.CreateTriggerSkill{
+  name = "xiaoshi",
+  anim_type = "offensive",
+  events = {fk.AfterCardTargetDeclared},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self) and player:getMark("@jinming-turn") > 0 and
+      (data.card.type == Card.TypeBasic or data.card:isCommonTrick()) and
+      player:usedSkillTimes(self.name, Player.HistoryTurn) == 0 and
+      table.find(U.getUseExtraTargets(player.room, data, true), function (id)
+        return player.room:getPlayerById(id):getAttackRange() == player:getMark("@jinming-turn")
+      end)
+  end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    local targets = table.filter(U.getUseExtraTargets(player.room, data, true), function (id)
+      return player.room:getPlayerById(id):getAttackRange() == player:getMark("@jinming-turn")
+    end)
+    local to = room:askForChoosePlayers(player, targets, 1, 1,
+      "#xiaoshi-choose:::"..data.card:toLogString()..":"..player:getMark("@jinming-turn"), self.name, true)
+    if #to > 0 then
+      self.cost_data = to
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    table.insert(data.tos, self.cost_data)
+    room:getPlayerById(self.cost_data[1]):drawCards(player:getMark("@jinming-turn"), self.name)
+  end,
+}
+local yanliangy = fk.CreateTriggerSkill{
+  name = "yanliangy$",
 
+  refresh_events = {fk.GameStart, fk.EventAcquireSkill, fk.EventLoseSkill, fk.Deathed},
+  can_refresh = function(self, event, target, player, data)
+    if event == fk.GameStart then
+      return player:hasSkill(self, true)
+    elseif event == fk.EventAcquireSkill or event == fk.EventLoseSkill then
+      return target == player and data == self and
+        not table.find(player.room:getOtherPlayers(player), function(p) return p:hasSkill(self, true) end)
+    else
+      return target == player and player:hasSkill(self, true, true) and
+        not table.find(player.room:getOtherPlayers(player), function(p) return p:hasSkill(self, true) end)
+    end
+  end,
+  on_refresh = function(self, event, target, player, data)
+    local room = player.room
+    if event == fk.GameStart or event == fk.EventAcquireSkill then
+      for _, p in ipairs(room:getOtherPlayers(player)) do
+        room:handleAddLoseSkills(p, "yanliangy&", nil, false, true)
+      end
+    else
+      for _, p in ipairs(room:getOtherPlayers(player, true, true)) do
+        room:handleAddLoseSkills(p, "-yanliangy&", nil, false, true)
+      end
+    end
+  end,
+}
+local yanliangy_active = fk.CreateActiveSkill{
+  name = "yanliangy&",
+  anim_type = "offensive",
+  card_num = 1,
+  target_num = 1,
+  prompt = "#yanliangy&",
+  can_use = function(self, player)
+    return player.kingdom == "qun" and player:usedSkillTimes(self.name, Player.HistoryPhase) == 0 and
+      player:canUse(Fk:cloneCard("analeptic"))
+  end,
+  card_filter = function(self, to_select, selected)
+    return #selected == 0 and Fk:getCardById(to_select).type == Card.TypeEquip
+  end,
+  target_filter = function (self, to_select, selected)
+    return #selected == 0 and Fk:currentRoom():getPlayerById(to_select):hasSkill("yanliangy")
+  end,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    local target = room:getPlayerById(effect.tos[1])
+    room:moveCardTo(effect.cards, Card.PlayerHand, target, fk.ReasonGive, "yanliangy", nil, true, player.id)
+    room:useVirtualCard("analeptic", nil, player, player, "yanliangy")
+  end,
+}
+Fk:addSkill(yanliangy_active)
+yuanshu:addSkill(jinming)
+yuanshu:addSkill(xiaoshi)
+yuanshu:addSkill(yanliangy)
+Fk:loadTranslationTable{
+  ["olmou__yuanshu"] = "谋袁术",
+  ["#olmou__yuanshu"] = "",
+  ["illustrator:olmou__yuanshu"] = "",
+
+  ["jinming"] = "矜名",
+  [":jinming"] = "回合开始时，你可以选择一项条件：1.回复过1点体力；2.造成过2点伤害；3.使用过三张类型的牌；4.弃置过四张牌。"..
+  "回合结束时，你摸X张牌，然后若你本回合未满足条件，你失去1点体力并删除此选项（X为你发动〖矜名〗选择项的序号）。",
+  ["xiaoshi"] = "枭噬",
+  [":xiaoshi"] = "每回合限一次，当你于出牌阶段使用基本牌或普通锦囊牌指定目标时，你可以令一名攻击范围为X的角色成为此牌额外目标，然后其摸X张牌"..
+  "（X为你发动〖矜名〗选择项的序号）。",
+  ["yanliangy"] = "厌粱",
+  [":yanliangy"] = "主公技，其他群势力角色出牌阶段限一次，其可以交给你一张装备牌，视为使用一张【酒】。",
+  ["#jinming-choice"] = "矜名：选择一项条件，回合结束时摸序号数的牌，若本回合未达到条件则失去1点体力并删除选项",
+  ["jinming1"] = "[1]回复过1点体力",
+  ["jinming2"] = "[2]造成过2点伤害",
+  ["jinming3"] = "[3]使用过三张类型的牌",
+  ["jinming4"] = "[4]弃置过四张牌",
+  ["@jinming-turn"] = "矜名",
+  ["#xiaoshi-choose"] = "枭噬：你可以为%arg增加一名攻击范围%arg2的角色为目标，其摸%arg2张牌",
+  ["yanliangy&"] = "厌粱",
+  [":yanliangy&"] = "出牌阶段限一次，你可以交给谋袁术一张装备牌，视为使用一张【酒】。",
+  ["#yanliangy&"] = "厌粱：你可以交给谋袁术一张装备牌，视为使用一张【酒】",
+}
 
 
 
