@@ -1051,4 +1051,102 @@ Fk:loadTranslationTable{
   ["#fuchao-discard"] = "覆巢：弃置 %dest 一张牌",
 }
 
+local wangkuang = General(extension, "wangkuang", "qun", 4)
+local renxia = fk.CreateActiveSkill{
+  name = "renxia",
+  anim_type = "drawcard",
+  min_card_num = 0,
+  msx_card_num = 2,
+  target_num = 0,
+  prompt = function (self, selected_cards, selected_targets)
+    return "#"..self.interaction.data
+  end,
+  interaction = function(self)
+    return UI.ComboBox { choices = {"renxia1", "renxia2"} }
+  end,
+  can_use = function(self, player)
+    return player:usedSkillTimes(self.name, Player.HistoryPhase) == 0
+  end,
+  card_filter = function (self, to_select, selected)
+    if self.interaction.data == "renxia1" then
+      return #selected < 2 and not Self:prohibitDiscard(to_select)
+    else
+      return false
+    end
+  end,
+  feasible = function (self, selected, selected_cards)
+    if self.interaction.data == "renxia1" then
+      return #selected_cards == 2
+    else
+      return #selected_cards == 0
+    end
+  end,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    local mark = player:getTableMark("renxia-phase")
+    table.insert(mark, self.interaction.data[7])
+    room:setPlayerMark(player, "renxia-phase", mark)
+    if self.interaction.data == "renxia1" then
+      if effect.cards then
+        room:throwCard(effect.cards, self.name, player, player)
+      else
+        room:askForDiscard(player, 2, 2, true, self.name, false)
+      end
+      while not player.dead and table.find(player:getCardIds("h"), function (id)
+        return Fk:getCardById(id).is_damage_card
+      end) do
+        room:askForDiscard(player, 2, 2, true, self.name, false)
+      end
+    else
+      player:drawCards(2, self.name)
+      while not player.dead and not table.find(player:getCardIds("h"), function (id)
+        return Fk:getCardById(id).is_damage_card
+      end) do
+        player:drawCards(2, self.name)
+      end
+    end
+  end,
+}
+local renxia_delay = fk.CreateTriggerSkill{
+  name = "#renxia_delay",
+  mute = true,
+  events = {fk.EventPhaseEnd},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player.phase == Player.Play and player:getMark("renxia-phase") ~= 0
+  end,
+  on_cost = Util.TrueFunc,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    player:broadcastSkillInvoke("renxia")
+    room:notifySkillInvoked(player, "renxia", "drawcard")
+    local mark = player:getTableMark("renxia-phase")
+    for _, n in ipairs(mark) do
+      if player.dead then return end
+      local i = 1
+      if n == "1" then
+        i = 2
+      end
+      renxia.interaction = renxia.interaction or {}
+      renxia.interaction.data = "renxia"..i
+      renxia:onUse(room, {
+        from = player.id,
+      })
+    end
+  end,
+}
+renxia:addRelatedSkill(renxia_delay)
+wangkuang:addSkill(renxia)
+Fk:loadTranslationTable{
+  ["wangkuang"] = "王匡",
+  ["#wangkuang"] = "",
+
+  ["renxia"] = "任侠",
+  [":renxia"] = "出牌阶段限一次，你可以执行一项，然后本阶段结束时执行另一项：1.弃置两张牌，重复此流程，直到手牌中没有【杀】或伤害锦囊牌；"..
+  "2.摸两张牌，重复此流程，直到手牌中有【杀】或伤害锦囊牌。",
+  ["#renxia1"] = "任侠：弃两张牌，重复直到手牌中没有伤害牌，本阶段结束时执行另一项",
+  ["#renxia2"] = "任侠：摸两张牌，重复直到手牌中有伤害牌，本阶段结束时执行另一项",
+  ["renxia1"] = "弃两张牌",
+  ["renxia2"] = "摸两张牌",
+}
+
 return extension

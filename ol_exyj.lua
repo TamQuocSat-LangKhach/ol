@@ -7,6 +7,132 @@ Fk:loadTranslationTable{
   ["ol_exyj"] = "OL-界一将成名",
 }
 
+local caozhi = General(extension, "ol_ex__caozhi", "wei", 3)
+local ol_ex__jiushi = fk.CreateViewAsSkill{
+  name = "ol_ex__jiushi",
+  anim_type = "support",
+  pattern = "analeptic",
+  prompt = "#ol_ex__jiushi",
+  card_filter = Util.FalseFunc,
+  before_use = function(self, player)
+    player:turnOver()
+  end,
+  view_as = function(self)
+    local c = Fk:cloneCard("analeptic")
+    c.skillName = self.name
+    return c
+  end,
+  enabled_at_play = function (self, player)
+    return player.faceup
+  end,
+  enabled_at_response = function (self, player, response)
+    return player.faceup and not response
+  end,
+}
+local ol_ex__jiushi_trigger = fk.CreateTriggerSkill{
+  name = "#ol_ex__jiushi_trigger",
+  mute = true,
+  main_skill = ol_ex__jiushi,
+  events = {fk.Damaged, fk.AfterCardsMove, fk.PreCardUse},
+  can_trigger = function(self, event, target, player, data)
+    if player:hasSkill(ol_ex__jiushi) and not player.faceup then
+      if event == fk.Damaged then
+        return target == player and (data.extra_data or {}).ol_ex__jiushi_check and not player.faceup
+      elseif event == fk.AfterCardsMove then
+        for _, move in ipairs(data) do
+          if move.skillName == "luoying" and move.to == player.id then
+            if player:getMark("@ol_ex__jiushi_count") >= player.maxHp then
+              return true
+            end
+          end
+        end
+      elseif event == fk.PreCardUse then
+        return target == player and data.card:getMark("@@luoying-inhand") > 0 and
+          (data.card.trueName == "slash" or data.card:isCommonTrick())
+      end
+    end
+  end,
+  on_cost = function(self, event, target, player, data)
+    if event == fk.PreCardUse then
+      return true
+    else
+      return player.room:askForSkillInvoke(player, "ol_ex__jiushi")
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    player:broadcastSkillInvoke("ol_ex__jiushi")
+    if event == fk.PreCardUse then
+      room:notifySkillInvoked(player, "ol_ex__jiushi", "offensive")
+      data.disresponsiveList = table.map(room.alive_players, Util.IdMapper)
+    else
+      room:notifySkillInvoked(player, "ol_ex__jiushi", "defensive")
+      player:turnOver()
+    end
+  end,
+
+  refresh_events = {fk.DamageInflicted, fk.AfterCardsMove, fk.TurnedOver, fk.EventLoseSkill},
+  can_refresh = function(self, event, target, player, data)
+    if player:hasSkill(ol_ex__jiushi, true) then
+      if not player.faceup then
+        if event == fk.DamageInflicted then
+          return target == player
+        elseif event == fk.AfterCardsMove then
+          for _, move in ipairs(data) do
+            if move.skillName == "luoying" and move.to == player.id and player.phase == Player.NotActive then
+              return true
+            end
+          end
+        end
+      end
+    end
+    if player:getMark("@ol_ex__jiushi_count") > 0 then
+      if event == fk.TurnedOver then
+        return player.faceup
+      elseif event == fk.EventLoseSkill then
+        return target == player and data == self
+      end
+    end
+  end,
+  on_refresh = function(self, event, target, player, data)
+    local room = player.room
+    if event == fk.DamageInflicted then
+      data.extra_data = data.extra_data or {}
+      data.extra_data.ol_ex__jiushi_check = true
+    elseif event == fk.AfterCardsMove then
+      for _, move in ipairs(data) do
+        if move.skillName == "luoying" and move.to == player.id then
+          room:addPlayerMark(player, "@ol_ex__jiushi_count", #move.moveInfo)
+        end
+      end
+    elseif event == fk.TurnedOver or event == fk.EventLoseSkill then
+      room:setPlayerMark(player, "@ol_ex__jiushi_count", 0)
+    end
+  end,
+}
+local ol_ex__jiushi_targetmod = fk.CreateTargetModSkill{
+  name = "#beifen_targetmod",
+  bypass_distances = function(self, player, skill, card, to)
+    return player:hasSkill(ol_ex__jiushi) and not player.faceup and card:getMark("@@luoying-inhand") > 0
+  end,
+}
+ol_ex__jiushi:addRelatedSkill(ol_ex__jiushi_trigger)
+ol_ex__jiushi:addRelatedSkill(ol_ex__jiushi_targetmod)
+caozhi:addSkill("luoying")
+caozhi:addSkill(ol_ex__jiushi)
+Fk:loadTranslationTable{
+  ["ol_ex__caozhi"] = "界曹植",
+  ["#ol_ex__caozhi"] = "才高八斗",
+  --["designer:ol_ex__caozhi"] = "",
+  --["illustrator:ol_ex__caozhi"] = "",
+
+  ["ol_ex__jiushi"] = "酒诗",
+  [":ol_ex__jiushi"] = "若你的武将牌正面朝上，你可以翻面视为使用一张【酒】。若你的武将牌背面朝上，你使用“落英”牌无距离限制且不可被响应。"..
+  "当你受到伤害时或当你于回合外发动〖落英〗累计获得至少X张牌后（X为你的体力上限），若你的武将牌背面朝上，你可以翻至正面。",
+  ["#ol_ex__jiushi"] = "酒诗：你可以翻面，视为使用一张【酒】",
+  ["@ol_ex__jiushi_count"] = "酒诗",
+}
+
 local zhangchunhua = General(extension, "ol_ex__zhangchunhua", "wei", 3, 3, General.Female)
 local jianmie = fk.CreateActiveSkill{
   name = "jianmie",
