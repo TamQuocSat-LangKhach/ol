@@ -569,18 +569,17 @@ local hetao = fk.CreateTriggerSkill{
     local to, card = room:askForChooseCardAndPlayers(player, AimGroup:getAllTargets(data.tos), 1, 1,
     tostring(Exppattern{ id = ids }), "#hetao-choose:::" .. data.card:toLogString(), self.name, true)
     if #to > 0 then
-      self.cost_data = {to[1], card}
+      self.cost_data = {tos = to, cards = card}
       return true
     end
   end,
   on_use = function(self, event, target, player, data)
-    local dat = table.simpleClone(self.cost_data)
     local room = player.room
-    room:throwCard({dat[2]}, self.name, player, player)
+    room:throwCard(self.cost_data.cards, self.name, player, player)
     data.additionalEffect = 1
     local targets = AimGroup:getAllTargets(data.tos)
     for _, pid in ipairs(targets) do
-      if pid ~= dat[1] then
+      if pid ~= self.cost_data.tos[1] then
         table.insert(data.nullifiedTargets, pid)
       end
     end

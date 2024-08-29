@@ -3457,14 +3457,14 @@ local jieli = fk.CreateTriggerSkill{
     local to = player.room:askForChoosePlayers(player, self.cost_data[1], 1, 1,
     "#jieli-choose:::" .. tostring(x), self.name, true)
     if #to > 0 then
-      self.cost_data = {to[1], x}
+      self.cost_data = {tos = to, x = x}
       return true
     end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local to = room:getPlayerById(self.cost_data[1])
-    local x, y, z = self.cost_data[2], 0, 0
+    local to = room:getPlayerById(self.cost_data.tos[1])
+    local x, y, z = self.cost_data.x, 0, 0
     local handcards = {}
     for _, id in ipairs(to:getCardIds(Player.Hand)) do
       z = Fk:translate(Fk:getCardById(id).trueName, "zh_CN"):len()

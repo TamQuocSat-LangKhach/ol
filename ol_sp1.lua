@@ -626,7 +626,7 @@ local fengpo = fk.CreateTriggerSkill{
       "#fengpo-choice::"..data.to..":"..data.card:toLogString())
     if choice == "Cancel" then return false end
     room:doIndicate(player.id, {data.to})
-    self.cost_data = choice
+    self.cost_data = {tos = {data.to}, choice = choice}
     return true
   end,
   on_use = function(self, event, target, player, data)
@@ -638,7 +638,7 @@ local fengpo = fk.CreateTriggerSkill{
       end
     end
     --FIXME:理论上应当对全部目标加伤的，但考虑到不会有重复目标，两者没区别就是了
-    if self.cost_data == "fengpo_draw" then
+    if self.cost_data.choice == "fengpo_draw" then
       if n > 0 then
         player:drawCards(n, self.name)
       end

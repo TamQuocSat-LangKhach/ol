@@ -2907,13 +2907,13 @@ local jianxuan = fk.CreateTriggerSkill{
     local to = player.room:askForChoosePlayers(player, table.map(player.room:getAlivePlayers(), Util.IdMapper),
       1, 1, "#jianxuan-choose", self.name, true)
     if #to > 0 then
-      self.cost_data = to[1]
+      self.cost_data = {tos = to}
       return true
     end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local to = room:getPlayerById(self.cost_data)
+    local to = room:getPlayerById(self.cost_data.tos[1])
     local n = 0
     local card = Fk:cloneCard("slash")
     repeat
@@ -4412,18 +4412,18 @@ local gongjie = fk.CreateTriggerSkill{
   end,
   on_cost = function(self, event, target, player, data)
     local room = player.room
-    local targets = table.map(room:getOtherPlayers(player, false), function (p) return p.id end)
+    local targets = table.map(room:getOtherPlayers(player, false), Util.IdMapper)
     local x = math.min(#player:getCardIds("he"), #targets)
     local tos = room:askForChoosePlayers(player, targets, 1, x, "#gongjie-choose:::" .. tostring(x), self.name, true)
     if #tos > 0 then
       room:sortPlayersByAction(tos)
-      self.cost_data = tos
+      self.cost_data = {tos = tos}
       return true
     end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local targets = table.simpleClone(self.cost_data)
+    local targets = table.simpleClone(self.cost_data.tos)
     local to = nil
     local suits = {}
     local mark = U.getMark(player, "gongjie_targets")
@@ -4438,7 +4438,7 @@ local gongjie = fk.CreateTriggerSkill{
         if suit ~= Card.NoSuit then
           table.insertIfNeed(suits, suit)
         end
-        room:obtainCard(pid, cid, false, fk.ReasonPrey)
+        room:obtainCard(pid, cid, false, fk.ReasonPrey, pid, self.name)
       end
     end
     if not player.dead and #suits > 0 then
@@ -4512,7 +4512,7 @@ local xiangxu = fk.CreateTriggerSkill{
       room:setPlayerMark(player, "xiangxu_targets", mark)
       player:broadcastSkillInvoke(self.name)
       if #self.cost_data > 0 then
-        room:notifySkillInvoked(player, self.name, "support")
+        room:notifySkillInvoked(player, self.name, "support", {target.id})
         room:throwCard(self.cost_data, self.name, player, player)
         if #self.cost_data > 1 and not player.dead and player:isWounded() then
           room:recover{
@@ -4523,7 +4523,7 @@ local xiangxu = fk.CreateTriggerSkill{
           }
         end
       else
-        room:notifySkillInvoked(player, self.name, "drawcard")
+        room:notifySkillInvoked(player, self.name, "drawcard", {target.id})
         local n = math.min(target:getHandcardNum(), 5) - player:getHandcardNum()
         player:drawCards(n, self.name)
       end
@@ -4555,14 +4555,14 @@ local xiangzuo = fk.CreateTriggerSkill{
       room:setPlayerMark(p, "@@xiangzuo", 0)
     end
     if #tos > 0 and #cards > 0 then
-      self.cost_data = {tos, cards}
+      self.cost_data = {tos = tos, cards = cards}
       return true
     end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local to = room:getPlayerById(self.cost_data[1][1])
-    local cards = table.simpleClone(self.cost_data[2])
+    local to = room:getPlayerById(self.cost_data.tos[1])
+    local cards = table.simpleClone(self.cost_data.cards)
     room:moveCardTo(cards, Player.Hand, to, fk.ReasonGive, self.name, nil, false, player.id)
     if not player.dead and player:isWounded() and table.contains(U.getMark(player, "gongjie_targets"), to.id) and
     table.contains(U.getMark(player, "xiangxu_targets"), to.id) then

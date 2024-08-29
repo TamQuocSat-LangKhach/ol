@@ -967,16 +967,17 @@ local ol__zhendu = fk.CreateTriggerSkill{
     return player:hasSkill(self) and target.phase == Player.Play and not player:isKongcheng() and not target.dead
   end,
   on_cost = function(self, event, target, player, data)
-    local card = player.room:askForDiscard(player, 1, 1, false, self.name, true, ".", "#ol__zhendu-invoke::"..target.id, true)
+    local prompt = (target == player) and "#ol__zhendu-self" or "#ol__zhendu-invoke::"..target.id
+    local card = player.room:askForDiscard(player, 1, 1, false, self.name, true, ".", prompt, true)
     if #card > 0 then
       player.room:doIndicate(player.id, {target.id})
-      self.cost_data = card
+      self.cost_data = {tos = {target.id}, cards = card}
       return true
     end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    room:throwCard(self.cost_data, self.name, player, player)
+    room:throwCard(self.cost_data.cards, self.name, player, player)
     if not target.dead and target:canUseTo(Fk:cloneCard("analeptic"), target) then
       room:useVirtualCard("analeptic", nil, target, target, self.name, false)
     end
@@ -1030,6 +1031,7 @@ Fk:loadTranslationTable{
   ["ol__qiluan"] = "戚乱",
   [":ol__qiluan"] = "一名角色回合结束时，你可摸X张牌（X为本回合死亡的角色数，其中每有一名角色是你杀死的，你多摸两张牌）。",
   ["#ol__zhendu-invoke"] = "鸩毒：你可以弃置一张手牌视为 %dest 使用一张【酒】，然后你对其造成1点伤害",
+  ["#ol__zhendu-self"] = "鸩毒：你可以弃置一张手牌视为使用一张【酒】",
 
   ["$ol__zhendu1"] = "想要母凭子贵？你这是妄想。",
   ["$ol__zhendu2"] = "这皇宫，只能有一位储君。",
@@ -1057,20 +1059,17 @@ local ol__meibu = fk.CreateTriggerSkill{
   end,
   on_cost = function(self, event, target, player, data)
     local room = player.room
-    local c = room:askForDiscard(player, 1, 1, true, self.name, true,
-      ".", "#ol__meibu-invoke:" .. target.id, true)[1]
-
-    if c then
-      self.cost_data = c
+    local cards = room:askForDiscard(player, 1, 1, true, self.name, true, ".", "#ol__meibu-invoke:" .. target.id, true)
+    if #cards == 1 then
+      self.cost_data = {tos = {target.id}, cards = cards}
       room:doIndicate(player.id, {target.id})
       return true
     end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local c = self.cost_data
-    local card = Fk:getCardById(c)
-    room:throwCard(c, self.name, player, player)
+    local card = Fk:getCardById(self.cost_data.cards[1])
+    room:throwCard(card, self.name, player, player)
     room:setPlayerMark(target, "ol__meibu", 1)
     room:handleAddLoseSkills(target, 'ol__zhixi', nil, true)
 

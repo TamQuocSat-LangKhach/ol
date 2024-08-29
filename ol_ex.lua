@@ -1724,18 +1724,24 @@ local ol_ex__jianchu = fk.CreateTriggerSkill{
     local to = player.room:getPlayerById(data.to)
     return data.card.trueName == "slash" and not to:isNude()
   end,
+  on_cost = function (self, event, target, player, data)
+    if player.room:askForSkillInvoke(player, self.name, nil, "#ol_ex__jianchu-invoke:"..data.to) then
+      self.cost_data = {tos = {data.to}}
+      return true
+    end
+  end,
   on_use = function(self, event, target, player, data)
     local room = player.room
     local to = room:getPlayerById(data.to)
     if to:isNude() then return end
-    local id = room:askForCardChosen(player, to, "he", self.name)
-    room:throwCard({id}, self.name, to, player)
-    local card = Fk:getCardById(id)
+    local cid = room:askForCardChosen(player, to, "he", self.name)
+    room:throwCard({cid}, self.name, to, player)
+    local card = Fk:getCardById(cid)
     if card.type == Card.TypeBasic then
       if not to.dead then
-        local cardlist = data.card:isVirtual() and data.card.subcards or {data.card.id}
+        local cardlist = Card:getIdList(data.card)
         if #cardlist > 0 and table.every(cardlist, function(id) return room:getCardArea(id) == Card.Processing end) then
-          room:obtainCard(to.id, data.card, false)
+          room:obtainCard(to.id, data.card, true)
         end
       end
     else
@@ -1753,6 +1759,7 @@ Fk:loadTranslationTable{
   ["illustrator:ol_ex__pangde"] = "YanBai",
   ["ol_ex__jianchu"] = "鞬出",
   [":ol_ex__jianchu"] = "当你使用【杀】指定一个目标后，你可弃置其一张牌，若此牌：为基本牌，其获得此【杀】；不为基本牌，此【杀】不能被此目标抵消，你于此阶段内使用【杀】的次数上限+1。",
+  ["#ol_ex__jianchu-invoke"] = "鞬出：你可以弃置 %src 一张牌",
 
   ["$ol_ex__jianchu1"] = "你这身躯，怎么能快过我？",
   ["$ol_ex__jianchu2"] = "这些怎么能挡住我的威力！",
@@ -2203,18 +2210,17 @@ local ol_ex__zaiqi = fk.CreateTriggerSkill{
   on_cost = function(self, event, target, player, data)
     local room = player.room
     local x = self.cost_data
-    local result = room:askForChoosePlayers(player, table.map(room.alive_players, Util.IdMapper), 1, x,
+    local tos = room:askForChoosePlayers(player, table.map(room.alive_players, Util.IdMapper), 1, x,
     "#ol_ex__zaiqi-choose:::"..x, self.name, true)
-    if #result > 0 then
-      self.cost_data = result
+    if #tos > 0 then
+      room:sortPlayersByAction(tos)
+      self.cost_data = {tos = tos}
       return true
     end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    room:sortPlayersByAction(self.cost_data)
-    local targets = table.map(self.cost_data, function(id)
-      return room:getPlayerById(id) end)
+    local targets = table.map(self.cost_data.tos, Util.Id2PlayerMapper)
     for _, p in ipairs(targets) do
       if not p.dead then
         local choices = {"ol_ex__zaiqi_draw"}
@@ -2271,14 +2277,15 @@ local ol_ex__wulie = fk.CreateTriggerSkill{
   on_cost = function(self, event, target, player, data)
     local tos = player.room:askForChoosePlayers(player, table.map(player.room:getOtherPlayers(player), Util.IdMapper), 1, player.hp, "#ol_ex__wulie-choose", self.name, true)
     if #tos > 0 then
-      self.cost_data = tos
+      player.room:sortPlayersByAction(tos)
+      self.cost_data = {tos = tos}
       return true
     end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    room:loseHp(player, #self.cost_data, self.name)
-    for _, id in ipairs(self.cost_data) do
+    room:loseHp(player, #self.cost_data.tos, self.name)
+    for _, id in ipairs(self.cost_data.tos) do
       local p = room:getPlayerById(id)
       if not p.dead then
         room:addPlayerMark(p, "@@ol_ex__wulie_lie")
@@ -3702,31 +3709,32 @@ local ol_ex__guzheng = fk.CreateTriggerSkill{
     local card_pack = self.cost_data[2]
     if #targets == 1 then
       if room:askForSkillInvoke(player, self.name, nil, "#ol_ex__guzheng-invoke::"..targets[1]) then
-        room:doIndicate(player.id, targets)
-        self.cost_data = {targets[1], card_pack[1]}
+        self.cost_data = {tos = targets, cards = card_pack[1]}
         return true
       end
     elseif #targets > 1 then
       local tos = room:askForChoosePlayers(player, targets, 1, 1, "#ol_ex__guzheng-choose", self.name)
       if #tos > 0 then
-        self.cost_data = {tos[1], card_pack[table.indexOf(targets, tos[1])]}
+        self.cost_data = {tos = {tos[1]}, cards = card_pack[table.indexOf(targets, tos[1])]}
         return true
       end
     end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local cards = self.cost_data[2]
+    local toId = self.cost_data.tos[1]
+    room:doIndicate(player.id, {toId})
+    local cards = self.cost_data.cards
     local to_return = table.random(cards, 1)
     local choice = "guzheng_no"
     if #cards > 1 then
       to_return, choice = U.askforChooseCardsAndChoice(player, cards, {"guzheng_yes", "guzheng_no"}, self.name,
-      "#guzheng-title::" .. self.cost_data[1])
+      "#guzheng-title::" .. toId)
     end
     local moveInfos = {}
     table.insert(moveInfos, {
       ids = to_return,
-      to = self.cost_data[1],
+      to = toId,
       toArea = Card.PlayerHand,
       moveReason = fk.ReasonJustMove,
       proposer = player.id,
