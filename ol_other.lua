@@ -1190,23 +1190,18 @@ local qin__yitong = fk.CreateTriggerSkill{
   events = {fk.AfterCardTargetDeclared},
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(self) and
-      table.contains({"slash", "dismantlement", "snatch", "fire_attack"}, data.card.trueName) and
-      #U.getUseExtraTargets(player.room, data, true) > 0
+      table.contains({"slash", "dismantlement", "snatch", "fire_attack"}, data.card.trueName)
   end,
   on_use = function(self, event, target, player, data)
-    if #data.tos > 0 then
-      for _, idpair in ipairs(data.tos) do
-        if player.room:getPlayerById(idpair[1]).kingdom == "qin" then
-          TargetGroup:removeTarget(data.tos, idpair[1])
-        end
+    local room = player.room
+    local tos = {}
+    for _, p in ipairs(room:getAlivePlayers()) do
+      if p.kingdom ~= "qin" and
+      not player:isProhibited(p, data.card) and data.card.skill:modTargetFilter(p.id, {}, data.from, data.card, false) then
+        table.insert(tos, p.id)
       end
     end
-    for _, id in ipairs(U.getUseExtraTargets(player.room, data, true)) do
-      if player.room:getPlayerById(id) and player.room:getPlayerById(id).kingdom ~= "qin" then
-        player.room:doIndicate(player.id, {id})
-        TargetGroup:pushTargets(data.tos, id)
-      end
-    end
+    data.tos = table.map(tos, function(p) return {p} end)
   end,
 }
 local qin__yitong_targetmod = fk.CreateTargetModSkill{
@@ -1225,7 +1220,7 @@ local qin__shihuang = fk.CreateTriggerSkill{
     return player:hasSkill(self) and target ~= player and math.random() < (6 * player.room:getTag("RoundCount") / 100)
   end,
   on_use = function(self, event, target, player, data)
-    player:gainAnExtraTurn(true)
+    player:gainAnExtraTurn(true, self.name)
   end,
 }
 local zulong_derivecards = {{"qin_dragon_sword", Card.Heart, 2}, {"qin_seal", Card.Heart, 7}}
@@ -1281,7 +1276,7 @@ Fk:loadTranslationTable{
   ["yingzheng"] = "嬴政",
   ["#yingzheng"] = "横扫六合",
   ["qin__yitong"] = "一统",
-  [":qin__yitong"] = "锁定技，你使用【杀】、【过河拆桥】、【顺手牵羊】、【火攻】无距离限制且指定所有非秦势力角色为目标。",
+  [":qin__yitong"] = "锁定技，你使用【杀】、【过河拆桥】、【顺手牵羊】、【火攻】无距离限制且改为指定所有非秦势力角色为目标。",
   ["qin__shihuang"] = "始皇",
   [":qin__shihuang"] = "锁定技，其他角色回合结束时，你有X%几率获得一个额外回合（X为游戏轮数的6倍，最大为100）。",
   ["qin__zulong"] = "祖龙",

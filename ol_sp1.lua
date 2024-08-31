@@ -3407,21 +3407,20 @@ local lingren = fk.CreateTriggerSkill{
     end)
     if #targets == 1 then
       if room:askForSkillInvoke(player, self.name, nil, "#lingren-invoke::" .. targets[1]) then
-        room:doIndicate(player.id, targets)
-        self.cost_data = targets
+        self.cost_data = {tos = targets}
         return true
       end
     else
-      targets = room:askForChoosePlayers(player, targets, 1, 1, "#lingren-choose", self.name, true)
+      targets = room:askForChoosePlayers(player, targets, 1, 1, "#lingren-choose", self.name, true, false)
       if #targets > 0 then
-        self.cost_data = targets
+        self.cost_data = {tos = targets}
         return true
       end
     end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local to = room:getPlayerById(self.cost_data[1])
+    local to = room:getPlayerById(self.cost_data.tos[1])
     local choices = {"lingren_basic", "lingren_trick", "lingren_equip"}
     local yes = room:askForChoices(player, choices, 0, 3, self.name, "#lingren-choice::" .. to.id, false)
     for _, value in ipairs(yes) do
@@ -3468,7 +3467,7 @@ local lingren = fk.CreateTriggerSkill{
 }
 local lingren_delay = fk.CreateTriggerSkill {
   name = "#lingren_delay",
-  mute = true,
+  anim_type = "offensive",
   events = {fk.DamageInflicted},
   can_trigger = function(self, event, target, player, data)
     if player.dead or data.card == nil or target ~= player then return false end
@@ -3515,15 +3514,14 @@ local fujian = fk.CreateTriggerSkill {
       if #targets == 0 then
         targets = players
       end
-      self.cost_data = table.map(targets, Util.IdMapper)
+      self.cost_data = {tos = {table.random(targets).id}}
       return true
     end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local to = table.random(self.cost_data)
-    room:doIndicate(player.id, {to})
-    U.viewCards(player, room:getPlayerById(to).player_cards[Player.Hand], self.name, "$ViewCardsFrom:"..to)
+    local to = room:getPlayerById(self.cost_data.tos[1])
+    U.viewCards(player, to.player_cards[Player.Hand], self.name, "$ViewCardsFrom:"..to.id)
   end,
 }
 lingren:addRelatedSkill(lingren_delay)
