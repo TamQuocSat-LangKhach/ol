@@ -565,12 +565,12 @@ local weiyi = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     room:addPlayerMark(target, self.name, 1)
-    if self.cost_data == "loseHp" then
-      room:notifySkillInvoked(player, self.name, "offensive")
+    if self.cost_data.choice == "loseHp" then
+      room:notifySkillInvoked(player, self.name, "offensive", {target.id})
       player:broadcastSkillInvoke(self.name, 1)
       room:loseHp(target, 1, self.name)
     else
-      room:notifySkillInvoked(player, self.name, "support")
+      room:notifySkillInvoked(player, self.name, "support", {target.id})
       player:broadcastSkillInvoke(self.name, 2)
       room:recover({
         who = target,
@@ -5199,6 +5199,7 @@ local qingyix = fk.CreateActiveSkill{
   card_num = 0,
   min_target_num = 1,
   max_target_num = 2,
+  prompt = "#qingyix-prompt",
   can_use = function(self, player)
     return not player:isNude() and player:usedSkillTimes(self.name, Player.HistoryPhase) == 0
   end,
@@ -5353,19 +5354,17 @@ local zeyue = fk.CreateTriggerSkill{
     if #targets == 0 then return end
     local to = room:askForChoosePlayers(player, targets, 1, 1, "#zeyue-choose", self.name, true)
     if #to > 0 then
-      self.cost_data = {to[1], skillsMap[to[1]]}
+      self.cost_data = {tos = to, choices = skillsMap[to[1]]}
       return true
     end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local to = room:getPlayerById(self.cost_data[1])
-    local choice = room:askForChoice(player, self.cost_data[2], self.name, "#zeyue-choice::"..to.id, true)
-    room:handleAddLoseSkills(to, "-"..choice, nil, true, false)
+    local to = room:getPlayerById(self.cost_data.tos[1])
+    local choice = room:askForChoice(player, self.cost_data.choices, self.name, "#zeyue-choice::"..to.id, true)
     room:setPlayerMark(player, "@zeyue", choice)
-    local mark = U.getMark(player, "zeyue_record")
-    table.insert(mark, {to.id, choice, 0})
-    room:setPlayerMark(player, "zeyue_record", mark)
+    room:addTableMark(player, "zeyue_record", {to.id, choice, 0})
+    room:handleAddLoseSkills(to, "-"..choice, nil, true, false)
   end,
 }
 local zeyue_delay = fk.CreateTriggerSkill{
@@ -5445,8 +5444,10 @@ Fk:loadTranslationTable{
   ["zeyue"] = "迮阅",
   [":zeyue"] = "限定技，准备阶段，你可以令一名你上个回合结束后（首轮为游戏开始后）对你造成过伤害的其他角色失去武将牌上一个技能（锁定技、觉醒技、限定技除外）。"..
   "每轮开始时，其视为对你使用X张【杀】（X为其已失去此技能的轮数），当你受到此【杀】伤害后，其获得以此法失去的技能。",
+
   ["#huanfu-invoke"] = "宦浮：你可以弃置至多%arg张牌，若此【杀】造成伤害值等于弃牌数，你摸两倍的牌",
   ["#huanfu_delay"] = "宦浮",
+  ["#qingyix-prompt"] = "清议：你可以与至多其他角色同时弃置一张牌，若弃牌类型相同，你可重复此流程",
   ["#qingyi-discard"] = "清议：弃置一张牌",
   ["#qingyi-invoke"] = "清议：是否继续发动“清议”？",
   ["#qingyi_get-invoke"] = "清议：可选择获得红色和黑色的卡牌各一张",

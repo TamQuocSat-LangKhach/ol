@@ -301,15 +301,15 @@ local yongzu = fk.CreateTriggerSkill{
   on_cost = function (self, event, target, player, data)
     local room = player.room
     local to = room:askForChoosePlayers(player, table.map(room:getOtherPlayers(player), Util.IdMapper), 1, 1,
-      "#yongzu-choose", self.name, true)
+      "#yongzu-choose", self.name, true, true)
     if #to > 0 then
-      self.cost_data = to[1]
+      self.cost_data = {tos = to}
       return true
     end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local to = room:getPlayerById(self.cost_data)
+    local to = room:getPlayerById(self.cost_data.tos[1])
     local all_choices = {"draw2", "recover", "reset"}
     if player.kingdom == to.kingdom then
       local prompt = "yongzu_skill:::"
@@ -388,7 +388,7 @@ Fk:loadTranslationTable{
   ["yongzu"] = "拥族",
   [":yongzu"] = "准备阶段，你可以选择一名其他角色，你与其依次选择不同的一项：<br>1.摸两张牌；<br>2.回复1点体力；<br>3.复原武将牌。<br>"..
   "若选择的角色与你势力相同，则增加选项：<br>4.手牌上限+1；<br>5.根据势力获得技能直到下回合开始：<br>"..
-  "<font color=\"blue\">魏〖奸雄〗</font><font color=\"grey\">群〖天命〗</font>。",
+  "<font color='blue'>魏〖奸雄〗</font><font color='grey'>群〖天命〗</font>。",
   ["qingliu"] = "清流",
   [":qingliu"] = "锁定技，游戏开始时，你选择变为群或魏势力。你首次脱离濒死状态被救回后，你变更为另一个势力。",
 

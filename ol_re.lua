@@ -1062,7 +1062,6 @@ local ol__meibu = fk.CreateTriggerSkill{
     local cards = room:askForDiscard(player, 1, 1, true, self.name, true, ".", "#ol__meibu-invoke:" .. target.id, true)
     if #cards == 1 then
       self.cost_data = {tos = {target.id}, cards = cards}
-      room:doIndicate(player.id, {target.id})
       return true
     end
   end,
