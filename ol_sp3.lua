@@ -863,6 +863,7 @@ Fk:loadTranslationTable{
   ["#zhanghua"] = "双剑化龙",
   ["designer:zhanghua"] = "玄蝶既白",
   ["illustrator:zhanghua"] = "匠人绘",
+  ["cv:zhanghua"] = "苏至豪",
 
   ["bihun"] = "弼昏",
   [":bihun"] = "锁定技，当你使用牌指定其他角色为目标时，若你的手牌数大于手牌上限，你取消之并令唯一目标获得此牌。",
@@ -3442,8 +3443,10 @@ local fudao = fk.CreateTriggerSkill{
   end,
   on_cost = function(self, event, target, player, data)
     if event == fk.GameStart then
+      self.cost_data = nil
       return true
     else
+      self.cost_data = {tos = {target.id}}
       return player.room:askForSkillInvoke(player, self.name, data, "#ol__fudao-ask::" .. target.id)
     end
   end,
@@ -3479,23 +3482,26 @@ local fengyan = fk.CreateTriggerSkill{
   anim_type = "masochism",
   frequency = Skill.Compulsory,
   can_trigger = function(self, event, target, player, data)
+    local to
     if event == fk.Damaged then
-      return player:hasSkill(self) and target == player and data.from and data.from ~= player
+      if player:hasSkill(self) and target == player and data.from and data.from ~= player and not data.from.dead then
+        to = data.from.id
+      end
     else
-      return target == player and player:hasSkill(self) and not player.dead and
+      if target == player and player:hasSkill(self) and not player.dead and
       data.responseToEvent and data.responseToEvent.from and data.responseToEvent.from ~= player.id and
-      not player.room:getPlayerById(data.responseToEvent.from).dead
+      not player.room:getPlayerById(data.responseToEvent.from).dead then
+        to = data.responseToEvent.from
+      end
+    end
+    if to then
+      self.cost_data = {tos = {to}}
+      return true
     end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local to
-    if event == fk.Damaged then
-      to = data.from
-    else
-      to = room:getPlayerById(data.responseToEvent.from)
-    end
-    room:doIndicate(player.id, {to.id})
+    local to = room:getPlayerById(self.cost_data.tos[1])
     local choice = player.room:askForChoice(player, {"ol__fengyan_self:" .. to.id, "ol__fengyan_other:" .. to.id}, self.name)
     if choice:startsWith("ol__fengyan_self") then
       player:drawCards(1, self.name)

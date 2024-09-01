@@ -359,9 +359,12 @@ local qingliu = fk.CreateTriggerSkill{
       if event == fk.GameStart then
         return true
       elseif event == fk.AfterDying then
-        return target == player and #player.room.logic:getEventsOfScope(GameEvent.Dying, 2, function(e)
-          return e.data[1].who == player.id
-        end, Player.HistoryGame) == 1
+        if target == player and player:getMark("qingliu_invoked") == 0 then
+          local dying_events = player.room.logic:getEventsOfScope(GameEvent.Dying, 1, function(e)
+            return e.data[1].who == player.id
+          end, Player.HistoryGame)
+          return #dying_events > 0 and dying_events[1].data[1] == data
+        end
       end
     end
   end,
@@ -370,6 +373,7 @@ local qingliu = fk.CreateTriggerSkill{
     local kingdoms = {"qun", "wei"}
     if event == fk.AfterDying then
       table.removeOne(kingdoms, player.kingdom)
+      room:setPlayerMark(player, "qingliu_invoked", 1)
     end
     local kingdom = room:askForChoice(player, kingdoms, self.name, "AskForKingdom")
     if kingdom ~= player.kingdom then
@@ -430,11 +434,11 @@ local chishi = fk.CreateTriggerSkill{
     end
   end,
   on_cost = function (self, event, target, player, data)
+    self.cost_data = {tos = {player.room.current.id}}
     return player.room:askForSkillInvoke(player, self.name, nil, "#chishi-invoke::"..player.room.current.id)
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    room:doIndicate(player.id, {room.current.id})
     room:addPlayerMark(room.current, MarkEnum.AddMaxCardsInTurn, 2)
     room.current:drawCards(2, self.name)
   end,
