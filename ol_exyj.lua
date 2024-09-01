@@ -111,7 +111,7 @@ local ol_ex__jiushi_trigger = fk.CreateTriggerSkill{
   end,
 }
 local ol_ex__jiushi_targetmod = fk.CreateTargetModSkill{
-  name = "#beifen_targetmod",
+  name = "#ol_ex__jiushi_targetmod",
   bypass_distances = function(self, player, skill, card, to)
     return player:hasSkill(ol_ex__jiushi) and not player.faceup and card:getMark("@@luoying-inhand") > 0
   end,
@@ -129,6 +129,7 @@ Fk:loadTranslationTable{
   ["ol_ex__jiushi"] = "酒诗",
   [":ol_ex__jiushi"] = "若你的武将牌正面朝上，你可以翻面视为使用一张【酒】。若你的武将牌背面朝上，你使用“落英”牌无距离限制且不可被响应。"..
   "当你受到伤害时或当你于回合外发动〖落英〗累计获得至少X张牌后（X为你的体力上限），若你的武将牌背面朝上，你可以翻至正面。",
+  ["#ol_ex__jiushi_targetmod"] = "酒诗",
   ["#ol_ex__jiushi"] = "酒诗：你可以翻面，视为使用一张【酒】",
   ["@ol_ex__jiushi_count"] = "酒诗",
 }
