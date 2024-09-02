@@ -926,25 +926,17 @@ local chuming = fk.CreateTriggerSkill{
       if not data.card or #Card:getIdList(data.card) == 0 then
         if event == fk.DamageCaused then
           player:broadcastSkillInvoke(self.name, 2)
-          room:notifySkillInvoked(player, self.name, "offensive")
+          room:notifySkillInvoked(player, self.name, "offensive", {data.to.id})
         else
           player:broadcastSkillInvoke(self.name, 1)
-          room:notifySkillInvoked(player, self.name, "negative")
+          room:notifySkillInvoked(player, self.name, "negative", {data.from.id})
         end
         data.damage = data.damage + 1
       else
+        local toId = (event == fk.DamageCaused) and data.to.id or data.from.id
         player:broadcastSkillInvoke(self.name)
-        room:notifySkillInvoked(player, self.name, "negative")
-        local p
-        if event == fk.DamageCaused then
-          p = data.to.id
-        else
-          p = data.from.id
-        end
-        local mark = player:getMark("chuming-turn")
-        if mark == 0 then mark = {} end
-        table.insert(mark, {p, Card:getIdList(data.card)})
-        room:setPlayerMark(player, "chuming-turn", mark)
+        room:notifySkillInvoked(player, self.name, "negative", {toId})
+        room:addTableMark(player, "chuming-turn", {toId, Card:getIdList(data.card)})
       end
     else
       local infos = table.simpleClone(player:getMark("chuming-turn"))
@@ -1229,32 +1221,31 @@ local yishi = fk.CreateTriggerSkill{
   can_trigger = function(self, event, target, player, data)
     if player:hasSkill(self) and player:usedSkillTimes(self.name, Player.HistoryTurn) == 0 then
       local room = player.room
-      local dat = {}
+      local tos, cards = {}, {}
       for _, move in ipairs(data) do
-        if move.from and move.from ~= player.id and move.moveReason == fk.ReasonDiscard 
+        if move.from and move.from ~= player.id and move.moveReason == fk.ReasonDiscard
         and room:getPlayerById(move.from).phase == Player.Play and not room:getPlayerById(move.from).dead then
-          dat[1] = move.from
-          dat[2] = dat[2] or {}
+          tos = {move.from}
           for _, info in ipairs(move.moveInfo) do
             if info.fromArea == Card.PlayerHand and room:getCardArea(info.cardId) == Card.DiscardPile then
-              table.insertIfNeed( dat[2], info.cardId)
+              table.insertIfNeed(cards, info.cardId)
             end
           end
         end
       end
-      if dat[2] and #dat[2] > 0 then
-        self.cost_data = dat
+      if #cards> 0 then
+        self.cost_data = {cards = cards, tos = tos}
         return true
       end
     end
   end,
   on_cost = function(self, event, target, player, data)
-    return player.room:askForSkillInvoke(player, self.name, data, "#yishi-invoke::"..self.cost_data[1])
+    return player.room:askForSkillInvoke(player, self.name, data, "#yishi-invoke::"..self.cost_data.tos[1])
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local to = room:getPlayerById(self.cost_data[1])
-    local cards = self.cost_data[2]
+    local to = room:getPlayerById(self.cost_data.tos[1])
+    local cards = self.cost_data.cards
     local give = cards[1]
     if #cards > 1 then
       give = room:askForCardChosen(player, to, { card_data = { { "yishi", cards } } }, self.name, "#yishi-card:"..to.id)
