@@ -1844,6 +1844,7 @@ local choufa = fk.CreateActiveSkill{
       for _, id in ipairs(target:getCardIds("h")) do
         if Fk:getCardById(id).type ~= Fk:getCardById(card).type then
           room:setCardMark(Fk:getCardById(id), "@@choufa-inhand", 1)
+          Fk:filterCard(id, target)
         end
       end
     end
@@ -1854,16 +1855,17 @@ local choufa_trigger = fk.CreateTriggerSkill{
 
   refresh_events = {fk.AfterTurnEnd},
   can_refresh = function(self, event, target, player, data)
-    return player == target
+    return player == target and not player:isKongcheng()
   end,
   on_refresh = function(self, event, target, player, data)
     U.clearHandMark(player, "@@choufa-inhand")
+    player:filterHandcards()
   end,
 }
 local choufa_filter = fk.CreateFilterSkill{
   name = "#choufa_filter",
   card_filter = function(self, card, player)
-    return card:getMark("@@choufa-inhand") > 0 and table.contains(player.player_cards[Player.Hand], card.id)
+    return card:getMark("@@choufa-inhand") > 0
   end,
   view_as = function(self, card)
     return Fk:cloneCard("slash", card.suit, card.number)

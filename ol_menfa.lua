@@ -2020,8 +2020,7 @@ local guangu = fk.CreateActiveSkill{
   end,
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
-    local status = player:getSwitchSkillState(self.name, true) == fk.SwitchYang and "yang" or "yin"
-    local target = nil
+    local status = player:getSwitchSkillState(self.name, true, true)
     local ids = {}
     if status == "yang" then
       local x = #room.draw_pile
@@ -2032,60 +2031,13 @@ local guangu = fk.CreateActiveSkill{
       end
       local result = room:askForCustomDialog(player, self.name, "packages/ol/qml/Guangu.qml", data)
       ids = room:getNCards(tonumber(result) or 1)
-    elseif status == "yin" then
-      target = room:getPlayerById(effect.tos[1])
+    else
+      local target = room:getPlayerById(effect.tos[1])
       ids = room:askForCardsChosen(player, target, 1, 4, "h", self.name)
     end
     room:setPlayerMark(player, "@guangu-phase", #ids)
 
-    if target == nil or target ~= player then
-      room:setPlayerMark(player, "guangu_view", table.simpleClone(ids))
-    end
-
-    local extra_data = {bypass_times = true}
-    local availableCards = {}
-    for _, id in ipairs(ids) do
-      local card = Fk:getCardById(id)
-      if not player:prohibitUse(card) and player:canUse(card, extra_data) then
-        table.insertIfNeed(availableCards, id)
-      end
-    end
-    room:setPlayerMark(player, "guangu_cards", availableCards)
-    local success, dat = room:askForUseActiveSkill(player, "guangu_viewas", "#guangu-use", true, extra_data)
-    room:setPlayerMark(player, "guangu_view", 0)
-    room:setPlayerMark(player, "guangu_cards", 0)
-
-    if status == "yang" then
-      for i = #ids, 1, -1 do
-        table.insert(room.draw_pile, 1, ids[i])
-      end
-    end
-    if success then
-      local card = Fk:getCardById(dat.cards[1])
-      room:useCard{
-        from = player.id,
-        tos = table.map(dat.targets, function(id) return {id} end),
-        card = card,
-        extraUse = true,
-      }
-    end
-  end,
-}
-local guangu_viewas = fk.CreateViewAsSkill{
-  name = "guangu_viewas",
-  expand_pile = function (self)
-    return U.getMark(Self, "guangu_view")
-  end,
-  card_filter = function(self, to_select, selected)
-    if #selected == 0 then
-      local ids = Self:getMark("guangu_cards")
-      return type(ids) == "table" and table.contains(ids, to_select)
-    end
-  end,
-  view_as = function(self, cards)
-    if #cards == 1 then
-      return Fk:getCardById(cards[1])
-    end
+    U.askForUseRealCard(room, player, ids, ".", self.name, "#guangu-use", {expand_pile = ids})
   end,
 }
 local xiaoyong = fk.CreateTriggerSkill{
@@ -2148,7 +2100,6 @@ local baozu = fk.CreateTriggerSkill{
     end
   end,
 }
-Fk:addSkill(guangu_viewas)
 zhongyan:addSkill(guangu)
 zhongyan:addSkill(xiaoyong)
 zhongyan:addSkill(baozu)
