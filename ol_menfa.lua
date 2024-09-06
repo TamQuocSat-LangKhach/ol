@@ -2022,6 +2022,7 @@ local guangu = fk.CreateActiveSkill{
     local player = room:getPlayerById(effect.from)
     local status = player:getSwitchSkillState(self.name, true, true)
     local ids = {}
+    local target
     if status == "yang" then
       local x = #room.draw_pile
       if x == 0 then return false end
@@ -2032,12 +2033,12 @@ local guangu = fk.CreateActiveSkill{
       local result = room:askForCustomDialog(player, self.name, "packages/ol/qml/Guangu.qml", data)
       ids = room:getNCards(tonumber(result) or 1)
     else
-      local target = room:getPlayerById(effect.tos[1])
+      target = room:getPlayerById(effect.tos[1])
       ids = room:askForCardsChosen(player, target, 1, 4, "h", self.name)
     end
     room:setPlayerMark(player, "@guangu-phase", #ids)
 
-    U.askForUseRealCard(room, player, ids, ".", self.name, "#guangu-use", {expand_pile = ids})
+    U.askForUseRealCard(room, player, ids, ".", self.name, "#guangu-use", (target ~= player) and {expand_pile = ids} or {})
   end,
 }
 local xiaoyong = fk.CreateTriggerSkill{
