@@ -1486,5 +1486,17 @@ Fk:loadTranslationTable{
 }
 
 
+local dengai = General(extension, "olmou__dengai", "wei", 4)
+dengai:addSkill("tmp_illustrate")
+dengai.hidden = true
+
+local huangyueying = General(extension, "olmou__huangyueying", "qun", 3)
+huangyueying:addSkill("tmp_illustrate")
+huangyueying.hidden = true
+
+Fk:loadTranslationTable{
+  ["olmou__dengai"] = "谋邓艾",
+  ["olmou__huangyueying"] = "谋黄月英",
+}
 
 return extension

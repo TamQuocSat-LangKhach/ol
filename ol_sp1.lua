@@ -945,26 +945,7 @@ local zhidao = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     room:doIndicate(player.id, {data.to.id})
-    local card_data = {}
-    if data.to:getHandcardNum() > 0 then
-      local handcards = {}
-      for i = 1, data.to:getHandcardNum(), 1 do
-        table.insert(handcards, -1) -- 手牌不可见
-      end
-      table.insert(card_data, {"$Hand", handcards})
-    end
-    local areas = {["$Equip"] = Player.Equip, ["$Judge"] = Player.Judge}
-    for k, v in pairs(areas) do
-      if #data.to.player_cards[v] > 0 then
-        table.insert(card_data, {k, data.to:getCardIds(v)})
-      end
-    end
-    local ret = room:askForPoxi(player, "zhidao_get", card_data, nil, false)
-    local cards = table.filter(ret, function(id) return id ~= -1 end)
-    local hand_num = #ret - #cards
-    if hand_num > 0 and data.to ~= player then
-      table.insertTable(cards, table.random(data.to:getCardIds("h"), hand_num))
-    end
+    local cards = U.askforCardsChosenFromAreas(player, data.to, "hej", self.name, nil, nil, false)
     if #cards > 0 then
       room:moveCardTo(cards, Card.PlayerHand, player, fk.ReasonPrey, self.name, nil, false, player.id)
     end
@@ -975,30 +956,6 @@ local zhidao_prohibit = fk.CreateProhibitSkill{
   name = "#zhidao_prohibit",
   is_prohibited = function(self, from, to, card)
     return from:getMark("@@zhidao-turn") > 0 and card and from ~= to
-  end,
-}
-Fk:addPoxiMethod{
-  name = "zhidao_get",
-  card_filter = Util.TrueFunc,
-  feasible = function(selected, data)
-    if data and #data == #selected then
-      local areas = {}
-      for _, id in ipairs(selected) do
-        for _, v in ipairs(data) do
-          if table.contains(v[2], id) then
-            table.insertIfNeed(areas, v[2])
-            break
-          end
-        end
-      end
-      return #areas == #selected
-    end
-  end,
-  prompt = "#zhidao_get",
-  default_choice = function(data)
-    if not data then return {} end
-    local cids = table.map(data, function(v) return v[2][1] end)
-    return cids
   end,
 }
 local jili = fk.CreateTriggerSkill{
@@ -1014,7 +971,9 @@ local jili = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    if data.card.is_damage_card or table.contains({"dismantlement", "snatch", "chasing_near"}, data.card.name) or data.card.is_derived then
+    if data.card.is_damage_card or
+      table.contains({"dismantlement", "snatch", "chasing_near"}, data.card.name) or
+      data.card.is_derived then
       player:broadcastSkillInvoke(self.name, 1)
       room:notifySkillInvoked(player, self.name, "negative")
     else
@@ -1037,6 +996,7 @@ Fk:loadTranslationTable{
   ["#yanbaihu"] = "豺牙落涧",
   ["designer:yanbaihu"] = "何叔",
   ["illustrator:yanbaihu"] = "NOVART",
+
   ["zhidao"] = "雉盗",
   [":zhidao"] = "锁定技，当你于出牌阶段内第一次对区域里有牌的其他角色造成伤害后，你获得其手牌、装备区和判定区里的各一张牌，"..
   "然后直到回合结束，其他角色不能被选择为你使用牌的目标。",
@@ -1044,8 +1004,6 @@ Fk:loadTranslationTable{
   [":jili"] = "锁定技，当一名其他角色成为红色基本牌或红色普通锦囊牌的目标时，若其与你的距离为1且"..
   "你既不是此牌的使用者也不是目标，你也成为此牌的目标。",
   ["@@zhidao-turn"] = "雉盗",
-  ["zhidao_get"] = "雉盗",
-  ["#zhidao_get"] = "雉盗：获得其每个区域各一张牌",
 
   ["$zhidao1"] = "谁有地盘，谁是老大！",
   ["$zhidao2"] = "乱世之中，能者为王！",

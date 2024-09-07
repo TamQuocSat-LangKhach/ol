@@ -7,15 +7,6 @@ Fk:loadTranslationTable{
 }
 
 local mawan = General(extension, "mawan", "qun", 4)
-Fk:loadTranslationTable{
-  ["mawan"] = "马玩",
-  ["#mawan"] = "驱率羌胡",
-  ["designer:mawan"] = "大宝",
-  ["~mawan"] = "",
-}
-
-mawan:addSkill("mashu")
-
 local hunjiang = fk.CreateActiveSkill{
   name = "hunjiang",
   anim_type = "offensive",
@@ -136,7 +127,14 @@ local hunjiangTarget = fk.CreateTriggerSkill{
     }
   end,
 }
+hunjiang:addRelatedSkill(hunjiangTarget)
+mawan:addSkill(hunjiang)
+mawan:addSkill("mashu")
 Fk:loadTranslationTable{
+  ["mawan"] = "马玩",
+  ["#mawan"] = "驱率羌胡",
+  ["designer:mawan"] = "大宝",
+
   ["hunjiang"] = "浑疆",
   [":hunjiang"] = "出牌阶段限一次，你可以令攻击范围内至少一名角色同时选择一项：1.令你于本阶段内使用【杀】可指定其为额外目标；" ..
   "2.令你摸一张牌。若这些角色均选择同一项，则依次执行另一项。",
@@ -147,10 +145,9 @@ Fk:loadTranslationTable{
   ["hunjiang_draw"] = "令 %dest 摸一张牌",
   ["#hunjiang-others_choose"] = "浑疆：请选择一项，若你与其他目标均选择同一项，则你执行另一项",
   ["#hunjiang-choose"] = "浑疆：你可选择其中至少一名角色成为此【杀】的额外目标",
-}
 
-hunjiang:addRelatedSkill(hunjiangTarget)
-mawan:addSkill(hunjiang)
+  ["~mawan"] = "",
+}
 
 local budugen = General(extension, "budugen", "qun", 4)
 local kouchao = fk.CreateViewAsSkill{
@@ -586,7 +583,7 @@ local pingduan = fk.CreateActiveSkill{
 kebineng:addSkill(pingduan)
 Fk:loadTranslationTable{
   ["ol__kebineng"] = "轲比能",
-  ["#ol__kebineng"] = "",
+  ["#ol__kebineng"] = "瀚海鲸波",
 
   ["pingduan"] = "平端",
   [":pingduan"] = "出牌阶段限一次，你可以令一名角色依次执行：1.使用一张基本牌；2.重铸一张锦囊牌；3.令你获得其装备区一张牌。其每执行一项"..
@@ -1041,11 +1038,11 @@ Fk:loadTranslationTable{
   ["#kongshu"] = "",
 
   ["leiluan"] = "累卵",
-  [":leiluan"] = "每回合限一次，你可以将X张牌当一张你本轮未使用过的基本牌使用。每轮结束时，若你此轮至少使用过X张基本牌，你可以摸X张牌并视为使用"..
-  "一张本轮进入弃牌堆的普通锦囊牌（X为你连续发动此技能的轮数，至少为1）。",
+  [":leiluan"] = "每回合限一次，你可以将X张牌当一张你本轮未使用过的基本牌使用。每轮结束时，若你此轮至少使用过X张基本牌，你可以摸X张牌并视为"..
+  "使用一张本轮进入弃牌堆的普通锦囊牌（X为你连续发动此技能的轮数，至少为1）。",
   ["fuchao"] = "覆巢",
-  [":fuchao"] = "锁定技，你响应其他角色使用的牌后，你选择一项：1.弃置你与其各一张牌，然后其他角色不能响应此牌；2.令此牌对其他角色无效，然后对你"..
-  "额外结算一次。",
+  [":fuchao"] = "锁定技，你响应其他角色使用的牌后，你选择一项：1.弃置你与其各一张牌，然后其他角色不能响应此牌；2.令此牌对其他角色无效，然后"..
+  "对你额外结算一次。",
   ["#leiluan"] = "累卵：你可以将%arg张牌当基本牌使用",
   ["#leiluan_trigger"] = "累卵",
   ["#leiluan-use"] = "累卵：你可以使用其中一张牌",
@@ -1151,6 +1148,34 @@ Fk:loadTranslationTable{
   ["#renxia2"] = "任侠：摸两张牌，重复直到手牌中有伤害牌，本阶段结束时执行另一项",
   ["renxia1"] = "弃两张牌",
   ["renxia2"] = "摸两张牌",
+}
+
+local chenggongying = General(extension, "chenggongying", "qun", 4)
+chenggongying:addSkill("tmp_illustrate")
+chenggongying.hidden = true
+
+local qinlang = General(extension, "ol__qinlang", "wei", 4)
+qinlang:addSkill("tmp_illustrate")
+qinlang.hidden = true
+
+local wuanguo = General(extension, "ol__wuanguo", "qun", 4)
+wuanguo:addSkill("tmp_illustrate")
+wuanguo.hidden = true
+
+local hanfu = General(extension, "ol__hanfu", "qun", 4)
+hanfu:addSkill("tmp_illustrate")
+hanfu.hidden = true
+
+local dongxie = General(extension, "ol__dongxie", "qun", 4, 4, General.Female)
+dongxie:addSkill("tmp_illustrate")
+dongxie.hidden = true
+
+Fk:loadTranslationTable{
+  ["chenggongying"] = "成公英",
+  ["ol__qinlang"] = "秦朗",
+  ["ol__wuanguo"] = "武安国",
+  ["ol__hanfu"] = "韩馥",
+  ["ol__dongxie"] = "董翓",
 }
 
 return extension
