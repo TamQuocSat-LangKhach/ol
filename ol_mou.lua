@@ -1270,7 +1270,7 @@ sunjian:addSkill(hulie)
 sunjian:addSkill(yipo)
 Fk:loadTranslationTable{
   ["olmou__sunjian"] = "谋孙坚",
-  ["#olmou__sunjian"] = "",
+  ["#olmou__sunjian"] = "乌程侯",
   ["illustrator:olmou__sunjian"] = "",
 
   ["hulie"] = "虎烈",
@@ -1496,6 +1496,7 @@ huangyueying.hidden = true
 
 Fk:loadTranslationTable{
   ["olmou__dengai"] = "谋邓艾",
+  ["#olmou__dengai"] = "壮士解腕",
   ["olmou__huangyueying"] = "谋黄月英",
 }
 
