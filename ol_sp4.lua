@@ -484,8 +484,8 @@ local weimian = fk.CreateActiveSkill{
       if choice == "weimian1" then
         local slots = table.simpleClone(to.sealedSlots)
         table.removeOne(slots, Player.JudgeSlot)
-        local weimian_resume = room:askForChoice(player, slots, self.name, "#weimian-resume")
-        room:resumePlayerArea(player, {weimian_resume})
+        local weimian_resume = room:askForChoice(to, slots, self.name, "#weimian-resume")
+        room:resumePlayerArea(to, {weimian_resume})
       elseif choice == "recover" then
         room:recover{
           who = to,
