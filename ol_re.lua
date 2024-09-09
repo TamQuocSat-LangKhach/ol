@@ -1919,6 +1919,7 @@ local weikui = fk.CreateActiveSkill{
   card_num = 0,
   card_filter = Util.FalseFunc,
   target_num = 1,
+  prompt = "#weikui",
   target_filter = function(self, to_select, selected)
     return #selected == 0 and to_select ~= Self.id and not Fk:currentRoom():getPlayerById(to_select):isKongcheng()
   end,
@@ -1931,10 +1932,8 @@ local weikui = fk.CreateActiveSkill{
     room:loseHp(player, 1, self.name)
     if player.dead or target:isKongcheng() then return end
     if table.find(target:getCardIds("h"), function(id) return Fk:getCardById(id).trueName == "jink" end) then
-      U.viewCards(player, target:getCardIds("h"), self.name, "$ViewCardsFrom:"..target.id)
-      local mark = U.getMark(player, "weikui-turn")
-      table.insert(mark, target.id)
-      room:setPlayerMark(player, "weikui-turn", mark)
+      U.viewCards(player, target.player_cards[Player.Hand], self.name, "#ViewCardsFrom:"..target.id)
+      room:addTableMark(player, "weikui-turn", target.id)
       room:useVirtualCard("slash", nil, player, target, self.name, true)
     else
       local id = room:askForCardChosen(player, target, { card_data = { { "$Hand", target:getCardIds("h") } } }, self.name,
@@ -1945,10 +1944,8 @@ local weikui = fk.CreateActiveSkill{
 }
 local weikui_distance = fk.CreateDistanceSkill{
   name = "#weikui_distance",
-  correct_func = function() return 0 end,
   fixed_func = function(self, from, to)
-    local mark = U.getMark(from, "weikui-turn")
-    if table.contains(mark, to.id) then
+    if table.contains(from:getTableMark("weikui-turn"), to.id) then
       return 1
     end
   end,
@@ -1991,6 +1988,8 @@ Fk:loadTranslationTable{
   [":weikui"] = "出牌阶段限一次，你可以失去1点体力并选择一名有手牌的其他角色观看其手牌：若其手牌中有【闪】，则视为你对其使用一张不计入次数限制的【杀】，且本回合你计算与其的距离视为1；若其手牌中没有【闪】，你弃置其中一张牌。",
   ["lizhan"] = "励战",
   [":lizhan"] = "结束阶段，你可以令任意名已受伤的角色摸一张牌。",
+
+  ["#weikui"] = "伪溃：你可失去1点体力观看一名角色手牌，根据有无【闪】视为对其使用【杀】或弃置其牌",
   ["#weikui-throw"] = "伪溃：弃置 %src 一张牌",
   ["#lizhan-choose"] = "励战：你可以令任意名已受伤的角色摸一张牌",
   ["$weikui1"] = "骑兵列队，准备突围。",

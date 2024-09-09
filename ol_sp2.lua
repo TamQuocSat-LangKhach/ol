@@ -4999,6 +4999,7 @@ local kanpod = fk.CreateViewAsSkill{
   name = "kanpod",
   anim_type = "offensive",
   pattern = "slash",
+  prompt = "#kanpod-prompt",
   card_filter = function(self, to_select, selected)
     return #selected == 0 and Fk:currentRoom():getCardArea(to_select) ~= Player.Equip
   end,
@@ -5032,7 +5033,7 @@ local kanpod_prey = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     player:broadcastSkillInvoke("kanpod")
-    room:doIndicate(player.id, {data.to.id})
+    room:notifySkillInvoked(player, "kanpod", "offensive", {data.to.id})
     local cards = data.to.player_cards[Player.Hand]
     local hearts = table.filter(cards, function (id) return Fk:getCardById(id).suit == data.card.suit end)
     if #hearts == 0 then
@@ -5130,6 +5131,7 @@ Fk:loadTranslationTable{
   ["gengzhan"] = "更战",
   [":gengzhan"] = "其他角色出牌阶段限一次，当一张【杀】因弃置而置入弃牌堆后，你可以获得之。其他角色的结束阶段，若其本回合未使用过【杀】，"..
   "你下个出牌阶段使用【杀】的限制次数+1。",
+  ["#kanpod-prompt"] = "勘破：每回合限一次，你可以将一张手牌当【杀】使用",
   ["#kanpod_prey"] = "勘破",
   ["#kanpod-invoke"] = "勘破：你可以观看 %dest 的手牌并获得其中一张%arg牌",
   ["#kanpod-card"] = "勘破：选择一张牌获得",
