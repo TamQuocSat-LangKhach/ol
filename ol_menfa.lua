@@ -2046,6 +2046,9 @@ local guangu = fk.CreateActiveSkill{
       end
       local result = room:askForCustomDialog(player, self.name, "packages/ol/qml/Guangu.qml", data)
       ids = room:getNCards(tonumber(result) or 1)
+      for i = #ids, 1, -1 do
+        table.insert(room.draw_pile, 1, ids[i])
+      end
     else
       target = room:getPlayerById(effect.tos[1])
       ids = room:askForCardsChosen(player, target, 1, 4, "h", self.name)
