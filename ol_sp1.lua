@@ -3869,7 +3869,7 @@ local xiying_delay = fk.CreateTriggerSkill{
         end
         return in_play
       end
-      return #U.getActualDamageEvents(player.room, 1, PlayCheck) > 0
+      return #player.room.logic:getActualDamageEvents(1, PlayCheck) > 0
     end
   end,
   on_cost = Util.TrueFunc,

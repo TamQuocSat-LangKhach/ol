@@ -50,7 +50,7 @@ local shanzhuan = fk.CreateTriggerSkill{
         return data.to ~= player and not data.to.dead and not data.to:isNude() and
         not table.contains(data.to.sealedSlots, Player.JudgeSlot) and #data.to.player_cards[Player.Judge] == 0
       else
-        return player.phase == Player.Finish and #U.getActualDamageEvents(player.room, 1, function(e) return e.data[1].from == player end) == 0
+        return player.phase == Player.Finish and #player.room.logic:getActualDamageEvents(1, function(e) return e.data[1].from == player end) == 0
       end
     end
   end,
@@ -179,7 +179,7 @@ local mubing = fk.CreateTriggerSkill{
         if player:usedSkillTimes("diaoling", Player.HistoryGame) > 0 then
           get = table.filter(get, function(id) return table.contains(player:getCardIds("h"), id) end)
           if #get > 0 then
-            U.askForDistribution(player, get, nil, self.name, 0, 999, "#mubing-give")
+            room:askForYiji(player, get, nil, self.name, 0, 999, "#mubing-give")
           end
         end
       end
@@ -1409,7 +1409,7 @@ local sujian = fk.CreateTriggerSkill{
         end
       end
       if choice == "sujian_give" then
-        U.askForDistribution(player, ids, room:getOtherPlayers(player), self.name, #ids, #ids)
+        room:askForYiji(player, ids, room:getOtherPlayers(player), self.name, #ids, #ids)
       else
         room:throwCard(ids, self.name, player, player)
         if player.dead then return true end
@@ -2290,7 +2290,7 @@ local xianlue = fk.CreateTriggerSkill{
       if player.dead then return false end
       cards = table.filter(cards, function(id) return table.contains(player:getCardIds("h"), id) end)
       if #cards > 0 then
-        U.askForDistribution(player, cards, room.alive_players, self.name, 0, #cards, "#xianlue-give")
+        room:askForYiji(player, cards, room.alive_players, self.name, 0, #cards, "#xianlue-give")
         if player.dead then return false end
       end
     end
@@ -3166,14 +3166,14 @@ local zhangjiq = fk.CreateTriggerSkill{
   events = {fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
     if player:hasSkill(self) and target.phase == Player.Finish and not target.dead then
-      return #U.getActualDamageEvents(player.room, 1, function(e)
+      return #player.room.logic:getActualDamageEvents(1, function(e)
         return e.data[1].from == player or e.data[1].to == player
       end) > 0
     end
   end,
   on_cost = function(self, event, target, player, data)
     local list = {}
-    U.getActualDamageEvents(player.room, 1, function(e)
+    player.room.logic:getActualDamageEvents(1, function(e)
       if e.data[1].from == player then
         table.insertIfNeed(list, "draw")
       end
@@ -3269,7 +3269,7 @@ local luochong = fk.CreateTriggerSkill{
         local room = player.room
         local record_id = player:getMark("luochong_damage-turn")
         if record_id == 0 then
-          local _event = U.getActualDamageEvents(player.room, 1, function(e)
+          local _event = player.room.logic:getActualDamageEvents(1, function(e)
             if e.data[1].to == player then
               record_id = e.id
               room:setPlayerMark(player, "luochong_damage-turn", record_id)
@@ -3610,7 +3610,7 @@ local qiaoli_delay = fk.CreateTriggerSkill{
           return table.contains(player:getCardIds("h"), id)
         end)
         if not player.dead and #cards > 0 then
-          U.askForDistribution(player, cards, room.alive_players, self.name, 0, #cards)
+          room:askForYiji(player, cards, room.alive_players, self.name, 0, #cards)
         end
       end
     else
@@ -5325,7 +5325,7 @@ local zeyue = fk.CreateTriggerSkill{
     if #turn_e > 0 then end_id = turn_e[1].end_id end
     local optional = {}
     local n = #room.alive_players - 1
-    U.getActualDamageEvents(player.room, 1, function(e)
+    player.room.logic:getActualDamageEvents(1, function(e)
       local damage = e.data[1]
       if damage.from and not damage.from.dead and damage.from ~= player and damage.to == player
       and table.insertIfNeed(optional, damage.from.id) and #optional == n then

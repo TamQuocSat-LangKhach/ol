@@ -424,7 +424,7 @@ local caltrop_cart_skill = fk.CreateTriggerSkill{
   can_trigger = function(self, event, target, player, data)
     if player:usedSkillTimes("#grain_cart_skill", Player.HistoryTurn) > 0 or player:usedSkillTimes("#caltrop_cart_skill", Player.HistoryTurn) > 0 or player:usedSkillTimes("#wheel_cart_skill", Player.HistoryTurn) > 0 then return false end
     if player:hasSkill(self) and table.find(player:getEquipments(Card.SubtypeTreasure), function(cid) return Fk:getCardById(cid).name == "caltrop_cart" end) and target ~= player then
-      return #U.getActualDamageEvents(player.room, 1, function(e) return e.data[1].from == target end) == 0
+      return #player.room.logic:getActualDamageEvents(1, function(e) return e.data[1].from == target end) == 0
     end
   end,
   on_cost = function(self, event, target, player, data)

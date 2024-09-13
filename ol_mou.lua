@@ -398,12 +398,13 @@ local duoshou = fk.CreateTriggerSkill{
       if b then
         table.insert(mark, "sanshou_basic")
       end
-      U.getActualDamageEvents(room, 1, function (e)
+      room.logic:getActualDamageEvents(1, function (e)
         use = e.data[1]
         if use.from == player then
           c = false
           return true
         end
+        return false
       end, nil, turn_event.id)
       if c then
         table.insert(mark, "sanshou_damage")
@@ -934,7 +935,7 @@ local qiwu = fk.CreateTriggerSkill{
   can_trigger = function(self, event, target, player, data)
     return player == target and player:hasSkill(self) and player:usedSkillTimes(self.name) == 0 and not player:isNude() and
     data.from and (data.from == player or player:inMyAttackRange(data.from)) and player:getMark("qiangwu_record-turn") == 0 and
-    #U.getActualDamageEvents(player.room, 1, function(e)
+    #player.room.logic:getActualDamageEvents(1, function(e)
       if e.data[1].to == player then
         player.room:setPlayerMark(player, "qiangwu_record-turn", 1)
         return true
@@ -1333,7 +1334,7 @@ local jinming = fk.CreateTriggerSkill{
           end
         end, Player.HistoryTurn)
       elseif n == 2 then
-        U.getActualDamageEvents(player.room, 1, function(e)
+        player.room.logic:getActualDamageEvents(1, function(e)
           local damage = e.data[1]
           if damage.from == player then
             count = count + damage.damage

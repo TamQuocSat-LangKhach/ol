@@ -1235,7 +1235,7 @@ local ol_ex__ninge = fk.CreateTriggerSkill{
   frequency = Skill.Compulsory,
   can_trigger = function(self, event, target, player, data)
     if player:hasSkill(self) and (target == player or data.from == player) then
-      local events = U.getActualDamageEvents(player.room, 2, function(e) return e.data[1].to == target end)
+      local events = player.room.logic:getActualDamageEvents(2, function(e) return e.data[1].to == target end)
       return #events > 1 and events[2].data[1] == data
     end
   end,
@@ -1814,11 +1814,12 @@ local ol_ex__shuangxiong_trigger = fk.CreateTriggerSkill{
         if turn_event == nil then return false end
         local cards = {}
         local damage
-        U.getActualDamageEvents(room, 1, function(e)
+        room.logic:getActualDamageEvents(1, function(e)
           damage = e.data[1]
           if damage.to == player and damage.card then
             table.insertTableIfNeed(cards, Card:getIdList(damage.card))
           end
+          return false
         end, nil, turn_event.id)
         cards = table.filter(cards, function (id)
           return room:getCardArea(id) == Card.DiscardPile

@@ -466,13 +466,14 @@ local shangshen = fk.CreateTriggerSkill{
       if damage_event == nil then return false end
       local mark = player:getMark("shangshen_record-turn")
       if mark == 0 then
-        U.getActualDamageEvents(room, 1, function(e)
+        room.logic:getActualDamageEvents(1, function(e)
           local damage = e.data[1]
           if damage.damageType ~= fk.NormalDamage then
             mark = e.id
             room:setPlayerMark(player, "shangshen_record-turn", mark)
             return true
           end
+          return false
         end, Player.HistoryTurn)
       end
       return mark == damage_event.id
@@ -2943,14 +2944,11 @@ local jianjiw = fk.CreateTriggerSkill{
       if turn_event == nil then return false end
       local targets = {}
       local next_alive = target:getNextAlive()
-      if next_alive == nil  or next_alive == target then return false end
+      if next_alive == nil or next_alive == target then return false end
       table.insert(targets, next_alive.id)
-      for _, p in ipairs(room.alive_players) do
-        if p:getNextAlive() == target then
-          table.insert(targets, p.id)
-          break
-        end
-      end
+      next_alive = target:getLastAlive()
+      if next_alive == nil or next_alive == target then return false end
+      table.insertIfNeed(targets, next_alive.id)
       local jianjiw1, jianjiw2 = false, false
       local use
       U.getEventsByRule(room, GameEvent.UseCard, 1, function (e)

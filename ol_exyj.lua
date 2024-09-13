@@ -657,7 +657,7 @@ local miji = fk.CreateTriggerSkill{
     if player.dead or player:isNude() then return false end
     n = player:getLostHp()
     if n > 0 then
-      U.askForDistribution(player, player:getCardIds("he"), room:getOtherPlayers(player, false), self.name, 0, n)
+      room:askForYiji(player, player:getCardIds("he"), room:getOtherPlayers(player, false), self.name, 0, n)
     end
   end,
 }
@@ -1367,7 +1367,7 @@ local ol_ex__qieting = fk.CreateTriggerSkill{
       local room = player.room
       local turn_event = room.logic:getCurrentEvent():findParent(GameEvent.Turn, true)
       if turn_event == nil then return false end
-      return #U.getActualDamageEvents(room, 1, function (e)
+      return #player.room.logic:getActualDamageEvents(1, function (e)
         local damage = e.data[1]
         return damage.from == target and damage.to ~= target
       end, nil, turn_event.id) == 0 or #U.getEventsByRule(room, GameEvent.UseCard, 1, function (e)

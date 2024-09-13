@@ -978,12 +978,13 @@ local kangrui = fk.CreateTriggerSkill{
       if damage_event == nil then return false end
       local x = target:getMark("kangrui_record-turn")
       if x == 0 then
-        U.getActualDamageEvents(room, 1, function (e)
+        room.logic:getActualDamageEvents(1, function (e)
           if e.data[1].to == target then
             x = e.id
             room:setPlayerMark(target, "kangrui_record-turn", x)
             return true
           end
+          return false
         end)
       end
       return x == damage_event.id
@@ -4905,13 +4906,14 @@ local qingyuan = fk.CreateTriggerSkill{
         local room = player.room
         local mark = player:getMark("qingyuan_damage")
         if mark == 0 then
-          U.getActualDamageEvents(room, 1, function (e)
+          room.logic:getActualDamageEvents(1, function (e)
             local damage = e.data[1]
             if damage.to == player then
               mark = e.id
               room:setPlayerMark(player, "qingyuan_damage", mark)
               return true
             end
+            return false
           end, Player.HistoryGame)
         end
         return room.logic:getCurrentEvent().id == mark
@@ -5840,14 +5842,14 @@ local maozhuo = fk.CreateTriggerSkill{
     player:getMark("maozhuo_record-turn") == 0 and
     #table.filter(player.player_skills, function(skill) return skill:isPlayerSkill(player) end) >
       #table.filter(data.to.player_skills, function(skill) return skill:isPlayerSkill(data.to) end) and
-    #U.getActualDamageEvents(
-      player.room,
+    #player.room.logic:getActualDamageEvents(
       1,
       function(e)
         if e.data[1].from == player then
           player.room:setPlayerMark(player, "maozhuo_record-turn", 1)
           return true
         end
+        return false
       end,
       Player.HistoryPhase
     ) == 0

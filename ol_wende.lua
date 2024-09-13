@@ -1064,11 +1064,12 @@ local xijue = fk.CreateTriggerSkill{
           local turn_event = room.logic:getCurrentEvent():findParent(GameEvent.Turn, true)
           if turn_event == nil then return false end
           local n = 0
-          U.getActualDamageEvents(room, 1, function(e)
+          room.logic:getActualDamageEvents(1, function(e)
             local damage = e.data[1]
             if damage.from == player then
               n = n + damage.damage
             end
+            return false
           end, nil, turn_event.id)
           if n > 0 then
             self.cost_data = n
