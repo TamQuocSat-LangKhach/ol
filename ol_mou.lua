@@ -324,7 +324,7 @@ local weilingy_filter = fk.CreateFilterSkill{
   name = "#weilingy_filter",
   card_filter = function(self, to_select, player)
     if not table.contains(player.player_cards[Player.Hand], to_select.id) then return false end
-    local mark = U.getMark(player, "@weilingy-turn")
+    local mark = player:getTableMark("@weilingy-turn")
     return table.contains(mark, to_select:getColorString())
   end,
   view_as = function(self, to_select)
@@ -338,10 +338,10 @@ local duoshou = fk.CreateTriggerSkill{
   frequency = Skill.Compulsory,
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(self) and
-    table.contains(U.getMark(player, "@duoshou-turn"), "sanshou_damage")
+    table.contains(player:getTableMark("@duoshou-turn"), "sanshou_damage")
   end,
   on_use = function(self, event, target, player, data)
-    local mark = U.getMark(player, "@duoshou-turn")
+    local mark = player:getTableMark("@duoshou-turn")
     table.removeOne(mark, "sanshou_damage")
     player.room:setPlayerMark(player, "@duoshou-turn", #mark > 0 and mark or 0)
     player:drawCards(1, self.name)
@@ -358,7 +358,7 @@ local duoshou = fk.CreateTriggerSkill{
   on_refresh = function (self, event, target, player, data)
     local room = player.room
     if event == fk.PreCardUse then
-      local mark = U.getMark(player, "@duoshou-turn")
+      local mark = player:getTableMark("@duoshou-turn")
       local update = false
       if data.card.color == Card.Red and table.removeOne(mark, "sanshou_red") then
         update = true
@@ -419,7 +419,7 @@ local duoshou_targetmod = fk.CreateTargetModSkill{
   name = "#duoshou_targetmod",
   bypass_distances =  function(self, player, skill, card, to)
     return player:hasSkill(duoshou) and card and card.color == Card.Red and
-    table.contains(U.getMark(player, "@duoshou-turn"), "sanshou_red")
+    table.contains(player:getTableMark("@duoshou-turn"), "sanshou_red")
   end,
 }
 
@@ -1239,7 +1239,7 @@ local yipo = fk.CreateTriggerSkill{
     return target == player and player:hasSkill(self, true) and player.hp > 0
   end,
   on_refresh = function(self, event, target, player, data)
-    local mark = U.getMark(player, self.name)
+    local mark = player:getTableMark(self.name)
     if not table.contains(mark, player.hp) then
       data.extra_data = data.extra_data or {}
       data.extra_data.yipo = true

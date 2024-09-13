@@ -1318,14 +1318,11 @@ local ol__fenxun = fk.CreateActiveSkill{
   end,
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
-    local mark = U.getMark(player, "ol__fenxun-turn")
-    table.insert(mark, effect.tos[1])
-    room:setPlayerMark(player, "ol__fenxun-turn", mark)
+    room:addTableMark(player, "ol__fenxun-turn", effect.tos[1])
   end,
 }
 local ol__fenxun_distance = fk.CreateDistanceSkill{
   name = "#ol__fenxun_distance",
-  correct_func = function(self, from, to) return 0 end,
   fixed_func = function(self, from, to)
     local mark = U.getMark(from, "ol__fenxun-turn")
     if table.contains(mark, to.id) then
@@ -1340,7 +1337,7 @@ local ol__fenxun_delay = fk.CreateTriggerSkill{
   events = {fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
     if target == player and player.phase == Player.Finish then
-      local mark = U.getMark(player, "ol__fenxun-turn")
+      local mark = player:getTableMark("ol__fenxun-turn")
       if #mark == 0 then return false end
       player.room.logic:getEventsOfScope(GameEvent.Damage, 1, function(e)
         local damage = e.data[1]
@@ -1762,7 +1759,7 @@ local ol__yingbing = fk.CreateTriggerSkill{
     player:drawCards(1, self.name)
     if player.dead then return end
     local zhou = target:getPile("ol__zhangbao_zhou")[1]
-    local record = U.getMark(player, self.name)
+    local record = player:getTableMark(self.name)
     local n = (record[tostring(zhou)] or 0) + 1
     if n == 2 then
       n = 0
@@ -2092,7 +2089,7 @@ local ol__jingce = fk.CreateTriggerSkill{
     if player ~= player.room.current then return false end
     if event == fk.CardUsing then
       return player:hasSkill(self, true) and data.card.suit ~= Card.NoSuit
-      and not table.contains(U.getMark(player, "@ol__jingce-turn"), data.card:getSuitString(true))
+      and not table.contains(player:getTableMark("@ol__jingce-turn"), data.card:getSuitString(true))
     else
       return data == self and target == player and player.room:getTag("RoundCount")
     end
@@ -2100,7 +2097,7 @@ local ol__jingce = fk.CreateTriggerSkill{
   on_refresh = function (self, event, target, player, data)
     local room = player.room
     if event == fk.CardUsing then
-      local mark = U.getMark(player, "@ol__jingce-turn")
+      local mark = player:getTableMark("@ol__jingce-turn")
       table.insert(mark, data.card:getSuitString(true))
       room:setPlayerMark(player, "@ol__jingce-turn", mark)
     else
@@ -2120,7 +2117,7 @@ local ol__jingce_maxcards = fk.CreateMaxCardsSkill{
   name = "#ol__jingce_maxcards",
   correct_func = function(self, player)
     if player:hasSkill(ol__jingce) then
-      return #U.getMark(player, "@ol__jingce-turn")
+      return #player:getTableMark("@ol__jingce-turn")
     end
   end,
 }

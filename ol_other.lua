@@ -2304,9 +2304,9 @@ local huyi = fk.CreateTriggerSkill {
       else
         if target == player then
           if event == fk.TurnEnd then
-            return #U.getMark(player, self.name) > 0
+            return #player:getTableMark(self.name) > 0
           else
-            return data.card.type == Card.TypeBasic and #U.getMark(player, self.name) < 5 and
+            return data.card.type == Card.TypeBasic and #player:getTableMark(self.name) < 5 and
               table.find(GetWuhuSkills(player), function(s)
                 return string.find(Fk:getDescription(s, "zh_CN"), "【"..Fk:translate(data.card.trueName, "zh_CN").."】")
               end)
@@ -2317,7 +2317,7 @@ local huyi = fk.CreateTriggerSkill {
   end,
   on_cost = function(self, event, target, player, data)
     if event == fk.TurnEnd then
-      local skills = U.getMark(player, self.name)
+      local skills = player:getTableMark(self.name)
       local generals = table.map(skills, function(s) return player.room:getBanner("huyi_wuhushangjiang")[2][s] end)
       local result = player.room:askForCustomDialog(player, self.name,
       "packages/utility/qml/ChooseSkillBox.qml", {
@@ -2335,7 +2335,7 @@ local huyi = fk.CreateTriggerSkill {
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local mark = U.getMark(player, self.name)
+    local mark = player:getTableMark(self.name)
     if event == fk.TurnEnd then
       table.removeOne(mark, self.cost_data)
       room:setPlayerMark(player, self.name, mark)

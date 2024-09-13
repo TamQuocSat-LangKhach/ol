@@ -36,9 +36,9 @@ local yingshis = fk.CreateActiveSkill{
   frequency = Skill.Compulsory,  --锁定主动技（
   card_num = 999,
   target_num = 0,
-  expand_pile = function() return U.getMark(Self, "yingshis") end,
+  expand_pile = function() return Self:getTableMark("yingshis") end,
   card_filter = function (self, to_select)
-    return table.contains(U.getMark(Self, "yingshis"), to_select)
+    return table.contains(Self:getTableMark("yingshis"), to_select)
   end,
   can_use = Util.TrueFunc,
 }
@@ -617,10 +617,10 @@ local chexuan_select = fk.CreateActiveSkill{
   card_num = 1,
   target_num = 0,
   expand_pile = function (self)
-    return U.getMark(Self, "chexuan_cards")
+    return Self:getTableMark("chexuan_cards")
   end,
   card_filter = function(self, to_select, selected)
-    return #selected == 0 and table.contains(U.getMark(Self, "chexuan_cards"), to_select)
+    return #selected == 0 and table.contains(Self:getTableMark("chexuan_cards"), to_select)
   end,
 }
 Fk:addSkill(chexuan_select)
@@ -2102,7 +2102,7 @@ local qimei_delay = fk.CreateTriggerSkill{
       if #tos == 0 then
         tos = {player.id, mark_id}
       end
-      local mark =  U.getMark(player, "qimei_used-turn")
+      local mark =  player:getTableMark("qimei_used-turn")
       tos = table.filter(tos, function (id)
         return not table.contains(mark, id)
       end)
@@ -2111,7 +2111,7 @@ local qimei_delay = fk.CreateTriggerSkill{
       return true
     elseif event == fk.HpChanged then
       if player.hp ~= to.hp then return false end
-      local mark =  U.getMark(player, "qimei_used-turn")
+      local mark =  player:getTableMark("qimei_used-turn")
       if target == player then
         if not table.contains(mark, mark_id) then
           self.cost_data = {mark_id}
@@ -2132,7 +2132,7 @@ local qimei_delay = fk.CreateTriggerSkill{
     room:sortPlayersByAction(tos)
     room:doIndicate(player.id, tos)
     player:broadcastSkillInvoke(qimei.name)
-    local mark = U.getMark(player, "qimei_used-turn")
+    local mark = player:getTableMark("qimei_used-turn")
     table.insertTable(mark, tos)
     room:setPlayerMark(player, "qimei_used-turn", mark)
     for _, pid in ipairs(tos) do
@@ -2952,7 +2952,7 @@ local bingxin = fk.CreateViewAsSkill{
   pattern = ".|.|.|.|.|basic|.",
   interaction = function()
     local all_names = U.getAllCardNames("b")
-    local names = U.getViewAsCardNames(Self, "bingxin", all_names, {}, U.getMark(Self, "bingxin-turn"))
+    local names = U.getViewAsCardNames(Self, "bingxin", all_names, {}, Self:getTableMark("bingxin-turn"))
     if #names > 0 then
       return UI.ComboBox { choices = names, all_choices = all_names }
     end
@@ -3332,7 +3332,7 @@ local cihuang = fk.CreateTriggerSkill{
   on_cost = function(self, event, target, player, data)
     local room = player.room
     local names = {}
-    local mark = U.getMark(player, "cihuang-round")
+    local mark = player:getTableMark("cihuang-round")
     for _, id in ipairs(Fk:getAllCardIds()) do
       local card = Fk:getCardById(id)
       if not table.contains(mark, card.name) and card.skill:getMinTargetNum() < 2 then
@@ -3380,7 +3380,7 @@ local cihuang = fk.CreateTriggerSkill{
   on_refresh = function(self, event, target, player, data)
     local room = player.room
     if event == fk.AfterCardUseDeclared then
-      local mark = U.getMark(player, "cihuang-round")
+      local mark = player:getTableMark("cihuang-round")
       table.insertIfNeed(mark, data.card.name)
       room:setPlayerMark(player, "cihuang-round", mark)
     else

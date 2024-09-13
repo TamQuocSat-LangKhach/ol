@@ -155,7 +155,7 @@ local kouchao = fk.CreateViewAsSkill{
   prompt = "#kouchao-viewas",
   pattern = ".",
   interaction = function()
-    local all_names = U.getMark(Self, "@$kouchao")
+    local all_names = Self:getTableMark("@$kouchao")
     local names = {}
     for i = 1, 3, 1 do
       local card_name = all_names[i]
@@ -200,7 +200,7 @@ local kouchao = fk.CreateViewAsSkill{
       end
     end, 0)
     if name ~= "" then
-      local mark = U.getMark(player, "@$kouchao")
+      local mark = player:getTableMark("@$kouchao")
       mark[tonumber(string.split(self.interaction.data, ":")[4])] = name
       if table.every(mark, function(str)
         return Fk:cloneCard(str).type == Card.TypeBasic
@@ -212,7 +212,7 @@ local kouchao = fk.CreateViewAsSkill{
   end,
   enabled_at_response = function(self, player, resp)
     if not resp and not player:isNude() and Fk.currentResponsePattern then
-      local mark = U.getMark(Self, "@$kouchao")
+      local mark = Self:getTableMark("@$kouchao")
       for i = 1, 3, 1 do
         if player:getMark("kouchao"..i.."-round") == 0 then
           if Exppattern:Parse(Fk.currentResponsePattern):match(Fk:cloneCard(mark[i])) then
@@ -634,7 +634,7 @@ local jieyan = fk.CreateTriggerSkill{
         }
       end
       if not player.dead and not to.dead then
-        local mark = U.getMark(player, self.name)
+        local mark = player:getTableMark(self.name)
         table.insertIfNeed(mark, to.id)
         room:setPlayerMark(player, self.name, mark)
       end
@@ -661,7 +661,7 @@ local jieyan_delay = fk.CreateTriggerSkill{
       if target == player then
         return player:getMark("@@jieyan2") > 0
       else
-        return table.contains(U.getMark(player, "jieyan"), target.id)
+        return table.contains(player:getTableMark("jieyan"), target.id)
       end
     end
   end,
@@ -675,9 +675,7 @@ local jieyan_delay = fk.CreateTriggerSkill{
       if target == player then
         room:setPlayerMark(player, "@@jieyan2", 0)
       else
-        local mark = U.getMark(player, "jieyan")
-        table.removeOne(mark, target.id)
-        room:setPlayerMark(player, "jieyan", mark)
+        room:removeTableMark(player, "jieyan", target.id)
         local cards = {}
         local phase_event = room.logic:getCurrentEvent():findParent(GameEvent.Phase, true)
         if phase_event ~= nil then
@@ -866,7 +864,7 @@ local leiluan = fk.CreateViewAsSkill{
   end,
   interaction = function()
     local names = {}
-    local mark = U.getMark(Self, "leiluan-round")
+    local mark = Self:getTableMark("leiluan-round")
     for _, id in ipairs(Fk:getAllCardIds()) do
       local card = Fk:getCardById(id)
       if ((Fk.currentResponsePattern == nil and Self:canUse(card)) or
@@ -963,7 +961,7 @@ local leiluan_trigger = fk.CreateTriggerSkill{
   on_refresh = function(self, event, target, player, data)
     local room = player.room
     if event == fk.AfterCardUseDeclared then
-      local mark = U.getMark(player, "leiluan-round")
+      local mark = player:getTableMark("leiluan-round")
       table.insert(mark, data.card.trueName)
       room:setPlayerMark(player, "leiluan-round", mark)
     elseif event == fk.EventAcquireSkill then

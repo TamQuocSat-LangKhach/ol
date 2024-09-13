@@ -720,7 +720,7 @@ local dianzhan = fk.CreateTriggerSkill{
   end,
   on_refresh = function(self, event, target, player, data)
     if event == fk.AfterCardUseDeclared then
-      local suitRecorded = U.getMark(player, "@dianzhan_suit-round")
+      local suitRecorded = player:getTableMark("@dianzhan_suit-round")
       if table.insertIfNeed(suitRecorded, data.card:getSuitString(true)) then
         player.room:setPlayerMark(player, "@dianzhan_suit-round", suitRecorded)
       end
@@ -1224,7 +1224,7 @@ local lianhe = fk.CreateTriggerSkill{
     if event == fk.AfterCardsMove then
       return player:getMark("@lianhe-phase") ~= 0
     elseif event == fk.EventPhaseStart then
-      return player == target and #U.getMark(player, "@@lianhe") > 0
+      return player == target and #player:getTableMark("@@lianhe") > 0
     end
   end,
   on_refresh = function(self, event, target, player, data)
@@ -1249,7 +1249,7 @@ local lianhe = fk.CreateTriggerSkill{
         room:setPlayerMark(player, "@lianhe-phase", math.min(3, x))
       end
     elseif event == fk.EventPhaseStart then
-      local mark = U.getMark(player, "@@lianhe")
+      local mark = player:getTableMark("@@lianhe")
       room:setPlayerMark(player, "lianhe_targets-phase", mark)
       room:setPlayerMark(player, "@lianhe-phase", "0")
       room:setPlayerMark(player, "@@lianhe", 0)
@@ -2741,7 +2741,7 @@ local baichu = fk.CreateTriggerSkill{
   events = {fk.CardUseFinished},
   can_trigger = function(self, event, target, player, data)
     if player == target and player:hasSkill(self) then
-      local mark = U.getMark(player, "@[baichu]")
+      local mark = player:getTableMark("@[baichu]")
       if type(mark) == "table" and mark[data.card.trueName] then return true end
       if data.card.suit == Card.NoSuit then return false end
       local suit = data.card:getSuitString()
@@ -2910,13 +2910,13 @@ local lilun = fk.CreateActiveSkill{
   card_filter = function(self, to_select, selected)
     if #selected > 1 then return false end
     local card_name = Fk:getCardById(to_select).trueName
-    return not table.contains(U.getMark(Self, "lilun-turn"), card_name) and
+    return not table.contains(Self:getTableMark("lilun-turn"), card_name) and
     (#selected == 0 or card_name == Fk:getCardById(selected[1]).trueName)
   end,
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
     local cards = table.simpleClone(effect.cards)
-    local mark = U.getMark(player, "lilun-turn")
+    local mark = player:getTableMark("lilun-turn")
     table.insert(mark, Fk:getCardById(cards[1]).trueName)
     room:setPlayerMark(player, "lilun-turn", mark)
     room:recastCard(cards, player, self.name)
@@ -3111,7 +3111,7 @@ local tanque = fk.CreateTriggerSkill{
   end,
 }
 local function getShengmoCards(player)
-  local cards = U.getMark(player, "shengmo_cards-turn")
+  local cards = player:getTableMark("shengmo_cards-turn")
   if #cards < 3 then return {} end
   local cardmap = {}
   for _ = 1, 13, 1 do
@@ -3142,7 +3142,7 @@ local shengmo = fk.CreateViewAsSkill{
     return getShengmoCards(Self)
   end,
   interaction = function()
-    local mark = U.getMark(Self, "shengmo_used")
+    local mark = Self:getTableMark("shengmo_used")
     local all_names = U.getAllCardNames("b")
     local names = table.filter(U.getViewAsCardNames(Self, "shengmo", all_names), function (name)
       return not table.contains(mark, Fk:cloneCard(name).trueName)
@@ -3152,7 +3152,7 @@ local shengmo = fk.CreateViewAsSkill{
     end
   end,
   card_filter = function(self, to_select, selected)
-    return #selected == 0 and table.contains(U.getMark(Self, "shengmo_cards-turn"), to_select)
+    return #selected == 0 and table.contains(Self:getTableMark("shengmo_cards-turn"), to_select)
   end,
   view_as = function(self, cards)
     if #cards ~= 1 or not self.interaction.data then return end
@@ -3163,10 +3163,10 @@ local shengmo = fk.CreateViewAsSkill{
   end,
   before_use = function(self, player, use)
     local room = player.room
-    local mark = U.getMark(player, "shengmo_used")
+    local mark = player:getTableMark("shengmo_used")
     table.insert(mark, use.card.trueName)
     room:setPlayerMark(player, "shengmo_used", mark)
-    mark = U.getMark(player, "@$shengmo")
+    mark = player:getTableMark("@$shengmo")
     table.removeOne(mark, use.card.trueName)
     room:setPlayerMark(player, "@$shengmo", mark)
     local card_id = use.card:getMark("shengmo_subcards")
@@ -3174,7 +3174,7 @@ local shengmo = fk.CreateViewAsSkill{
   end,
   enabled_at_play = function(self, player)
     if #getShengmoCards(player) > 0 then
-      local mark = U.getMark(player, "shengmo_used")
+      local mark = player:getTableMark("shengmo_used")
       return #table.filter(U.getViewAsCardNames(player, "shengmo", U.getAllCardNames("b")), function (name)
         return not table.contains(mark, Fk:cloneCard(name).trueName)
       end) > 0
@@ -3182,7 +3182,7 @@ local shengmo = fk.CreateViewAsSkill{
   end,
   enabled_at_response = function(self, player, response)
     if not response and #getShengmoCards(player) > 0 then
-      local mark = U.getMark(player, "shengmo_used")
+      local mark = player:getTableMark("shengmo_used")
       return #table.filter(U.getViewAsCardNames(player, "shengmo", U.getAllCardNames("b")), function (name)
         return not table.contains(mark, Fk:cloneCard(name).trueName)
       end) > 0
@@ -3199,7 +3199,7 @@ local shengmo_refresh = fk.CreateTriggerSkill{
   on_refresh = function(self, event, target, player, data)
     local room = player.room
     if event == fk.AfterCardsMove then
-      local ids = U.getMark(player, "shengmo_cards-turn")
+      local ids = player:getTableMark("shengmo_cards-turn")
       for _, move in ipairs(data) do
         if move.toArea == Card.DiscardPile then
           for _, info in ipairs(move.moveInfo) do
@@ -3274,7 +3274,7 @@ local chengqi = fk.CreateViewAsSkill{
   prompt = "#chengqi-viewas",
   pattern = ".",
   interaction = function()
-    local mark = U.getMark(Self, "chengqi-turn")
+    local mark = Self:getTableMark("chengqi-turn")
     local all_names = U.getAllCardNames("bt")
     local names = table.filter(U.getViewAsCardNames(Self, "chengqi", all_names), function (name)
       local card = Fk:cloneCard(name)
@@ -3314,7 +3314,7 @@ local chengqi = fk.CreateViewAsSkill{
   end,
   enabled_at_response = function(self, player, response)
     if response or player:getHandcardNum() < 2 then return false end
-    local mark = U.getMark(player, "chengqi-turn")
+    local mark = player:getTableMark("chengqi-turn")
     return #table.filter(U.getViewAsCardNames(player, self.name, U.getAllCardNames("bt")), function (name)
       return not table.contains(mark, Fk:cloneCard(name).trueName)
     end) > 0
@@ -3348,7 +3348,7 @@ local chengqi_trigger = fk.CreateTriggerSkill{
   on_refresh = function(self, event, target, player, data)
     local room = player.room
     if event == fk.AfterCardUseDeclared then
-      local mark = U.getMark(player, "chengqi-turn")
+      local mark = player:getTableMark("chengqi-turn")
       table.insertIfNeed(mark, data.card.trueName)
       room:setPlayerMark(player, "chengqi-turn", mark)
     else

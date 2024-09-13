@@ -444,13 +444,13 @@ local chenglie_active = fk.CreateActiveSkill{
   card_num = 1,
   target_num = 1,
   expand_pile = function (self)
-    return U.getMark(Self, "chenglie_cards")
+    return Self:getTableMark("chenglie_cards")
   end,
   card_filter = function(self, to_select, selected, targets)
-    return #selected == 0 and table.contains(U.getMark(Self, "chenglie_cards"), to_select)
+    return #selected == 0 and table.contains(Self:getTableMark("chenglie_cards"), to_select)
   end,
   target_filter = function(self, to_select, selected, selected_cards)
-    return #selected == 0 and table.contains(U.getMark(Self, "chenglie_targets"), to_select)
+    return #selected == 0 and table.contains(Self:getTableMark("chenglie_targets"), to_select)
   end,
 }
 local chenglie_delay = fk.CreateTriggerSkill{
@@ -552,7 +552,7 @@ local qiejian = fk.CreateTriggerSkill{
   events = {fk.AfterCardsMove},
   can_trigger = function(self, event, target, player, data)
     if player:hasSkill(self) then
-      local targets, targetRecorded = {}, U.getMark(player, "qiejian_prohibit-round")
+      local targets, targetRecorded = {}, player:getTableMark("qiejian_prohibit-round")
       for _, move in ipairs(data) do
         if move.from and not table.contains(targetRecorded, move.from) then
           local to = player.room:getPlayerById(move.from)
@@ -574,7 +574,7 @@ local qiejian = fk.CreateTriggerSkill{
     room:sortPlayersByAction(targets)
     for _, target_id in ipairs(targets) do
       if not player:hasSkill(self) then break end
-      if not table.contains(U.getMark(player, "qiejian_prohibit-round"), target_id) then
+      if not table.contains(player:getTableMark("qiejian_prohibit-round"), target_id) then
         local skill_target = room:getPlayerById(target_id)
         if skill_target and not skill_target.dead then
           self:doCost(event, skill_target, player, data)
@@ -608,7 +608,7 @@ local qiejian = fk.CreateTriggerSkill{
       local id = room:askForCardChosen(player, to, 'ej', self.name)
       room:throwCard({id}, self.name, to, player)
     else
-      local targetRecorded = U.getMark(player, "qiejian_prohibit-round")
+      local targetRecorded = player:getTableMark("qiejian_prohibit-round")
       table.insertIfNeed(targetRecorded, target.id)
       room:setPlayerMark(player, "qiejian_prohibit-round", targetRecorded)
     end
@@ -830,7 +830,7 @@ local chuanwu = fk.CreateTriggerSkill{
     local n = math.min(player:getAttackRange(), #skills)
     if n == 0 then return false end
     skills = table.slice(skills, 1, n + 1)
-    local mark = U.getMark(player, "chuanwu")
+    local mark = player:getTableMark("chuanwu")
     table.insertTable(mark, skills)
     player.room:setPlayerMark(player, "chuanwu", mark)
     player.room:handleAddLoseSkills(player, "-"..table.concat(skills, "|-"), nil, true, false)
@@ -849,7 +849,7 @@ local chuanwu_delay = fk.CreateTriggerSkill{
     local room = player.room
     player:broadcastSkillInvoke("chuanwu")
     room:notifySkillInvoked(player, "chuanwu")
-    local skills = U.getMark(player, "chuanwu")
+    local skills = player:getTableMark("chuanwu")
     room:setPlayerMark(player, "chuanwu", 0)
     room:handleAddLoseSkills(player, table.concat(skills, "|"), nil, true, false)
   end,
@@ -1347,7 +1347,7 @@ local daili = fk.CreateTriggerSkill{
   end,
   on_refresh = function(self, event, target, player, data)
     local room = player.room
-    local mark = U.getMark(player, "@$daili")
+    local mark = player:getTableMark("@$daili")
     if event == fk.CardShown then
       for _, id in ipairs(data.cardIds) do
         if Fk:getCardById(id):getMark("@@daili") == 0 and table.contains(player:getCardIds("h"), id) then
@@ -2515,7 +2515,7 @@ local xieju = fk.CreateActiveSkill{
       local target = room:getPlayerById(id)
       if not target.dead and not target:isNude() then
         local success, dat = room:askForUseViewAsSkill(target, "xieju_viewas", "#xieju-slash", true, {bypass_times = true})
-        if success then
+        if dat then
           local card = Fk.skills["xieju_viewas"]:viewAs(dat.cards)
           room:useCard{
             from = target.id,
@@ -2581,7 +2581,6 @@ Fk:loadTranslationTable{
   ["#xieju"] = "偕举：选择任意名角色，这些角色可以将一张黑色牌当【杀】使用",
   ["#xieju-slash"] = "偕举：你可以将一张黑色牌当【杀】使用",
   ["xieju_viewas"] = "偕举",
-  ["#AddTargetsBySkill"] = "用于 %arg 的效果，%from 使用的 %arg2 增加了目标 %to",
 
   ["$guangao1"] = "策马觅封侯，长驱万里之数。",
   ["$guangao2"] = "大丈夫行事，焉能畏首畏尾。",
@@ -2636,13 +2635,13 @@ local saogu = fk.CreateActiveSkill{
   end,
   can_use = function(self)
     return Self:getSwitchSkillState(self.name, false) == fk.SwitchYin or
-    #U.getMark(Self, "@[suits]saogu-phase") < 4
+    #Self:getTableMark("@[suits]saogu-phase") < 4
   end,
   card_filter = function(self, to_select, selected)
     if Self:getSwitchSkillState(self.name, false) == fk.SwitchYang and #selected < 2 then
       local card = Fk:getCardById(to_select)
       return card.suit ~= Card.NoSuit and
-      not (table.contains(U.getMark(Self, "@[suits]saogu-phase"), card.suit) or Self:prohibitDiscard(card))
+      not (table.contains(Self:getTableMark("@[suits]saogu-phase"), card.suit) or Self:prohibitDiscard(card))
     end
   end,
   on_use = function(self, room, effect)
@@ -2686,7 +2685,7 @@ local saogu_trigger = fk.CreateTriggerSkill{
     if not to.dead then
       if self.cost_data[3] == "yang" then
         local suits = {"spade", "heart", "club", "diamond"}
-        for _, suit in ipairs(U.getMark(player, "@[suits]saogu-phase")) do
+        for _, suit in ipairs(player:getTableMark("@[suits]saogu-phase")) do
           table.removeOne(suits, U.ConvertSuit(suit, "int", "str"))
         end
         local cards = room:askForDiscard(to, 2, 2, true, "saogu", false,
@@ -2710,7 +2709,7 @@ local saogu_trigger = fk.CreateTriggerSkill{
   on_refresh = function(self, event, target, player, data)
     local room = player.room
     if event == fk.AfterCardsMove then
-      local mark = U.getMark(player, "@[suits]saogu-phase")
+      local mark = player:getTableMark("@[suits]saogu-phase")
       local suit = Card.NoSuit
       local updata_mark = false
       for _, move in ipairs(data) do
@@ -2809,7 +2808,7 @@ local function updateGangshu(player, reset)
     else
       x3 = tostring(card.skill:getMaxUseTime(player, Player.HistoryPhase, card, nil))
     end
-    local mark = U.getMark(player, "@gangshu")
+    local mark = player:getTableMark("@gangshu")
     if #mark ~= 3 or mark[1] ~= x1 or mark[2] ~= x2 or mark[3] ~= x3 then
       room:setPlayerMark(player, "@gangshu", { x1, x2, x3 })
     end
@@ -2960,13 +2959,13 @@ local xiaofan = fk.CreateViewAsSkill{
   pattern = ".",
   anim_type = "special",
   expand_pile = function (self)
-    return table.slice(U.getMark(Self, "xiaofan_view"), 1, #U.getMark(Self, "xiaofan_types-turn") + 2)
+    return table.slice(Self:getTableMark("xiaofan_view"), 1, #Self:getTableMark("xiaofan_types-turn") + 2)
   end,
   prompt = function()
-    return "#xiaofan:::"..(#U.getMark(Self, "xiaofan_types-turn") + 1)
+    return "#xiaofan:::"..(#Self:getTableMark("xiaofan_types-turn") + 1)
   end,
   card_filter = function(self, to_select, selected)
-    if #selected == 0 and table.contains(U.getMark(Self, "xiaofan_view"), to_select) then
+    if #selected == 0 and table.contains(Self:getTableMark("xiaofan_view"), to_select) then
       local card = Fk:getCardById(to_select)
       if Fk.currentResponsePattern == nil then
         return Self:canUse(card) and not Self:prohibitUse(card)
@@ -2980,7 +2979,7 @@ local xiaofan = fk.CreateViewAsSkill{
     return Fk:getCardById(cards[1])
   end,
   after_use = function (self, player, useData)
-    local x = #U.getMark(player, "xiaofan_types-turn")
+    local x = #player:getTableMark("xiaofan_types-turn")
     local areas = {"j", "e", "h"}
     local to_throw = ""
     for i = 1, x, 1 do
@@ -2989,10 +2988,10 @@ local xiaofan = fk.CreateViewAsSkill{
     player:throwAllCards(to_throw)
   end,
   enabled_at_play = function(self, player)
-    return #U.getMark(player, "xiaofan_view") > 0 and player:getMark("@tuoshi-turn") < 3
+    return #player:getTableMark("xiaofan_view") > 0 and player:getMark("@tuoshi-turn") < 3
   end,
   enabled_at_response = function(self, player, response)
-    return not response and #U.getMark(player, "xiaofan_view") > 0 and player:getMark("@tuoshi-turn") < 3
+    return not response and #player:getTableMark("xiaofan_view") > 0 and player:getMark("@tuoshi-turn") < 3
   end,
 }
 local xiaofan_trigger = fk.CreateTriggerSkill{
@@ -3010,7 +3009,7 @@ local xiaofan_trigger = fk.CreateTriggerSkill{
   on_refresh = function(self, event, target, player, data)
     local room = player.room
     if event == fk.AfterCardsMove or event == fk.AfterDrawPileShuffle then
-      local mark = U.getMark(player, "xiaofan_view")
+      local mark = player:getTableMark("xiaofan_view")
       local draw_pile = room.draw_pile
       local new_mark = {}
       for i = 0, 3, 1 do
@@ -3027,7 +3026,7 @@ local xiaofan_trigger = fk.CreateTriggerSkill{
         end
       end
     elseif event == fk.PreCardUse then
-      local mark = U.getMark(player, "xiaofan_types-turn")
+      local mark = player:getTableMark("xiaofan_types-turn")
       local type_name = data.card:getTypeString()
       if not table.contains(mark, type_name) then
         table.insert(mark, type_name)
@@ -3042,7 +3041,7 @@ local xiaofan_trigger = fk.CreateTriggerSkill{
       end
       room:setPlayerMark(player, "xiaofan_view", mark)
 
-      local mark = U.getMark(player, "xiaofan_types-turn")
+      local mark = player:getTableMark("xiaofan_types-turn")
       local current_event = room.logic:getCurrentEvent()
       if current_event == nil then return false end
       local start_event = current_event:findParent(GameEvent.Turn, true)
@@ -3810,7 +3809,7 @@ local langdao = fk.CreateTriggerSkill{
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(self) and data.card.trueName == "slash"
     and data.tos and #AimGroup:getAllTargets(data.tos) == 1
-    and #U.getMark(player, "langdao_removed") < 3
+    and #player:getTableMark("langdao_removed") < 3
   end,
   on_cost = function(self, event, target, player, data)
     return player.room:askForSkillInvoke(player, self.name, nil, "#langdao-invoke:"..data.to)
@@ -3818,7 +3817,7 @@ local langdao = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     local choices = {}
-    local mark = U.getMark(player, "langdao_removed")
+    local mark = player:getTableMark("langdao_removed")
     for _, n in ipairs({"AddDamage1","AddTarget1","disresponsive"}) do
       if not table.contains(mark, n) then
         table.insert(choices, n)
@@ -3879,7 +3878,7 @@ local langdao = fk.CreateTriggerSkill{
   end,
   on_refresh = function (self, event, target, player, data)
     local room = player.room
-    local mark = U.getMark(player, "langdao_removed")
+    local mark = player:getTableMark("langdao_removed")
     for _, c in ipairs(data.extra_data.langdao) do
       table.insertIfNeed(mark, c)
     end
@@ -4433,7 +4432,7 @@ local gongjie = fk.CreateTriggerSkill{
     local targets = table.simpleClone(self.cost_data.tos)
     local to = nil
     local suits = {}
-    local mark = U.getMark(player, "gongjie_targets")
+    local mark = player:getTableMark("gongjie_targets")
     table.insertTableIfNeed(mark, targets)
     room:setPlayerMark(player, "gongjie_targets", mark)
     for _, pid in ipairs(targets) do
@@ -4511,7 +4510,7 @@ local xiangxu = fk.CreateTriggerSkill{
     if event == fk.AfterCardsMove then
       player.room:setPlayerMark(player, "@@xiangxu-turn", 1)
     else
-      local mark = U.getMark(player, "xiangxu_targets")
+      local mark = player:getTableMark("xiangxu_targets")
       if not table.contains(mark, target.id) then
         table.insert(mark, target.id)
       end
@@ -4548,8 +4547,8 @@ local xiangzuo = fk.CreateTriggerSkill{
   end,
   on_cost = function(self, event, target, player, data)
     local room = player.room
-    local gongjie_targets = U.getMark(player, "gongjie_targets")
-    local xiangxu_targets = U.getMark(player, "xiangxu_targets")
+    local gongjie_targets = player:getTableMark("gongjie_targets")
+    local xiangxu_targets = player:getTableMark("xiangxu_targets")
     for _, p in ipairs(room.alive_players) do
       if table.contains(gongjie_targets, p.id) and table.contains(xiangxu_targets, p.id) then
         room:setPlayerMark(p, "@@xiangzuo", 1)
@@ -4571,8 +4570,8 @@ local xiangzuo = fk.CreateTriggerSkill{
     local to = room:getPlayerById(self.cost_data.tos[1])
     local cards = table.simpleClone(self.cost_data.cards)
     room:moveCardTo(cards, Player.Hand, to, fk.ReasonGive, self.name, nil, false, player.id)
-    if not player.dead and player:isWounded() and table.contains(U.getMark(player, "gongjie_targets"), to.id) and
-    table.contains(U.getMark(player, "xiangxu_targets"), to.id) then
+    if not player.dead and player:isWounded() and table.contains(player:getTableMark("gongjie_targets"), to.id) and
+    table.contains(player:getTableMark("xiangxu_targets"), to.id) then
       room:recover({
         who = player,
         num = #cards,
@@ -4884,7 +4883,7 @@ local qingyuan = fk.CreateTriggerSkill{
     if player:hasSkill(self) then
       if event == fk.AfterCardsMove then
         if player:getMark("qingyuan-turn") > 0 then return false end
-        local mark = U.getMark(player, "qingyuan_target")
+        local mark = player:getTableMark("qingyuan_target")
         if #mark == 0 then return false end
         local room = player.room
         for _, move in ipairs(data) do
@@ -4932,7 +4931,7 @@ local qingyuan = fk.CreateTriggerSkill{
       if #cards == 0 then return false end
       room:obtainCard(player.id, table.random(cards), false, fk.ReasonPrey)
     else
-      local mark = U.getMark(player, "qingyuan_target")
+      local mark = player:getTableMark("qingyuan_target")
       local tos = table.map(table.filter(room.alive_players, function(p)
         return p ~= player and not table.contains(mark, p.id)
       end), Util.IdMapper)
@@ -5060,7 +5059,7 @@ local qushi_delay = fk.CreateTriggerSkill{
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local targets = U.getMark(player, "qushi_source")
+    local targets = player:getTableMark("qushi_source")
     room:setPlayerMark(player, "qushi_source", 0)
     local cards = player:getPile("qushi_pile")
     local card_types = {}
@@ -5224,7 +5223,7 @@ local pijingl = fk.CreateTriggerSkill{
     local room = player.room
     local tos = table.simpleClone(self.cost_data)
     room:sortPlayersByAction(tos)
-    local mark = U.getMark(player, "pijingl")
+    local mark = player:getTableMark("pijingl")
     table.insertTableIfNeed(mark, tos)
     room:setPlayerMark(player, "pijingl", mark)
     local current_targets = AimGroup:getAllTargets(data.tos)
@@ -5271,14 +5270,14 @@ local pijingl_delay = fk.CreateTriggerSkill{
   events = {fk.TargetSpecifying},
   mute = true,
   can_trigger = function(self, event, target, player, data)
-    return not player.dead and not target.dead and table.contains(U.getMark(player, "pijingl"), target.id) and
+    return not player.dead and not target.dead and table.contains(player:getTableMark("pijingl"), target.id) and
     (data.card.type == Card.TypeBasic or data.card:isCommonTrick()) and data.firstTarget and
     U.isOnlyTarget(player.room:getPlayerById(data.to), data, event)
   end,
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local mark = U.getMark(player, "pijingl")
+    local mark = player:getTableMark("pijingl")
     table.removeOne(mark, target.id)
     room:setPlayerMark(player, "pijingl", mark)
     if table.every(room.alive_players, function (p)
@@ -6083,7 +6082,7 @@ jiangwan:addSkill(ziruo)
 local xufaViewAs = fk.CreateViewAsSkill{
   name = "xufa_viewAs",
   interaction = function()
-    return UI.ComboBox { choices = U.getMark(Self, "xufa_tricks") }
+    return UI.ComboBox { choices = Self:getTableMark("xufa_tricks") }
   end,
   card_filter = function(self, to_select, selected)
     return #selected == 0
@@ -6111,12 +6110,12 @@ local xufa = fk.CreateActiveSkill{
   interaction = function()
     local choices = table.filter(
       { "xufa_put", "xufa_remove" },
-      function(choice) return not table.contains(U.getMark(Self, "xufaChosen-phase"), choice) end
+      function(choice) return not table.contains(Self:getTableMark("xufaChosen-phase"), choice) end
     )
     return UI.ComboBox { choices = choices, all_choices = { "xufa_put", "xufa_remove" } }
   end,
   can_use = function(self, player)
-    return #U.getMark(Self, "xufaChosen-phase") < 2
+    return #Self:getTableMark("xufaChosen-phase") < 2
   end,
   card_filter = function(self, to_select, selected)
     if self.interaction.data == "xufa_put" then
@@ -6128,7 +6127,7 @@ local xufa = fk.CreateActiveSkill{
   target_filter = Util.FalseFunc,
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
-    local xufaChosen = U.getMark(player, "xufaChosen-phase")
+    local xufaChosen = player:getTableMark("xufaChosen-phase")
     table.insertIfNeed(xufaChosen, self.interaction.data)
     room:setPlayerMark(player, "xufaChosen-phase", xufaChosen)
 

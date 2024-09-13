@@ -78,7 +78,7 @@ local ol_ex__botu = fk.CreateTriggerSkill{
         player:setSkillUseHistory(self.name, 0, Player.HistoryRound)
       end
     else
-      local suitsRecorded = U.getMark(player, "@ol_ex__botu-turn")
+      local suitsRecorded = player:getTableMark("@ol_ex__botu-turn")
       local mark_change = false
       for _, move in ipairs(data) do
         if move.toArea == Card.DiscardPile then
@@ -967,7 +967,7 @@ local ol_ex__huangtian_other = fk.CreateActiveSkill{
   mute = true,
   can_use = function(self, player)
     if player.kingdom ~= "qun" then return false end
-    local targetRecorded = U.getMark(player, "ol_ex__huangtian_sources-phase")
+    local targetRecorded = player:getTableMark("ol_ex__huangtian_sources-phase")
     return table.find(Fk:currentRoom().alive_players, function(p)
       return p ~= player and p:hasSkill(ol_ex__huangtian) and not table.contains(targetRecorded, p.id)
     end)
@@ -991,7 +991,7 @@ local ol_ex__huangtian_other = fk.CreateActiveSkill{
     local target = room:getPlayerById(effect.tos[1])
     room:notifySkillInvoked(player, ol_ex__huangtian.name)
     target:broadcastSkillInvoke(ol_ex__huangtian.name)
-    local targetRecorded = U.getMark(player, "ol_ex__huangtian_sources-phase")
+    local targetRecorded = player:getTableMark("ol_ex__huangtian_sources-phase")
     table.insertIfNeed(targetRecorded, target.id)
     room:setPlayerMark(player, "ol_ex__huangtian_sources-phase", targetRecorded)
     room:moveCardTo(effect.cards, Player.Hand, target, fk.ReasonGive, self.name, nil, true)
@@ -1199,14 +1199,14 @@ local ol_ex__qiangxi = fk.CreateActiveSkill{
   end,
   target_filter = function(self, to_select, selected, selected_cards)
     if #selected == 0 and to_select ~= Self.id then
-      local qiangxiRecorded = U.getMark(Self, "ol_ex__qiangxi_targets-phase")
+      local qiangxiRecorded = Self:getTableMark("ol_ex__qiangxi_targets-phase")
       return not table.contains(qiangxiRecorded, to_select)
     end
   end,
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
     local target = room:getPlayerById(effect.tos[1])
-    local qiangxiRecorded = U.getMark(player, "ol_ex__qiangxi_targets-phase")
+    local qiangxiRecorded = player:getTableMark("ol_ex__qiangxi_targets-phase")
     table.insertIfNeed(qiangxiRecorded, target.id)
     room:setPlayerMark(player, "ol_ex__qiangxi_targets-phase", qiangxiRecorded)
     if #effect.cards > 0 then
@@ -1849,7 +1849,7 @@ local ol_ex__shuangxiong_trigger = fk.CreateTriggerSkill{
     if event == fk.EventPhaseEnd then
       local color = Fk:getCardById(self.cost_data[1]):getColorString()
       room:throwCard(self.cost_data, self.name, player, player)
-      local colorsRecorded = U.getMark(player, "@ol_ex__shuangxiong-turn")
+      local colorsRecorded = player:getTableMark("@ol_ex__shuangxiong-turn")
       table.insertIfNeed(colorsRecorded, color)
       room:setPlayerMark(player, "@ol_ex__shuangxiong-turn", colorsRecorded)
     elseif event == fk.EventPhaseStart then
@@ -2386,7 +2386,7 @@ local ol_ex__haoshi_delay = fk.CreateTriggerSkill{
       local to = room:getPlayerById(tos[1])
       room:moveCardTo(cards, Card.PlayerHand, to, fk.ReasonGive, "ol_ex__haoshi", nil, false, player.id)
       if player.dead or to.dead then return false end
-      local targetRecorded = U.getMark(player, "ol_ex__haoshi_target")
+      local targetRecorded = player:getTableMark("ol_ex__haoshi_target")
       if table.insertIfNeed(targetRecorded, to.id) then
         room:setPlayerMark(player, "ol_ex__haoshi_target", targetRecorded)
       end
@@ -2439,7 +2439,7 @@ local ol_ex__dimeng = fk.CreateActiveSkill{
     local target1 = room:getPlayerById(effect.tos[1])
     local target2 = room:getPlayerById(effect.tos[2])
     U.swapHandCards(room, player, target1, target2, self.name)
-    local targetRecorded = U.getMark(player, "ol_ex__dimeng_target-phase")
+    local targetRecorded = player:getTableMark("ol_ex__dimeng_target-phase")
     table.insert(targetRecorded, effect.tos)
     room:setPlayerMark(player, "ol_ex__dimeng_target-phase", targetRecorded)
   end,
@@ -2450,7 +2450,7 @@ local ol_ex__dimeng_delay = fk.CreateTriggerSkill{
   mute = true,
   can_trigger = function(self, event, target, player, data)
     if not player.dead and player:usedSkillTimes(ol_ex__dimeng.name, Player.HistoryPhase) > 0 and not player:isNude() then
-      local mark = U.getMark(player, "ol_ex__dimeng_target-phase")
+      local mark = player:getTableMark("ol_ex__dimeng_target-phase")
       for _, tos in ipairs(mark) do
         if type(tos) == "table" and #tos == 2 then
           local p1 = player.room:getPlayerById(tos[1])
@@ -2466,7 +2466,7 @@ local ol_ex__dimeng_delay = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     player.room:notifySkillInvoked(player, ol_ex__dimeng.name, "negative")
     local x = 0
-    local mark = U.getMark(player, "ol_ex__dimeng_target-phase")
+    local mark = player:getTableMark("ol_ex__dimeng_target-phase")
     if type(mark) ~= "table" then return false end
     for _, tos in ipairs(mark) do
       if type(tos) == "table" and #tos == 2 then
@@ -2802,7 +2802,7 @@ local ol_ex__qiaobian = fk.CreateTriggerSkill{
     if player:hasSkill(self) then
       if event == fk.GameStart then return true
       elseif event == fk.EventPhaseStart and player.phase == Player.Finish then
-        return not table.contains(U.getMark(player, "ol_ex__qiaobian_number"), player:getHandcardNum())
+        return not table.contains(player:getTableMark("ol_ex__qiaobian_number"), player:getHandcardNum())
       elseif event == fk.EventPhaseChanging and player == target and
           (not player:isNude() or player:getMark("@ol_ex__qiaobian_change") > 0) then
         return data.to > Player.Start and data.to < Player.Finish
@@ -2841,7 +2841,7 @@ local ol_ex__qiaobian = fk.CreateTriggerSkill{
     if event == fk.GameStart then
       room:addPlayerMark(player, "@ol_ex__qiaobian_change", 2)
     elseif event == fk.EventPhaseStart then
-      local numberRecorded = U.getMark(player, "ol_ex__qiaobian_number")
+      local numberRecorded = player:getTableMark("ol_ex__qiaobian_number")
       table.insert(numberRecorded, player:getHandcardNum())
       room:setPlayerMark(player, "ol_ex__qiaobian_number", numberRecorded)
       room:addPlayerMark(player, "@ol_ex__qiaobian_change")
@@ -3558,7 +3558,7 @@ local ol_ex__zhiba_other = fk.CreateActiveSkill{
   mute = true,
   can_use = function(self, player)
     if player.kingdom ~= "wu" or player:isKongcheng() then return false end
-    local targetRecorded = U.getMark(player, "ol_ex__zhiba_sources-phase")
+    local targetRecorded = player:getTableMark("ol_ex__zhiba_sources-phase")
     return table.find(Fk:currentRoom().alive_players, function(p)
       return p ~= player and p:hasSkill(ol_ex__zhiba) and not table.contains(targetRecorded, p.id)
     end)
@@ -3570,7 +3570,7 @@ local ol_ex__zhiba_other = fk.CreateActiveSkill{
     if #selected == 0 and to_select ~= Self.id then
       local target = Fk:currentRoom():getPlayerById(to_select)
       return target:hasSkill(ol_ex__zhiba) and Self:canPindian(target) and
-      not table.contains(U.getMark(Self, "ol_ex__zhiba_sources-phase"), to_select)
+      not table.contains(Self:getTableMark("ol_ex__zhiba_sources-phase"), to_select)
     end
   end,
   on_use = function(self, room, effect)
@@ -3578,7 +3578,7 @@ local ol_ex__zhiba_other = fk.CreateActiveSkill{
     local target = room:getPlayerById(effect.tos[1])
     room:notifySkillInvoked(player, ol_ex__zhiba.name)
     target:broadcastSkillInvoke(ol_ex__zhiba.name)
-    local targetRecorded = U.getMark(player, "ol_ex__zhiba_sources-phase")
+    local targetRecorded = player:getTableMark("ol_ex__zhiba_sources-phase")
     table.insertIfNeed(targetRecorded, target.id)
     room:setPlayerMark(player, "ol_ex__zhiba_sources-phase", targetRecorded)
 

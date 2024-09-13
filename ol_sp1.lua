@@ -15,11 +15,11 @@ local aocai = fk.CreateViewAsSkill{
   pattern = ".|.|.|.|.|basic",
   anim_type = "special",
   expand_pile = function()
-    return U.getMark(Self, "aocai")
+    return Self:getTableMark("aocai")
   end,
   prompt = "#aocai",
   card_filter = function(self, to_select, selected)
-    if #selected == 0 and table.contains(U.getMark(Self, "aocai"), to_select) then
+    if #selected == 0 and table.contains(Self:getTableMark("aocai"), to_select) then
       local card = Fk:getCardById(to_select)
       if card.type == Card.TypeBasic then
         if Fk.currentResponsePattern == nil then
@@ -2534,7 +2534,7 @@ Fk:loadTranslationTable{
 
 local xizhicai = General(extension, "xizhicai", "wei", 3)
 local updataXianfu = function (room, player, target)
-  local mark = U.getMark(player, "xianfu")
+  local mark = player:getTableMark("xianfu")
   table.insertIfNeed(mark[2], target.id)
   room:setPlayerMark(player, "xianfu", mark)
   local names = table.map(mark[2], function(pid) return Fk:translate(room:getPlayerById(pid).general) end)
@@ -2553,7 +2553,7 @@ local xianfu = fk.CreateTriggerSkill{
     room:notifySkillInvoked(player, self.name)
     player:broadcastSkillInvoke(self.name, math.random(2))
     local tos = room:askForChoosePlayers(player, table.map(room:getOtherPlayers(player), Util.IdMapper), 1, 1, "#xianfu-choose", self.name, false, true)
-    local mark = U.getMark(player, self.name)
+    local mark = player:getTableMark(self.name)
     if #mark == 0 then mark = {{},{}} end
     table.insertIfNeed(mark[1], tos[1])
     room:setPlayerMark(player, self.name, mark)
@@ -2565,7 +2565,7 @@ local xianfu_delay = fk.CreateTriggerSkill{
   frequency = Skill.Compulsory,
   mute = true,
   can_trigger = function(self, event, target, player, data)
-    local mark = U.getMark(player, "xianfu")
+    local mark = player:getTableMark("xianfu")
     if not player.dead and not target.dead and #mark > 0 and table.contains(mark[1], target.id) then
       return event == fk.Damaged or player:isWounded()
     end
@@ -2625,7 +2625,7 @@ local chouce = fk.CreateTriggerSkill{
       local tos = room:askForChoosePlayers(player, targets, 1, 1, "#chouce-draw", self.name, false)
       local to = room:getPlayerById(tos[1])
       local num = 1
-      local mark = U.getMark(player, "xianfu")
+      local mark = player:getTableMark("xianfu")
       if #mark > 0 and table.contains(mark[1], to.id) then
         num = 2
         updataXianfu (room, player, to)
@@ -3645,7 +3645,7 @@ local neifa_trigger = fk.CreateTriggerSkill{
   events = {fk.AfterCardTargetDeclared},
   can_trigger = function(self, event, target, player, data)
     if player == target then
-      local mark = U.getMark(player, "@neifa-turn")
+      local mark = player:getTableMark("@neifa-turn")
       if #mark ~= 2 then return false end
       if data.card:isCommonTrick() and mark[1] == "non_basic" then
         local targets = U.getUseExtraTargets(player.room, data, false)
@@ -3690,14 +3690,14 @@ local neifa_draw = fk.CreateTriggerSkill{
   can_trigger = function(self, event, target, player, data)
     if not player.dead and target == player and data.card.type == Card.TypeEquip and
     player:usedSkillTimes(self.name, Player.HistoryTurn) < 2 then
-      local mark = U.getMark(player, "@neifa-turn")
+      local mark = player:getTableMark("@neifa-turn")
       return #mark == 2 and mark[1] == "non_basic" and mark[2] > 0
     end
   end,
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     player:broadcastSkillInvoke(neifa.name)
-    local mark = U.getMark(player, "@neifa-turn")
+    local mark = player:getTableMark("@neifa-turn")
     if #mark == 2 and mark[2] > 0 then
       player:drawCards(mark[2], "neifa")
     end
@@ -3707,7 +3707,7 @@ local neifa_targetmod = fk.CreateTargetModSkill{
   name = "#neifa_targetmod",
   residue_func = function(self, player, skill, scope)
     if skill.trueName == "slash_skill" and scope == Player.HistoryPhase then
-      local mark = U.getMark(player, "@neifa-turn")
+      local mark = player:getTableMark("@neifa-turn")
       return #mark == 2 and mark[1] == "basic" and mark[2] or 0
     end
   end,
@@ -3715,7 +3715,7 @@ local neifa_targetmod = fk.CreateTargetModSkill{
 local neifa_prohibit = fk.CreateProhibitSkill{
   name = "#neifa_prohibit",
   prohibit_use = function(self, player, card)
-    local mark = U.getMark(player, "@neifa-turn")
+    local mark = player:getTableMark("@neifa-turn")
     return #mark == 2 and (mark[1] == "basic" and card.type ~= Card.TypeBasic) or
       (mark[1] == "non_basic" and card.type == Card.TypeBasic)
   end,
