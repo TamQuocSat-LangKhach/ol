@@ -3412,11 +3412,12 @@ local ol_ex__jiang = fk.CreateTriggerSkill{
       local room = player.room
       local cards = table.simpleClone(self.cost_data)
       room:loseHp(player, 1, self.name)
+      if player.dead then return false end
       cards = U.moveCardsHoldingAreaCheck(room, table.filter(cards, function (id)
         return room:getCardArea(id) == Card.DiscardPile
       end))
       if #cards > 0 then
-        room:moveCardTo(cards, Player.Hand, player, fk.ReasonPrey, self.name, nil, false, player.id)
+        room:moveCardTo(cards, Player.Hand, player, fk.ReasonPrey, self.name, nil, true, player.id)
       end
     end
   end,
