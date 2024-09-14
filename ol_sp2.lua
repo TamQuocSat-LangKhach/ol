@@ -5049,8 +5049,15 @@ local kanpod_prey = fk.CreateTriggerSkill{
 local gengzhan = fk.CreateTriggerSkill{
   name = "gengzhan",
   anim_type = "drawcard",
-  events = {fk.AfterCardsMove},
+  events = {fk.AfterCardsMove, fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
+    if event == fk.EventPhaseStart then
+      return player:hasSkill(self) and target ~= player and target.phase == Player.Finish
+      and #player.room.logic:getEventsOfScope(GameEvent.UseCard, 1, function(e)
+        local use = e.data[1]
+        return use.from == target.id and use.card.trueName == "slash"
+      end, Player.HistoryTurn) == 0
+    end
     if player:hasSkill(self) and player.room.current ~= player and player.room.current.phase == Player.Play and
       player:usedSkillTimes(self.name, Player.HistoryPhase) == 0 then
       self.cost_data = {}
@@ -5067,53 +5074,38 @@ local gengzhan = fk.CreateTriggerSkill{
       return #self.cost_data > 0
     end
   end,
+  on_cost = function(self, event, target, player, data)
+    return event == fk.EventPhaseStart or player.room:askForSkillInvoke(player, self.name)
+  end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local cards = self.cost_data
-    if #cards == 1 then
-      room:obtainCard(player.id, cards[1], true, fk.ReasonJustMove)
+    if event == fk.EventPhaseStart then
+      room:addPlayerMark(player, "@gengzhan_record")
     else
-      room:fillAG(player, cards)
-      local id = room:askForAG(player, cards, false, self.name)
-      if id == nil then
-        id = table.random(cards)
+      local cards = self.cost_data
+      if #cards == 1 then
+        room:obtainCard(player.id, cards[1], true, fk.ReasonJustMove)
+      else
+        local id = room:askForCardChosen(player, room.current, { card_data = { { self.name, cards } } }, self.name)
+        room:obtainCard(player.id, id, true, fk.ReasonJustMove)
       end
-      room:closeAG(player)
-      room:obtainCard(player.id, id, true, fk.ReasonJustMove)
     end
   end,
 
   refresh_events = {fk.EventPhaseStart},
   can_refresh = function(self, event, target, player, data)
-    if player:hasSkill(self) then
-      if target == player then
-        return player.phase == Player.Play and player:getMark(self.name) > 0
-      else
-        if target.phase == Player.Finish then
-          for _, id in ipairs(Fk:getAllCardIds()) do
-            if Fk:getCardById(id).trueName == "slash" and target:usedCardTimes(Fk:getCardById(id).name) > 0 then
-              return
-            end
-          end
-          return true
-        end
-      end
-    end
+    return target == player and player.phase == Player.Play and player:getMark("@gengzhan_record") > 0
   end,
   on_refresh = function(self, event, target, player, data)
     local room = player.room
-    if target == player then
-      room:addPlayerMark(player, "@gengzhan-phase", player:getMark(self.name))
-      room:setPlayerMark(player, self.name, 0)
-    else
-      room:addPlayerMark(player, self.name, 1)
-    end
+    room:setPlayerMark(player, "@gengzhan-phase", player:getMark("@gengzhan_record"))
+    room:setPlayerMark(player, "@gengzhan_record", 0)
   end,
 }
 local gengzhan_targetmod = fk.CreateTargetModSkill{
   name = "#gengzhan_targetmod",
   residue_func = function(self, player, skill, scope)
-    if player:hasSkill(self, true) and skill.trueName == "slash_skill" and player:getMark("@gengzhan-phase") > 0 and scope == Player.HistoryPhase then
+    if skill.trueName == "slash_skill" and player:getMark("@gengzhan-phase") > 0 and scope == Player.HistoryPhase then
       return player:getMark("@gengzhan-phase")
     end
   end,
@@ -5136,6 +5128,7 @@ Fk:loadTranslationTable{
   ["#kanpod-invoke"] = "勘破：你可以观看 %dest 的手牌并获得其中一张%arg牌",
   ["#kanpod-card"] = "勘破：选择一张牌获得",
   ["@gengzhan-phase"] = "更战",
+  ["@gengzhan_record"] = "更战",
 
   ["$kanpod1"] = "兵锋相交，便可知其玄机。",
   ["$kanpod2"] = "先发一军，以探敌营虚实。",
