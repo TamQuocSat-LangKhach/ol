@@ -17,16 +17,22 @@ local buchen = fk.CreateTriggerSkill{
   anim_type = "control",
   can_trigger = function (self, event, target, player, data)
     if target == player and player:hasShownSkill(self) then
-      local to = player.room.current
-      return to and to ~= player and not to:isNude()
+      local turn_event = player.room.logic:getCurrentEvent():findParent(GameEvent.Turn)
+      if turn_event == nil then return end
+      local to = turn_event.data[1]
+      if to ~= player and not to.dead and not to:isNude() then
+        self.cost_data = to
+        return true
+      end
     end
   end,
   on_cost = function (self, event, target, player, data)
-    return player.room:askForSkillInvoke(player, self.name, nil, "#buchen-invoke:"..player.room.current.id)
+    return player.room:askForSkillInvoke(player, self.name, nil, "#buchen-invoke:"..self.cost_data.id)
   end,
   on_use = function (self, event, target, player, data)
     local room = player.room
-    local id = room:askForCardChosen(player, room.current, "he", self.name)
+    room:doIndicate(player.id, {self.cost_data.id})
+    local id = room:askForCardChosen(player, self.cost_data, "he", self.name)
     room:moveCardTo(id, Card.PlayerHand, player, fk.ReasonPrey, self.name, nil, false, player.id)
   end,
 }
@@ -216,9 +222,7 @@ local xuanmu = fk.CreateTriggerSkill{
   events = {"fk.GeneralAppeared"},
   frequency = Skill.Compulsory,
   can_trigger = function (self, event, target, player, data)
-    if target == player and player:hasShownSkill(self) then
-      return player.phase == Player.NotActive
-    end
+    return target == player and player:hasShownSkill(self) and player.phase == Player.NotActive
   end,
   on_use = function (self, event, target, player, data)
     player.room:setPlayerMark(player, "@@xuanmu-turn", 1)
@@ -1198,7 +1202,7 @@ local baoqie = fk.CreateTriggerSkill{
   events = {"fk.GeneralAppeared"},
   anim_type = "drawcard",
   can_trigger = function (self, event, target, player, data)
-    return target == player and player:hasShownSkill(self)
+    return target == player and player:hasShownSkill(self) and #player.room:getCardsFromPileByRule(".|.|.|.|.|treasure") > 0
   end,
   on_use = function (self, event, target, player, data)
     local room = player.room
@@ -1328,16 +1332,22 @@ local taoyin = fk.CreateTriggerSkill{
   anim_type = "control",
   can_trigger = function (self, event, target, player, data)
     if target == player and player:hasShownSkill(self) then
-      local to = player.room.current
-      return to and to ~= player and not to.dead
+      local turn_event = player.room.logic:getCurrentEvent():findParent(GameEvent.Turn)
+      if turn_event == nil then return end
+      local to = turn_event.data[1]
+      if to ~= player and not to.dead then
+        self.cost_data = to
+        return true
+      end
     end
   end,
   on_cost = function (self, event, target, player, data)
-    return player.room:askForSkillInvoke(player, self.name, nil, "#taoyin-invoke:"..player.room.current.id)
+    return player.room:askForSkillInvoke(player, self.name, nil, "#taoyin-invoke:"..self.cost_data.id)
   end,
   on_use = function (self, event, target, player, data)
     local room = player.room
-    local to = room.current
+    local to = self.cost_data
+    room:doIndicate(player.id, {to.id})
     room:addPlayerMark(to, MarkEnum.MinusMaxCardsInTurn, 2)
     room:broadcastProperty(to, "MaxCards")
   end,
@@ -1534,21 +1544,25 @@ local huirong = fk.CreateTriggerSkill{
   events = {"fk.GeneralAppeared"},
   anim_type = "control",
   can_trigger = function (self, event, target, player, data)
-    return target == player and player:hasShownSkill(self)
+    return target == player and player:hasShownSkill(self) and
+      table.find(player.room.alive_players, function (p)
+        return p:getHandcardNum() > p.hp or p:getHandcardNum() < math.min(p.hp, 5)
+      end)
   end,
   on_use = function (self, event, target, player, data)
     local room = player.room
-    local tos = player.room:askForChoosePlayers(player, table.map(room.alive_players, Util.IdMapper), 1, 1, "#huirong-choose", self.name, false)
-    if #tos > 0 then
-      local to = room:getPlayerById(tos[1])
-      local n = to:getHandcardNum() - to.hp
+    local targets = table.filter(room.alive_players, function (p)
+      return p:getHandcardNum() > p.hp or p:getHandcardNum() < math.min(p.hp, 5)
+    end)
+    local tos = room:askForChoosePlayers(player, table.map(targets, Util.IdMapper), 1, 1, "#huirong-choose", self.name, false)
+    local to = room:getPlayerById(tos[1])
+    local n = to:getHandcardNum() - math.max(to.hp, 0)
+    if n > 0 then
+      room:askForDiscard(to, n, n, false, self.name, false)
+    else
+      n = math.min(5-to:getHandcardNum(), -n)
       if n > 0 then
-        room:askForDiscard(to, n, n, false, self.name, false)
-      else
-        n = math.min(5-to:getHandcardNum(), -n)
-        if n > 0 then
-          to:drawCards(n, self.name)
-        end
+        to:drawCards(n, self.name)
       end
     end
   end,
@@ -1710,11 +1724,11 @@ local zhuosheng = fk.CreateTriggerSkill{
     end
   end,
 
-  refresh_events = {fk.AfterCardsMove, fk.RoundEnd, fk.PreCardUse},
+  refresh_events = {fk.AfterCardsMove, fk.PreCardUse},
   can_refresh = function(self, event, target, player, data)
     if event == fk.PreCardUse then
-      return player:hasSkill(self) and player.phase == Player.Play and target == player and data.card:getMark("@@zhuosheng-inhand") > 0
-    -- 是否支持转化牌？
+      return player:hasSkill(self) and player.phase == Player.Play and target == player and
+        data.card:getMark("@@zhuosheng-inhand-round") > 0
     else
       return player:hasSkill(self, true)
     end
@@ -1727,7 +1741,7 @@ local zhuosheng = fk.CreateTriggerSkill{
           for _, info in ipairs(move.moveInfo) do
             local id = info.cardId
             if room:getCardArea(id) == Card.PlayerHand and room:getCardOwner(id) == player then
-              room:setCardMark(Fk:getCardById(id), "@@zhuosheng-inhand", 1)
+              room:setCardMark(Fk:getCardById(id), "@@zhuosheng-inhand-round", 1)
             end
           end
         end
@@ -1738,10 +1752,6 @@ local zhuosheng = fk.CreateTriggerSkill{
       if data.card.type == Card.TypeBasic then
         data.extraUse = true
       end
-    else
-      for _, id in ipairs(player.player_cards[Player.Hand]) do -- FIXEME : 双后缀应用后删掉此处
-        room:setCardMark(Fk:getCardById(id), "@@zhuosheng-inhand", 0)
-      end
     end
   end,
 }
@@ -1749,11 +1759,11 @@ local zhuosheng_targetmod = fk.CreateTargetModSkill{
   name = "#zhuosheng_targetmod",
   bypass_times = function(self, player, skill, scope, card, to)
     return player:hasSkill(self) and player.phase == Player.Play and card and
-      card.type == Card.TypeBasic and card:getMark("@@zhuosheng-inhand") > 0
+      card.type == Card.TypeBasic and card:getMark("@@zhuosheng-inhand-round") > 0
   end,
   bypass_distances =  function(self, player, skill, card, to)
     return player:hasSkill(self) and player.phase == Player.Play and card and
-      card.type == Card.TypeBasic and card:getMark("@@zhuosheng-inhand") > 0
+      card.type == Card.TypeBasic and card:getMark("@@zhuosheng-inhand-round") > 0
   end,
 }
 zhuosheng:addRelatedSkill(zhuosheng_targetmod)
@@ -1765,7 +1775,7 @@ Fk:loadTranslationTable{
   ["zhuosheng"] = "擢升",
   [":zhuosheng"] = "出牌阶段，当你使用本轮非以本技能获得的牌时，根据类型执行以下效果：1.基本牌，无距离和次数限制；"..
   "2.普通锦囊牌，可以令此牌目标+1或-1；3.装备牌，你可以摸一张牌。",
-  ["@@zhuosheng-inhand"] = "擢升",
+  ["@@zhuosheng-inhand-round"] = "擢升",
   ["#zhuosheng-choose"] = "擢升：你可以为此%arg增加或减少一个目标",
   ["#zhuosheng-invoke"] = "擢升：你可以摸一张牌",
 
@@ -1780,9 +1790,7 @@ local tuishi = fk.CreateTriggerSkill{
   events = {"fk.GeneralAppeared"},
   mute = true,
   can_trigger = function (self, event, target, player, data)
-    if target == player and player:hasShownSkill(self) then
-      return player.phase == Player.NotActive
-    end
+    return target == player and player:hasShownSkill(self) and player.phase == Player.NotActive
   end,
   on_cost = Util.TrueFunc,
   on_use = function (self, event, target, player, data)
@@ -2017,7 +2025,9 @@ local gaoling = fk.CreateTriggerSkill{
   events = {"fk.GeneralAppeared"},
   can_trigger = function (self, event, target, player, data)
     if target == player and player:hasShownSkill(self) then
-      return player.room.current ~= player and table.find(player.room.alive_players, function (p)
+      local turn_event = player.room.logic:getCurrentEvent():findParent(GameEvent.Turn)
+      if turn_event == nil then return end
+      return turn_event.data[1] ~= player and table.find(player.room.alive_players, function (p)
         return p:isWounded()
       end)
     end
@@ -2026,13 +2036,17 @@ local gaoling = fk.CreateTriggerSkill{
     local targets = table.filter(player.room.alive_players, function (p) return p:isWounded() end)
     local tos = player.room:askForChoosePlayers(player, table.map(targets, Util.IdMapper), 1, 1, "#gaoling-choose", self.name, true)
     if #tos > 0 then
-      self.cost_data = tos[1]
+      self.cost_data = {tos = tos}
       return true
     end
   end,
   on_use = function (self, event, target, player, data)
-    local room = player.room
-    room:recover { num = 1, skillName = self.name, who = room:getPlayerById(self.cost_data), recoverBy = player }
+    player.room:recover {
+      num = 1,
+      skillName = self.name,
+      who = room:getPlayerById(self.cost_data.tos[1]),
+      recoverBy = player,
+    }
   end,
 }
 gaoling.isHiddenSkill = true
@@ -2232,16 +2246,21 @@ local shiren = fk.CreateTriggerSkill{
   anim_type = "drawcard",
   can_trigger = function (self, event, target, player, data)
     if target == player and player:hasShownSkill(self) then
-      local to = player.room.current
-      return to and to ~= player and not to:isKongcheng()
+      local turn_event = player.room.logic:getCurrentEvent():findParent(GameEvent.Turn)
+      if turn_event == nil then return end
+      local to = turn_event.data[1]
+      if to ~= player and not to.dead and not to:isKongcheng() then
+        self.cost_data = to
+        return true
+      end
     end
   end,
   on_cost = function (self, event, target, player, data)
-    return player.room:askForSkillInvoke(player, self.name, nil, "#shiren-invoke:"..player.room.current.id)
+    return player.room:askForSkillInvoke(player, self.name, nil, "#shiren-invoke:"..self.cost_data.id)
   end,
   on_use = function (self, event, target, player, data)
     local room = player.room
-    Fk.skills["yanxi"]:onUse(room, {from = player.id, tos = {room.current.id}})
+    Fk.skills["yanxi"]:onUse(room, {from = player.id, tos = {self.cost_data.id}})
   end,
 }
 shiren.isHiddenSkill = true
