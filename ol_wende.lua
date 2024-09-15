@@ -705,26 +705,20 @@ local ol__caozhao = fk.CreateActiveSkill{
   target_num = 1,
   prompt = "#ol__caozhao-invoke",
   interaction = function()
-    local names = {}
-    local mark = Self:getMark("@$ol__caozhao")
-    for _, id in ipairs(Fk:getAllCardIds()) do
-      local card = Fk:getCardById(id)
-      if (card.type == Card.TypeBasic or card:isCommonTrick()) and not card.is_derived then
-        if mark == 0 or (not table.contains(mark, card.trueName)) then
-          table.insertIfNeed(names, card.name)
-        end
-      end
+    local all_names = U.getAllCardNames("bt")
+    local names = U.getViewAsCardNames(Self, "ol__caozhao", all_names, nil, Self:getTableMark("@$ol__caozhao"))
+    if #names > 0 then
+      return U.CardNameBox { choices = names, all_choices = all_names }
     end
-    return UI.ComboBox {choices = names}
   end,
   can_use = function(self, player)
     return player:usedSkillTimes(self.name, Player.HistoryPhase) == 0 and not player:isKongcheng()
   end,
   card_filter = function(self, to_select, selected)
-    return #selected == 0 and self.interaction.data and Fk:currentRoom():getCardArea(to_select) == Card.PlayerHand
+    return #selected == 0 and table.contains(Self:getCardIds("h"), to_select)
   end,
   target_filter = function(self, to_select, selected)
-    return #selected == 0 and self.interaction.data and to_select ~= Self.id and Fk:currentRoom():getPlayerById(to_select).hp <= Self.hp
+    return #selected == 0 and to_select ~= Self.id and Fk:currentRoom():getPlayerById(to_select).hp <= Self.hp
   end,
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
@@ -733,13 +727,11 @@ local ol__caozhao = fk.CreateActiveSkill{
       type = "#ol__caozhao",
       from = player.id,
       arg = self.interaction.data,
+      toast = true,
     }
-    local mark = player:getMark("@$ol__caozhao")
-    if mark == 0 then mark = {} end
-    table.insert(mark, Fk:cloneCard(self.interaction.data).trueName)
-    room:setPlayerMark(player, "@$ol__caozhao", mark)
+    room:addTableMark(player, "@$ol__caozhao", Fk:cloneCard(self.interaction.data).trueName)
     player:showCards(effect.cards)
-    if player.dead then return end
+    if player.dead or not table.contains(player:getCardIds("h"), effect.cards[1]) then return end
     local id = effect.cards[1]
     local choice = room:askForSkillInvoke(target, self.name, nil,
       "#ol__caozhao-choice:"..player.id.."::"..Fk:getCardById(id, true):toLogString()..":"..self.interaction.data)
@@ -748,7 +740,7 @@ local ol__caozhao = fk.CreateActiveSkill{
       local to = room:askForChoosePlayers(player, table.map(room:getOtherPlayers(player), Util.IdMapper),
         1, 1, "#ol__caozhao-choose", self.name, true)
       if #to > 0 then
-        room:obtainCard(to[1], id, true, fk.ReasonGive)
+        room:moveCardTo(effect.cards, Card.PlayerHand, room:getPlayerById(to[1]), fk.ReasonGive, self.name, nil, true, player.id)
       end
     else
       room:loseHp(target, 1, self.name)
@@ -799,13 +791,13 @@ local ol__xibing = fk.CreateTriggerSkill{
     end
     local to = room:askForChoosePlayers(player, targets, 1, 1, "#ol__xibing-invoke::"..data.from.id, self.name, true)
     if #to > 0 then
-      self.cost_data = to[1]
+      self.cost_data = {tos = to}
       return true
     end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local to = room:getPlayerById(self.cost_data)
+    local to = room:getPlayerById(self.cost_data.tos[1])
     local cards = room:askForCardsChosen(player, to, 2, 2, "he", self.name)
     room:throwCard(cards, self.name, to, player)
     local p = nil
@@ -816,16 +808,15 @@ local ol__xibing = fk.CreateTriggerSkill{
     end
     if not p or p.dead then return end
     p:drawCards(2, self.name)
-    local mark = player:getMark("ol__xibing-turn")
-    if mark == 0 then mark = {} end
-    table.insertIfNeed(mark, p.id)
-    room:setPlayerMark(player, "ol__xibing-turn", mark)
+    if not player.dead then
+      room:addTableMark(player, "ol__xibing-turn", p.id)
+    end
   end,
 }
 local ol__xibing_prohibit = fk.CreateProhibitSkill{
   name = "#ol__xibing_prohibit",
   is_prohibited = function(self, from, to, card)
-    return to:getMark("ol__xibing-turn") ~= 0 and table.contains(to:getMark("ol__xibing-turn"), from.id)
+    return card and table.contains(to:getTableMark("ol__xibing-turn"), from.id)
   end,
 }
 ol__caozhao:addRelatedSkill(ol__caozhao_record)
@@ -1578,7 +1569,7 @@ local ciwei = fk.CreateTriggerSkill{
       local room = player.room
       local use_event = room.logic:getCurrentEvent():findParent(GameEvent.UseCard, true)
       if use_event == nil then return false end
-      local mark = U.getMark(target, "ciwei_record-turn")
+      local mark = target:getTableMark("ciwei_record-turn")
       if table.contains(mark, use_event.id) then
         return #mark > 1 and mark[2] == use_event.id
       end
@@ -1626,7 +1617,7 @@ local caiyuan = fk.CreateTriggerSkill{
       if end_id == 0 then
         local turn_event = room.logic:getCurrentEvent():findParent(GameEvent.Turn, true)
         if turn_event == nil then return false end
-        U.getEventsByRule(room, GameEvent.Turn, 1, function(e)
+        room.logic:getEventsByRule(GameEvent.Turn, 1, function(e)
           if e.data[1] == player and e.id ~= turn_event.id then
             end_id = e.id
             return true
@@ -1638,7 +1629,7 @@ local caiyuan = fk.CreateTriggerSkill{
         room:setPlayerMark(player, "caiyuan_record-turn", -1)
         return false
       end
-      U.getEventsByRule(room, GameEvent.ChangeHp, 1, function(e)
+      room.logic:getEventsByRule(GameEvent.ChangeHp, 1, function(e)
         if e.data[1] == player and e.data[2] < 0 then
           end_id = -1
           room:setPlayerMark(player, "caiyuan_record-turn", -1)
@@ -2041,7 +2032,8 @@ local gaoling = fk.CreateTriggerSkill{
     end
   end,
   on_use = function (self, event, target, player, data)
-    player.room:recover {
+    local room = player.room
+    room:recover {
       num = 1,
       skillName = self.name,
       who = room:getPlayerById(self.cost_data.tos[1]),
@@ -2061,16 +2053,14 @@ local qimei = fk.CreateTriggerSkill{
     local tos = player.room:askForChoosePlayers(player, table.map(player.room:getOtherPlayers(player, false), Util.IdMapper),
     1, 1, "#qimei-choose", self.name, true)
     if #tos > 0 then
-      self.cost_data = tos[1]
+      self.cost_data = {tos = tos}
       return true
     end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local to = room:getPlayerById(self.cost_data)
-    local mark =  U.getMark(to, "@@qimei")
-    table.insert(mark, player.id)
-    room:setPlayerMark(to, "@@qimei", mark)
+    local to = room:getPlayerById(self.cost_data.tos[1])
+    room:addTableMark(to, "@@qimei", player.id)
     room:setPlayerMark(player, "qimei_couple", to.id)
   end,
 
@@ -2082,9 +2072,7 @@ local qimei = fk.CreateTriggerSkill{
     if player == target then
       player.room:setPlayerMark(player, "qimei_couple", 0)
     else
-      local mark = player:getMark("@@qimei")
-      table.removeOne(mark, target.id)
-      player.room:setPlayerMark(player, "@@qimei", #mark > 0 and mark or 0)
+      player.room:removeTableMark(player, "@@qimei", target.id)
     end
   end,
 }
@@ -2385,9 +2373,9 @@ local zhaotao = fk.CreateTriggerSkill{
 local pozhu = fk.CreateViewAsSkill{
   name = "pozhu",
   anim_type = "offensive",
-  pattern = "unexpectation",
+  prompt = "#pozhu",
   card_filter = function(self, to_select, selected)
-    return #selected == 0 and Fk:currentRoom():getCardArea(to_select) ~= Player.Equip
+    return #selected == 0 and table.contains(Self:getHandlyIds(true), to_select)
   end,
   view_as = function(self, cards)
     if #cards ~= 1 then return end
@@ -2396,24 +2384,15 @@ local pozhu = fk.CreateViewAsSkill{
     c:addSubcard(cards[1])
     return c
   end,
-  enabled_at_play = function (self, player)
-    return player:getMark("pozhu-turn") == 0
-  end,
-}
-local pozhu_record = fk.CreateTriggerSkill{
-  name = "#pozhu_record",
-
-  refresh_events = {fk.CardUseFinished},
-  can_refresh = function(self, event, target, player, data)
-    return target == player and table.contains(data.card.skillNames, "pozhu")
-  end,
-  on_refresh = function(self, event, target, player, data)
-    if not data.damageDealt then
-      player.room:addPlayerMark(player, "pozhu-turn", 1)
+  after_use = function (self, player, use)
+    if not player.dead and not use.damageDealt then
+      player.room:setPlayerMark(player, "@@pozhu-turn", 1)
     end
   end,
+  enabled_at_play = function (self, player)
+    return player:getMark("@@pozhu-turn") == 0
+  end,
 }
-pozhu:addRelatedSkill(pozhu_record)
 duyu:addSkill(sanchen)
 duyu:addSkill(zhaotao)
 duyu:addRelatedSkill(pozhu)
@@ -2431,6 +2410,8 @@ Fk:loadTranslationTable{
   [":pozhu"] = "出牌阶段，你可将一张手牌当【出其不意】使用，若此【出其不意】未造成伤害，此技能无效直到回合结束。",
   ["#sanchen-discard"] = "三陈：弃置三张牌，若类别各不相同则你摸一张牌且 %src 可以再发动“三陈”",
   ["@sanchen"] = "三陈",
+  ["#pozhu"] = "破竹：你可将一张手牌当【出其不意】使用",
+  ["@@pozhu-turn"] = "破竹失效",
 
   ["$sanchen1"] = "陈书弼国，当一而再、再而三。",
   ["$sanchen2"] = "勘除弼事，三陈而就。",
