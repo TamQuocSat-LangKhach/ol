@@ -450,8 +450,9 @@ shixie:addSkill(lixia)
 Fk:loadTranslationTable{
   ["shixie"] = "士燮",
   ["#shixie"] = "南交学祖",
-  ["designer:shixie"] = "士燮",
+  ["designer:shixie"] = "Rivers",
   ["illustrator:shixie"] = "銘zmy",
+
   ["biluan"] = "避乱",
   [":biluan"] = "结束阶段，若有其他角色计算与你的距离为1，你可以弃置一张牌，令其他角色计算与你的距离+X（X为存活势力数）。",
   ["lixia"] = "礼下",
@@ -924,6 +925,8 @@ Fk:loadTranslationTable{
   ["tadun"] = "蹋顿",
   ["#tadun"] = "北狄王",
   ["illustrator:tadun"] = "NOVART",
+  ["designer:tadun"] = "Rivers",
+
   ["luanzhan"] = "乱战",
   [":luanzhan"] = "当一名角色因你造成或受到的伤害而扣减体力后，你获得1枚“乱战”。"..
   "当【杀】或黑色普通锦囊牌指定第一个目标后，若使用者为你且目标角色数小于X，你弃一半数量的“乱战”（向上取整）。"..
@@ -999,7 +1002,7 @@ yanbaihu:addSkill(jili)
 Fk:loadTranslationTable{
   ["yanbaihu"] = "严白虎",
   ["#yanbaihu"] = "豺牙落涧",
-  ["designer:yanbaihu"] = "何叔",
+  ["designer:yanbaihu"] = "Rivers",
   ["illustrator:yanbaihu"] = "NOVART",
 
   ["zhidao"] = "雉盗",
@@ -2520,6 +2523,8 @@ Fk:loadTranslationTable{
   ["#quyi"] = "名门的骁将",
   ["cv:quyi"] = "冷泉月夜",
   ["illustrator:quyi"] = "王立雄", -- 稀有皮 界桥先登
+  ["designer:quyi"] = "荼蘼",
+
   ["fuji"] = "伏骑",
   [":fuji"] = "锁定技，当你使用【杀】或普通锦囊牌时，你令所有至你距离为1的角色不能响应此牌。",
   ["jiaozi"] = "骄恣",

@@ -721,6 +721,8 @@ Fk:loadTranslationTable{
   ["quhuang"] = "屈晃",
   ["#quhuang"] = "泥头自缚",
   ["illustrator:quhuang"] = "夜小雨",
+  ["designer:quhuang"] = "玄蝶既白",
+
   ["qiejian"] = "切谏",
   [":qiejian"] = "当一名角色失去手牌后，若其没有手牌，你可以与其各摸一张牌，"..
   "然后选择一项：1.弃置你或其场上的一张牌；2.你本轮内不能对其发动此技能。",
@@ -1299,7 +1301,7 @@ wangguan:addSkill(shilu)
 Fk:loadTranslationTable{
   ["wangguan"] = "王瓘",
   ["#wangguan"] = "假降误撞",
-  ["designer:wangguan"] = "zzccll朱古力",
+  ["designer:wangguan"] = "zzcclll朱苦力",
   ["illustrator:wangguan"] = "匠人绘",
 
   ["miuyan"] = "谬焰",
@@ -1468,7 +1470,7 @@ sunhong:addSkill(zenrun)
 Fk:loadTranslationTable{
   ["sunhong"] = "孙弘",
   ["#sunhong"] = "谮诉构争",
-  ["designer:sunhong"] = "zzccll朱古力",
+  ["designer:sunhong"] = "zzcclll朱苦力",
   ["illustrator:sunhong"] = "匠人绘",
 
   ["xianbi"] = "险诐",
@@ -3279,8 +3281,9 @@ qianzhao:addSkill(kuansai)
 Fk:loadTranslationTable{
   ["ol__qianzhao"] = "牵招",
   ["#ol__qianzhao"] = "雁门无烟",
-  ["designer:ol__qianzhao"] = "CYC",
+  ["designer:ol__qianzhao"] = "玄蝶既白",
   ["illustrator:ol__qianzhao"] = "匠人绘",
+
   ["weifu"] = "威抚",
   [":weifu"] = "出牌阶段，你可以弃置一张牌并判定，你本回合下次使用与判定牌类别相同的牌无距离限制且可以多指定一个目标；若弃置牌与判定牌类别相同，你摸一张牌。",
   ["kuansai"] = "款塞",
@@ -3410,7 +3413,7 @@ luyusheng:addSkill(runwei)
 Fk:loadTranslationTable{
   ["ol__luyusheng"] = "陆郁生",
   ["#ol__luyusheng"] = "义姑",
-  ["designer:ol__luyusheng"] = "zzccll朱古力",
+  ["designer:ol__luyusheng"] = "zzcclll朱苦力",
   ["illustrator:ol__luyusheng"] = "土豆",
 
   ["cangxin"] = "藏心",
@@ -4054,6 +4057,7 @@ Fk:loadTranslationTable{
   ["lvboshe"] = "吕伯奢",
   ["#lvboshe"] = "醉乡路稳",
   ["illustrator:lvboshe"] = "匠人绘",
+  ["designer:lvboshe"] = "玄蝶既白",
 
   ["fushi"] = "缚豕",
   [":fushi"] = "当一名角色使用【杀】后，若你至其距离小于2，你将之置于你的武将牌上。"..
@@ -4789,6 +4793,8 @@ Fk:loadTranslationTable{
   ["liyi"] = "李异",
   ["#liyi"] = "兼人之勇",
   --["illustrator:liyi"] = "",
+  ["designer:liyi"] = "玄蝶既白",
+
   ["chanshuang"] = "缠双",
   [":chanshuang"] = "出牌阶段限一次，你可以与一名其他角色同时选择一项执行："..
   "1.重铸一张牌；2.使用一张【杀】；3.弃置两张牌。结束阶段，你依次执行上述前X项（X为你本回合以任意方式执行过的项数）。",
@@ -5535,6 +5541,7 @@ sunce:addSkill(liantao)
 Fk:loadTranslationTable{
   ["ol_sp__sunce"] = "孙策",
   ["#ol_sp__sunce"] = "壮武命世",
+  ["designer:ol_sp__sunce"] = "韩旭",
 
   ["liantao"] = "连讨",
   [":liantao"] = "出牌阶段开始时，你可以令一名其他角色选择一种颜色，然后你依次将此颜色的手牌当【决斗】对其使用直到你或其进入濒死状态，"..
@@ -5802,6 +5809,7 @@ caimao:addSkill(jingzhou)
 Fk:loadTranslationTable{
   ["caimao"] = "蔡瑁",
   ["#caimao"] = "蛟海腾云",
+  ["designer:caimao"] = "步穗",
 
   ["zuolian"] = "佐练",
   [":zuolian"] = "出牌阶段限一次，你可以选择至多X名有手牌的角色（X为你的体力值），这些角色各随机展示一张手牌，"..

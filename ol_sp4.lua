@@ -584,6 +584,7 @@ kebineng:addSkill(pingduan)
 Fk:loadTranslationTable{
   ["ol__kebineng"] = "轲比能",
   ["#ol__kebineng"] = "瀚海鲸波",
+  ["designer:ol__kebineng"] = "CYC",
 
   ["pingduan"] = "平端",
   [":pingduan"] = "出牌阶段限一次，你可以令一名角色依次执行：1.使用一张基本牌；2.重铸一张锦囊牌；3.令你获得其装备区一张牌。其每执行一项"..
@@ -863,19 +864,11 @@ local leiluan = fk.CreateViewAsSkill{
     return "#leiluan:::"..math.max(Self:getMark("leiluan_count"), 1)
   end,
   interaction = function()
-    local names = {}
-    local mark = Self:getTableMark("leiluan-round")
-    for _, id in ipairs(Fk:getAllCardIds()) do
-      local card = Fk:getCardById(id)
-      if ((Fk.currentResponsePattern == nil and Self:canUse(card)) or
-      (Fk.currentResponsePattern and Exppattern:Parse(Fk.currentResponsePattern):match(card))) then
-        if card.type == Card.TypeBasic and not table.contains(mark, card.trueName) then
-          table.insertIfNeed(names, card.name)
-        end
-      end
+    local all_names = U.getAllCardNames("b")
+    local names = U.getViewAsCardNames(Self, "leiluan", all_names, nil, Self:getTableMark("leiluan-round"))
+    if #names > 0 then
+      return U.CardNameBox { choices = names, all_choices = all_names }
     end
-    if #names == 0 then return false end
-    return UI.ComboBox {choices = names}
   end,
   card_filter = function (self, to_select, selected)
     return #selected < math.max(Self:getMark("leiluan_count"), 1)
@@ -931,21 +924,38 @@ local leiluan_trigger = fk.CreateTriggerSkill{
     end
     player:drawCards(n, "leiluan")
     if player.dead then return end
-    local cards = {}
+    local names = {}
     room.logic:getEventsOfScope(GameEvent.MoveCards, 1, function(e)
       for _, move in ipairs(e.data) do
         if move.toArea == Card.DiscardPile then
           for _, info in ipairs(move.moveInfo) do
-            if Fk:getCardById(info.cardId):isCommonTrick() and table.contains(room.discard_pile, info.cardId) then
-              table.insertIfNeed(cards, info.cardId)
+            local card = Fk:getCardById(info.cardId)
+            if card:isCommonTrick() then
+              table.insertIfNeed(names, card.name)
             end
           end
         end
       end
       return false
     end, Player.HistoryRound)
-    if #cards == 0 then return end
-    U.askForUseRealCard(room, player, cards, ".", "leiluan", "#leiluan-use", {expand_pile = cards})
+    if #names == 0 then return end
+    if player:getMark("leiluan_cards") == 0 then
+      room:setPlayerMark(player, "leiluan_cards", U.getUniversalCards(room, "t"))
+    end
+    local cards = table.filter(player:getMark("leiluan_cards"), function (id)
+      return table.contains(names, Fk:getCardById(id).name)
+    end)
+    local use = U.askForUseRealCard(room, player, cards, nil, "leiluan", "#leiluan-use",
+      {expand_pile = cards, bypass_times = true, extraUse = true}, true, true)
+    if use then
+      use = {
+        card = Fk:cloneCard(use.card.name),
+        from = player.id,
+        tos = use.tos,
+      }
+      use.card.skillName = "leiluan"
+      room:useCard(use)
+    end
   end,
 
   refresh_events = {fk.AfterCardUseDeclared, fk.EventAcquireSkill, fk.RoundEnd},
@@ -961,9 +971,7 @@ local leiluan_trigger = fk.CreateTriggerSkill{
   on_refresh = function(self, event, target, player, data)
     local room = player.room
     if event == fk.AfterCardUseDeclared then
-      local mark = player:getTableMark("leiluan-round")
-      table.insert(mark, data.card.trueName)
-      room:setPlayerMark(player, "leiluan-round", mark)
+      room:addTableMark(player, "leiluan-round", data.card.trueName)
     elseif event == fk.EventAcquireSkill then
       if room.logic:getCurrentEvent() then
         local names = {}
@@ -1043,7 +1051,7 @@ Fk:loadTranslationTable{
   "对你额外结算一次。",
   ["#leiluan"] = "累卵：你可以将%arg张牌当基本牌使用",
   ["#leiluan_trigger"] = "累卵",
-  ["#leiluan-use"] = "累卵：你可以使用其中一张牌",
+  ["#leiluan-use"] = "累卵：你可以视为使用其中一张牌",
   ["#fuchao-choice"] = "覆巢：你抵消了 %dest 使用的%arg，请选择一项",
   ["fuchao1"] = "弃置你与%dest各一张牌，其他角色不能响应此牌",
   ["fuchao2"] = "此牌对其他角色无效，对你额外结算一次",
@@ -1138,6 +1146,7 @@ wangkuang:addSkill(renxia)
 Fk:loadTranslationTable{
   ["wangkuang"] = "王匡",
   ["#wangkuang"] = "",
+  ["designer:wangkuang"] = "U",
 
   ["renxia"] = "任侠",
   [":renxia"] = "出牌阶段限一次，你可以执行一项，然后本阶段结束时执行另一项：1.弃置两张牌，重复此流程，直到手牌中没有【杀】或伤害锦囊牌；"..
