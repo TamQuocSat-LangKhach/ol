@@ -2329,7 +2329,13 @@ local zaowang = fk.CreateActiveSkill{
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
     local target = room:getPlayerById(effect.tos[1])
-    room:setPlayerMark(target, "@@zaowang", 1)
+    room:addPlayerMark(target, "@@zaowang", 1)
+    local tag = room.tag[self.name] or {}
+    if target.role == "loyalist" or target.role == "rebel" then
+      tag[target.role] = tag[target.role] or {}
+      table.insertIfNeed(tag[target.role], target.id)
+    end
+    room.tag[self.name] = tag
     room:changeMaxHp(target, 1)
     if target:isWounded() then
       room:recover{
@@ -2347,26 +2353,25 @@ local zaowang = fk.CreateActiveSkill{
 local zaowang_trigger = fk.CreateTriggerSkill{
   name = "#zaowang_trigger",
 
-  refresh_events = {fk.BeforeGameOverJudge},
+  refresh_events = {fk.GameOverJudge},
   can_refresh = function(self, event, target, player, data)
-    if player:getMark("@@zaowang") > 0 then
-      if player.role == "loyalist" then
-        return not player.dead and target.role == "lord"
-      elseif player.role == "rebel" then
-        return target == player and data.damage and data.damage.from and
+    local tag = player.room.tag["zaowang"] or {}
+    if table.contains(tag["loyalist"] or {}, player.id) then
+      return not player.dead and target.role == "lord"
+    elseif table.contains(tag["rebel"] or {}, player.id) then
+      return target == player and data.damage and data.damage.from and
         (data.damage.from.role == "lord" or data.damage.from.role == "loyalist")
-      end
     end
   end,
   on_refresh = function(self, event, target, player, data)
     local room = player.room
-    room:setPlayerMark(player, "@@zaowang", 0)
-    if player.role == "loyalist" then
-      player.role = "lord"
-      target.role = "loyalist"
+    local tag = room.tag["zaowang"] or {}
+    room:removePlayerMark(player, "@@zaowang", 1)
+    if table.contains(tag["loyalist"] or {}, player.id) then
+      player.role, target.role = target.role, player.role
       room:broadcastProperty(player, "role")
       room:broadcastProperty(target, "role")
-    else
+    elseif table.contains(tag["rebel"] or {}, player.id) then
       room:gameOver("lord+loyalist")
     end
   end,

@@ -1495,10 +1495,15 @@ local huangyueying = General(extension, "olmou__huangyueying", "qun", 3)
 huangyueying:addSkill("tmp_illustrate")
 huangyueying.hidden = true
 
+local huaxiong = General(extension, "olmou__huaxiong", "qun", 6)
+huaxiong:addSkill("tmp_illustrate")
+huaxiong.hidden = true
+
 Fk:loadTranslationTable{
   ["olmou__dengai"] = "谋邓艾",
   ["#olmou__dengai"] = "壮士解腕",
   ["olmou__huangyueying"] = "谋黄月英",
+  ["olmou__huaxiong"] = "谋华雄",
 }
 
 return extension

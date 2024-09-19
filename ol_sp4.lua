@@ -1161,7 +1161,7 @@ local chenggongying = General(extension, "chenggongying", "qun", 4)
 chenggongying:addSkill("tmp_illustrate")
 chenggongying.hidden = true
 
-local qinlang = General(extension, "ol__qinlang", "wei", 4)
+local qinlang = General(extension, "ol__qinlang", "wei", 3)
 qinlang:addSkill("tmp_illustrate")
 qinlang.hidden = true
 
@@ -1173,9 +1173,13 @@ local hanfu = General(extension, "ol__hanfu", "qun", 4)
 hanfu:addSkill("tmp_illustrate")
 hanfu.hidden = true
 
-local dongxie = General(extension, "ol__dongxie", "qun", 4, 4, General.Female)
+local dongxie = General(extension, "ol__dongxie", "qun", 3, 5, General.Female)
 dongxie:addSkill("tmp_illustrate")
 dongxie.hidden = true
+
+local niufu = General(extension, "ol__niufu", "qun", 4)
+niufu:addSkill("tmp_illustrate")
+niufu.hidden = true
 
 Fk:loadTranslationTable{
   ["chenggongying"] = "成公英",
@@ -1183,6 +1187,7 @@ Fk:loadTranslationTable{
   ["ol__wuanguo"] = "武安国",
   ["ol__hanfu"] = "韩馥",
   ["ol__dongxie"] = "董翓",
+  ["ol__niufu"] = "牛辅",
 }
 
 return extension

@@ -907,16 +907,15 @@ local yirong = fk.CreateActiveSkill{
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
     if #effect.cards > 0 then
-      room:throwCard(effect.cards, self.name, player, player)
       room:addPlayerMark(player, MarkEnum.AddMaxCards, 1)
+      room:throwCard(effect.cards, self.name, player, player)
     else
       local n = player:getMaxCards() - player:getHandcardNum()
       if n > 0 then
-        room:drawCards(player, n, self.name)
         room:addPlayerMark(player, MarkEnum.MinusMaxCards, 1)
+        room:drawCards(player, n, self.name)
       end
     end
-    room:broadcastProperty(player, "MaxCards")
   end,
 }
 local guixiang = fk.CreateTriggerSkill{
