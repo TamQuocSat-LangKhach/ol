@@ -2353,12 +2353,8 @@ local huyi = fk.CreateTriggerSkill {
         })
         if result == "" then
           skill = table.random(skills)
-        end
-        local choice = json.decode(result)
-        if #choice > 0 then
-          skill = choice[1]
         else
-          skill = table.random(skills)
+          skill = json.decode(result)[1]
         end
       else
         skills = table.filter(GetWuhuSkills(player), function(s)

@@ -3629,19 +3629,29 @@ local neifa = fk.CreateTriggerSkill{
     if #self.cost_data > 0 then
       room:doIndicate(player.id, self.cost_data)
       local id = room:askForCardChosen(player, room:getPlayerById(self.cost_data[1]), "ej", self.name)
-      room:obtainCard(player, id, true, fk.ReasonPrey)
+      room:obtainCard(player, id, true, fk.ReasonPrey, player.id, self.name)
     else
       room:drawCards(player, 2, self.name)
     end
-    local card = room:askForDiscard(player, 1, 1, true, self.name, false)
+    if player.dead or player:isNude() then return end
+    local card = room:askForDiscard(player, 1, 1, true, self.name, false, ".", "#neifa-discard")
     if #card == 0 then return false end
+    local list = {}
     if Fk:getCardById(card[1]).type == Card.TypeBasic then
       local cards = table.filter(player.player_cards[Player.Hand], function(id) return Fk:getCardById(id).type ~= Card.TypeBasic end)
-      room:setPlayerMark(player, "@neifa-turn", {"basic", math.min(#cards, 5)})
+      list = {"basic_char", math.min(#cards, 5)}
     else
       local cards = table.filter(player.player_cards[Player.Hand], function(id) return Fk:getCardById(id).type == Card.TypeBasic end)
-      room:setPlayerMark(player, "@neifa-turn", {"non_basic", math.min(#cards, 5)})
+      list = {"non_basic_char", math.min(#cards, 5)}
     end
+    local mark = player:getTableMark("@neifa-turn")
+    -- 未测试，暂定同类覆盖
+    if mark[1] == list[1] then
+      mark[2] = list[2]
+    else
+      table.insertTable(mark, list)
+    end
+    room:setPlayerMark(player, "@neifa-turn", mark)
   end,
 }
 local neifa_trigger = fk.CreateTriggerSkill{
@@ -3651,8 +3661,8 @@ local neifa_trigger = fk.CreateTriggerSkill{
   can_trigger = function(self, event, target, player, data)
     if player == target then
       local mark = player:getTableMark("@neifa-turn")
-      if #mark ~= 2 then return false end
-      if data.card:isCommonTrick() and mark[1] == "non_basic" then
+      if #mark == 0 then return false end
+      if data.card:isCommonTrick() and table.contains(mark, "non_basic_char") then
         local targets = U.getUseExtraTargets(player.room, data, false)
         if #TargetGroup:getRealTargets(data.tos) > 1 then
           table.insertTable(targets, TargetGroup:getRealTargets(data.tos))
@@ -3661,7 +3671,7 @@ local neifa_trigger = fk.CreateTriggerSkill{
           self.cost_data = targets
           return true
         end
-      elseif data.card.trueName == "slash" and mark[1] == "basic" then
+      elseif data.card.trueName == "slash" and table.contains(mark, "basic_char") then
         local targets = U.getUseExtraTargets(player.room, data, false)
         if #targets > 0 then
           self.cost_data = targets
@@ -3681,10 +3691,13 @@ local neifa_trigger = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     player:broadcastSkillInvoke(neifa.name)
+    local room = player.room
     if table.contains(TargetGroup:getRealTargets(data.tos), self.cost_data[1]) then
       TargetGroup:removeTarget(data.tos, self.cost_data[1])
+      room:sendLog{ type = "#RemoveTargetsBySkill", from = target.id, to = self.cost_data, arg = neifa.name, arg2 = data.card:toLogString() }
     else
       table.insert(data.tos, self.cost_data)
+      room:sendLog{ type = "#AddTargetsBySkill", from = target.id, to = self.cost_data, arg = neifa.name, arg2 = data.card:toLogString() }
     end
   end,
 }
@@ -3696,15 +3709,17 @@ local neifa_draw = fk.CreateTriggerSkill{
     if not player.dead and target == player and data.card.type == Card.TypeEquip and
     player:usedSkillTimes(self.name, Player.HistoryTurn) < 2 then
       local mark = player:getTableMark("@neifa-turn")
-      return #mark == 2 and mark[1] == "non_basic" and mark[2] > 0
+      local index = table.indexOf(mark, "non_basic_char")
+      return index > 0 and mark[index + 1] > 0
     end
   end,
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     player:broadcastSkillInvoke(neifa.name)
     local mark = player:getTableMark("@neifa-turn")
-    if #mark == 2 and mark[2] > 0 then
-      player:drawCards(mark[2], "neifa")
+    local index = table.indexOf(mark, "non_basic_char")
+    if index > 0 and mark[index + 1] > 0 then
+      player:drawCards(mark[index + 1], "neifa")
     end
   end,
 }
@@ -3713,7 +3728,10 @@ local neifa_targetmod = fk.CreateTargetModSkill{
   residue_func = function(self, player, skill, scope)
     if skill.trueName == "slash_skill" and scope == Player.HistoryPhase then
       local mark = player:getTableMark("@neifa-turn")
-      return #mark == 2 and mark[1] == "basic" and mark[2] or 0
+      local index = table.indexOf(mark, "basic_char")
+      if index > 0 then
+        return mark[index + 1]
+      end
     end
   end,
 }
@@ -3721,8 +3739,11 @@ local neifa_prohibit = fk.CreateProhibitSkill{
   name = "#neifa_prohibit",
   prohibit_use = function(self, player, card)
     local mark = player:getTableMark("@neifa-turn")
-    return #mark == 2 and (mark[1] == "basic" and card.type ~= Card.TypeBasic) or
-      (mark[1] == "non_basic" and card.type == Card.TypeBasic)
+    if card.type == Card.TypeBasic then
+      return table.contains(mark, "non_basic_char")
+    else
+      return table.contains(mark, "basic_char")
+    end
   end,
 }
 neifa:addRelatedSkill(neifa_targetmod)
@@ -3740,8 +3761,10 @@ Fk:loadTranslationTable{
   "本阶段使用【杀】次数上限+X，目标上限+1；不是基本牌，你本回合不能使用基本牌，使用普通锦囊牌的目标+1或-1，前两次使用装备牌时摸X张牌"..
   "（X为发动技能时手牌中因本技能不能使用的牌且至多为5）。",
   ["#neifa-choose"] = "是否使用 内伐，获得场上的一张牌，或不选择角色则摸两张牌",
+  ["#neifa-discard"] = "内伐：请弃置一张牌：若弃基本牌，你不能使用非基本牌；若弃非基本牌，你不能使用基本牌",
   ["@neifa-turn"] = "内伐",
-  ["non_basic"] = "非基本牌",
+  ["non_basic"] = "非基本牌", -- TODO: 搬运到本体翻译
+  ["non_basic_char"] = "非基",
   ["#neifa_trigger-choose"] = "内伐：你可以为%arg增加/减少一个目标",
   ["#neifa_trigger"] = "内伐",
   ["#neifa_draw"] = "内伐",
