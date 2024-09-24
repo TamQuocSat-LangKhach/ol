@@ -114,29 +114,27 @@ local quanbian = fk.CreateTriggerSkill{
       if mark == 0 then
         logic:getEventsOfScope(GameEvent.UseCard, 1, function (e)
           local use = e.data[1]
-          if use.from == player.id and use.card.suit == card_suit then
+          if use.from == player.id and use.card.suit == card_suit and U.IsUsingHandcard(player, e.id) then
             mark = e.id
-            room:setPlayerMark(player, mark_name, mark)
             return true
           end
           return false
         end, Player.HistoryPhase)
         logic:getEventsOfScope(GameEvent.RespondCard, 1, function (e)
           local use = e.data[1]
-          if use.from == player.id and use.card.suit == card_suit then
-            mark = math.max(e.id, mark)
-            room:setPlayerMark(player, mark_name, mark)
+          if use.from == player.id and use.card.suit == card_suit and U.IsUsingHandcard(player, e.id) then
+            mark = (mark == 0) and e.id or math.min(e.id, mark)
             return true
           end
           return false
         end, Player.HistoryPhase)
+        room:setPlayerMark(player, mark_name, mark)
       end
       return mark == current_event.id
     end
   end,
   on_trigger = function(self, event, target, player, data)
-    local mark = player:getMark("@quanbian-phase")
-    if mark == 0 then mark = {} end
+    local mark = player:getTableMark("@quanbian-phase")
     table.insert(mark, data.card:getSuitString(true))
     player.room:setPlayerMark(player, "@quanbian-phase", mark)
     self:doCost(event, target, player, data)
