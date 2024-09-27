@@ -64,7 +64,9 @@ local duwu = fk.CreateActiveSkill{
   can_use = function(self, player)
     return player:getMark("@@duwu-turn") == 0
   end,
-  card_filter = Util.TrueFunc,
+  card_filter = function(self, to_select)
+    return not Self:prohibitDiscard(to_select)
+  end,
   target_filter = function(self, to_select, selected, selected_cards)
     if #selected == 0 and to_select ~= Self.id then
       local target = Fk:currentRoom():getPlayerById(to_select)
