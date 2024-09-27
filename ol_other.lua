@@ -2392,4 +2392,154 @@ Fk:loadTranslationTable{
   ["~wuhushangjiang"] = "亢龙……有悔……",
 }
 
+local caocao = General(extension, "ol__caocao", "qun", 4)
+local dingxi = fk.CreateTriggerSkill{
+  name = "dingxi",
+  anim_type = "offensive",
+  derived_piles = "dingxi",
+  events = {fk.AfterCardsMove},
+  can_trigger = function(self, event, target, player, data)
+    if not player:hasSkill(self) then return false end
+    local room = player.room
+    local cards = {}
+    for _, move in ipairs(data) do
+      if move.from == nil and move.moveReason == fk.ReasonUse then
+        local move_event = room.logic:getCurrentEvent()
+        local use_event = move_event.parent
+        if use_event ~= nil and use_event.event == GameEvent.UseCard or use_event.event == GameEvent.RespondCard then
+          local use = use_event.data[1]
+          if use.from == player.id and use.card.is_damage_card then
+            local card_ids = room:getSubcardsByRule(use.card)
+            for _, info in ipairs(move.moveInfo) do
+              local card = Fk:getCardById(info.cardId, true)
+              if table.contains(card_ids, info.cardId) and card.is_damage_card and
+                table.contains(room.discard_pile, info.cardId) then
+                table.insertIfNeed(cards, info.cardId)
+              end
+            end
+          end
+        end
+      end
+    end
+    cards = U.moveCardsHoldingAreaCheck(room, cards)
+    cards = table.filter(cards, function (id)
+      local card = Fk:getCardById(id)
+      if player:getLastAlive() == player then
+        return player:canUseTo(card, player)
+      else
+        return not player:isProhibited(player:getLastAlive(), card)
+      end
+    end)
+    if #cards > 0 then
+      self.cost_data = cards
+      return true
+    end
+  end,
+  on_cost = function (self, event, target, player, data)
+    local use = U.askForUseRealCard(player.room, player, self.cost_data, nil, self.name, "#dingxi-use::"..player:getLastAlive().id,
+      {
+        expand_pile = self.cost_data,
+        must_targets = {player:getLastAlive().id},
+        bypass_times = true,
+        extraUse = true,
+      },
+      true, true)
+    if use then
+      self.cost_data = use
+      return true
+    end
+  end,
+  on_use = function (self, event, target, player, data)
+    local use = self.cost_data
+    if #use.tos == 0 then
+      use.tos = {{player:getLastAlive().id}}
+    end
+    use.extra_data = use.extra_data or {}
+    use.extra_data.dingxi = player.id
+    player.room:useCard(self.cost_data)
+  end,
+}
+local dingxi_delay = fk.CreateTriggerSkill{
+  name = "#dingxi_delay",
+  mute = true,
+  events = {fk.CardUseFinished},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and data.extra_data and data.extra_data.dingxi == player.id and
+      not player.dead and player.room:getCardArea(data.card) == Card.Processing
+  end,
+  on_cost = Util.TrueFunc,
+  on_use = function (self, event, target, player, data)
+    player:addToPile("dingxi", data.card, true, "dingxi", player.id)
+  end,
+}
+local nengchen = fk.CreateTriggerSkill{
+  name = "nengchen",
+  anim_type = "masochism",
+  frequency = Skill.Compulsory,
+  events = {fk.Damaged},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self) and data.card and
+      table.find(player:getPile("dingxi"), function (id)
+        return data.card.trueName == Fk:getCardById(id).trueName
+      end)
+  end,
+  on_use = function(self, event, target, player, data)
+    local cards = table.filter(player:getPile("dingxi"), function (id)
+      return data.card.trueName == Fk:getCardById(id).trueName
+    end)
+    player.room:moveCardTo(table.random(cards), Card.PlayerHand, player, fk.ReasonJustMove, self.name, nil, true, player.id)
+  end,
+}
+local huojie = fk.CreateTriggerSkill{
+  name = "huojie",
+  anim_type = "negative",
+  frequency = Skill.Compulsory,
+  events = {fk.EventPhaseStart},
+  can_trigger = function (self, event, target, player, data)
+    return target == player and player:hasSkill(self) and player.phase == Player.Play and #player:getPile("dingxi") > 0
+  end,
+  on_use = function (self, event, target, player, data)
+    local room = player.room
+    local n = #player:getPile("dingxi")
+    for i = 1, n, 1 do
+      if player.dead then return end
+      local judge = {
+        who = player,
+        reason = "lightning",
+        pattern = ".|2~9|spade",
+      }
+      room:judge(judge)
+      if judge.card.suit == Card.Spade and judge.card.number > 1 and judge.card.number < 10 then
+        if player.dead then return end
+        room:damage{
+          to = player,
+          damage = 3,
+          damageType = fk.ThunderDamage,
+          skillName = self.name,
+        }
+        if player.dead then return end
+        if #player:getPile("dingxi") > 0 then
+          room:moveCardTo(player:getPile("dingxi"), Card.PlayerHand, player, fk.ReasonJustMove, self.name, nil, true, player.id)
+        end
+      end
+    end
+  end,
+}
+dingxi:addRelatedSkill(dingxi_delay)
+caocao:addSkill(dingxi)
+caocao:addSkill(nengchen)
+caocao:addSkill(huojie)
+Fk:loadTranslationTable{
+  ["ol__caocao"] = "忠曹操",
+
+  ["dingxi"] = "定西",
+  [":dingxi"] = "当你使用伤害牌结算完毕进入弃牌堆后，你可以对你的上家使用其中一张伤害牌（无次数限制），然后将之置于你的武将牌上。",
+  ["nengchen"] = "能臣",
+  [":nengchen"] = "锁定技，当你受到伤害后，你获得随机一张与造成伤害的牌牌名相同的“定西”牌。",
+  ["huojie"] = "祸结",
+  [":huojie"] = "锁定技，出牌阶段开始时，你进行X次【闪电】判定，若你以此法受到伤害，你获得所有“定西”牌（X为“定西”牌的数量）。",
+  ["#dingxi-use"] = "定西：你可以对 %dest 使用其中一张牌",
+  ["#dingxi_delay"] = "定西",
+}
+
 return extension
