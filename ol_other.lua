@@ -2531,6 +2531,7 @@ caocao:addSkill(nengchen)
 caocao:addSkill(huojie)
 Fk:loadTranslationTable{
   ["ol__caocao"] = "忠曹操",
+  ["~ol__caocao"] = "此征西将军曹侯之墓。",
 
   ["dingxi"] = "定西",
   [":dingxi"] = "当你使用伤害牌结算完毕进入弃牌堆后，你可以对你的上家使用其中一张伤害牌（无次数限制），然后将之置于你的武将牌上。",
@@ -2540,6 +2541,13 @@ Fk:loadTranslationTable{
   [":huojie"] = "锁定技，出牌阶段开始时，你进行X次【闪电】判定，若你以此法受到伤害，你获得所有“定西”牌（X为“定西”牌的数量）。",
   ["#dingxi-use"] = "定西：你可以对 %dest 使用其中一张牌",
   ["#dingxi_delay"] = "定西",
+
+  ["$dingxi1"] = "今天，我曹操誓要踏平祁连山！",
+  ["$dingxi2"] = "饮马瀚海、封狼居胥，大丈夫当如此！",
+  ["$nengchen1"] = "当今四海升平，可为治世之能臣。",
+  ["$nengchen2"] = "为大汉江山鞠躬尽瘁，臣死犹生。",
+  ["$huojie1"] = "国虽大，忘战必危，好战必亡。",
+  ["$huojie2"] = "这穷兵黩武的罪，让我一人受便可！",
 }
 
 return extension

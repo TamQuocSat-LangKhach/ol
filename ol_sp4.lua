@@ -585,6 +585,7 @@ Fk:loadTranslationTable{
   ["ol__kebineng"] = "轲比能",
   ["#ol__kebineng"] = "瀚海鲸波",
   ["designer:ol__kebineng"] = "CYC",
+  ["~ol__kebineng"] = "未驱青马饮于黄河，死难瞑目。",
 
   ["pingduan"] = "平端",
   [":pingduan"] = "出牌阶段限一次，你可以令一名角色依次执行：1.使用一张基本牌；2.重铸一张锦囊牌；3.令你获得其装备区一张牌。其每执行一项"..
@@ -594,6 +595,9 @@ Fk:loadTranslationTable{
   ["#pingduan-recast"] = "平端：你可以重铸一张锦囊牌，摸一张牌",
   ["#pingduan-equip"] = "平端：你可以令 %src 获得你装备区一张牌，你摸一张牌",
   ["#pingduan-prey"] = "平端：获得 %dest 装备区一张牌",
+
+  ["$pingduan1"] = "草原儿郎，张弓善射，勇不可当。",
+  ["$pingduan2"] = "策马逐雄鹰，孤当与尔等共分天下。",
 }
 
 local yuanji = General(extension, "ol__yuanji", "wu", 3, 3, General.Female)

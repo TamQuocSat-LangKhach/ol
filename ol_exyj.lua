@@ -219,6 +219,7 @@ Fk:loadTranslationTable{
   ["#ol_ex__zhangchunhua"] = "冷血皇后",
   --["designer:ol_ex__zhangchunhua"] = "",
   --["illustrator:ol_ex__zhangchunhua"] = "",
+  ["~ol_ex__zhangchunhua"] = "我不负懿，懿负我。",
 
   ["jianmie"] = "翦灭",
   [":jianmie"] = "出牌阶段限一次，你可以选择一名其他角色，你与其同时选择一种颜色，弃置所有各自选择颜色的手牌，然后弃置牌数较多的角色视为对"..
@@ -226,6 +227,13 @@ Fk:loadTranslationTable{
   ["#jianmie"] = "翦灭：与一名角色同时选择一种颜色的手牌弃置，弃牌数多的角色视为对对方使用【决斗】",
   ["#jianmie-choice"] = "翦灭：与 %dest 同时选择一种颜色的手牌弃置，弃牌数多的角色视为对对方使用【决斗】",
   ["#jianmie-quest"] = "%from 选择弃置 %arg 手牌",
+
+  ["$jianmie1"] = "莫说是你，天潢贵胄亦可杀得！",
+  ["$jianmie2"] = "你我不到黄泉，不复相见！",
+  ["$jueqing_ol_ex__zhangchunhua1"] = "情丝如雪，难当暖阳。",
+  ["$jueqing_ol_ex__zhangchunhua2"] = "有情总被无情负，绝情方无软肋生。",
+  ["$shangshi_ol_ex__zhangchunhua1"] = "伤我最深的，竟是你司马懿。",
+  ["$shangshi_ol_ex__zhangchunhua2"] = "世间刀剑数万，何以情字伤人？",
 }
 
 local fazheng = General(extension, "ol_ex__fazheng", "shu", 3)
@@ -536,6 +544,7 @@ Fk:loadTranslationTable{
   ["#ol_ex__wuguotai"] = "武烈皇后",
   --["designer:ol_ex__wuguotai"] = "",
   --["illustrator:ol_ex__wuguotai"] = "",
+  ["~ol_ex__wuguotai"] = "竖子，何以胞妹为饵乎？",
 
   ["ol_ex__ganlu"] = "甘露",
   [":ol_ex__ganlu"] = "出牌阶段限一次，你可以令两名角色交换装备区里的牌。若X大于你已损失体力值，你须先弃置X张手牌。（X为其装备区牌数之差）",
@@ -545,6 +554,11 @@ Fk:loadTranslationTable{
   ["#ol_ex__ganlu1"] = "甘露：令 %src 和 %dest 交换装备区里的牌",
   ["#ol_ex__ganlu2"] = "甘露：弃置%arg张手牌，令 %src 和 %dest 交换装备区里的牌",
   ["#ol_ex__buyi-invoke"] = "补益：选择 %dest 的一张牌，若为非基本牌，其弃置之并回复1点体力",
+
+  ["$ol_ex__ganlu1"] = "今见玄德，真佳婿也。",
+  ["$ol_ex__ganlu2"] = "吾家有女，当择良婿。",
+  ["$ol_ex__buyi1"] = "补气凝神，百邪不侵。",
+  ["$ol_ex__buyi2"] = "今植桑梧，可荫来者。",
 }
 
 -- yj2012
@@ -1053,6 +1067,7 @@ Fk:loadTranslationTable{
   ["#ol_ex__caochong"] = "仁爱的神童",
   --["designer:ol_ex__caochong"] = "",
   --["illustrator:ol_ex__caochong"] = "",
+  ["~ol_ex__caochong"] = "性慧早夭，为之奈何？",
 
   ["ol_ex__chengxiang"] = "称象",
   [":ol_ex__chengxiang"] = "当你受到1点伤害后，你可以亮出牌堆顶四张牌，获得其中任意张数量点数之和不大于13的牌，将其余的牌置入弃牌堆。"..
@@ -1060,6 +1075,11 @@ Fk:loadTranslationTable{
   ["ol_ex__renxin"] = "仁心",
   [":ol_ex__renxin"] = "当一名其他角色进入濒死状态时，你可以弃置一张装备牌并翻面，然后令其回复至1点体力。",
   ["#ol_ex__renxin-invoke"] = "仁心：你可以弃置一张装备牌并翻面，令 %dest 回复至1点体力",
+
+  ["$ol_ex__chengxiang1"] = "谁知道称大象需要几步？",
+  ["$ol_ex__chengxiang2"] = "象虽大，然可并舟称之。",
+  ["$ol_ex__renxin1"] = "待三日中，然后自归。",
+  ["$ol_ex__renxin2"] = "王者仁心，尚性善之本。",
 }
 
 local yufan = General(extension, "ol_ex__yufan", "wu", 3)

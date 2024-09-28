@@ -1273,6 +1273,7 @@ Fk:loadTranslationTable{
   ["olmou__sunjian"] = "谋孙坚",
   ["#olmou__sunjian"] = "乌程侯",
   ["illustrator:olmou__sunjian"] = "",
+  ["~olmou__sunjian"] = "江东子弟们，我先走一步了……",
 
   ["hulie"] = "虎烈",
   [":hulie"] = "每回合各限一次，当你使用【杀】或【决斗】指定唯一目标后，你可以令此牌伤害+1。此牌结算后，若未造成伤害，你可以令目标角色视为"..
@@ -1284,6 +1285,12 @@ Fk:loadTranslationTable{
   ["#hulie-slash"] = "虎烈：是否令 %dest 视为对你使用【杀】？",
   ["yipo_active"] = "毅魄",
   ["#yipo-invoke"] = "毅魄：你可以令一名角色：摸%arg张牌然后弃一张牌，或摸一张牌然后弃%arg张牌",
+
+  ["$hulie1"] = "匹夫犯我，吾必斩之。",
+  ["$hulie2"] = "鼠辈，这一刀下去定让你看不到明天的太阳。",
+  ["$yipo1"] = "乱臣贼子，天地不容。",
+  ["$yipo2"] = "年少束发从羽林，纵死不改报国志。",
+  ["$yipo3"] = "身既死兮神以灵，魂魄毅兮为鬼雄！",
 }
 
 local yuanshu = General(extension, "olmou__yuanshu", "qun", 4)
