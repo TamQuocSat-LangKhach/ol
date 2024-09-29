@@ -154,7 +154,8 @@ local ol_ex__shizhan = fk.CreateActiveSkill{
   end,
   card_filter = Util.FalseFunc,
   target_filter = function(self, to_select, selected)
-    return #selected == 0 and not Fk:currentRoom():getPlayerById(to_select):isProhibited(Self, Fk:cloneCard("duel"))
+    return #selected == 0 and to_select ~= Self.id
+    and not Fk:currentRoom():getPlayerById(to_select):isProhibited(Self, Fk:cloneCard("duel"))
   end,
   target_num = 1,
   on_use = function(self, room, effect)
