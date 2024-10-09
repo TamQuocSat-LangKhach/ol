@@ -37,13 +37,13 @@ local zhuri = fk.CreateTriggerSkill{
       return player:canPindian(p) end), Util.IdMapper),
       1, 1, "#zhuri-choose", self.name, true)
     if #to > 0 then
-      self.cost_data = to[1]
+      self.cost_data = {tos = to}
       return true
     end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-      local to = room:getPlayerById(self.cost_data)
+      local to = room:getPlayerById(self.cost_data.tos[1])
       local pindian = player:pindian({to}, self.name)
       if player.dead then return end
       if pindian.results[to.id].winner == player then
@@ -693,7 +693,7 @@ local yufeng = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    U.moveCardIntoEquip(room, player, U.prepareDeriveCards(room, {{"sizhao_sword", Card.Diamond, 6}}, "yufeng_derivecards"), self.name)
+    room:moveCardIntoEquip(player, U.prepareDeriveCards(room, {{"sizhao_sword", Card.Diamond, 6}}, "yufeng_derivecards"), self.name)
   end,
 }
 local shishouyTriggerable = function (player)
@@ -747,7 +747,7 @@ local shishouy = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    U.moveCardIntoEquip(room, player, U.prepareDeriveCards(room, {{"sizhao_sword", Card.Diamond, 6}}, "yufeng_derivecards"), self.name)
+    room:moveCardIntoEquip(player, U.prepareDeriveCards(room, {{"sizhao_sword", Card.Diamond, 6}}, "yufeng_derivecards"), self.name)
   end,
 }
 shenliy:addRelatedSkill(shenliy_delay)
