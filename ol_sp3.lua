@@ -352,11 +352,11 @@ local chenglie = fk.CreateTriggerSkill{
   events = {fk.AfterCardTargetDeclared},
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(self) and data.card.trueName == "slash" and
-      #U.getUseExtraTargets(player.room, data, false) > 0
+      #player.room:getUseExtraTargets(data) > 0
   end,
   on_cost = function(self, event, target, player, data)
     local room = player.room
-    local tos = room:askForChoosePlayers(player, U.getUseExtraTargets(room, data, false), 1, 2,
+    local tos = room:askForChoosePlayers(player, room:getUseExtraTargets(data), 1, 2,
     "#chenglie-choose:::"..data.card:toLogString(), self.name, true)
     if #tos > 0 then
       self.cost_data = tos
@@ -2734,7 +2734,7 @@ local saogu_trigger = fk.CreateTriggerSkill{
       local end_id = phase_event.id
       local mark = {}
       local suit = Card.NoSuit
-      U.getEventsByRule(room, GameEvent.MoveCards, 1, function (e)
+      room.logic:getEventsByRule(GameEvent.MoveCards, 1, function (e)
         for _, move in ipairs(e.data) do
           if move.from == player.id and move.moveReason == fk.ReasonDiscard then
             for _, info in ipairs(move.moveInfo) do
@@ -3204,8 +3204,8 @@ local weifu_delay = fk.CreateTriggerSkill{
     local n = player:getMark("weifu_"..data.card:getTypeString().."-turn")
     room:setPlayerMark(player, "weifu_"..data.card:getTypeString().."-turn", 0)
     updataWeifuMark(player)
-    if data.tos and (data.card:isCommonTrick() or data.card.type == Card.TypeBasic) and #U.getUseExtraTargets(room, data, true) > 0 then
-      local tos = room:askForChoosePlayers(player, U.getUseExtraTargets(room, data, true), 1, n,
+    if data.tos and (data.card:isCommonTrick() or data.card.type == Card.TypeBasic) and #room:getUseExtraTargets(data, true) > 0 then
+      local tos = room:askForChoosePlayers(player, room:getUseExtraTargets(data, true), 1, n,
       "#weifu-invoke:::"..data.card:toLogString()..":"..n, "weifu", true)
       if #tos > 0 then
         for _, pid in ipairs(tos) do
@@ -3649,7 +3649,7 @@ local lianju = fk.CreateTriggerSkill{
       if turn_event == nil then return false end
       local end_id = turn_event.id
       local cards = {}
-      U.getEventsByRule(room, GameEvent.UseCard, 1, function (e)
+      room.logic:getEventsByRule(GameEvent.UseCard, 1, function (e)
         local use = e.data[1]
         if use.from == target.id then
           table.insertTableIfNeed(cards, Card:getIdList(use.card))
@@ -3669,7 +3669,7 @@ local lianju = fk.CreateTriggerSkill{
       if turn_event == nil then return false end
       local end_id = turn_event.id
       local cards = {}
-      U.getEventsByRule(room, GameEvent.UseCard, 1, function (e)
+      room.logic:getEventsByRule(GameEvent.UseCard, 1, function (e)
         local use = e.data[1]
         if use.from == target.id then
           table.insertTableIfNeed(cards, table.filter(Card:getIdList(use.card), function (id)
@@ -3845,7 +3845,7 @@ local langdao = fk.CreateTriggerSkill{
       end
     end
     if target_num > 0 then
-      local targets = U.getUseExtraTargets(room, data, false, true)
+      local targets = room:getUseExtraTargets(data, false, true)
       if #targets > 0 then
         local tos = room:askForChoosePlayers(player, targets, 1, target_num, "#langdao-AddTarget:::"..target_num, self.name, true)
         if #tos > 0 then
@@ -3929,20 +3929,19 @@ local fushi = fk.CreateViewAsSkill{
     if #cards == 0 then return end
     local card = Fk:cloneCard("slash")
     card.skillName = self.name
-    card:setMark("fushi_subcards", cards)
+    self.cost_data = cards
     return card
   end,
   before_use = function(self, player, use)
     local room = player.room
-    local cards = use.card:getMark("fushi_subcards")
-    room:recastCard(cards, player, self.name)
+    room:recastCard(self.cost_data, player, self.name)
     if player.dead then return end
     local choices = {"fushi1", "fushi2", "fushi3"}
-    local n = math.min(#cards, 3)
+    local n = math.min(#self.cost_data, 3)
     local chosen = room:askForChoices(player, choices, n, n, self.name, nil, false, false)
     local targets = TargetGroup:getRealTargets(use.tos)
     if table.contains(chosen, "fushi1") then
-      local tos = U.getUseExtraTargets(room, use, false)
+      local tos = room:getUseExtraTargets(use)
       if #tos > 0 then
         tos = room:askForChoosePlayers(player, tos, 1, 1, "#fushi1-choose", self.name, false, true)
         table.insert(targets, tos[1])
@@ -4332,7 +4331,7 @@ local jiane = fk.CreateTriggerSkill{
       local use_event = room.logic:getCurrentEvent():findParent(GameEvent.UseCard, true)
       if use_event == nil then return false end
       local is_from = false
-      U.getEventsByRule(room, GameEvent.UseCard, 1, function (e)
+      room.logic:getEventsByRule(GameEvent.UseCard, 1, function (e)
         local use = e.data[1]
         if use.responseToEvent == data then
           if use.from == player.id then
@@ -4689,7 +4688,7 @@ local chanshuang_trigger = fk.CreateTriggerSkill{
       if turn_event == nil then return false end
       local x = 0
       local use = nil
-      U.getEventsByRule(room, GameEvent.UseCard, 1, function (e)
+      room.logic:getEventsByRule(GameEvent.UseCard, 1, function (e)
         use = e.data[1]
         if use.from == player.id and use.card.trueName == "slash" then
           x = 1
@@ -4697,7 +4696,7 @@ local chanshuang_trigger = fk.CreateTriggerSkill{
         end
       end, turn_event.id)
       local choices = {}
-      U.getEventsByRule(room, GameEvent.MoveCards, 1, function (e)
+      room.logic:getEventsByRule(GameEvent.MoveCards, 1, function (e)
         local a, b = 0, 0
         for _, move in ipairs(e.data) do
           if move.from == player.id then
@@ -5085,7 +5084,7 @@ local qushi_delay = fk.CreateTriggerSkill{
     local players = {}
     local cant_trigger = true
     --FIXME:可能需要根据放置此牌的角色单独判定类别，暂不作考虑
-    U.getEventsByRule(room, GameEvent.UseCard, 1, function (e)
+    room.logic:getEventsByRule(GameEvent.UseCard, 1, function (e)
       local use = e.data[1]
       if use.from == player.id then
         if table.contains(card_types, use.card.type) then
@@ -5198,7 +5197,7 @@ local pijingl = fk.CreateTriggerSkill{
     local room = player.room
     local x = math.max(1, player:getLostHp())
     local current_targets = AimGroup:getAllTargets(data.tos)
-    local targets = U.getUseExtraTargets(player.room, data, false, true)
+    local targets = room:getUseExtraTargets(data, false, true)
     for _, p in ipairs(room.alive_players) do
       if p ~= player then
         if table.contains(current_targets, p.id) then
@@ -5292,10 +5291,10 @@ local pijingl_delay = fk.CreateTriggerSkill{
       room:setPlayerMark(target, "@@pijingl", 0)
     end
     local choices = {"draw1", "Cancel"}
-    if table.contains(U.getUseExtraTargets(room, data, false, true), player.id) then
+    if table.contains(room:getUseExtraTargets(data, false, true), player.id) then
       table.insert(choices, "pijingl_target")
     end
-    local choice = room:askForChoice(target, choices, "", "#pijingl-choice::" .. player.id .. ":" .. data.card:toLogString(),
+    local choice = room:askForChoice(target, choices, "pijingl", "#pijingl-choice::" .. player.id .. ":" .. data.card:toLogString(),
     false, {"draw1", "pijingl_target", "Cancel"})
     if choice == "draw1" then
       room:drawCards(target, 1, self.name)

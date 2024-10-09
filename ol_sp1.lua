@@ -886,13 +886,13 @@ local luanzhan = fk.CreateTriggerSkill{
     else
       return target == player and player:hasSkill(self) and (data.card.trueName == "slash" or
       (data.card.color == Card.Black and data.card:isCommonTrick())) and
-      player:getMark("@luanzhan") > 0 and #U.getUseExtraTargets(player.room, data, false) > 0
+      player:getMark("@luanzhan") > 0 and #player.room:getUseExtraTargets(data, false) > 0
     end
   end,
   on_cost = function(self, event, target, player, data)
     if event == fk.AfterCardTargetDeclared then
       local n = player:getMark("@luanzhan")
-      local tos = player.room:askForChoosePlayers(player, U.getUseExtraTargets(player.room, data, false), 1, n,
+      local tos = player.room:askForChoosePlayers(player, player.room:getUseExtraTargets(data), 1, n,
       "#luanzhan-choose:::"..data.card:toLogString()..":"..n, self.name, true)
       if #tos > 0 then
         self.cost_data = tos
@@ -1655,7 +1655,7 @@ local sheyan = fk.CreateTriggerSkill{
   can_trigger = function(self, event, target, player, data)
     if target == player and player:hasSkill(self) and data.card:isCommonTrick() then
       local room = player.room
-      local targets = U.getUseExtraTargets(room, data, true, true)
+      local targets = room:getUseExtraTargets(data, true, true)
       local origin_targets = U.getActualUseTargets(room, data, event)
       if #origin_targets > 1 then
         table.insertTable(targets, origin_targets)
@@ -3665,7 +3665,7 @@ local neifa_trigger = fk.CreateTriggerSkill{
       local mark = player:getTableMark("@neifa-turn")
       if #mark == 0 then return false end
       if data.card:isCommonTrick() and table.contains(mark, "non_basic_char") then
-        local targets = U.getUseExtraTargets(player.room, data, false)
+        local targets = player.room:getUseExtraTargets(data)
         if #TargetGroup:getRealTargets(data.tos) > 1 then
           table.insertTable(targets, TargetGroup:getRealTargets(data.tos))
         end
@@ -3674,7 +3674,7 @@ local neifa_trigger = fk.CreateTriggerSkill{
           return true
         end
       elseif data.card.trueName == "slash" and table.contains(mark, "basic_char") then
-        local targets = U.getUseExtraTargets(player.room, data, false)
+        local targets = player.room:getUseExtraTargets(data)
         if #targets > 0 then
           self.cost_data = targets
           return true
@@ -3812,12 +3812,12 @@ local yidian = fk.CreateTriggerSkill{
     return target == player and player:hasSkill(self) and data.tos and
       (data.card.type == Card.TypeBasic or data.card:isCommonTrick()) and
       not table.find(player.room.discard_pile, function(id) return Fk:getCardById(id).name == data.card.name end) and
-      #U.getUseExtraTargets(player.room, data, true) > 0
+      #player.room:getUseExtraTargets(data, true) > 0
   end,
   on_cost = function(self, event, target, player, data)
     local room = player.room
-    local targets = U.getUseExtraTargets(room, data, true)
-    local to = room:askForChoosePlayers(player, targets, 1, 1, "#yidian-choose:::"..data.card:toLogString(), self.name, true)
+    local to = room:askForChoosePlayers(player, room:getUseExtraTargets(data, true), 1, 1,
+      "#yidian-choose:::"..data.card:toLogString(), self.name, true)
     if #to > 0 then
       self.cost_data = to
       return true

@@ -1730,7 +1730,7 @@ local mingjiew_delay = fk.CreateTriggerSkill{
     if event == fk.AfterCardTargetDeclared then
       if target == player and (data.card.type == Card.TypeBasic or data.card:isCommonTrick()) then
         local mark
-        local targets = table.filter(U.getUseExtraTargets(player.room, data), function (id)
+        local targets = table.filter(player.room:getUseExtraTargets(data), function (id)
           mark = room:getPlayerById(id):getMark("@@mingjiew")
           return type(mark) == "table" and table.contains(mark, player.id)
         end)
@@ -2193,7 +2193,7 @@ local yuzhi = fk.CreateTriggerSkill{
       if room:getTag("RoundCount") == 1 or player:getMark("_yuzhi-round") >= x then
         local round_event = room.logic:getCurrentEvent():findParent(GameEvent.Round, true)
         if round_event == nil then return false end
-        local use_events = U.getEventsByRule(room, GameEvent.UseCard, x, function(e)
+        local use_events = room.logic:getEventsByRule(GameEvent.UseCard, x, function(e)
           return e.data[1].from == player.id
         end, round_event.id)
         if #use_events >= x then return false end
@@ -2953,7 +2953,7 @@ local jianjiw = fk.CreateTriggerSkill{
       table.insertIfNeed(targets, next_alive.id)
       local jianjiw1, jianjiw2 = false, false
       local use
-      U.getEventsByRule(room, GameEvent.UseCard, 1, function (e)
+      room.logic:getEventsByRule(GameEvent.UseCard, 1, function (e)
         use = e.data[1]
         if use.from and table.contains(targets, use.from) then
           jianjiw1 = true
@@ -3221,7 +3221,7 @@ local shengmo_refresh = fk.CreateTriggerSkill{
       local turn_event = room.logic:getCurrentEvent():findParent(GameEvent.Turn, true)
       if turn_event == nil then return false end
       local ids = {}
-      U.getEventsByRule(room, GameEvent.MoveCards, 1, function (e)
+      room.logic:getEventsByRule(GameEvent.MoveCards, 1, function (e)
         for _, move in ipairs(e.data) do
           if move.toArea == Card.DiscardPile then
             for _, info in ipairs(move.moveInfo) do
@@ -3358,7 +3358,7 @@ local chengqi_trigger = fk.CreateTriggerSkill{
       local turn_event = room.logic:getCurrentEvent():findParent(GameEvent.Turn)
       if turn_event == nil then return false end
       local use
-      U.getEventsByRule(room, GameEvent.UseCard, 1, function (e)
+      room.logic:getEventsByRule(GameEvent.UseCard, 1, function (e)
         use = e.data[1]
         if use.from == player.id then
           table.insertIfNeed(mark, use.card.trueName)
@@ -3384,7 +3384,7 @@ local jieli = fk.CreateTriggerSkill{
       if turn_event == nil then return false end
       local x = 0
       local use
-      U.getEventsByRule(room, GameEvent.UseCard, 1, function (e)
+      room.logic:getEventsByRule(GameEvent.UseCard, 1, function (e)
         use = e.data[1]
         if use.from == player.id then
           x = math.max(x, Fk:translate(use.card.trueName, "zh_CN"):len())

@@ -525,7 +525,7 @@ local jieliang_trigger = fk.CreateTriggerSkill{
         local phase_event = room.logic:getCurrentEvent():findParent(GameEvent.Phase, true)
         if phase_event == nil then return false end
         local end_id = phase_event.id
-        U.getEventsByRule(room, GameEvent.MoveCards, 1, function (e)
+        room.logic:getEventsByRule(GameEvent.MoveCards, 1, function (e)
           for _, move in ipairs(e.data) do
             for _, info in ipairs(move.moveInfo) do
               local id = info.cardId
@@ -1071,7 +1071,7 @@ local qin__xichu = fk.CreateTriggerSkill{
       return not room:getPlayerById(data.from).dead and
         table.find(room:getOtherPlayers(player), function(p)
         return room:getPlayerById(data.from):inMyAttackRange(p) and
-          table.contains(U.getUseExtraTargets(room, data, false, true), p.id)
+          table.contains(player.room:getUseExtraTargets(data, false, true), p.id)
       end)
     end
   end,
@@ -1079,7 +1079,7 @@ local qin__xichu = fk.CreateTriggerSkill{
     local room = player.room
     if #room:askForDiscard(room:getPlayerById(data.from), 1, 1, true, self.name, true, ".|6", "#qin__xichu-discard:"..player.id) == 0 then
       local targets = table.map(table.filter(room:getOtherPlayers(player), function(p)
-        return room:getPlayerById(data.from):inMyAttackRange(p) and table.contains(U.getUseExtraTargets(room, data, false, true), p.id)
+        return room:getPlayerById(data.from):inMyAttackRange(p) and table.contains(room:getUseExtraTargets(data, false, true), p.id)
       end), Util.IdMapper)
       local tos = room:askForChoosePlayers(player, targets, 1, 1, "#qin__xichu-choose::"..data.from, self.name, true) or table.random(targets)
       if #tos > 0 then
@@ -1562,11 +1562,13 @@ local qin__gaizhao = fk.CreateTriggerSkill{
   events = {fk.TargetConfirming},
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(self.name) and (data.card.trueName == "slash" or data.card:isCommonTrick()) and
-    table.find(U.getUseExtraTargets(player.room, data, true, true), function (p) return player.room:getPlayerById(p).kingdom == "qin" end)
+    table.find(player.room:getUseExtraTargets(data, true, true), function (p) return player.room:getPlayerById(p).kingdom == "qin" end)
   end,
   on_cost = function(self, event, target, player, data)
     local room = player.room
-    local targets = table.filter(U.getUseExtraTargets(player.room, data, true, true), function (p) return player.room:getPlayerById(p).kingdom == "qin" end)
+    local targets = table.filter(room:getUseExtraTargets(data, true, true), function (p)
+      return room:getPlayerById(p).kingdom == "qin"
+    end)
     local to = room:askForChoosePlayers(player, targets, 1, 1, "#qin__gaizhao-choose:::"..data.card:toLogString(), self.name, true)
     if #to > 0 then
       self.cost_data = to[1]
@@ -2093,7 +2095,7 @@ local changjian = fk.CreateTriggerSkill{
     local room = player.room
     local all_choices = {"changjian-exTG", "changjian-exDMG", "Cancel"}
     local choices = table.clone(all_choices)
-    local tos = U.getUseExtraTargets(player.room, data, false)
+    local tos = room:getUseExtraTargets(data)
     tos = table.filter(table.map(tos, Util.Id2PlayerMapper), function (p)
       return player:inMyAttackRange(p)
     end)
@@ -2110,7 +2112,7 @@ local changjian = fk.CreateTriggerSkill{
     local room = player.room
     local choice = self.cost_data
     if choice == "changjian-exTG" then
-      local tos = U.getUseExtraTargets(room, data, false)
+      local tos = room:getUseExtraTargets(data)
       tos = table.filter(tos, function (id)
         return player:inMyAttackRange(room:getPlayerById(id))
       end)

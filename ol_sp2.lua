@@ -1596,7 +1596,7 @@ local zhaosong_trigger = fk.CreateTriggerSkill{
           not table.every(player.room:getAlivePlayers(), function(p) return p:isAllNude() end)
       else
         return player:getMark("@@zuofen_song") > 0 and data.card.trueName == "slash" and #data.tos == 1 and
-        #U.getUseExtraTargets(player.room, data) > 0 
+          #player.room:getUseExtraTargets(data) > 0
       end
     end
   end,
@@ -1612,8 +1612,8 @@ local zhaosong_trigger = fk.CreateTriggerSkill{
         return true
       end
     else
-      local tos = room:askForChoosePlayers(player, U.getUseExtraTargets(player.room, data),
-      1, 2, "#zhaosong3-invoke", self.name, true)
+      local tos = room:askForChoosePlayers(player, room:getUseExtraTargets(data), 1, 2,
+        "#zhaosong3-invoke", self.name, true)
       if #tos > 0 then
         self.cost_data = tos
         return true
@@ -2652,7 +2652,7 @@ local saodi = fk.CreateTriggerSkill{
     if self.cost_data == "left" then
       from, to = dest, player
     end
-    local targets = U.getUseExtraTargets(player.room, data)
+    local targets = player.room:getUseExtraTargets(data)
     local temp = from.next
     while temp ~= to do
       if not temp.dead and table.contains(targets, temp.id) then
@@ -5318,7 +5318,7 @@ local zeyue = fk.CreateTriggerSkill{
   on_cost = function(self, event, target, player, data)
     local room = player.room
     local end_id = 1
-    local turn_e = U.getEventsByRule (room, GameEvent.Turn, 1, function (e)
+    local turn_e = room.logic:getEventsByRule (GameEvent.Turn, 1, function (e)
       return e.end_id ~= -1 and e.data[1] == player
     end, end_id)
     if #turn_e > 0 then end_id = turn_e[1].end_id end

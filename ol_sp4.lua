@@ -186,7 +186,7 @@ local kouchao = fk.CreateViewAsSkill{
   after_use = function(self, player, use)
     local room = player.room
     local name = ""
-    U.getEventsByRule(room, GameEvent.MoveCards, 1, function(e)
+    room.logic:getEventsByRule(GameEvent.MoveCards, 1, function(e)
       for _, move in ipairs(e.data) do
         if move.toArea == Card.DiscardPile and move.moveReason ~= fk.ReasonUse then
           for _, info in ipairs(move.moveInfo) do
@@ -685,7 +685,7 @@ local jieyan_delay = fk.CreateTriggerSkill{
         local phase_event = room.logic:getCurrentEvent():findParent(GameEvent.Phase, true)
         if phase_event ~= nil then
           local end_id = phase_event.id
-          U.getEventsByRule(room, GameEvent.MoveCards, 1, function (e)
+          room.logic:getEventsByRule(GameEvent.MoveCards, 1, function (e)
             for _, move in ipairs(e.data) do
               if move.from == target.id and move.toArea == Card.DiscardPile and move.moveReason == fk.ReasonDiscard then
                 for _, info in ipairs(move.moveInfo) do
@@ -1005,7 +1005,7 @@ local fuchao = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     local use_event = nil
-    U.getEventsByRule(room, GameEvent.UseCard, 1, function (e)
+    room.logic:getEventsByRule(GameEvent.UseCard, 1, function (e)
       local u = e.data[1]
       if u.from == data.responseToEvent.from and u.card == data.responseToEvent.card then
         use_event = e

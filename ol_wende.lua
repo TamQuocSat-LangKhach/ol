@@ -1691,7 +1691,7 @@ local zhuosheng = fk.CreateTriggerSkill{
       if #TargetGroup:getRealTargets(data.tos) > 1 then
         table.insertTable(targets, TargetGroup:getRealTargets(data.tos))
       end
-      table.insertTable(targets, U.getUseExtraTargets(room, data, false))
+      table.insertTable(targets, room:getUseExtraTargets(data))
       local tos = room:askForChoosePlayers(player, targets, 1, 1, "#zhuosheng-choose:::"..data.card:toLogString(), self.name, true)
       if #tos > 0 then
         self.cost_data = tos
@@ -2730,9 +2730,11 @@ local canmou = fk.CreateTriggerSkill{
   anim_type = "control",
   events = {fk.AfterCardTargetDeclared},
   can_trigger = function(self, event, target, player, data)
-    if player:hasSkill(self) and data.card:isCommonTrick() and table.every(player.room:getOtherPlayers(target),
-    function (p) return target:getHandcardNum() > p:getHandcardNum() end) then
-      local targets = U.getUseExtraTargets(player.room, data)
+    if player:hasSkill(self) and data.card:isCommonTrick() and
+      table.every(player.room:getOtherPlayers(target),
+        function (p) return target:getHandcardNum() > p:getHandcardNum()
+      end) then
+      local targets = player.room:getUseExtraTargets(data)
       if #targets > 0 then
         self.cost_data = targets
         return true

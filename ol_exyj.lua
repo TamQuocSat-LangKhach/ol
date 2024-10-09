@@ -746,15 +746,16 @@ local ol_ex__lihuo = fk.CreateTriggerSkill{
       if event == fk.AfterCardUseDeclared then
         return data.card.trueName == "slash" and data.card.name ~= "fire__slash"
       elseif event == fk.AfterCardTargetDeclared then
-        return data.card.name == "fire__slash" and #U.getUseExtraTargets(player.room, data) > 0
+        return data.card.name == "fire__slash" and #player.room:getUseExtraTargets(data) > 0
       end
     end
   end,
   on_cost = function(self, event, target, player, data)
+    local room = player.room
     if event == fk.AfterCardUseDeclared then
-      return player.room:askForSkillInvoke(player, self.name, nil, "#ol_ex__lihuo-invoke:::"..data.card:toLogString())
+      return room:askForSkillInvoke(player, self.name, nil, "#ol_ex__lihuo-invoke:::"..data.card:toLogString())
     elseif event == fk.AfterCardTargetDeclared then
-      local tos = player.room:askForChoosePlayers(player, U.getUseExtraTargets(player.room, data), 1, 1,
+      local tos = room:askForChoosePlayers(player, room:getUseExtraTargets(data), 1, 1,
         "#lihuo-choose:::"..data.card:toLogString(), self.name, true)
       if #tos > 0 then
         self.cost_data = tos
@@ -805,7 +806,7 @@ local ol_ex__chunlao = fk.CreateTriggerSkill{
   name = "ol_ex__chunlao",
   anim_type = "support",
   derived_piles = "ol_ex__chengpu_chun",
-  events = {fk.AfterCardsMove, fk.AskForPeaches, fk.HpLost},
+  events = {fk.AfterCardsMove, fk.AskForPeaches},
   can_trigger = function(self, event, target, player, data)
     if player:hasSkill(self) then
       if event == fk.AfterCardsMove then
@@ -816,7 +817,7 @@ local ol_ex__chunlao = fk.CreateTriggerSkill{
             if move.moveReason == fk.ReasonDiscard and move.from and
               (move.from == player.id or move.from == player:getNextAlive().id or move.from == player:getLastAlive().id) then
               for _, info in ipairs(move.moveInfo) do
-                if Fk:getCardById(info.cardId).trueName == "slash" and room:getCardArea(info.cardId) == Card.DiscardPile then
+                if Fk:getCardById(info.cardId).trueName == "slash" and table.contains(room.discard_pile, info.cardId) then
                   table.insertIfNeed(cards, info.cardId)
                 end
               end
@@ -829,9 +830,7 @@ local ol_ex__chunlao = fk.CreateTriggerSkill{
           return true
         end
       elseif event == fk.AskForPeaches then
-        return target.dying and #player:getPile("ol_ex__chengpu_chun") > 0
-      elseif event == fk.HpLost then
-        return #player:getPile("ol_ex__chengpu_chun") > 0
+        return target.dying and #player:getPile("ol_ex__chengpu_chun") > player:getMark("ol_ex__chunlao-round")
       end
     end
   end,
@@ -839,15 +838,9 @@ local ol_ex__chunlao = fk.CreateTriggerSkill{
     if event == fk.AfterCardsMove then
       return true
     elseif event == fk.AskForPeaches then
-      local cards = player.room:askForCard(player, 1, 1, false, self.name, true, ".|.|.|ol_ex__chengpu_chun|.|.",
-        "#ol_ex__chunlao-invoke::"..target.id, "ol_ex__chengpu_chun")
-      if #cards > 0 then
-        self.cost_data = cards
-        return true
-      end
-    elseif event == fk.HpLost then
-      local cards = player.room:askForCard(player, 1, 2, false, self.name, true, ".|.|.|ol_ex__chengpu_chun|.|.",
-        "#ol_ex__chunlao-prey", "ol_ex__chengpu_chun")
+      local n = player:getMark("ol_ex__chunlao-round") + 1
+      local cards = player.room:askForCard(player, n, n, false, self.name, true, ".|.|.|ol_ex__chengpu_chun|.|.",
+        "#ol_ex__chunlao-invoke::"..target.id..":"..n, "ol_ex__chengpu_chun")
       if #cards > 0 then
         self.cost_data = cards
         return true
@@ -859,6 +852,7 @@ local ol_ex__chunlao = fk.CreateTriggerSkill{
     if event == fk.AfterCardsMove then
       player:addToPile("ol_ex__chengpu_chun", self.cost_data, true, self.name, player.id)
     elseif event == fk.AskForPeaches then
+      room:addPlayerMark(player, "ol_ex__chunlao-round", 1)
       room:moveCardTo(self.cost_data, Card.DiscardPile, nil, fk.ReasonPutIntoDiscardPile, self.name, nil, true, player.id)
       if not target.dead then
         room:useCard({
@@ -869,8 +863,6 @@ local ol_ex__chunlao = fk.CreateTriggerSkill{
           skillName = self.name,
         })
       end
-    elseif event == fk.HpLost then
-      room:moveCardTo(self.cost_data, Card.PlayerHand, player, fk.ReasonJustMove, self.name, nil, true, player.id)
     end
   end,
 }
@@ -885,13 +877,13 @@ Fk:loadTranslationTable{
   ["ol_ex__lihuo"] = "疬火",
   [":ol_ex__lihuo"] = "你使用非火【杀】可以改为火【杀】，此牌结算后，若造成了伤害，你弃置一张牌或失去1点体力。你使用火【杀】时可以增加一个目标。",
   ["ol_ex__chunlao"] = "醇醪",
-  [":ol_ex__chunlao"] = "你或你相邻角色的【杀】因弃置进入弃牌堆后，将之置为“醇”。当一名角色处于濒死状态时，你可以将一张“醇”置入弃牌堆，"..
-  "视为该角色使用一张【酒】。当一名角色失去体力后，你可以获得至多两张“醇”。",
+  [":ol_ex__chunlao"] = "你或你相邻角色的【杀】因弃置进入弃牌堆后，将之置为“醇”。当一名角色处于濒死状态时，你可以将X张“醇”置入弃牌堆，"..
+  "视为该角色使用一张【酒】（X为本轮以此法使用【酒】的次数）。",
   ["#ol_ex__lihuo-invoke"] = "疬火：是否将%arg改为火【杀】？",
   ["#ol_ex__lihuo-discard"] = "疬火：弃置一张牌，否则你失去1点体力",
   ["#ol_ex__lihuo_delay"] = "疬火",
   ["ol_ex__chengpu_chun"] = "醇",
-  ["#ol_ex__chunlao-invoke"] = "醇醪：你可以将一张“醇”置入弃牌堆，视为 %dest 使用一张【酒】",
+  ["#ol_ex__chunlao-invoke"] = "醇醪：你可以将%arg张“醇”置入弃牌堆，视为 %dest 使用一张【酒】",
   ["#ol_ex__chunlao-prey"] = "醇醪：你可以获得至多两张“醇”",
 }
 
@@ -1284,7 +1276,7 @@ local ol_ex__qiaoshui_delay = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     room:setPlayerMark(player, "@@ol_ex__qiaoshui-turn", 0)
-    local targets = U.getUseExtraTargets(room, data, true)
+    local targets = player.room:getUseExtraTargets(data, true)
     if #TargetGroup:getRealTargets(data.tos) > 1 then
       table.insertTable(targets, TargetGroup:getRealTargets(data.tos))
     end
@@ -1390,7 +1382,7 @@ local ol_ex__qieting = fk.CreateTriggerSkill{
       return #player.room.logic:getActualDamageEvents(1, function (e)
         local damage = e.data[1]
         return damage.from == target and damage.to ~= target
-      end, nil, turn_event.id) == 0 or #U.getEventsByRule(room, GameEvent.UseCard, 1, function (e)
+      end, nil, turn_event.id) == 0 or #room.logic:getEventsByRule(GameEvent.UseCard, 1, function (e)
         local use = e.data[1]
         if use.from == target.id and use.tos then
           if table.find(TargetGroup:getRealTargets(use.tos), function(pid) return pid ~= target.id end) then
@@ -1421,7 +1413,7 @@ local ol_ex__qieting = fk.CreateTriggerSkill{
       if player.dead or target.dead or not target:canMoveCardsInBoardTo(player, "e") then return false end
       local turn_event = room.logic:getCurrentEvent():findParent(GameEvent.Turn, true)
       if turn_event == nil then return false end
-      if #U.getEventsByRule(room, GameEvent.UseCard, 1, function (e)
+      if #room.logic:getEventsByRule(GameEvent.UseCard, 1, function (e)
         local use = e.data[1]
         if use.from == target.id and use.tos then
           if table.find(TargetGroup:getRealTargets(use.tos), function(pid) return pid ~= target.id end) then
@@ -1440,7 +1432,7 @@ local ol_ex__qieting = fk.CreateTriggerSkill{
       if player.dead then return false end
       local turn_event = room.logic:getCurrentEvent():findParent(GameEvent.Turn, true)
       if turn_event == nil then return false end
-      if #U.getEventsByRule(room, GameEvent.UseCard, 1, function (e)
+      if #room.logic:getEventsByRule(GameEvent.UseCard, 1, function (e)
         local use = e.data[1]
         if use.from == target.id and use.tos then
           if table.find(TargetGroup:getRealTargets(use.tos), function(pid) return pid ~= target.id end) then

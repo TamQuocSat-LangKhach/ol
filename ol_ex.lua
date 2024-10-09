@@ -1550,10 +1550,10 @@ local ol_ex__lianhuan_trigger = fk.CreateTriggerSkill{
   events = {fk.AfterCardTargetDeclared},
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(ol_ex__lianhuan) and data.card.trueName == "iron_chain" and
-    #U.getUseExtraTargets(player.room, data) > 0
+    #player.room:getUseExtraTargets(data) > 0
   end,
   on_cost = function(self, event, target, player, data)
-    local to = player.room:askForChoosePlayers(player, U.getUseExtraTargets(player.room, data),
+    local to = player.room:askForChoosePlayers(player, player.room:getUseExtraTargets(data),
     1, 1, "#ol_ex__lianhuan-choose:::"..data.card:toLogString(), ol_ex__lianhuan.name, true)
     if #to > 0 then
       self.cost_data = to[1]
@@ -2190,7 +2190,7 @@ local ol_ex__zaiqi = fk.CreateTriggerSkill{
       local room = player.room
       local turn_event = room.logic:getCurrentEvent():findParent(GameEvent.Turn)
       if turn_event == nil then return false end
-      U.getEventsByRule(room, GameEvent.MoveCards, 1, function (e)
+      room.logic:getEventsByRule(GameEvent.MoveCards, 1, function (e)
         for _, move in ipairs(e.data) do
           if move.toArea == Card.DiscardPile then
             for _, info in ipairs(move.moveInfo) do

@@ -379,7 +379,7 @@ local duoshou = fk.CreateTriggerSkill{
       if turn_event == nil then return false end
       local a, b, c = true, true, true
       local use = nil
-      U.getEventsByRule(room, GameEvent.UseCard, 1, function (e)
+      room.logic:getEventsByRule(GameEvent.UseCard, 1, function (e)
         use = e.data[1]
         if use.from == player.id then
           if use.card.color == Card.Red then
@@ -593,7 +593,7 @@ local shenliy = fk.CreateTriggerSkill{
   can_trigger = function(self, event, target, player, data)
     if target == player and player:hasSkill(self) and data.card.trueName == "slash" and
     player.phase == Player.Play and player:usedSkillTimes(self.name, Player.HistoryPhase) == 0 then
-      local targets = U.getUseExtraTargets(player.room, data, true)
+      local targets = player.room:getUseExtraTargets(data, true)
       if #targets > 0 then
         self.cost_data = targets
         return true
@@ -812,7 +812,7 @@ local hongtu = fk.CreateTriggerSkill{
       local room = player.room
       local phase_event = room.logic:getCurrentEvent():findParent(GameEvent.Phase, true)
       if phase_event == nil then return false end
-      U.getEventsByRule(room, GameEvent.MoveCards, 1, function (e)
+      room.logic:getEventsByRule(GameEvent.MoveCards, 1, function (e)
         for _, move in ipairs(e.data) do
           if move.to == player.id and move.toArea == Card.PlayerHand then
             x = x + #move.moveInfo
@@ -1391,13 +1391,13 @@ local xiaoshi = fk.CreateTriggerSkill{
     return target == player and player:hasSkill(self) and player:getMark("@jinming-turn") > 0 and
       (data.card.type == Card.TypeBasic or data.card:isCommonTrick()) and
       player:usedSkillTimes(self.name, Player.HistoryTurn) == 0 and
-      table.find(U.getUseExtraTargets(player.room, data, true), function (id)
+      table.find(player.room:getUseExtraTargets(data, true), function (id)
         return player.room:getPlayerById(id):getAttackRange() == player:getMark("@jinming-turn")
       end)
   end,
   on_cost = function(self, event, target, player, data)
     local room = player.room
-    local targets = table.filter(U.getUseExtraTargets(player.room, data, true), function (id)
+    local targets = table.filter(player.room:getUseExtraTargets(data, true), function (id)
       return player.room:getPlayerById(id):getAttackRange() == player:getMark("@jinming-turn")
     end)
     local to = room:askForChoosePlayers(player, targets, 1, 1,

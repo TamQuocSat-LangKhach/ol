@@ -1194,7 +1194,7 @@ local zhixi = fk.CreateTriggerSkill{
       local end_id = phase_event.id
       local x = 0
       local use_trick = false
-      U.getEventsByRule(room, GameEvent.UseCard, 1, function (e)
+      room.logic:getEventsByRule(GameEvent.UseCard, 1, function (e)
         local use = e.data[1]
         if use.from == player.id then
           if use.card.type == Card.TypeTrick then
@@ -1798,7 +1798,7 @@ local ol__qirang = fk.CreateTriggerSkill{
       return player:hasSkill(self) and target == player and data.card.type == Card.TypeEquip
     else
       return player:hasSkill(self) and target == player and data.card:getMark("@@ol__qirang") > 0
-      and data.tos and #data.tos == 1 and #U.getUseExtraTargets(player.room, data) > 0
+      and data.tos and #data.tos == 1 and #player.room:getUseExtraTargets(data) > 0
     end
   end,
   on_cost = function(self, event, target, player, data)
@@ -1806,8 +1806,8 @@ local ol__qirang = fk.CreateTriggerSkill{
     if event == fk.CardUseFinished then
       return room:askForSkillInvoke(player, self.name)
     else
-      local tos = room:askForChoosePlayers(player, U.getUseExtraTargets(player.room, data),
-      1, 1, "#ol__qirang-choose:::"..data.card:toLogString(), self.name, true)
+      local tos = room:askForChoosePlayers(player, room:getUseExtraTargets(data), 1, 1,
+        "#ol__qirang-choose:::"..data.card:toLogString(), self.name, true)
       if #tos > 0 then
         self.cost_data = tos[1]
         return true
