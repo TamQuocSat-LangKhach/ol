@@ -1789,14 +1789,15 @@ local ol_ex__shuangxiong = fk.CreateViewAsSkill{
       return nil
     end
     local c = Fk:cloneCard("duel")
+    c.skillName = self.name
     c:addSubcard(cards[1])
     return c
   end,
   enabled_at_play = function(self, player)
     return type(player:getMark("@ol_ex__shuangxiong-turn")) == "table"
   end,
-  enabled_at_response = function(self, player)
-    return type(player:getMark("@ol_ex__shuangxiong-turn")) == "table"
+  enabled_at_response = function(self, player, resp)
+    return type(player:getMark("@ol_ex__shuangxiong-turn")) == "table" and not resp
   end,
 }
 local ol_ex__shuangxiong_trigger = fk.CreateTriggerSkill{
