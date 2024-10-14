@@ -2350,9 +2350,13 @@ local fuxun_viewas = fk.CreateViewAsSkill{
   name = "fuxun_viewas",
   interaction = function()
     local all_names = U.getAllCardNames("b")
-    local names = U.getViewAsCardNames(Self, "fuxun", all_names)
+    local names = table.filter(all_names, function (name)
+      local card = Fk:cloneCard(name)
+      card.skillName = "fuxun"
+      return Self:canUse(card, {bypass_times = true}) and not Self:prohibitUse(card)
+    end)
     if #names > 0 then
-      return UI.ComboBox { choices = names, all_choices = all_names }
+      return U.CardNameBox { choices = names, all_choices = all_names }
     end
   end,
   card_filter = function(self, to_select, selected)
