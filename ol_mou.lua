@@ -986,17 +986,21 @@ Fk:loadTranslationTable{
 local kongrong = General(extension, "olmou__kongrong", "qun", 4)
 local liwen = fk.CreateTriggerSkill{
   name = "liwen",
-  events = {fk.CardUsing, fk.TurnEnd},
+  events = {fk.GameStart, fk.CardUsing, fk.CardResponding, fk.TurnEnd},
   mute = true,
   can_trigger = function(self, event, target, player, data)
-    if target == player and player:hasSkill(self) then
-      if event == fk.CardUsing then
-        return data.extra_data and data.extra_data.liwen_triggerable and player:getMark("@kongrong_virtuous") < 5
-      else
-        return player:getMark("@kongrong_virtuous") > 0 and
-          table.find(player.room:getOtherPlayers(player), function (p)
-            return p:getMark("@kongrong_virtuous") < 5
-          end)
+    if player:hasSkill(self) then
+      if event == fk.GameStart then
+        return player:getMark("@kongrong_virtuous") < 5
+      elseif target == player then
+        if event == fk.CardUsing or event == fk.CardResponding then
+          return data.extra_data and data.extra_data.liwen_triggerable and player:getMark("@kongrong_virtuous") < 5
+        else
+          return player:getMark("@kongrong_virtuous") > 0 and
+            table.find(player.room:getOtherPlayers(player), function (p)
+              return p:getMark("@kongrong_virtuous") < 5
+            end)
+        end
       end
     end
   end,
@@ -1018,7 +1022,10 @@ local liwen = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     player:broadcastSkillInvoke(self.name)
-    if event == fk.CardUsing then
+    if event == fk.GameStart then
+      room:notifySkillInvoked(player, self.name, "special")
+      room:addPlayerMark(player, "@kongrong_virtuous", math.min(3, 5 - player:getMark("@kongrong_virtuous")))
+    elseif event == fk.CardUsing or event == fk.CardResponding then
       room:notifySkillInvoked(player, self.name, "special")
       room:addPlayerMark(player, "@kongrong_virtuous", 1)
     else
@@ -1059,7 +1066,7 @@ local liwen = fk.CreateTriggerSkill{
     end
   end,
 
-  refresh_events = {fk.AfterCardUseDeclared},  --FIXME: 该改成记录器了
+  refresh_events = {fk.AfterCardUseDeclared, fk.CardResponding},  --FIXME: 该改成记录器了
   can_refresh = function(self, event, target, player, data)
     return target == player and player:hasSkill(self, true)
   end,
@@ -1142,9 +1149,9 @@ Fk:loadTranslationTable{
   ["illustrator:olmou__kongrong"] = "",
 
   ["liwen"] = "立文",
-  [":liwen"] = "当你使用牌时，若此牌与你使用的上一张牌花色或类别相同，你获得一枚“贤”标记；回合结束时，你可以将任意个“贤”标记分配给"..
-  "等量的角色（每名角色“贤”标记上限为5个），然后有“贤”标记的角色按照标记从多到少的顺序，依次使用一张手牌，若其不使用，移去其"..
-  "“贤”标记，你摸等量的牌。",
+  [":liwen"] = "游戏开始时，你获得三枚“贤”标记；当你使用或打出牌时，若此牌与你使用或打出的上一张牌花色或类别相同，你获得一枚“贤”标记；回合结束时，"..
+  "你可以将任意个“贤”标记分配给等量的角色（每名角色“贤”标记上限为5个），然后有“贤”标记的角色按照标记从多到少的顺序，依次使用一张手牌，若其不使用，"..
+  "移去其“贤”标记，你摸等量的牌。",
   ["ol__zhengyi"] = "争义",
   [":ol__zhengyi"] = "当有“贤”标记的角色受到非属性伤害时，其他有“贤”标记的角色同时选择是否失去体力，若有角色同意，则防止此伤害，同意的"..
   "角色中体力值最大的角色失去等同于此伤害值的体力。",

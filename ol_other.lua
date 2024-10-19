@@ -2409,7 +2409,7 @@ local dingxi = fk.CreateTriggerSkill{
           if move.from == nil and move.moveReason == fk.ReasonUse then
             local move_event = room.logic:getCurrentEvent()
             local use_event = move_event.parent
-            if use_event ~= nil and use_event.event == GameEvent.UseCard or use_event.event == GameEvent.RespondCard then
+            if use_event ~= nil and use_event.event == GameEvent.UseCard then
               local use = use_event.data[1]
               if use.from == player.id and use.card.is_damage_card then
                 local card_ids = room:getSubcardsByRule(use.card)
