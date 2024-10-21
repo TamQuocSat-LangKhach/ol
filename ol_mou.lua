@@ -311,7 +311,7 @@ local weilingy_trigger = fk.CreateTriggerSkill{
     for _, pid in ipairs(TargetGroup:getRealTargets(data.tos)) do
       to = room:getPlayerById(pid)
       if not to.dead then
-        local mark = U.getMark(to, "@weilingy-turn")
+        local mark = to:getTableMark("@weilingy-turn")
         if table.insertIfNeed(mark, color) then
           room:setPlayerMark(to, "@weilingy-turn", mark)
           to:filterHandcards()

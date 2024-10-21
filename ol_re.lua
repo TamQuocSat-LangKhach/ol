@@ -625,7 +625,7 @@ local ol__huxiao = fk.CreateTriggerSkill{
 local ol__huxiao_targetmod = fk.CreateTargetModSkill{
   name = "#ol__huxiao_targetmod",
   bypass_times = function(self, player, skill, scope, card, to)
-    return table.contains(U.getMark(to, "@@ol__huxiao-turn"), player.id)
+    return table.contains(to:getTableMark("@@ol__huxiao-turn"), player.id)
   end,
 }
 ol__huxiao:addRelatedSkill(ol__huxiao_targetmod)
@@ -1324,7 +1324,7 @@ local ol__fenxun = fk.CreateActiveSkill{
 local ol__fenxun_distance = fk.CreateDistanceSkill{
   name = "#ol__fenxun_distance",
   fixed_func = function(self, from, to)
-    local mark = U.getMark(from, "ol__fenxun-turn")
+    local mark = from:getTableMark("ol__fenxun-turn")
     if table.contains(mark, to.id) then
       return 1
     end

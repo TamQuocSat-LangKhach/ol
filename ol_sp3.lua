@@ -1663,7 +1663,7 @@ Fk:loadTranslationTable{
 local lushi = General(extension, "lushi", "qun", 3, 3, General.Female)
 local function setZhuyanMark(p)  --FIXME：先用个mark代替贴脸文字
   local room = p.room
-  local mark = U.getMark(p, "zhuyan")
+  local mark = p:getTableMark("zhuyan")
   if #mark == 2 then
     if p:getMark("zhuyan_hp") == 0 then
       local sig = ""
@@ -1694,7 +1694,7 @@ local zhuyan_active = fk.CreateActiveSkill{
   target_filter = function(self, to_select, selected)
     if #selected > 0 then return false end
     local to = Fk:currentRoom():getPlayerById(to_select)
-    return to:getMark(self.interaction.data) == 0 and #U.getMark(to, "zhuyan") == 2
+    return to:getMark(self.interaction.data) == 0 and #to:getTableMark("zhuyan") == 2
   end,
 }
 Fk:addSkill(zhuyan_active)
@@ -1705,7 +1705,7 @@ local zhuyan = fk.CreateTriggerSkill{
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(self) and player.phase == Player.Discard and
     not table.every(player.room.alive_players, function (p)
-      return #U.getMark(p, "zhuyan") ~= 2 or (p:getMark("zhuyan_hp") > 0 and p:getMark("zhuyan_handcard") > 0)
+      return #p:getTableMark("zhuyan") ~= 2 or (p:getMark("zhuyan_hp") > 0 and p:getMark("zhuyan_handcard") > 0)
     end)
   end,
   on_cost = function(self, event, target, player, data)
@@ -2318,7 +2318,7 @@ local goude = fk.CreateTriggerSkill{
         return true
       elseif choice == "goude2" then
         local targets = table.map(table.filter(room.alive_players, function(pl)
-          return not pl:isKongcheng() end), function(pl) return pl.id end)
+          return not pl:isKongcheng() end), Util.IdMapper)
         local to = room:askForChoosePlayers(player, targets, 1, 1, "#goude-choose", self.name, true)
         if #to > 0 then
           self.cost_data = {choice, to[1]}
@@ -3663,7 +3663,7 @@ local lianju = fk.CreateTriggerSkill{
         self.cost_data = cards
         return true
       end
-    elseif table.contains(U.getMark(target, "lianju_sources"), player.id) then
+    elseif table.contains(target:getTableMark("lianju_sources"), player.id) then
       local color = target:getMark("@lianju")
       local turn_event = room.logic:getCurrentEvent():findParent(GameEvent.Turn, false)
       if turn_event == nil then return false end
@@ -3706,7 +3706,7 @@ local lianju = fk.CreateTriggerSkill{
       local tar = room:getPlayerById(self.cost_data[1])
       local cards = self.cost_data[2]
       room:setPlayerMark(tar, "@lianju", Fk:getCardById(cards[1], true):getColorString())
-      local mark = U.getMark(tar, "lianju_sources")
+      local mark = tar:getTableMark("lianju_sources")
       if table.insertIfNeed(mark, player.id) then
         room:setPlayerMark(tar, "lianju_sources", mark)
       end
@@ -4951,7 +4951,7 @@ local qingyuan = fk.CreateTriggerSkill{
   refresh_events = {fk.BuryVictim},
   can_refresh = function(self, event, target, player, data)
     return player:getMark("@@qingyuan") > 0 and table.every(player.room.alive_players, function(p)
-      return not table.contains(U.getMark(p, "qingyuan_target"), player.id)
+      return not table.contains(p:getTableMark("qingyuan_target"), player.id)
     end)
   end,
   on_refresh = function(self, event, target, player, data)
@@ -5044,7 +5044,7 @@ local qushi = fk.CreateActiveSkill{
     local target, card = room:askForChooseCardAndPlayers(player, targets, 1, 1, ".|.|.|hand", "#qushi-choose", self.name, false)
     if #target > 0 and card then
       target = room:getPlayerById(target[1])
-      local targetRecorded = U.getMark(target, "qushi_source")
+      local targetRecorded = target:getTableMark("qushi_source")
       if not table.contains(targetRecorded, player.id) then
         table.insert(targetRecorded, player.id)
         room:setPlayerMark(target, "qushi_source", targetRecorded)
@@ -5258,12 +5258,12 @@ local pijingl = fk.CreateTriggerSkill{
   on_refresh = function(self, event, target, player, data)
     local room = player.room
     for _, p in ipairs(room.alive_players) do
-      local mark = U.getMark(p, "pijingl")
+      local mark = p:getTableMark("pijingl")
       if table.removeOne(mark, player.id) then
         room:setPlayerMark(p, "pijingl", #mark > 0 and mark or 0)
       end
       if p:getMark("@@pijingl") > 0 and table.every(room.alive_players, function (p2)
-        return not table.contains(U.getMark(p2, "pijingl"), p.id)
+        return not table.contains(p2:getTableMark("pijingl"), p.id)
       end) then
         room:setPlayerMark(p, "@@pijingl", 0)
       end
@@ -5286,7 +5286,7 @@ local pijingl_delay = fk.CreateTriggerSkill{
     table.removeOne(mark, target.id)
     room:setPlayerMark(player, "pijingl", mark)
     if table.every(room.alive_players, function (p)
-      return not table.contains(U.getMark(p, "pijingl"), target.id)
+      return not table.contains(p:getTableMark("pijingl"), target.id)
     end) then
       room:setPlayerMark(target, "@@pijingl", 0)
     end

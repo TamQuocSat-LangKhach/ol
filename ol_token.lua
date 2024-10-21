@@ -12,16 +12,16 @@ local honeyTrapSkill = fk.CreateActiveSkill{
   target_num = 1,
   mod_target_filter = function(self, to_select, selected, user, card, distance_limited)
     local target = Fk:currentRoom():getPlayerById(to_select)
-    return to_select ~= Self.id and not target:isKongcheng() and target.gender == General.Male
+    return to_select ~= Self.id and not target:isKongcheng() and target:isMale()
   end,
   target_filter = function(self, to_select)
     local target = Fk:currentRoom():getPlayerById(to_select)
-    return to_select ~= Self.id and not target:isKongcheng() and target.gender == General.Male
+    return to_select ~= Self.id and not target:isKongcheng() and target:isMale()
   end,
   on_effect = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
     local target = room:getPlayerById(effect.to)
-    local female = table.filter(room:getAlivePlayers(), function(p) return p.gender == General.Female end)
+    local female = table.filter(room:getAlivePlayers(), function(p) return p:isFemale() end)
     if #female > 0 then
       for _, p in ipairs(female) do
         if target:isKongcheng() or target.dead then break end

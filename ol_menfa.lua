@@ -438,7 +438,7 @@ local yushen = fk.CreateActiveSkill{
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
     local target = room:getPlayerById(effect.tos[1])
-    if player:getMark("fenchai") == 0 and player.gender ~= target.gender then
+    if player:getMark("fenchai") == 0 and player:compareGenderWith(target, true) then
       room:setPlayerMark(player, "fenchai", target.id)
     end
     room:recover({
@@ -1701,13 +1701,13 @@ local mingjiew = fk.CreateActiveSkill{
   card_filter = Util.FalseFunc,
   target_filter = function(self, to_select, selected)
     local target = Fk:currentRoom():getPlayerById(to_select)
-    return #selected == 0 and (not table.contains(U.getMark(target, "@@mingjiew"), Self.id)
+    return #selected == 0 and (not table.contains(target:getTableMark("@@mingjiew"), Self.id)
     or (to_select == Self.id and Self:getMark("mingjiew_Self-turn") == 0))
   end,
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
     local target = room:getPlayerById(effect.tos[1])
-    local mark = U.getMark(target, "@@mingjiew")
+    local mark = target:getTableMark("@@mingjiew")
     if player == target then
       room:setPlayerMark(player, "mingjiew_Self-turn", 1)
       if table.contains(mark, player.id) then
@@ -1740,7 +1740,7 @@ local mingjiew_delay = fk.CreateTriggerSkill{
         end
       end
     elseif event == fk.TurnEnd then
-      if player:getMark("mingjiew_disabled-turn") > 0 or not table.contains(U.getMark(target, "@@mingjiew"), player.id) then
+      if player:getMark("mingjiew_disabled-turn") > 0 or not table.contains(target:getTableMark("@@mingjiew"), player.id) then
         return false
       end
       local events = room.logic.event_recorder[GameEvent.UseCard] or Util.DummyTable
@@ -1749,7 +1749,7 @@ local mingjiew_delay = fk.CreateTriggerSkill{
         end_id = room.logic:getCurrentEvent().id
       end
       room:setPlayerMark(target, "mingjiew_record-turn", room.logic.current_event_id)
-      local ids = U.getMark(target, "mingjiew_usecard-turn")
+      local ids = target:getTableMark("mingjiew_usecard-turn")
       for i = #events, 1, -1 do
         local e = events[i]
         if e.id <= end_id then break end
@@ -2540,7 +2540,7 @@ local qiuxin = fk.CreateActiveSkill{
     local player = room:getPlayerById(effect.from)
     local target = room:getPlayerById(effect.tos[1])
     local choice = room:askForChoice(target, {"slash", "trick"}, self.name, "#qiuxin-choice:"..player.id)
-    local mark = U.getMark(target, "@qiuxin")
+    local mark = target:getTableMark("@qiuxin")
     table.insertIfNeed(mark, choice)
     room:setPlayerMark(target, "@qiuxin", mark)
   end,
@@ -2561,7 +2561,7 @@ local qiuxin_trigger = fk.CreateTriggerSkill{
     end
     local tos = TargetGroup:getRealTargets(data.tos)
     for _, p in ipairs(player.room.alive_players) do
-      if table.contains(tos, p.id) and table.contains(U.getMark(p, "@qiuxin"), qiuxin_type) then
+      if table.contains(tos, p.id) and table.contains(p:getTableMark("@qiuxin"), qiuxin_type) then
         return true
       end
     end

@@ -838,7 +838,7 @@ local xiefang = fk.CreateDistanceSkill{
     if from:hasSkill(self) then
       local n = 0
       for _, p in ipairs(Fk:currentRoom().alive_players) do
-        if p.gender == General.Female then
+        if p:isFemale() then
           n = n + 1
         end
       end
@@ -3053,7 +3053,7 @@ local dianhu = fk.CreateTriggerSkill{
     local to = room:askForChoosePlayers(player, table.map(room:getOtherPlayers(player), Util.IdMapper), 1, 1,
       "#dianhu-choose", self.name, false)
     to = room:getPlayerById(to[1])
-    local mark =  U.getMark(to, "@@dianhu")
+    local mark =  to:getTableMark("@@dianhu")
     table.insert(mark, player.id)
     room:setPlayerMark(to, "@@dianhu", mark)
   end,
@@ -3074,7 +3074,7 @@ local dianhu_delay = fk.CreateTriggerSkill{
   frequency = Skill.Compulsory,
   can_trigger = function(self, event, target, player, data)
     if target and not (player.dead or target.dead) then
-      local mark =  U.getMark(target, "@@dianhu")
+      local mark =  target:getTableMark("@@dianhu")
       if table.contains(mark, player.id) then
         if event == fk.Damaged then
           return data.from == player
@@ -3285,7 +3285,7 @@ local ol__xushen = fk.CreateTriggerSkill{
       end
     end
     local targets = table.map(table.filter(room:getAlivePlayers(), function(p)
-      return p.gender == General.Male end), Util.IdMapper)
+      return p:isMale() end), Util.IdMapper)
     if #targets == 0 then return end
     local to = room:askForChoosePlayers(player, targets, 1, 1, "#ol__xushen-choose", self.name, true)
     if #to > 0 then

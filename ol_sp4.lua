@@ -53,7 +53,7 @@ local hunjiang = fk.CreateActiveSkill{
       end
 
       if choice:startsWith("hunjiang_extra_target") then
-        local hunjiangUsers = U.getMark(p, "@@hunjiang-phase")
+        local hunjiangUsers = p:getTableMark("@@hunjiang-phase")
         table.insertIfNeed(hunjiangUsers, player.id)
         room:setPlayerMark(p, "@@hunjiang-phase", hunjiangUsers)
       else
@@ -66,7 +66,7 @@ local hunjiang = fk.CreateActiveSkill{
         if firstChosen:startsWith("hunjiang_extra_target") then
           player:drawCards(1, self.name)
         else
-          local hunjiangUsers = U.getMark(p, "@@hunjiang-phase")
+          local hunjiangUsers = p:getTableMark("@@hunjiang-phase")
           table.insertIfNeed(hunjiangUsers, player.id)
           room:setPlayerMark(p, "@@hunjiang-phase", hunjiangUsers)
         end
@@ -87,7 +87,7 @@ local hunjiangTarget = fk.CreateTriggerSkill{
         room.alive_players,
         function(p)
           return
-            table.contains(U.getMark(p, "@@hunjiang-phase"), player.id) and
+            table.contains(p:getTableMark("@@hunjiang-phase"), player.id) and
             not table.contains(TargetGroup:getRealTargets(data.tos), p.id) and
             U.canUseCardTo(room, player, p, data.card, true)
         end
@@ -99,7 +99,7 @@ local hunjiangTarget = fk.CreateTriggerSkill{
       room.alive_players,
       function(p)
         return
-          table.contains(U.getMark(p, "@@hunjiang-phase"), player.id) and
+          table.contains(p:getTableMark("@@hunjiang-phase"), player.id) and
           not table.contains(TargetGroup:getRealTargets(data.tos), p.id) and
           U.canUseCardTo(room, player, p, data.card, true)
       end

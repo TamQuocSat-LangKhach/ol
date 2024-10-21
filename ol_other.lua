@@ -1845,7 +1845,7 @@ local qin__taihou = fk.CreateTriggerSkill{
   can_trigger = function(self, event, target, player, data)
     if target == player and player:hasSkill(self) and (data.card:isCommonTrick() or data.card.trueName == "slash") then
       local p = player.room:getPlayerById(data.from)
-      return p.gender == General.Male and not p.dead
+      return p:isMale() and not p.dead
     end
   end,
   on_use = function(self, event, target, player, data)

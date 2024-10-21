@@ -1247,7 +1247,7 @@ local bixiong = fk.CreateTriggerSkill{
 local bixiong_prohibit = fk.CreateProhibitSkill{
   name = "#bixiong_prohibit",
   is_prohibited = function(self, from, to, card)
-    return from ~= to and table.contains(U.getMark(to, "@[suits]bixiong"), card.suit)
+    return from ~= to and table.contains(to:getTableMark("@[suits]bixiong"), card.suit)
   end,
 }
 Fk:addSkill(quxi_active)
