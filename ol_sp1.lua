@@ -147,7 +147,7 @@ local chengyu = General(extension, "chengyu", "wei", 3)
 local shefu = fk.CreateTriggerSkill{
   name = "shefu",
   anim_type = "control",
-  derived_piles = "shefu",
+  derived_piles = "$shefu",
   events ={fk.EventPhaseStart, fk.CardUsing},
   can_trigger = function(self, event, target, player, data)
     if player:hasSkill(self) then
@@ -185,7 +185,7 @@ local shefu = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     if event == fk.EventPhaseStart then
-      player:addToPile(self.name, self.cost_data, false, self.name)
+      player:addToPile("$shefu", self.cost_data, false, self.name)
       local names ={}
       local tag = player.tag[self.name]
       if type(tag) ~= "table" then tag ={} end
@@ -281,6 +281,7 @@ Fk:loadTranslationTable{
   [":benyu"] = "当你受到伤害后，若你的手牌数不大于伤害来源手牌数，你可以将手牌摸至与伤害来源手牌数相同（最多摸至5张）；"..
   "否则你可以弃置大于伤害来源手牌数的手牌，然后对其造成1点伤害。",
   ["#shefu-cost"] = "设伏：你可以将一张手牌扣置为“伏兵”",
+  ["$shefu"] = "伏兵",
   ["#benyu-discard"] = "贲育：你可以弃置至少%arg张手牌，对 %dest 造成1点伤害",
   ["#benyu-draw"] = "贲育：你可以将手牌摸至 %arg 张",
 
@@ -1121,7 +1122,7 @@ local litong = General(extension, "litong", "wei", 4)
 local tuifeng = fk.CreateTriggerSkill{
   name = "tuifeng",
   anim_type = "masochism",
-  derived_piles = "tuifeng",
+  derived_piles = "$tuifeng",
   events = {fk.Damaged},
   on_trigger = function(self, event, target, player, data)
     self.cancel_cost = false
@@ -1140,7 +1141,7 @@ local tuifeng = fk.CreateTriggerSkill{
     self.cancel_cost = true
   end,
   on_use = function(self, event, target, player, data)
-    player:addToPile(self.name, self.cost_data, false, self.name)
+    player:addToPile("$tuifeng", self.cost_data, false, self.name)
   end,
 }
 local tuifeng_trigger = fk.CreateTriggerSkill{
@@ -1148,17 +1149,17 @@ local tuifeng_trigger = fk.CreateTriggerSkill{
   mute = true,
   events = {fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self) and player.phase == Player.Start and #player:getPile("tuifeng") > 0
+    return target == player and player:hasSkill(self) and player.phase == Player.Start and #player:getPile("$tuifeng") > 0
   end,
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     local room = player.room
     player:broadcastSkillInvoke("tuifeng")
     room:notifySkillInvoked(player, "tuifeng")
-    local n = #player:getPile("tuifeng")
+    local n = #player:getPile("$tuifeng")
     room:moveCards({
       from = player.id,
-      ids = player:getPile("tuifeng"),
+      ids = player:getPile("$tuifeng"),
       toArea = Card.DiscardPile,
       moveReason = fk.ReasonPutIntoDiscardPile,
       skillName = "tuifeng",
@@ -1189,6 +1190,7 @@ Fk:loadTranslationTable{
   ["#tuifeng_trigger"] = "推锋",
   ["#tuifeng-cost"] = "推锋：你可以将一张牌置于武将牌上，称为“锋”",
   ["@tuifeng-turn"] = "推锋",
+  ["$tuifeng"] = "推锋",
 
   ["$tuifeng1"] = "摧锋陷阵，以杀贼首！",
   ["$tuifeng2"] = "敌锋之锐，我已尽知。",

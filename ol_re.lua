@@ -1691,11 +1691,11 @@ local ol__zhoufu = fk.CreateActiveSkill{
     return #selected == 0
   end,
   target_filter = function(self, to_select, selected, cards)
-    return #selected == 0 and to_select ~= Self.id and #Fk:currentRoom():getPlayerById(to_select):getPile("ol__zhangbao_zhou") == 0
+    return #selected == 0 and to_select ~= Self.id and #Fk:currentRoom():getPlayerById(to_select):getPile("$ol__zhangbao_zhou") == 0
   end,
   on_use = function(self, room, effect)
     local target = room:getPlayerById(effect.tos[1])
-    target:addToPile("ol__zhangbao_zhou", effect.cards, false, self.name)
+    target:addToPile("$ol__zhangbao_zhou", effect.cards, false, self.name)
   end,
 }
 local ol__zhoufu_trigger = fk.CreateTriggerSkill{
@@ -1710,7 +1710,7 @@ local ol__zhoufu_trigger = fk.CreateTriggerSkill{
       room.logic:getEventsOfScope(GameEvent.MoveCards, 1, function(e)
         for _, move in ipairs(e.data) do
           for _, info in ipairs(move.moveInfo) do
-            if info.fromSpecialName and info.fromSpecialName == "ol__zhangbao_zhou" then
+            if info.fromSpecialName and info.fromSpecialName == "$ol__zhangbao_zhou" then
               if move.from and not room:getPlayerById(move.from).dead then
                 table.insertIfNeed(tos, move.from)
               end
@@ -1739,10 +1739,10 @@ local ol__zhoufu_trigger = fk.CreateTriggerSkill{
 
   refresh_events = {fk.StartJudge},
   can_refresh = function(self, event, target, player, data)
-    return target == player and #target:getPile("ol__zhangbao_zhou") > 0
+    return target == player and #target:getPile("$ol__zhangbao_zhou") > 0
   end,
   on_refresh = function(self, event, target, player, data)
-    data.card = Fk:getCardById(target:getPile("ol__zhangbao_zhou")[1])
+    data.card = Fk:getCardById(target:getPile("$ol__zhangbao_zhou")[1])
     data.card.skillName = "ol__zhoufu"
   end,
 }
@@ -1752,13 +1752,13 @@ local ol__yingbing = fk.CreateTriggerSkill{
   frequency = Skill.Compulsory,
   events = {fk.CardUsing},
   can_trigger = function(self, event, target, player, data)
-    return player:hasSkill(self) and #target:getPile("ol__zhangbao_zhou") > 0 and data.card.color == Fk:getCardById(target:getPile("ol__zhangbao_zhou")[1]).color
+    return player:hasSkill(self) and #target:getPile("$ol__zhangbao_zhou") > 0 and data.card.color == Fk:getCardById(target:getPile("$ol__zhangbao_zhou")[1]).color
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
     player:drawCards(1, self.name)
     if player.dead then return end
-    local zhou = target:getPile("ol__zhangbao_zhou")[1]
+    local zhou = target:getPile("$ol__zhangbao_zhou")[1]
     local record = player:getTableMark(self.name)
     local n = (record[tostring(zhou)] or 0) + 1
     if n == 2 then
@@ -1779,7 +1779,7 @@ Fk:loadTranslationTable{
   [":ol__zhoufu"] = "①出牌阶段限一次，你可以将一张牌置于一名武将牌旁没有“咒”的其他角色的武将牌旁，称为“咒”；②当有“咒”的角色判定时，将“咒”作为判定牌；③一名角色的回合结束时，你令本回合移除过“咒”的角色各失去1点体力。",
   ["ol__yingbing"] = "影兵",
   [":ol__yingbing"] = "锁定技，有“咒”的角色使用与“咒”颜色相同的牌时，你摸一张牌；若这是你第二次因该“咒”摸牌，你获得该“咒”。",
-  ["ol__zhangbao_zhou"] = "咒",
+  ["$ol__zhangbao_zhou"] = "咒",
   ["#ol__zhoufu_trigger"] = "咒缚",
 
   ["$ol__zhoufu1"] = "走兽飞禽，术缚齐备。",

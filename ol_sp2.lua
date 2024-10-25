@@ -2177,14 +2177,14 @@ local zhanghe = General(extension, "ol_sp__zhanghe", "qun", 4)
 local ol__zhouxuan = fk.CreateTriggerSkill{
   name = "ol__zhouxuan",
   anim_type = "drawcard",
-  derived_piles = "zhanghe_xuan",
+  derived_piles = "$zhanghe_xuan",
   events = {fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(self) and player.phase == Player.Discard and
-    not player:isKongcheng() and #player:getPile("zhanghe_xuan") < 5
+    not player:isKongcheng() and #player:getPile("$zhanghe_xuan") < 5
   end,
   on_cost = function(self, event, target, player, data)
-    local x = 5 - #player:getPile("zhanghe_xuan")
+    local x = 5 - #player:getPile("$zhanghe_xuan")
     local cards = player.room:askForCard(player, 1, x, false, self.name, true,
     ".", "#ol__zhouxuan-invoke:::".. tostring(x))
     if #cards > 0 then
@@ -2193,7 +2193,7 @@ local ol__zhouxuan = fk.CreateTriggerSkill{
     end
   end,
   on_use = function(self, event, target, player, data)
-    player:addToPile("zhanghe_xuan", self.cost_data, false, self.name)
+    player:addToPile("$zhanghe_xuan", self.cost_data, false, self.name)
   end,
 }
 local ol__zhouxuan_trigger = fk.CreateTriggerSkill{
@@ -2202,7 +2202,7 @@ local ol__zhouxuan_trigger = fk.CreateTriggerSkill{
   main_skill = ol__zhouxuan,
   events = {fk.EventPhaseEnd, fk.CardUsing},
   can_trigger = function(self, event, target, player, data)
-    if target == player and player:hasSkill(ol__zhouxuan) and #player:getPile("zhanghe_xuan") > 0 then
+    if target == player and player:hasSkill(ol__zhouxuan) and #player:getPile("$zhanghe_xuan") > 0 then
       if event == fk.EventPhaseEnd then
         return player.phase == Player.Play
       else
@@ -2218,29 +2218,29 @@ local ol__zhouxuan_trigger = fk.CreateTriggerSkill{
       room:notifySkillInvoked(player, "ol__zhouxuan", "negative")
       room:moveCards({
         from = player.id,
-        ids = player:getPile("zhanghe_xuan"),
+        ids = player:getPile("$zhanghe_xuan"),
         toArea = Card.DiscardPile,
         moveReason = fk.ReasonPutIntoDiscardPile,
         skillName = "ol__zhouxuan",
-        specialName = "zhanghe_xuan",
+        specialName = "$zhanghe_xuan",
       })
     else
       player:broadcastSkillInvoke("ol__zhouxuan")
       room:notifySkillInvoked(player, "ol__zhouxuan", "drawcard")
       if not table.every(room:getOtherPlayers(player), function(p)
         return #p.player_cards[Player.Hand] < #player.player_cards[Player.Hand] end) then
-        player:drawCards(#player:getPile("zhanghe_xuan"), "ol__zhouxuan")
+        player:drawCards(#player:getPile("$zhanghe_xuan"), "ol__zhouxuan")
       else
         player:drawCards(1, "ol__zhouxuan")
       end
-      if #player:getPile("zhanghe_xuan") == 0 then return false end
+      if #player:getPile("$zhanghe_xuan") == 0 then return false end
       room:moveCards({
         from = player.id,
-        ids = table.random(player:getPile("zhanghe_xuan"), 1),
+        ids = table.random(player:getPile("$zhanghe_xuan"), 1),
         toArea = Card.DiscardPile,
         moveReason = fk.ReasonPutIntoDiscardPile,
         skillName = "ol__zhouxuan",
-        specialName = "zhanghe_xuan",
+        specialName = "$zhanghe_xuan",
       })
     end
   end,
@@ -2257,7 +2257,7 @@ Fk:loadTranslationTable{
   [":ol__zhouxuan"] = "弃牌阶段开始时，你可将任意张手牌扣置于武将牌上（均称为「旋」，至多五张）。"..
   "出牌阶段结束时，你移去所有「旋」。当你使用牌时，若你有「旋」，你摸一张牌，"..
   "若你不是唯一手牌数最大的角色，则改为摸X张牌（X为「旋」的数量），然后随机移去一张「旋」。",
-  ["zhanghe_xuan"] = "旋",
+  ["$zhanghe_xuan"] = "旋",
   ["#ol__zhouxuan-invoke"] = "你可以发动 周旋，将至多%arg张手牌置为「旋」",
 
   ["$ol__zhouxuan1"] = "详勘细察，洞若观火。",

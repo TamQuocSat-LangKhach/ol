@@ -420,7 +420,7 @@ local chenglie = fk.CreateTriggerSkill{
       table.removeOne(ids, dat.cards[1])
       table.insert(to_clean, dat.cards[1])
 
-      room:getPlayerById(dat.targets[1]):addToPile("chenglie", dat.cards, false, self.name, player.id, player.id)
+      room:getPlayerById(dat.targets[1]):addToPile("$chenglie", dat.cards, false, self.name, player.id, player.id)
 
       if Fk:getCardById(dat.cards[1]).color == Card.Red then
         table.insert(red_players, dat.targets[1])
@@ -511,7 +511,7 @@ local chenglie_delay = fk.CreateTriggerSkill{
     to_clean = table.filter(to_clean, function(id)
       if room:getCardArea(id) == Card.PlayerSpecial then
         local p = room:getCardOwner(id)
-        return p and p:getPileNameOfId(id) == "chenglie"
+        return p and p:getPileNameOfId(id) == "$chenglie"
       end
     end)
     if #to_clean > 0 then
@@ -539,6 +539,7 @@ Fk:loadTranslationTable{
   ["#chenglie-give"] = "骋烈：将这些牌置于目标角色武将牌上直到【杀】结算结束",
   ["#chenglie-card"] = "骋烈：你需交给 %src 一张牌",
   ["#ChenglieResult"] = "%from 的「骋烈」牌为 %arg",
+  ["$chenglie"] = "骋烈",
 
   ["$chenglie1"] = "铁蹄踏南北，烈马惊黄沙！",
   ["$chenglie2"] = "策马逐金雕，跨鞍寻天狼！",
@@ -5049,7 +5050,7 @@ local qushi = fk.CreateActiveSkill{
         table.insert(targetRecorded, player.id)
         room:setPlayerMark(target, "qushi_source", targetRecorded)
       end
-      target:addToPile("qushi_pile", card, false, self.name, player.id, {})
+      target:addToPile("$qushi_pile", card, false, self.name, player.id, {})
     end
   end
 }
@@ -5059,14 +5060,14 @@ local qushi_delay = fk.CreateTriggerSkill{
   mute = true,
   can_trigger = function(self, event, target, player, data)
     return target == player and not player.dead and player.phase == Player.Finish and
-    #player:getPile("qushi_pile") > 0
+    #player:getPile("$qushi_pile") > 0
   end,
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     local room = player.room
     local targets = player:getTableMark("qushi_source")
     room:setPlayerMark(player, "qushi_source", 0)
-    local cards = player:getPile("qushi_pile")
+    local cards = player:getPile("$qushi_pile")
     local card_types = {}
     for _, id in ipairs(cards) do
       table.insertIfNeed(card_types, Fk:getCardById(id).type)
@@ -5172,7 +5173,7 @@ Fk:loadTranslationTable{
 
   ["#qushi-active"] = "发动 趋势，你可以摸一张牌，然后放置一张手牌作为“趋”",
   ["#qushi-choose"] = "趋势：选择作为“趋”的一张手牌以及一名其他角色",
-  ["qushi_pile"] = "趋",
+  ["$qushi_pile"] = "趋",
   ["#qushi_delay"] = "趋势",
   ["#weijie-viewas"] = "发动 诿解，视为使用或打出一张基本牌",
   ["#weijie-choose"] = "诿解：弃置与你距离为1的一名角色的一张牌，若此牌为【%arg】，视为你使用或打出之",
