@@ -265,6 +265,9 @@ local ol__zhubi = fk.CreateActiveSkill{
   anim_type = "support",
   card_num = 0,
   target_num = 1,
+  times = function(self)
+    return Self.phase == Player.Play and Self.maxHp - Self:usedSkillTimes(self.name, Player.HistoryPhase) or -1
+  end,
   can_use = function(self, player)
     return player:usedSkillTimes(self.name, Player.HistoryPhase) < player.maxHp
   end,
@@ -6049,6 +6052,7 @@ local ziruo = fk.CreateTriggerSkill{
         end
       end
       room:setPlayerMark(player, "@[ziruo_cards]", 0)
+      room:setPlayerMark(player, MarkEnum.SortProhibited, 0)
     else
       for index, id in ipairs(handcards) do
         local card = Fk:getCardById(id)
@@ -6070,6 +6074,7 @@ local ziruo = fk.CreateTriggerSkill{
       if player:getMark("@[ziruo_cards]") == 0 then
         room:setPlayerMark(player, "@[ziruo_cards]", { value = player.id })
       end
+      room:setPlayerMark(player, MarkEnum.SortProhibited, 1)
     end
   end,
 }
@@ -6129,7 +6134,7 @@ local xufa = fk.CreateActiveSkill{
     if self.interaction.data == "xufa_put" then
       return Fk:currentRoom():getCardArea(to_select) == Card.PlayerHand
     end
-    
+
     return Self:getPileNameOfId(to_select) == "ol__jiangwan_xufa"
   end,
   target_filter = Util.FalseFunc,
