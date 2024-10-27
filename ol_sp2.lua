@@ -3781,22 +3781,15 @@ local shengong = fk.CreateActiveSkill{
       end
     end
     if #others > 0 then
-      local choices = {"shengong_good", "shengong_bad", "Cancel"}
-      -- TODO: 需要封装同时询问
+      local result = U.askForJointChoice(player, others, {"shengong_good", "shengong_bad", "Cancel"}, self.name,
+        "#shengong-help:"..player.id)
       for _, p in ipairs(others) do
-        local _data = json.encode{ choices, choices, self.name, "#shengong-help:"..player.id }
-        p.request_data = _data
-      end
-      room:notifyMoveFocus(others, self.name)
-      room:doBroadcastRequest("AskForChoice", others)
-      for _, p in ipairs(others) do
-        local chosen = p.reply_ready and p.client_reply or "Cancel"
-        choiceMap[p.id] = chosen
+        choiceMap[p.id] = result[p.id]
       end
     end
     local good,bad = 0,0
     local show = room:getNCards(#players)
-    room:moveCards({ ids = show, toArea = Card.Processing, moveReason = fk.ReasonJustMove, skillName = self.name, proposer = player.id })
+    room:moveCardTo(show, Card.Processing, nil, fk.ReasonJustMove, self.name, nil, true, player.id)
     for i, p in ipairs(players) do
       room:delay(200)
       local num = Fk:getCardById(show[i]).number

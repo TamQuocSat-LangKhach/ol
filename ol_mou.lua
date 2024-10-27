@@ -1100,35 +1100,17 @@ local ol__zhengyi = fk.CreateTriggerSkill{
     local targets = table.filter(room:getOtherPlayers(target, false), function (p)
       return p:getMark("@kongrong_virtuous") > 0
     end)
-    for _, p in ipairs(targets) do
-      local choices = {"yes", "no"}
-      p.request_data = json.encode({choices, choices, self.name, "#ol__zhengyi-choice::"..target.id..":"..data.damage})
-    end
-    room:notifyMoveFocus(targets, self.name)
-    room:doBroadcastRequest("AskForChoice", targets)
-    for _, p in ipairs(targets) do
-      local choice
-      if p.reply_ready then
-        choice = p.client_reply
-      else
-        p.client_reply = "yes"
-        choice = "yes"
-      end
-      room:sendLog{
-        type = "#ol__zhengyi-quest",
-        from = p.id,
-        arg = choice,
-      }
-    end
+    local result = U.askForJointChoice(player, targets, {"yes", "no"}, self.name,
+      "#ol__zhengyi-choice::"..target.id..":"..data.damage, true)
     local n = 0
     for _, p in ipairs(targets) do
-      if p.client_reply == "yes" and p.hp > n then
+      if result[p.id] == "yes" and p.hp > n then
         n = p.hp
       end
     end
     if n == 0 then return end
     for _, p in ipairs(room:getAlivePlayers(false)) do
-      if p.client_reply and p.client_reply == "yes" and p.hp == n then
+      if result[p.id] == "yes" and p.hp == n then
         self.cost_data = p
         return true
       end
@@ -1160,7 +1142,6 @@ Fk:loadTranslationTable{
   ["#liwen-choose"] = "立文：你可以将“贤”标记交给其他角色各一枚（每名角色至多5枚）",
   ["#liwen-use"] = "立文：请使用一张手牌，否则你弃置所有“贤”标记，%src 摸牌",
   ["#ol__zhengyi-choice"] = "争义：是否失去%arg点体力，防止 %dest 受到的伤害？（只有选“是”的体力值最大的角色会失去体力）",
-  ["#ol__zhengyi-quest"] = "%from 选择 %arg",
 }
 
 local sunjian = General(extension, "olmou__sunjian", "wu", 4, 5)

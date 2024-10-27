@@ -1039,7 +1039,7 @@ local ol_ex__guhuo = fk.CreateViewAsSkill{
     local all_names = U.getAllCardNames("bt")
     local names = U.getViewAsCardNames(Self, "ol_ex__guhuo", all_names)
     if #names > 0 then
-      return UI.ComboBox { choices = names, all_choices = all_names }
+      return U.CardNameBox { choices = names, all_choices = all_names }
     end
   end,
   card_filter = function(self, to_select, selected)
@@ -1081,24 +1081,12 @@ local ol_ex__guhuo = fk.CreateViewAsSkill{
     local players = table.filter(room:getOtherPlayers(player), function(p) return not p:hasSkill("ol_ex__chanyuan") end)
     if #players > 0 then
       local questioners = {}
-      local choices = {"noquestion", "question"}
+      local result = U.askForJointChoice(player, players, {"noquestion", "question"}, self.name,
+        "#guhuo-ask::"..player.id..":"..use.card.name, true)
       for _, p in ipairs(players) do
-        local _data = json.encode({ choices, choices, self.name, "#guhuo-ask::"..player.id..":"..use.card.name })
-        p.request_data = _data
-      end
-      room:notifyMoveFocus(players, self.name)
-      room:doBroadcastRequest("AskForChoice", players)
-      for _, p in ipairs(players) do
-        local choice = p.reply_ready and p.client_reply or choices[1]
-        room:sendLog{
-          type = "#guhuo_query",
-          from = p.id,
-          arg = choice
-        }
-        if choice == "question" then
+        if result[p.id] == "question" then
           table.insert(questioners, p)
         end
-        room:delay(200)
       end
       if #questioners > 0 then
         player:showCards({card_id})

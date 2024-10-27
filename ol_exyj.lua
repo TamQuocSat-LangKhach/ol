@@ -151,32 +151,14 @@ local jianmie = fk.CreateActiveSkill{
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
     local target = room:getPlayerById(effect.tos[1])
-
-    local choices = {"red", "black"}
-    player.request_data = json.encode({choices, choices, self.name, "#jianmie-choice::"..target.id})
-    target.request_data = json.encode({choices, choices, self.name, "#jianmie-choice::"..player.id})
-    room:notifyMoveFocus({player, target}, self.name)
-    room:doBroadcastRequest("AskForChoice", {player, target})
-    for _, p in ipairs({player, target}) do
-      local choice
-      if p.reply_ready then
-        choice = p.client_reply
-      else
-        local color = table.random(choices)
-        p.client_reply = color
-        choice = color
-      end
-      room:sendLog{
-        type = "#jianmie-quest",
-        from = p.id,
-        arg = choice,
-      }
-    end
+    local result = U.askForJointChoice(player, {player, target}, {"red", "black"}, self.name, "#jianmie-choice", true)
     local cards1 = table.filter(player:getCardIds("h"), function (id)
-      return Fk:getCardById(id):getColorString() == player.client_reply
+      return Fk:getCardById(id):getColorString() == result[player.id] and
+        not player:prohibitDiscard(id)
     end)
     local cards2 = table.filter(target:getCardIds("h"), function (id)
-      return Fk:getCardById(id):getColorString() == target.client_reply
+      return Fk:getCardById(id):getColorString() == result[target.id] and
+        not target:prohibitDiscard(id)
     end)
     local moves = {}
     if #cards1 > 0 then
@@ -225,8 +207,7 @@ Fk:loadTranslationTable{
   [":jianmie"] = "出牌阶段限一次，你可以选择一名其他角色，你与其同时选择一种颜色，弃置所有各自选择颜色的手牌，然后弃置牌数较多的角色视为对"..
   "另一名角色使用【决斗】。",
   ["#jianmie"] = "翦灭：与一名角色同时选择一种颜色的手牌弃置，弃牌数多的角色视为对对方使用【决斗】",
-  ["#jianmie-choice"] = "翦灭：与 %dest 同时选择一种颜色的手牌弃置，弃牌数多的角色视为对对方使用【决斗】",
-  ["#jianmie-quest"] = "%from 选择弃置 %arg 手牌",
+  ["#jianmie-choice"] = "翦灭：选择一种颜色的手牌弃置，弃牌多的角色视为对对方使用【决斗】！",
 
   ["$jianmie1"] = "莫说是你，天潢贵胄亦可杀得！",
   ["$jianmie2"] = "你我不到黄泉，不复相见！",

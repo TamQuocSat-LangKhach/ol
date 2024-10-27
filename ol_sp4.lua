@@ -25,26 +25,12 @@ local hunjiang = fk.CreateActiveSkill{
     local targets = table.simpleClone(effect.tos)
     room:sortPlayersByAction(targets)
     targets = table.map(targets, function(pId) return room:getPlayerById(pId) end)
-    for _, p in ipairs(targets) do
-      local choices = { "hunjiang_extra_target:" .. player.id, "hunjiang_draw::" .. player.id }
-      p.request_data = json.encode({
-        choices,
-        choices,
-        self.name,
-        "#hunjiang-others_choose",
-      })
-    end
-    room:notifyMoveFocus(targets, self.name)
-    room:doBroadcastRequest("AskForChoice", targets)
+    local result = U.askForJointChoice(player, targets, { "hunjiang_extra_target:"..player.id, "hunjiang_draw::"..player.id }, self.name,
+      "#hunjiang-others_choose")
 
     local firstChosen
     for _, p in ipairs(targets) do
-      local choice
-      if p.reply_ready then
-        choice = p.client_reply
-      else
-        choice = "hunjiang_extra_target:" .. player.id
-      end
+      local choice = result[p.id]
 
       if firstChosen == nil then
         firstChosen = choice

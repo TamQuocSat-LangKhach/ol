@@ -2128,18 +2128,14 @@ local zhenying = fk.CreateActiveSkill{
     local tos = {player, target}
     local cardsMap = {}
     for _, p in ipairs(tos) do
-      local choices = {"0", "1", "2"}
-      p.request_data = json.encode({choices, choices, self.name, "#zhenying-choice"})
       cardsMap[p.id] = table.filter(p:getCardIds("h"), function(id)
         return not p:prohibitDiscard(Fk:getCardById(id))
       end)
     end
-    room:notifyMoveFocus(tos, self.name)
-    room:doBroadcastRequest("AskForChoice", tos)
+    local result = U.askForJointChoice(player, tos, {"0", "1", "2"}, self.name, "#zhenying-choice")
     local discard_num_map = {}
     for _, p in ipairs(tos) do
-      local choice = p.reply_ready and tonumber(p.client_reply) or 2
-      discard_num_map[p.id] = p:getHandcardNum() - choice
+      discard_num_map[p.id] = p:getHandcardNum() - tonumber(result[p.id])
     end
     local toAsk = {}
     for _, p in ipairs(tos) do
