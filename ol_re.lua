@@ -617,7 +617,7 @@ local ol__huxiao = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     data.to:drawCards(1, self.name)
     if data.to.dead then return end
-    local mark = U.getMark(data.to, "@@ol__huxiao-turn")
+    local mark = data.to:getTableMark("@@ol__huxiao-turn")
     table.insertIfNeed(mark, player.id)
     player.room:setPlayerMark(data.to, "@@ol__huxiao-turn", mark)
   end,
