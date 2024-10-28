@@ -2132,7 +2132,7 @@ local zhenying = fk.CreateActiveSkill{
         return not p:prohibitDiscard(Fk:getCardById(id))
       end)
     end
-    local result = U.askForJointChoice(player, tos, {"0", "1", "2"}, self.name, "#zhenying-choice")
+    local result = U.askForJointChoice(tos, {"0", "1", "2"}, self.name, "#zhenying-choice")
     local discard_num_map = {}
     for _, p in ipairs(tos) do
       discard_num_map[p.id] = p:getHandcardNum() - tonumber(result[p.id])

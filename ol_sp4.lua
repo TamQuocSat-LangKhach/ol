@@ -25,7 +25,7 @@ local hunjiang = fk.CreateActiveSkill{
     local targets = table.simpleClone(effect.tos)
     room:sortPlayersByAction(targets)
     targets = table.map(targets, function(pId) return room:getPlayerById(pId) end)
-    local result = U.askForJointChoice(player, targets, { "hunjiang_extra_target:"..player.id, "hunjiang_draw::"..player.id }, self.name,
+    local result = U.askForJointChoice(targets, { "hunjiang_extra_target:"..player.id, "hunjiang_draw::"..player.id }, self.name,
       "#hunjiang-others_choose")
 
     local firstChosen

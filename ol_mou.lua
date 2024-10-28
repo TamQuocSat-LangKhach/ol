@@ -1100,7 +1100,7 @@ local ol__zhengyi = fk.CreateTriggerSkill{
     local targets = table.filter(room:getOtherPlayers(target, false), function (p)
       return p:getMark("@kongrong_virtuous") > 0
     end)
-    local result = U.askForJointChoice(player, targets, {"yes", "no"}, self.name,
+    local result = U.askForJointChoice(targets, {"yes", "no"}, self.name,
       "#ol__zhengyi-choice::"..target.id..":"..data.damage, true)
     local n = 0
     for _, p in ipairs(targets) do

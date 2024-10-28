@@ -1081,7 +1081,7 @@ local ol_ex__guhuo = fk.CreateViewAsSkill{
     local players = table.filter(room:getOtherPlayers(player), function(p) return not p:hasSkill("ol_ex__chanyuan") end)
     if #players > 0 then
       local questioners = {}
-      local result = U.askForJointChoice(player, players, {"noquestion", "question"}, self.name,
+      local result = U.askForJointChoice(players, {"noquestion", "question"}, self.name,
         "#guhuo-ask::"..player.id..":"..use.card.name, true)
       for _, p in ipairs(players) do
         if result[p.id] == "question" then

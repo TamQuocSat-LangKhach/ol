@@ -3781,7 +3781,7 @@ local shengong = fk.CreateActiveSkill{
       end
     end
     if #others > 0 then
-      local result = U.askForJointChoice(player, others, {"shengong_good", "shengong_bad", "Cancel"}, self.name,
+      local result = U.askForJointChoice(others, {"shengong_good", "shengong_bad", "Cancel"}, self.name,
         "#shengong-help:"..player.id)
       for _, p in ipairs(others) do
         choiceMap[p.id] = result[p.id]

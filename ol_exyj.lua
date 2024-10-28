@@ -151,7 +151,7 @@ local jianmie = fk.CreateActiveSkill{
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
     local target = room:getPlayerById(effect.tos[1])
-    local result = U.askForJointChoice(player, {player, target}, {"red", "black"}, self.name, "#jianmie-choice", true)
+    local result = U.askForJointChoice({player, target}, {"red", "black"}, self.name, "#jianmie-choice", true)
     local cards1 = table.filter(player:getCardIds("h"), function (id)
       return Fk:getCardById(id):getColorString() == result[player.id] and
         not player:prohibitDiscard(id)
