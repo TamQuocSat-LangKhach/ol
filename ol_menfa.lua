@@ -895,6 +895,9 @@ local yirong = fk.CreateActiveSkill{
   card_num = function()
     return math.max(0, Self:getHandcardNum() - Self:getMaxCards())
   end,
+  times = function(self)
+    return Self.phase == Player.Play and 2 - Self:usedSkillTimes(self.name, Player.HistoryPhase) or -1
+  end,
   can_use = function(self, player)
     return player:usedSkillTimes(self.name, Player.HistoryPhase) < 2 and
     player:getHandcardNum() ~= player:getMaxCards()

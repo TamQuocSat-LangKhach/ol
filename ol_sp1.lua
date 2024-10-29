@@ -1312,6 +1312,9 @@ local dingpan = fk.CreateActiveSkill{
   card_num = 0,
   target_num = 1,
   prompt = "#dingpan",
+  times = function(self)
+    return Self.phase == Player.Play and Self:getMark("dingpan-phase") - Self:usedSkillTimes(self.name, Player.HistoryPhase) or -1
+  end,
   can_use = function(self, player)
     return player:usedSkillTimes(self.name, Player.HistoryPhase) < player:getMark("dingpan-phase")
   end,
