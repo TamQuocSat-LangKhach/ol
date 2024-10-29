@@ -611,7 +611,7 @@ local chexuan = fk.CreateActiveSkill{
     room:setPlayerMark(player, "chexuan_cards", 0)
     local cardId = success and dat.cards[1] or table.random(carts)
     room:setCardMark(Fk:getCardById(cardId), MarkEnum.DestructOutMyEquip, 1)
-    U.moveCardIntoEquip(room, player, cardId, self.name, true, player)
+    room:moveCardIntoEquip(player, cardId, self.name, true, player)
   end,
 }
 local chexuan_select = fk.CreateActiveSkill{
@@ -660,7 +660,7 @@ local chexuan_trigger = fk.CreateTriggerSkill{
       if #carts > 0 then
         local put = table.random(carts)
         room:setCardMark(Fk:getCardById(put), MarkEnum.DestructOutMyEquip, 1)
-        U.moveCardIntoEquip(room, player, put, chexuan.name, true, player)
+        room:moveCardIntoEquip(player, put, chexuan.name, true, player)
       end
     end
   end,

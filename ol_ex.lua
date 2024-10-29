@@ -3651,7 +3651,7 @@ local ol_ex__zhijian = fk.CreateActiveSkill{
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
     local target = room:getPlayerById(effect.tos[1])
-    U.moveCardIntoEquip(room, target, effect.cards[1], self.name, true, player)
+    room:moveCardIntoEquip(target, effect.cards[1], self.name, true, player)
     if not player.dead then
       room:drawCards(player, 1, self.name)
     end

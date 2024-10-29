@@ -1801,7 +1801,7 @@ local zhuangshu = fk.CreateTriggerSkill{
       end
       if comb_id then
         room:setCardMark(Fk:getCardById(comb_id), MarkEnum.DestructOutEquip, 1)
-        U.moveCardIntoEquip(room, target, comb_id, self.name, true, player)
+        room:moveCardIntoEquip(target, comb_id, self.name, true, player)
       end
     end
   end,
@@ -3923,7 +3923,7 @@ local qisi = fk.CreateTriggerSkill{
       for _, t in ipairs(types) do
         table.insert(put, table.random(equipMap[t]))
       end
-      U.moveCardIntoEquip(room, player, put, self.name, false, player)
+      room:moveCardIntoEquip(player, put, self.name, false, player)
     else
       local choices = {"weapon", "armor", "equip_horse", "treasure"}
       local StrToSubtypeList = {["weapon"]={Card.SubtypeWeapon},["armor"]={Card.SubtypeArmor},["treasure"]={Card.SubtypeTreasure},["equip_horse"]={Card.SubtypeOffensiveRide,Card.SubtypeDefensiveRide}}
