@@ -438,7 +438,7 @@ local zhongjiex = fk.CreateTriggerSkill{
   anim_type = "support",
   events = {fk.Death},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name, false, true)
+    return target == player and player:hasSkill(self, false, true)
   end,
   on_cost = function(self, event, target, player, data)
     local room = player.room
@@ -1066,7 +1066,7 @@ local qin__xichu = fk.CreateTriggerSkill{
   frequency = Skill.Compulsory,
   events = {fk.TargetConfirming},
   can_trigger = function(self, event, target, player, data)
-    if target == player and player:hasSkill(self.name) and data.card.trueName == "slash" then
+    if target == player and player:hasSkill(self) and data.card.trueName == "slash" then
       local room = player.room
       return not room:getPlayerById(data.from).dead and
         table.find(room:getOtherPlayers(player), function(p)
@@ -1561,7 +1561,7 @@ local qin__gaizhao = fk.CreateTriggerSkill{
   anim_type = "defensive",
   events = {fk.TargetConfirming},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name) and (data.card.trueName == "slash" or data.card:isCommonTrick()) and
+    return target == player and player:hasSkill(self) and (data.card.trueName == "slash" or data.card:isCommonTrick()) and
     table.find(player.room:getUseExtraTargets(data, true, true), function (p) return player.room:getPlayerById(p).kingdom == "qin" end)
   end,
   on_cost = function(self, event, target, player, data)

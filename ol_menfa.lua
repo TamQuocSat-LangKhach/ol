@@ -713,7 +713,7 @@ local dianzhan = fk.CreateTriggerSkill{
   refresh_events = {fk.AfterCardUseDeclared, fk.EventLoseSkill},
   can_refresh = function(self, event, target, player, data)
     if event == fk.AfterCardUseDeclared then
-      return player == target and player:hasSkill(self.name, true) and data.card.suit ~= Card.NoSuit
+      return player == target and player:hasSkill(self, true) and data.card.suit ~= Card.NoSuit
     elseif event == fk.EventLoseSkill then
       return target == player and data == self and player:getMark("@dianzhan_suit-round") ~= 0
     end
@@ -1489,11 +1489,11 @@ local lianzhuw_trigger = fk.CreateTriggerSkill{
   refresh_events = {fk.GameStart, fk.EventAcquireSkill, fk.EventLoseSkill, fk.Deathed},
   can_refresh = function(self, event, target, player, data)
     if event == fk.GameStart then
-      return player:hasSkill(self.name, true)
+      return player:hasSkill(self, true)
     elseif event == fk.EventAcquireSkill or event == fk.EventLoseSkill then
       return target == player and data == self
     else
-      return target == player and player:hasSkill(self.name, true, true)
+      return target == player and player:hasSkill(self, true, true)
     end
   end,
   on_refresh = function(self, event, target, player, data)
@@ -2469,7 +2469,7 @@ local jiejian = fk.CreateTriggerSkill{
 
   refresh_events = {fk.AfterCardUseDeclared},
   can_refresh = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self.name, true)
+    return target == player and player:hasSkill(self, true)
   end,
   on_refresh = function(self, event, target, player, data)
     player.room:addPlayerMark(player, "@jiejian-turn", 1)
