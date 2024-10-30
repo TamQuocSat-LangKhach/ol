@@ -1296,7 +1296,37 @@ Fk:loadTranslationTable{
 }
 
 local liru = General(extension, "ol_ex__liru", "qun", 3)
-local ol_ex__mieji = fk.CreateActiveSkill{
+local juece = fk.CreateTriggerSkill{
+  name = "ol_ex__juece",
+  anim_type = "offensive",
+  events = {fk.EventPhaseStart},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self) and player.phase == Player.Finish
+    and table.find(player.room:getOtherPlayers(player), function (p)
+      return p:getHandcardNum() <= player:getHandcardNum()
+    end)
+  end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    local targets = table.filter(room:getOtherPlayers(player), function (p)
+      return p:getHandcardNum() <= player:getHandcardNum()
+    end)
+    local to = room:askForChoosePlayers(player, table.map(targets, Util.IdMapper), 1, 1, "#ol_ex__juece-choose", self.name, true)
+    if #to > 0 then
+      self.cost_data = {tos = to}
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    player.room:damage{
+      from = player,
+      to = player.room:getPlayerById(self.cost_data.tos[1]),
+      damage = 1,
+      skillName = self.name,
+    }
+  end,
+}
+local mieji = fk.CreateActiveSkill{
   name = "ol_ex__mieji",
   anim_type = "offensive",
   card_num = 1,
@@ -1330,8 +1360,8 @@ local ol_ex__mieji = fk.CreateActiveSkill{
     end
   end,
 }
-liru:addSkill("juece")
-liru:addSkill(ol_ex__mieji)
+liru:addSkill(juece)
+liru:addSkill(mieji)
 liru:addSkill("ty_ex__fencheng")
 Fk:loadTranslationTable{
   ["ol_ex__liru"] = "界李儒",
@@ -1339,11 +1369,14 @@ Fk:loadTranslationTable{
   --["designer:ol_ex__caochong"] = "",
   --["illustrator:ol_ex__caochong"] = "",
 
+  ["ol_ex__juece"] = "绝策",
+  [":ol_ex__juece"] = "结束阶段，你可以对一名手牌数不大于你的其他角色造成1点伤害。",
   ["ol_ex__mieji"] = "灭计",
   [":ol_ex__mieji"] = "出牌阶段限一次，你可以将一张锦囊牌置于牌堆顶并令一名有手牌的其他角色选择一项：1.弃置一张锦囊牌；2.依次弃置两张牌。",
   ["ol_ex__fencheng"] = "焚城",
   [":ol_ex__fencheng"] = "限定技，出牌阶段，你可以选择一名其他角色开始，所有其他角色依次选择一项：1.弃置任意张牌（须比上家弃置的牌多）；2.受到"..
   "你造成的2点火焰伤害。",
+  ["#ol_ex__juece-choose"] = "绝策：你可以对一名手牌数不大于你的角色造成1点伤害",
   ["#ol_ex__mieji"] = "灭计：将一张锦囊牌置于牌堆顶，令一名角色弃一张锦囊牌或弃置两张牌",
   ["#ol_ex__mieji-discard1"] = "灭计：请弃置一张锦囊牌，或依次弃置两张牌",
   ["#ol_ex__mieji-discard2"] = "灭计：请再弃置一张牌",

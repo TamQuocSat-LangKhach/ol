@@ -3454,7 +3454,7 @@ zhongyao:addSkill("baozu")
 Fk:loadTranslationTable{
   ["olz__zhongyao"] = "族钟繇",
   ["#olz__zhongyao"] = "开达理干",
-  --["designer:olz__zhongyao"] = "",
+  ["designer:olz__zhongyao"] = "张浩",
   ["illustrator:olz__zhongyao"] = "alien",
   ["chengqi"] = "承启",
   [":chengqi"] = "你可以将至少两张手牌当你于当前回合内未使用过的基本牌或普通锦囊牌使用，"..

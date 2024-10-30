@@ -5965,6 +5965,7 @@ local jiangwan = General(extension, "ol__jiangwan", "shu", 3)
 Fk:loadTranslationTable{
   ["ol__jiangwan"] = "蒋琬",
   ["#ol__jiangwan"] = "社稷之器",
+  ["designer:ol__jiangwan"] = "那个背影",
   ["~ol__jiangwan"] = "臣既暗弱，加婴疾疢，规方无成……",
 }
 
