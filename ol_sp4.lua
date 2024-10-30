@@ -1387,7 +1387,8 @@ local zonglve_trigger = fk.CreateTriggerSkill{
   events = {fk.Damage},
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(zonglve) and data.card and data.card.trueName == "slash" and
-      player.room.logic:damageByCardEffect() and not data.to.dead and not data.to:isAllNude()
+      player.room.logic:damageByCardEffect() and not data.to.dead and not data.to:isAllNude() and
+      data.card:isVirtual() and (#data.card.subcards ~= 1 or Fk:getCardById(data.card.subcards[1]).trueName ~= "slash")
   end,
   on_cost = function(self, event, target, player, data)
     return player.room:askForSkillInvoke(player, self.name, data, "#zonglve-invoke::"..data.to.id)
