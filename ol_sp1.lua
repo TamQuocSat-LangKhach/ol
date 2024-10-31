@@ -1313,10 +1313,16 @@ local dingpan = fk.CreateActiveSkill{
   target_num = 1,
   prompt = "#dingpan",
   times = function(self)
-    return Self.phase == Player.Play and Self:getMark("dingpan-phase") - Self:usedSkillTimes(self.name, Player.HistoryPhase) or -1
+    return Self.phase == Player.Play and
+    #table.filter(Fk:currentRoom().alive_players, function (p)
+      return p.role == "rebel"
+    end) - Self:usedSkillTimes(self.name, Player.HistoryPhase) or -1
   end,
   can_use = function(self, player)
-    return player:usedSkillTimes(self.name, Player.HistoryPhase) < player:getMark("dingpan-phase")
+    return player:usedSkillTimes(self.name, Player.HistoryPhase) <
+      #table.filter(Fk:currentRoom().alive_players, function (p)
+        return p.role == "rebel"
+      end)
   end,
   card_filter = Util.FalseFunc,
   target_filter = function(self, to_select, selected)
@@ -1343,22 +1349,6 @@ local dingpan = fk.CreateActiveSkill{
     end
   end,
 }
-local dingpan_record = fk.CreateTriggerSkill{
-  name = "#dingpan_record",
-
-  refresh_events = {fk.StartPlayCard},
-  can_refresh = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self, true)
-  end,
-  on_refresh = function(self, event, target, player, data)
-    local room = player.room
-    local rebel = table.filter(room.alive_players, function (p)
-      return p.role == "rebel"
-    end)
-    room:setPlayerMark(player, "dingpan-phase", #rebel)
-  end,
-}
-dingpan:addRelatedSkill(dingpan_record)
 buzhi:addSkill(hongde)
 buzhi:addSkill(dingpan)
 Fk:loadTranslationTable{
