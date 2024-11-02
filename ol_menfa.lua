@@ -1666,6 +1666,9 @@ local jiexuan = fk.CreateViewAsSkill{
   prompt = function(self)
     return "#jiexuan-"..Self:getSwitchSkillState(self.name, false, true)
   end,
+  times = function(self)
+    return Self.phase == Player.Play and 1 - Self:usedSkillTimes(self.name, Player.HistoryGame) or -1
+  end,
   card_filter = function(self, to_select, selected)
     if #selected == 0 then
       if Self:getSwitchSkillState(self.name, false) == fk.SwitchYang then
@@ -1698,6 +1701,9 @@ local mingjiew = fk.CreateActiveSkill{
   card_num = 0,
   target_num = 1,
   frequency = Skill.Limited,
+  times = function(self)
+    return Self.phase == Player.Play and 1 - Self:usedSkillTimes(self.name, Player.HistoryGame) or -1
+  end,
   can_use = function(self, player)
     return player:usedSkillTimes(self.name, Player.HistoryGame) == 0
   end,
@@ -3479,12 +3485,67 @@ Fk:loadTranslationTable{
 }
 
 local wangchang = General(extension, "olz__wangchang", "wei", 4)
-wangchang:addSkill("tmp_illustrate")
+local kaiji = fk.CreateActiveSkill{
+  name = "ol__kaiji",
+  anim_type = "offensive",
+  card_num = 0,
+  target_num = 1,
+  prompt = "#ol__kaiji",
+  times = function(self)
+    return Self.phase == Player.Play and 1 - Self:usedSkillTimes(self.name, Player.HistoryPhase) or -1
+  end,
+  can_use = function(self, player)
+    return player:usedSkillTimes(self.name, Player.HistoryPhase) == 0 and not player:isKongcheng()
+  end,
+  card_filter = Util.FalseFunc,
+  target_filter = function(self, to_select, selected)
+    if #selected == 0 and not table.contains(Self:getTableMark("ol__kaiji-round"), to_select) then
+      if to_select == Self.id then
+        return table.find(Self:getCardIds("h"), function (id)
+          return not Self:prohibitDiscard(id)
+        end)
+      else
+        return true
+      end
+    end
+  end,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    local target = room:getPlayerById(effect.tos[1])
+    room:addTableMark(player, "ol__kaiji-round", target.id)
+    local card
+    if target == player then
+      card = room:askForDiscard(player, 1, 1, false, self.name, false, nil, "#ol__kaiji-discard:"..player.id)[1]
+    else
+      card = room:askForCardChosen(target, player, "h", self.name, "#ol__kaiji-discard:"..player.id)
+      room:throwCard(card, self.name, player, target)
+    end
+    if not player.dead and card and table.contains(room.discard_pile, card) then
+      local use = U.askForUseRealCard(room, player, {card}, nil, self.name,
+        "#ol__kaiji-use", {bypass_times = true, extraUse = true, expand_pile = {card}}, false, true)
+      if use and not player.dead then
+        player:drawCards(1, self.name)
+      end
+    end
+  end,
+}
+kaiji.scope_type = Player.HistoryPhase
+wangchang:addSkill(kaiji)
 wangchang:addSkill("zhongliu")
-wangchang.hidden = true
 Fk:loadTranslationTable{
   ["olz__wangchang"] = "族王昶",
   ["#olz__wangchang"] = "治论识度",
+  ["designer:olz__wangchang"] = "玄蝶既白",
+  ["illustrator:olz__wangchang"] = "",
+
+  ["ol__kaiji"] = "开济",
+  [":ol__kaiji"] = "出牌阶段限一次，你可以令一名本轮未以此法指定过的角色弃置你一张手牌，然后你可以使用弃置的牌，若如此做，你摸一张牌。",
+  ["#ol__kaiji"] = "开济：令一名角色弃置你一张手牌，你可以使用被弃置的牌并摸一张牌",
+  ["#ol__kaiji-discard"] = "开济：请弃置 %src 一张手牌",
+  ["#ol__kaiji-use"] = "开济：你可以使用这张牌，摸一张牌",
+}
+
+Fk:loadTranslationTable{
   ["olz__wangjiw"] = "族王机",
   ["#olz__wangjiw"] = "寒花疏寂",
 }

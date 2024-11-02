@@ -1701,8 +1701,8 @@ huangyueying:addSkill("tmp_illustrate")
 huangyueying.hidden = true
 
 local dongzhuo = General(extension, "olmou__dongzhuo", "qun", 5)
-dengai:addSkill("tmp_illustrate")
-dengai.hidden = true
+dongzhuo:addSkill("tmp_illustrate")
+dongzhuo.hidden = true
 
 Fk:loadTranslationTable{
   ["olmou__dengai"] = "谋邓艾",
