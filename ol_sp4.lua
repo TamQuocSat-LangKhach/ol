@@ -132,7 +132,9 @@ Fk:loadTranslationTable{
   ["#hunjiang-others_choose"] = "浑疆：请选择一项，若你与其他目标均选择同一项，则你执行另一项",
   ["#hunjiang-choose"] = "浑疆：你可选择其中至少一名角色成为此【杀】的额外目标",
 
-  ["~mawan"] = "",
+  ["$hunjiang1"] = "边野有豪强，敢执干戈动玄黄！",
+  ["$hunjiang2"] = "漫天浑雪，弥散八荒。",
+  ["~mawan"] = "曹贼势大，唯避其锋芒。",
 }
 
 local budugen = General(extension, "budugen", "qun", 4)

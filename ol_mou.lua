@@ -1678,6 +1678,7 @@ Fk:loadTranslationTable{
   ["olmou__huaxiong"] = "谋华雄",
   ["#olmou__huaxiong"] = "",
   ["illustrator:olmou__huaxiong"] = "",
+  ["~olmou__huaxiong"] = "我已连战三场，匹夫胜之不武！",
 
   ["bojue"] = "搏决",
   [":bojue"] = "出牌阶段限两次，你可以与一名其他角色同时选择摸或弃置一张牌，若你与其牌数因此变化之和为：0，你与其弃置对方一张牌；2，你与其"..
@@ -1690,6 +1691,11 @@ Fk:loadTranslationTable{
   ["@yangwei1"] = "伤害+",
   ["@yangwei2"] = "受伤+",
   ["#yangwei_trigger"] = "扬威",
+
+  ["$bojue1"] = "匹夫，今日便让你尝尝我大刀之利！",
+  ["$bojue2"] = "孙坚！你若有胆，便与我一对一！",
+  ["$yangwei1"] = "本将军刀下，不分强弱，只问生死。",
+  ["$yangwei2"] = "敌将何在？速来受死！",
 }
 
 local dengai = General(extension, "olmou__dengai", "wei", 4)
