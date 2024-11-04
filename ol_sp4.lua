@@ -1357,12 +1357,12 @@ local shisuan = fk.CreateTriggerSkill{
     end
   end,
 }
-local zonglve = fk.CreateViewAsSkill{
-  name = "zonglve",
+local zonglue = fk.CreateViewAsSkill{
+  name = "zonglue",
   anim_type = "offensive",
-  prompt = "#zonglve",
+  prompt = "#zonglue",
   times = function (self)
-    return 1 - Self:getMark("zonglve-phase")
+    return 1 - Self:getMark("zonglue-phase")
   end,
   card_filter = function(self, to_select, selected)
     return #selected == 0
@@ -1375,36 +1375,36 @@ local zonglve = fk.CreateViewAsSkill{
     return card
   end,
   before_use = function (self, player, use)
-    player.room:setPlayerMark(player, "zonglve-phase", 1)
+    player.room:setPlayerMark(player, "zonglue-phase", 1)
   end,
   enabled_at_play = function(self, player)
-    return player:getMark("zonglve-phase") == 0
+    return player:getMark("zonglue-phase") == 0
   end,
   enabled_at_response = Util.FalseFunc,
 }
-local zonglve_trigger = fk.CreateTriggerSkill{
-  name = "#zonglve_trigger",
+local zonglue_trigger = fk.CreateTriggerSkill{
+  name = "#zonglue_trigger",
   anim_type = "offensive",
-  main_skill = zonglve,
+  main_skill = zonglue,
   events = {fk.Damage},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(zonglve) and data.card and data.card.trueName == "slash" and
+    return target == player and player:hasSkill(zonglue) and data.card and data.card.trueName == "slash" and
       player.room.logic:damageByCardEffect() and not data.to.dead and not data.to:isAllNude() and
       data.card:isVirtual() and (#data.card.subcards ~= 1 or Fk:getCardById(data.card.subcards[1]).trueName ~= "slash")
   end,
   on_cost = function(self, event, target, player, data)
-    return player.room:askForSkillInvoke(player, self.name, data, "#zonglve-invoke::"..data.to.id)
+    return player.room:askForSkillInvoke(player, self.name, data, "#zonglue-invoke::"..data.to.id)
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
     room:doIndicate(player.id, {data.to.id})
-    local card = room:askForCardChosen(player, data.to, "hej", self.name)
-    room:obtainCard(player.id, card, false, fk.ReasonPrey)
+    local cards = U.askforCardsChosenFromAreas(player, data.to, "hej", self.name, nil, nil, false)
+    room:obtainCard(player, cards, false, fk.ReasonPrey)
   end,
 }
-zonglve:addRelatedSkill(zonglve_trigger)
+zonglue:addRelatedSkill(zonglue_trigger)
 niufu:addSkill(shisuan)
-niufu:addSkill(zonglve)
+niufu:addSkill(zonglue)
 Fk:loadTranslationTable{
   ["ol__niufu"] = "牛辅",
   ["#ol__niufu"] = "",
@@ -1412,14 +1412,14 @@ Fk:loadTranslationTable{
 
   ["shisuan"] = "蓍算",
   [":shisuan"] = "锁定技，当你受到伤害后，你弃置一张牌，伤害来源选择一项：1.失去1点体力；2.交给你其装备区内一张牌；3.翻面。",
-  ["zonglve"] = "纵掠",
-  [":zonglve"] = "出牌阶段限一次，你可以将一张牌当【杀】使用。当你使用【杀】对目标角色造成伤害后，若实体牌不为【杀】或没有实体牌，"..
+  ["zonglue"] = "纵掠",
+  [":zonglue"] = "出牌阶段限一次，你可以将一张牌当【杀】使用。当你使用【杀】对目标角色造成伤害后，若实体牌不为【杀】或没有实体牌，"..
   "你可以获得其每个区域各一张牌。",
   ["shisuan_give"] = "交给 %src 装备区一张牌",
   ["#shisuan-give"] = "蓍算：请交给 %src 装备区一张牌",
-  ["#zonglve"] = "纵掠：你可以将一张牌当【杀】使用",
-  ["#zonglve_trigger"] = "纵掠",
-  ["#zonglve-invoke"] = "纵掠：是否获得 %dest 每个区域各一张牌？",
+  ["#zonglue"] = "纵掠：你可以将一张牌当【杀】使用",
+  ["#zonglue_trigger"] = "纵掠",
+  ["#zonglue-invoke"] = "纵掠：是否获得 %dest 每个区域各一张牌？",
 }
 
 local qinlang = General(extension, "ol__qinlang", "wei", 3)
