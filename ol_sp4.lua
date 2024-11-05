@@ -1182,7 +1182,7 @@ local kuangxiang = fk.CreateTriggerSkill{
     if n > 0 then
       room:askForDiscard(to, n, n, false, self.name, false)
     else
-      local cards = to:drawCards(4, self.name, "top", "@@kuangxiang-inhand")
+      local cards = to:drawCards(-n, self.name, "top", "@@kuangxiang-inhand")
       if not to.dead then
         n = #table.filter(cards, function (id)
           return Fk:getCardById(id).color == Card.Red
