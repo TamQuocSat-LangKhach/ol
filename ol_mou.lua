@@ -997,28 +997,14 @@ local liwen = fk.CreateTriggerSkill{
           return data.extra_data and data.extra_data.liwen_triggerable and player:getMark("@kongrong_virtuous") < 5
         else
           return player:getMark("@kongrong_virtuous") > 0 and
-            table.find(player.room:getOtherPlayers(player), function (p)
+            table.find(player.room:getOtherPlayers(player, false), function (p)
               return p:getMark("@kongrong_virtuous") < 5
             end)
         end
       end
     end
   end,
-  on_cost = function (self, event, target, player, data)
-    if event == fk.CardUsing then
-      return true
-    else
-      local room = player.room
-      local targets = table.map(table.filter(room:getOtherPlayers(player), function (p)
-        return p:getMark("@kongrong_virtuous") < 5
-      end), Util.IdMapper)
-      local tos = room:askForChoosePlayers(player, targets, 1, 5, "#liwen-choose", self.name, true)
-      if #tos > 0 then
-        self.cost_data = tos
-        return true
-      end
-    end
-  end,
+  on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     local room = player.room
     player:broadcastSkillInvoke(self.name)
@@ -1029,9 +1015,15 @@ local liwen = fk.CreateTriggerSkill{
       room:notifySkillInvoked(player, self.name, "special")
       room:addPlayerMark(player, "@kongrong_virtuous", 1)
     else
-      room:notifySkillInvoked(player, self.name, "support")
-      room:sortPlayersByAction(self.cost_data)
-      for _, id in ipairs(self.cost_data) do
+      local avilTar = table.map(table.filter(room:getOtherPlayers(player, false), function (p)
+        return p:getMark("@kongrong_virtuous") < 5
+      end), Util.IdMapper)
+      local tos = room:askForChoosePlayers(player, avilTar, 1, player:getMark("@kongrong_virtuous"), "#liwen-choose", self.name, true)
+      if #tos > 0 then
+        room:sortPlayersByAction(tos)
+      end
+      room:notifySkillInvoked(player, self.name, "support", tos)
+      for _, id in ipairs(tos) do
         local to = room:getPlayerById(id)
         room:removePlayerMark(player, "@kongrong_virtuous", 1)
         room:addPlayerMark(to, "@kongrong_virtuous", 1)
@@ -1132,7 +1124,7 @@ Fk:loadTranslationTable{
 
   ["liwen"] = "立文",
   [":liwen"] = "游戏开始时，你获得三枚“贤”标记；当你使用或打出牌时，若此牌与你使用或打出的上一张牌花色或类别相同，你获得一枚“贤”标记；"..
-  "回合结束时，你可以将任意个“贤”标记分配给等量的角色（每名角色“贤”标记上限为5个），然后有“贤”标记的角色按照标记从多到少的顺序，依次使用一张手牌，"..
+  "回合结束时，你需将任意个“贤”标记分配给等量的角色（每名角色“贤”标记上限为5个），然后有“贤”标记的角色按照标记从多到少的顺序，依次使用一张手牌，"..
   "若其不使用，移去其“贤”标记，你摸等量的牌。",
   ["ol__zhengyi"] = "争义",
   [":ol__zhengyi"] = "当有“贤”标记的角色受到非属性伤害时，其他有“贤”标记的角色同时选择是否失去体力，若有角色同意，则防止此伤害，同意的"..
