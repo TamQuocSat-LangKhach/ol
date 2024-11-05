@@ -513,7 +513,7 @@ local ol_ex__kuanggu = fk.CreateTriggerSkill{
 
   refresh_events = {fk.BeforeHpChanged},
   can_refresh = function(self, event, target, player, data)
-    if data.damageEvent and player == data.damageEvent.from and player:distanceTo(target) < 2 then
+    if data.damageEvent and player == data.damageEvent.from and player:distanceTo(target) < 2 and not target:isRemoved() then
       return true
     end
   end,
@@ -526,7 +526,7 @@ local ol_ex__qimou_targetmod = fk.CreateTargetModSkill{
   name = "#ol_ex__qimou_targetmod",
   residue_func = function(self, player, skill, scope)
     if skill.trueName == "slash_skill" and scope == Player.HistoryPhase then
-      return player:getMark("@qimou-turn") or 0
+      return player:getMark("@qimou-turn")
     end
   end,
 }
@@ -542,6 +542,7 @@ local ol_ex__qimou = fk.CreateActiveSkill{
   card_num = 0,
   target_num = 0,
   frequency = Skill.Limited,
+  prompt = "#ol_ex__qimou",
   interaction = function()
     return UI.Spin {
       from = 1,
@@ -556,7 +557,7 @@ local ol_ex__qimou = fk.CreateActiveSkill{
     local tolose = self.interaction.data
     room:loseHp(player, tolose, self.name)
     if player.dead then return end
-    room:setPlayerMark(player, "@qimou-turn", tolose)
+    room:addPlayerMark(player, "@qimou-turn", tolose)
     player:drawCards(tolose, self.name)
   end,
 }
@@ -573,6 +574,7 @@ Fk:loadTranslationTable{
   ["ol_ex__qimou"] = "奇谋",
   [":ol_ex__qimou"] = "限定技，出牌阶段，你可以失去X点体力，摸X张牌，本回合内与其他角色计算距离-X且可以多使用X张杀。",
   ["@qimou-turn"] = "奇谋",
+  ["#ol_ex__qimou"] = "奇谋：可失去任意点体力，摸等量张牌，本回合与其他角色距离减等量，可多出等量张杀",
 
   ["$ol_ex__kuanggu1"] = "反骨狂傲，彰显本色！",
   ["$ol_ex__kuanggu2"] = "只有战场，能让我感到兴奋！",
