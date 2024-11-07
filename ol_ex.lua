@@ -552,6 +552,7 @@ local ol_ex__qimou = fk.CreateActiveSkill{
   can_use = function(self, player)
     return player:usedSkillTimes(self.name, Player.HistoryGame) == 0 and player.hp > 0
   end,
+  card_filter = Util.FalseFunc,
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
     local tolose = self.interaction.data

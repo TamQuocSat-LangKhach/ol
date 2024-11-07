@@ -1091,10 +1091,16 @@ local renxia = fk.CreateActiveSkill{
       else
         room:askForDiscard(player, 2, 2, true, self.name, false)
       end
-      while not player.dead and table.find(player:getCardIds("h"), function (id)
-        return Fk:getCardById(id).is_damage_card
-      end) do
-        room:askForDiscard(player, 2, 2, true, self.name, false)
+      while not player.dead do
+        if table.find(player:getCardIds("h"), function (id)
+          return Fk:getCardById(id).is_damage_card
+        end) and table.find(player:getCardIds("he"), function (id)
+          return not player:prohibitDiscard(id)
+        end) then
+          room:askForDiscard(player, 2, 2, true, self.name, false)
+        else
+          break
+        end
       end
     else
       player:drawCards(2, self.name)
