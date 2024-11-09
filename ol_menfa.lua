@@ -952,18 +952,10 @@ local guixiang = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local phase_name_table = {
-      [2] = "phase_start",
-      [3] = "phase_judge",
-      [4] = "phase_draw",
-      [5] = "phase_play",
-      [6] = "phase_discard",
-      [7] = "phase_finish",
-    }
     room:sendLog{
       type = "#PhaseChanged",
       from = player.id,
-      arg = phase_name_table[data.to],
+      arg = Util.PhaseStrMapper(data.to),
       arg2 = "phase_play",
     }
     data.to = Player.Play

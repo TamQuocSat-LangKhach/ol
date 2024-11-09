@@ -2809,14 +2809,6 @@ local ol_ex__qiaobian = fk.CreateTriggerSkill{
     if event == fk.GameStart or event == fk.EventPhaseStart then
       return true
     elseif event == fk.EventPhaseChanging then
-      local phase_name_table = {
-        [2] = "phase_start",
-        [3] = "phase_judge",
-        [4] = "phase_draw",
-        [5] = "phase_play",
-        [6] = "phase_discard",
-        [7] = "phase_finish",
-      }
       local discard_data = {
         num = 1,
         min_num = player:getMark("@ol_ex__qiaobian_change") == 0 and 1 or 0,
@@ -2825,7 +2817,7 @@ local ol_ex__qiaobian = fk.CreateTriggerSkill{
         pattern = ".",
       }
       local success, ret = player.room:askForUseActiveSkill(player, "discard_skill",
-        "#ol_ex__qiaobian-invoke:::" .. phase_name_table[data.to], true, discard_data)
+        "#ol_ex__qiaobian-invoke:::" .. Util.PhaseStrMapper(data.to), true, discard_data)
       if success then
         self.cost_data = ret.cards
         return true
