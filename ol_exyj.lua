@@ -193,9 +193,9 @@ local jianmie = fk.CreateActiveSkill{
     end
   end,
 }
-zhangchunhua:addSkill(jianmie)
 zhangchunhua:addSkill("jueqing")
 zhangchunhua:addSkill("shangshi")
+zhangchunhua:addSkill(jianmie)
 Fk:loadTranslationTable{
   ["ol_ex__zhangchunhua"] = "界张春华",
   ["#ol_ex__zhangchunhua"] = "冷血皇后",
@@ -1211,11 +1211,11 @@ Fk:loadTranslationTable{
   ["#ol_ex__zhiyan-choose"] = "是否发动 直言，令一名角色摸一张牌",
   ["#PutKnownCardtoDrawPile"] = "%from 将 %card 置于牌堆顶",
 
-  ["$ol_ex__zongxuan1"] = "",
-  ["$ol_ex__zongxuan2"] = "",
-  ["$ol_ex__zhiyan1"] = "",
-  ["$ol_ex__zhiyan2"] = "",
-  ["~ol_ex__yufan"] = "",
+  ["$ol_ex__zongxuan1"] = "易字从日下月，此乃自然之理。",
+  ["$ol_ex__zongxuan2"] = "笔著太玄十四卷，继往圣之学。",
+  ["$ol_ex__zhiyan1"] = "尔降虏，何敢与吾君齐马首乎！",
+  ["$ol_ex__zhiyan2"] = "当闭反开，当开反闭，匹夫何故反复？",
+  ["~ol_ex__yufan"] = "彼皆死人，何语神仙？",
 }
 
 local ol_ex__jianyong = General(extension, "ol_ex__jianyong", "shu", 3)

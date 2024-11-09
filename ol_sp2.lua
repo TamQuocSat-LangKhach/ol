@@ -2600,6 +2600,8 @@ Fk:loadTranslationTable{
 
   ["$fengji1"] = "取舍有道，待机而赢。",
   ["$fengji2"] = "此退彼进，月亏待盈。",
+  ["$xuanhui1"] = "今日，怕是要辜负温侯美意了。",
+  ["$xuanhui2"] = "前盖以惑敌，今图穷而匕见。",
   ["~ol__chendeng"] = "可无命，不可无脍……",
 }
 
