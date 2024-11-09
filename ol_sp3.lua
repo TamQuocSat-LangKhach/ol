@@ -1665,28 +1665,6 @@ Fk:loadTranslationTable{
 }
 
 local lushi = General(extension, "lushi", "qun", 3, 3, General.Female)
-local function setZhuyanMark(p)  --FIXME：先用个mark代替贴脸文字
-  local room = p.room
-  local mark = p:getTableMark("zhuyan")
-  if #mark == 2 then
-    if p:getMark("zhuyan_hp") == 0 then
-      local sig = ""
-      local n = p:getMark("zhuyan")[1] - p.hp
-      if n > 0 then
-        sig = "+"
-      end
-      room:setPlayerMark(p, "@zhuyan1", sig..tostring(n))
-    end
-    if p:getMark("zhuyan_handcard") == 0 then
-      local sig = ""
-      local n = p:getMark("zhuyan")[2] - p:getHandcardNum()
-      if n > 0 then
-        sig = "+"
-      end
-      room:setPlayerMark(p, "@zhuyan2", sig..tostring(n))
-    end
-  end
-end
 local zhuyan_active = fk.CreateActiveSkill{
   name = "zhuyan_active",
   card_num = 0,
@@ -1700,6 +1678,44 @@ local zhuyan_active = fk.CreateActiveSkill{
     local to = Fk:currentRoom():getPlayerById(to_select)
     return to:getMark(self.interaction.data) == 0 and #to:getTableMark("zhuyan") == 2
   end,
+  target_tip = function(self, to_select, selected, selected_cards, card, selectable, extra_data)
+    if not selectable then return end
+    local p = Fk:currentRoom():getPlayerById(to_select)
+    local mark = p:getTableMark("zhuyan")
+    if #mark == 2 then
+      local ret1, ret2
+      if p:getMark("zhuyan_hp") == 0 then
+        local sig = ""
+        local n = p:getMark("zhuyan")[1] - p.hp
+        if n > 0 then
+          sig = "+"
+        end
+        ret1 = sig..tostring(n)
+      end
+      if p:getMark("zhuyan_handcard") == 0 then
+        local sig = ""
+        local n = p:getMark("zhuyan")[2] - p:getHandcardNum()
+        if n > 0 then
+          sig = "+"
+        end
+        ret2 = sig..tostring(n)
+      end
+      local ret = {}
+      if ret1 then
+        table.insert(ret, {
+          content = "#zhuyan_tip1:::"..ret1,
+          type = "normal",
+        })
+      end
+      if ret2 then
+        table.insert(ret, {
+          content = "#zhuyan_tip2:::"..ret2,
+          type = "normal",
+        })
+      end
+      return ret
+    end
+  end,
 }
 Fk:addSkill(zhuyan_active)
 local zhuyan = fk.CreateTriggerSkill{
@@ -1708,46 +1724,38 @@ local zhuyan = fk.CreateTriggerSkill{
   events = {fk.EventPhaseEnd},
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(self) and player.phase == Player.Discard and
-    not table.every(player.room.alive_players, function (p)
-      return #p:getTableMark("zhuyan") ~= 2 or (p:getMark("zhuyan_hp") > 0 and p:getMark("zhuyan_handcard") > 0)
-    end)
+      table.find(player.room.alive_players, function (p)
+        return not (table.contains(player:getTableMark("zhuyan_hp"), p.id) and
+          table.contains(player:getTableMark("zhuyan_handcard"), p.id))
+      end)
   end,
   on_cost = function(self, event, target, player, data)
-    local room = player.room
-    for _, p in ipairs(room.alive_players) do
-      setZhuyanMark(p)
-    end
-    local _, dat = room:askForUseActiveSkill(player, "zhuyan_active", "#zhuyan-choose", true, nil, false)
-    for _, p in ipairs(room.alive_players) do
-      room:setPlayerMark(p, "@zhuyan1", 0)
-      room:setPlayerMark(p, "@zhuyan2", 0)
-    end
-    if dat then
-      self.cost_data = {dat.targets[1], dat.interaction}
+    local success, dat = player.room:askForUseActiveSkill(player, "zhuyan_active", "#zhuyan-choose", true, nil, false)
+    if success and dat then
+      self.cost_data = {tos = dat.targets, choice = dat.interaction}
       return true
     end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local to = room:getPlayerById(self.cost_data[1])
-    local choice = self.cost_data[2]
+    local to = room:getPlayerById(self.cost_data.tos[1])
+    local choice = self.cost_data.choice
+    room:addTableMark(player, choice, to.id)
     if choice == "zhuyan_hp" then
-      room:setPlayerMark(to, "zhuyan_hp", 1)
       local n = to:getMark(self.name)[1] - to.hp
       if n > 0 then
         if to:isWounded() then
-          room:recover({
+          room:recover{
             who = to,
             num = math.min(to:getLostHp(), n),
             recoverBy = player,
             skillName = self.name
-          })
+          }
         end
       elseif n < 0 then
         room:loseHp(to, -n, self.name)
       end
     else
-      room:setPlayerMark(to, "zhuyan_handcard", 1)
       local n = to:getMark(self.name)[2] - to:getHandcardNum()
       if n > 0 then
         to:drawCards(n, self.name)
@@ -1818,8 +1826,8 @@ Fk:loadTranslationTable{
   ["#leijie-active"] = "发动 雷劫，令一名角色判定，若为♠2~9，视为对其使用两张雷【杀】，否则其摸两张牌",
 
   ["zhuyan_active"] = "驻颜",
-  ["@zhuyan1"] = "体力",
-  ["@zhuyan2"] = "手牌",
+  ["#zhuyan_tip1"] = "体力%arg",
+  ["#zhuyan_tip2"] = "手牌%arg",
   ["zhuyan_hp"] = "体力值",
   ["zhuyan_handcard"] = "手牌数",
 

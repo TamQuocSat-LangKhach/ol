@@ -47,33 +47,28 @@ local sankuang = fk.CreateTriggerSkill{
         return false
       end, Player.HistoryRound)
     end
-    return mark == use_event.id
+    return mark == use_event.id and #room:getOtherPlayers(player) > 0
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local targets = {}
-    for _, p in ipairs(room.alive_players) do
-      if p ~= player then
-        table.insert(targets, p.id)
-        local n = 0
-        if #p:getCardIds{Player.Equip, Player.Judge} > 0 then n = n + 1 end
-        if p:isWounded() then n = n + 1 end
-        if p.hp < #p.player_cards[Player.Hand] then n = n + 1 end
-        room:setPlayerMark(p, "@sankuang", {n})  --FIXME: 用来显示三恇张数
-      end
-    end
-    if #targets == 0 then return end
-    targets = room:askForChoosePlayers(player, targets, 1, 1, "#sankuang-choose:::"..data.card:toLogString(), self.name, false)
-    local to = room:getPlayerById(targets[1])
+    local to = room:askForChoosePlayers(player, table.map(room:getOtherPlayers(player), Util.IdMapper), 1, 1,
+      "#sankuang-choose:::"..data.card:toLogString(), self.name, false, false, "sankuang_tip")
+    to = room:getPlayerById(to[1])
     if player:getMark("beishi") == 0 then
-      room:setPlayerMark(player, "beishi", targets[1])
+      room:setPlayerMark(player, "beishi", to.id)
       room:setPlayerMark(to, "@@beishi", 1)
     end
-    local n = to:getMark("@sankuang")[1]
-    for _, p in ipairs(room.alive_players) do
-      room:setPlayerMark(p, "@sankuang", 0)
+    local n = 0
+    if #to:getCardIds("ej") > 0 then
+      n = n + 1
     end
-    local all_cards = to:getCardIds{Player.Hand, Player.Equip}
+    if to:isWounded() then
+      n = n + 1
+    end
+    if to.hp < to:getHandcardNum() then
+      n = n + 1
+    end
+    local all_cards = to:getCardIds("he")
     if #all_cards == 0 then return false end
     local cards = {}
     if n == 0 then
@@ -99,6 +94,24 @@ local sankuang = fk.CreateTriggerSkill{
       end
       room:moveCardTo(card_ids, Player.Hand, to, fk.ReasonPrey, self.name, nil, true, targets[1])
     end
+  end,
+}
+Fk:addTargetTip{
+  name = "sankuang_tip",
+  target_tip = function(self, to_select, selected, selected_cards, card, selectable, extra_data)
+    if not selectable then return end
+    local p = Fk:currentRoom():getPlayerById(to_select)
+    local n = 0
+    if #p:getCardIds("ej") > 0 then
+      n = n + 1
+    end
+    if p:isWounded() then
+      n = n + 1
+    end
+    if p.hp < p:getHandcardNum() then
+      n = n + 1
+    end
+    return "#sankuang_tip:::"..n
   end,
 }
 local beishi = fk.CreateTriggerSkill{
@@ -210,8 +223,8 @@ Fk:loadTranslationTable{
   [":beishi"] = "锁定技，当你首次发动〖三恇〗选择的角色失去最后的手牌后，你回复1点体力。",
   ["daojie"] = "蹈节",
   [":daojie"] = "宗族技，锁定技，当你每回合首次使用非伤害类普通锦囊牌后，你选择一项：1.失去1点体力；2.失去一个锁定技。然后令一名同族角色获得此牌。",
-  ["#sankuang-choose"] = "三恇：令一名其他角色交给你至少X张牌并获得你使用的%arg",
-  ["@sankuang"] = "三恇张数：",
+  ["#sankuang-choose"] = "三恇：令一名其他角色交给你至少“三恇”张数的牌并获得你使用的%arg",
+  ["#sankuang_tip"] = "三恇张数 %arg",
   ["#sankuang-give0"] = "三恇：可选择任意张牌交给 %src，然后获得其使用的 %arg",
   ["#sankuang-give"] = "三恇：你须选择至少 %arg 张牌交给 %src",
   ["@@beishi"] = "卑势",
