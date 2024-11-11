@@ -2172,7 +2172,7 @@ local zhenying = fk.CreateActiveSkill{
         local throw
         if p.reply_ready then
           local replyCard = json.decode(p.client_reply).card
-          throw = json.decode(replyCard).subcards
+          throw = replyCard.subcards
         else
           throw = table.random(cardsMap[p.id], discard_num_map[p.id])
         end

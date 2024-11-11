@@ -1496,6 +1496,12 @@ local bianyu_filter = fk.CreateFilterSkill{
     return Fk:cloneCard("slash", card.suit, card.number)
   end,
 }
+local bianyu_targetmod = fk.CreateTargetModSkill{
+  name = "#bianyu_targetmod",
+  bypass_times = function(self, player, skill, scope, card, to)
+    return card and card:getMark("@@bianyu-inhand") > 0
+  end,
+}
 local fengyao = fk.CreateTriggerSkill{
   name = "fengyao",
   mute = true,
@@ -1563,6 +1569,7 @@ local fengyao = fk.CreateTriggerSkill{
 }
 jiaoweid:addRelatedSkill(jiaoweid_maxcards)
 bianyu:addRelatedSkill(bianyu_filter)
+bianyu:addRelatedSkill(bianyu_targetmod)
 dongxie:addSkill(jiaoweid)
 dongxie:addSkill(bianyu)
 dongxie:addSkill(fengyao)
