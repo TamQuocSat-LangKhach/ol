@@ -1428,6 +1428,163 @@ Fk:loadTranslationTable{
   ["#zonglue-invoke"] = "纵掠：是否获得 %dest 每个区域各一张牌？",
 }
 
+local dongxie = General(extension, "ol__dongxie", "qun", 3, 5, General.Female)
+local jiaoweid = fk.CreateTriggerSkill{
+  name = "jiaoweid",
+  anim_type = "offensive",
+  events = {fk.CardUsing},
+  frequency = Skill.Compulsory,
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self) and player:getHandcardNum() > player.hp and
+      data.card.color == Card.Black and (data.card.trueName == "slash" or data.card:isCommonTrick())
+  end,
+  on_use = function(self, event, target, player, data)
+    local targets = table.filter(player.room.alive_players, function(p)
+      return p.hp <= player.hp
+    end)
+    data.disresponsiveList = data.disresponsiveList or {}
+    for _, p in ipairs(targets) do
+      table.insertIfNeed(data.disresponsiveList, p.id)
+    end
+  end,
+}
+local jiaoweid_maxcards = fk.CreateMaxCardsSkill{
+  name = "#jiaoweid_maxcards",
+  main_skill = jiaoweid,
+  frequency = Skill.Compulsory,
+  exclude_from = function(self, player, card)
+    return player:hasSkill(jiaoweid) and card.color == Card.Black
+  end,
+}
+local bianyu = fk.CreateTriggerSkill{
+  name = "bianyu",
+  anim_type = "control",
+  frequency = Skill.Compulsory,
+  events = {fk.Damage, fk.Damaged},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self) and data.card and data.card.trueName == "slash" and
+      not data.to.dead and not data.to:isKongcheng() and data.to:isWounded()
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    room:doIndicate(player.id, {data.to.id})
+    local cards = room:askForCardsChosen(player, data.to, 1, data.to:getLostHp(), "h", self.name,
+      "#bianyu-choose::"..data.to.id..":"..data.to:getLostHp())
+    for _, id in ipairs(cards) do
+      room:setCardMark(Fk:getCardById(id), "@@bianyu-inhand", 1)
+    end
+  end,
+
+  refresh_events = {fk.AfterCardUseDeclared},
+  can_refresh = function (self, event, target, player, data)
+    return target == player and table.find(player:getCardIds("h"), function (id)
+      return Fk:getCardById(id):getMark("@@bianyu-inhand") > 0
+    end) and data.card.type ~= Card.TypeBasic
+  end,
+  on_refresh = function (self, event, target, player, data)
+    for _, id in ipairs(player:getCardIds("h")) do
+      player.room:setCardMark(Fk:getCardById(id), "@@bianyu-inhand", 0)
+    end
+  end,
+}
+local bianyu_filter = fk.CreateFilterSkill{
+  name = "#bianyu_filter",
+  card_filter = function(self, card, player)
+    return card:getMark("@@bianyu-inhand") > 0 and table.contains(player:getCardIds("h"), card.id)
+  end,
+  view_as = function(self, card)
+    return Fk:cloneCard("slash", card.suit, card.number)
+  end,
+}
+local fengyao = fk.CreateTriggerSkill{
+  name = "fengyao",
+  mute = true,
+  frequency = Skill.Compulsory,
+  events = {fk.AfterCardsMove, fk.DamageCaused},
+  can_trigger = function(self, event, target, player, data)
+    if not player:hasSkill(self) then return end
+    if event == fk.AfterCardsMove and player:isWounded() then
+      for _, move in ipairs(data) do
+        if move.from then
+          for _, info in ipairs(move.moveInfo) do
+            if info.fromArea == Card.PlayerEquip and Fk:getCardById(info.cardId).suit == Card.Spade then
+              return true
+            end
+          end
+        end
+      end
+    elseif event == fk.DamageCaused and target == player and data.to ~= player then
+      return table.find(player:getCardIds("ej"), function (id)
+        return Fk:getCardById(id).suit == Card.Spade and not player:prohibitDiscard(id)
+      end) or table.find(data.to:getCardIds("ej"), function (id)
+        return Fk:getCardById(id).suit == Card.Spade
+      end)
+    end
+  end,
+  on_use = function (self, event, target, player, data)
+    local room = player.room
+    player:broadcastSkillInvoke(self.name)
+    if event == fk.AfterCardsMove then
+      room:notifySkillInvoked(player, self.name, "support")
+      room:recover{
+        who = player,
+        num = 1,
+        recoverBy = player,
+        skillName = self.name,
+      }
+    else
+      room:notifySkillInvoked(player, self.name, "offensive")
+      local targets = {}
+      if table.find(player:getCardIds("ej"), function (id)
+        return Fk:getCardById(id).suit == Card.Spade and not player:prohibitDiscard(id)
+      end) then
+        table.insert(targets, player.id)
+      end
+      if table.find(data.to:getCardIds("ej"), function (id)
+        return Fk:getCardById(id).suit == Card.Spade
+      end) then
+        table.insert(targets, data.to.id)
+      end
+      local to = targets
+      if #targets > 1 then
+        to = room:askForChoosePlayers(player, targets, 1, 1, "#fengyao-choose::"..data.to.id, self.name, false)
+      end
+      to = room:getPlayerById(to[1])
+      local card = table.filter(to:getCardIds("ej"), function (id)
+        return Fk:getCardById(id).suit == Card.Spade and not player:prohibitDiscard(id)
+      end)
+      if #card > 1 then
+        card = U.askforChooseCardsAndChoice(player, card, {"OK"}, self.name, "#fengyao-discard")
+      end
+      room:throwCard(card, self.name, to, player)
+      data.damage = data.damage + 1
+    end
+  end,
+}
+jiaoweid:addRelatedSkill(jiaoweid_maxcards)
+bianyu:addRelatedSkill(bianyu_filter)
+dongxie:addSkill(jiaoweid)
+dongxie:addSkill(bianyu)
+dongxie:addSkill(fengyao)
+Fk:loadTranslationTable{
+  ["ol__dongxie"] = "董翓",
+  ["#ol__dongxie"] = "",
+  --["designer:ol__dongxie"] = "",
+
+  ["jiaoweid"] = "狡威",
+  [":jiaoweid"] = "锁定技，你的黑色牌不计入手牌上限。若你的手牌数大于体力值，体力值不大于你的角色不能响应你使用的黑色牌。",
+  ["bianyu"] = "鞭御",
+  [":bianyu"] = "锁定技，你使用【杀】造成伤害或受到【杀】的伤害后，你选择受伤角色至多X张手牌，这些牌视为无次数限制的【杀】，直到其使用非基本牌"..
+  "（X为其已损失体力值）。",
+  ["fengyao"] = "凤瑶",
+  [":fengyao"] = "锁定技，当♠牌离开一名角色装备区后，你回复1点体力。当你对其他角色造成伤害时，你弃置你或其场上一张♠牌，令此伤害+1。",
+  ["#bianyu-choose"] = "鞭御：选择 %dest 至多%arg张手牌，这些牌视为【杀】",
+  ["#bianyu_filter"] = "鞭御",
+  ["@@bianyu-inhand"] = "鞭御",
+  ["#fengyao-choose"] = "凤瑶：弃置你或 %dest 场上一张♠牌，令你对其造成的伤害+1",
+  ["#fengyao-discard"] = "凤瑶：弃置其中一张♠牌",
+}
+
 local qinlang = General(extension, "ol__qinlang", "wei", 3)
 qinlang:addSkill("tmp_illustrate")
 qinlang.hidden = true
@@ -1436,14 +1593,9 @@ local wuanguo = General(extension, "ol__wuanguo", "qun", 4)
 wuanguo:addSkill("tmp_illustrate")
 wuanguo.hidden = true
 
-local dongxie = General(extension, "ol__dongxie", "qun", 3, 5, General.Female)
-dongxie:addSkill("tmp_illustrate")
-dongxie.hidden = true
-
 Fk:loadTranslationTable{
   ["ol__qinlang"] = "秦朗",
   ["ol__wuanguo"] = "武安国",
-  ["ol__dongxie"] = "董翓",
 }
 
 return extension
