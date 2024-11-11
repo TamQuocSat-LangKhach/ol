@@ -79,26 +79,26 @@ local sankuang = fk.CreateTriggerSkill{
       cards = room:askForCard(to, n, #all_cards, true, self.name, false, ".", "#sankuang-give:"..player.id.."::"..n)
     end
     if #cards > 0 then
-      room:moveCardTo(cards, Player.Hand, player, fk.ReasonGive, self.name, nil, false, targets[1])
+      room:moveCardTo(cards, Player.Hand, player, fk.ReasonGive, self.name, nil, false, to.id)
       if to.dead then return false end
       local card_ids = Card:getIdList(data.card)
       if #card_ids == 0 then return false end
       if data.card.type == Card.TypeEquip then
         if not table.every(card_ids, function (id)
-          return room:getCardArea(id) == Card.PlayerEquip and room:getCardOwner(id) == player
+          return room:getCardArea(id) == Card.PlayerEquip and table.contains(player:getCardIds("e"), id)
         end) then return false end
       else
         if not table.every(card_ids, function (id)
           return room:getCardArea(id) == Card.Processing
         end) then return false end
       end
-      room:moveCardTo(card_ids, Player.Hand, to, fk.ReasonPrey, self.name, nil, true, targets[1])
+      room:moveCardTo(card_ids, Player.Hand, to, fk.ReasonPrey, self.name, nil, true, to.id)
     end
   end,
 }
 Fk:addTargetTip{
   name = "sankuang_tip",
-  target_tip = function(self, to_select, selected, selected_cards, card, selectable, extra_data)
+  target_tip = function(self, to_select, selected, selected_cards, card, selectable)
     if not selectable then return end
     local p = Fk:currentRoom():getPlayerById(to_select)
     local n = 0
