@@ -5262,7 +5262,7 @@ local qingyix = fk.CreateActiveSkill{
           local throw
           if p.reply_ready then
             local replyCard = json.decode(p.client_reply).card
-            throw = json.decode(replyCard).subcards
+            throw = replyCard.subcards
           else
             throw = table.random(cardsMap[p.id], 1)
           end
