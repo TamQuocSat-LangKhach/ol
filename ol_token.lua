@@ -9,15 +9,13 @@ local U = require "packages/utility/utility"
 
 local honeyTrapSkill = fk.CreateActiveSkill{
   name = "honey_trap_skill",
+  can_use = Util.CanUse,
   target_num = 1,
   mod_target_filter = function(self, to_select, selected, user, card, distance_limited)
     local target = Fk:currentRoom():getPlayerById(to_select)
     return to_select ~= Self.id and not target:isKongcheng() and target:isMale()
   end,
-  target_filter = function(self, to_select)
-    local target = Fk:currentRoom():getPlayerById(to_select)
-    return to_select ~= Self.id and not target:isKongcheng() and target:isMale()
-  end,
+  target_filter = Util.TargetFilter,
   on_effect = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
     local target = room:getPlayerById(effect.to)
@@ -64,13 +62,12 @@ Fk:loadTranslationTable{
 
 local daggarInSmileSkill = fk.CreateActiveSkill{
   name = "daggar_in_smile_skill",
+  can_use = Util.CanUse,
   target_num = 1,
   mod_target_filter = function(self, to_select, selected, user, card, distance_limited)
     return to_select ~= Self.id
   end,
-  target_filter = function(self, to_select)
-    return to_select ~= Self.id
-  end,
+  target_filter = Util.TargetFilter,
   on_effect = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
     local target = room:getPlayerById(effect.to)
@@ -222,15 +219,12 @@ Fk:loadTranslationTable{
 
 local shangyangReformSkill = fk.CreateActiveSkill{
   name = "shangyang_reform_skill",
+  can_use = Util.CanUse,
   target_num = 1,
   mod_target_filter = function(self, to_select, selected, user, card, distance_limited)
     return to_select ~= Self.id
   end,
-  target_filter = function (self, to_select, selected, selected_cards, card)
-    if #selected < self:getMaxTargetNum(Self, card) then
-      return self:modTargetFilter(to_select, selected, Self.id, card)
-    end
-  end,
+  target_filter = Util.TargetFilter,
   on_effect = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
     local target = room:getPlayerById(effect.to)
