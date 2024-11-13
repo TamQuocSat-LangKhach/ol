@@ -4335,7 +4335,12 @@ local jiane = fk.CreateTriggerSkill{
   can_trigger = function(self, event, target, player, data)
     if not player:hasSkill(self) then return false end
     if event == fk.CardEffecting then
-      return target and target ~= player and not target.dead and data.from == player.id and target:getMark("@@jiane_debuff-turn") == 0
+      if data.from == player.id then
+        local tos = TargetGroup:getRealTargets(data.tos)
+        return table.find(player.room.alive_players, function (p)
+          return p ~= player and p:getMark("@@jiane_debuff-turn") == 0 and table.contains(tos, p.id)
+        end)
+      end
     else
       if player:getMark("@@jiane_buff-turn") > 0 then return false end
       local room = player.room
@@ -4359,8 +4364,12 @@ local jiane = fk.CreateTriggerSkill{
     if event == fk.CardEffecting then
       room:notifySkillInvoked(player, self.name, "control")
       player:broadcastSkillInvoke(self.name)
-      room:doIndicate(player.id, {target.id})
-      room:setPlayerMark(target, "@@jiane_debuff-turn", 1)
+      local tos = TargetGroup:getRealTargets(data.tos)
+      for _, p in ipairs(room.alive_players) do
+        if p ~= player and p:getMark("@@jiane_debuff-turn") == 0 and table.contains(tos, p.id) then
+          room:setPlayerMark(p, "@@jiane_debuff-turn", 1)
+        end
+      end
     else
       room:notifySkillInvoked(player, self.name, "defensive")
       player:broadcastSkillInvoke(self.name)
@@ -4399,7 +4408,7 @@ Fk:loadTranslationTable{
   [":xuanzhu"] = "转换技，每回合限一次，阳：你可以将一张牌移出游戏，视为使用任意基本牌；阴：你可以将一张牌移出游戏，视为使用仅指定唯一角色为目标的普通锦囊牌。"..
   "若移出游戏的牌：不为装备牌，你弃置一张牌；为装备牌，你重铸以此法移出游戏的牌。",
   ["jiane"] = "謇谔",
-  [":jiane"] = "锁定技，当你使用的牌对其他角色生效后，你令其于当前回合内不能抵消牌；当一名角色使用的牌被你抵消后，你令你于当前回合内不是牌的合法目标。",
+  [":jiane"] = "锁定技，当你使用的牌对一名角色生效后，你令此牌的所有其他目标角色于当前回合内不能抵消牌；当一名角色使用的牌被你抵消后，你令你于当前回合内不是牌的合法目标。",
 
   ["@@jiane_buff-turn"] = "謇谔",
   ["@@jiane_debuff-turn"] = "謇谔",
