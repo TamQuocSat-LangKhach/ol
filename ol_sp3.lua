@@ -5209,15 +5209,6 @@ local pijingl = fk.CreateTriggerSkill{
     local x = math.max(1, player:getLostHp())
     local current_targets = AimGroup:getAllTargets(data.tos)
     local targets = room:getUseExtraTargets(data, false, true)
-    for _, p in ipairs(room.alive_players) do
-      if p ~= player then
-        if table.contains(current_targets, p.id) then
-          room:setPlayerMark(p, "@@CancelTarget", 1)
-        elseif table.contains(targets, p.id) then
-          room:setPlayerMark(p, "@@AddTarget", 1)
-        end
-      end
-    end
     table.insertTable(targets, current_targets)
     for i = #targets, 1, -1 do
       if targets[i] == player.id then
@@ -5225,11 +5216,7 @@ local pijingl = fk.CreateTriggerSkill{
       end
     end
     local tos = room:askForChoosePlayers(player, targets, 1, x,
-    "#pijingl-choose:::" .. tostring(x) .. ":"..data.card:toLogString(), self.name, true)
-    for _, p in ipairs(room.alive_players) do
-      room:setPlayerMark(p, "@@CancelTarget", 0)
-      room:setPlayerMark(p, "@@AddTarget", 0)
-    end
+    "#pijingl-choose:::" .. tostring(x) .. ":"..data.card:toLogString(), self.name, true, false, "addandcanceltarget_tip", current_targets)
     if #tos > 0 then
       self.cost_data = tos
       return true
@@ -5281,6 +5268,7 @@ local pijingl = fk.CreateTriggerSkill{
     end
   end,
 }
+
 local pijingl_delay = fk.CreateTriggerSkill{
   name = "#pijingl_delay",
   events = {fk.TargetSpecifying},
@@ -5324,7 +5312,7 @@ Fk:loadTranslationTable{
   ["designer:liupan"] = "CYC",
 
   ["pijingl"] = "披荆",
-  [":pijingl"] = "当你使用【杀】或普通锦囊牌指定第一个目标时，若你于当前回合内未发动过此技能，"..
+  [":pijingl"] = "每回合限一次，当你使用【杀】或普通锦囊牌指定第一个目标时，"..
   "你可以令任意名其他角色也成为此牌的目标并取消任意名其他目标角色合计至多X名角色（X为你已损失的体力值且至少为1），"..
   "这些角色各随机将一张牌交给你，且下次使用基本牌或普通锦囊牌指定唯一目标时，其可以选择：1.令你也成为此牌的目标；2.摸一张牌。",
 
@@ -5334,8 +5322,6 @@ Fk:loadTranslationTable{
   ["#pijingl_delay"] = "披荆",
   ["#pijingl-choice"] = "披荆：你可以摸一张牌，或令%dest也成为%arg的目标",
   ["pijingl_target"] = "增加目标",
-  ["@@AddTarget"] = "增加目标",
-  ["@@CancelTarget"] = "取消目标",
 
   ["$pijingl1"] = "今青锋在手，必破敌军于域外。",
   ["$pijingl2"] = "荆楚多锦绣，安能丧于小儿之手！",

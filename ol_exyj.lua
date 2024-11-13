@@ -1263,7 +1263,7 @@ local ol_ex__qiaoshui_delay = fk.CreateTriggerSkill{
     end
     if #targets == 0 then return false end
     local tos = room:askForChoosePlayers(player, targets, 1, 1, "#ol_ex__qiaoshui-choose:::"
-    ..data.card:toLogString(), ol_ex__qiaoshui.name, true)
+    ..data.card:toLogString(), ol_ex__qiaoshui.name, true, false, "addandcanceltarget_tip", TargetGroup:getRealTargets(data.tos))
     if #tos == 0 then return false end
     if table.contains(TargetGroup:getRealTargets(data.tos), tos[1]) then
       TargetGroup:removeTarget(data.tos, tos[1])

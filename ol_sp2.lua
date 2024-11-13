@@ -2124,7 +2124,7 @@ local jixian = fk.CreateTriggerSkill{
       end
     end
     if #targets == 0 then return end
-    local to = room:askForChoosePlayers(player, targets, 1, 1, "#jixian-choose", self.name, true)
+    local to = room:askForChoosePlayers(player, targets, 1, 1, "#jixian-choose", self.name, true, false, "jixian_tip")
     if #to > 0 then
       self.cost_data = to[1]
       return true
@@ -2142,20 +2142,39 @@ local jixian = fk.CreateTriggerSkill{
     if not to:isWounded() then
       n = n + 1
     end
-    player.room:useVirtualCard("slash", nil, player, to, self.name, true)
-    if not player.dead then
-      player:drawCards(n, self.name)
+    local room = player.room
+    local slash = Fk:cloneCard("slash")
+    slash.skillName = self.name
+    local use = {
+      from = target.id,
+      tos = {{to.id}},
+      card = slash,
+      extraUse = true,
+    }
+    room:useCard(use)
+    if player.dead then return false end
+    player:drawCards(n, self.name)
+    if not (player.dead or use.damageDealt) then
+      room:loseHp(player, 1, self.name)
     end
   end,
-
-  refresh_events = {fk.CardUseFinished},
-  can_refresh = function(self, event, target, player, data)
-    return target == player and table.contains(data.card.skillNames, self.name)
-  end,
-  on_refresh = function(self, event, target, player, data)
-    if not data.damageDealt then
-      player.room:loseHp(player, 1, self.name)
+}
+Fk:addTargetTip{
+  name = "jixian_tip",
+  target_tip = function(self, to_select, selected, selected_cards, card, selectable)
+    if not selectable then return end
+    local n = 0
+    local to = Fk:currentRoom():getPlayerById(to_select)
+    if to:getEquipment(Card.SubtypeArmor) then
+      n = n + 1
     end
+    if #getTrueSkills(to) > #getTrueSkills(Self) then
+      n = n + 1
+    end
+    if not to:isWounded() then
+      n = n + 1
+    end
+    return "#jixian_tip:::"..n
   end,
 }
 zhuling:addSkill(jixian)
@@ -2167,6 +2186,7 @@ Fk:loadTranslationTable{
   [":jixian"] = "摸牌阶段结束时，你可以视为对符合以下任意条件的一名其他角色使用一张【杀】并摸X张牌（X为其符合的条件数）："..
   "1.装备区里有防具牌；2.技能数多于你；3.未受伤。然后若此【杀】未造成伤害，你失去1点体力。",
   ["#jixian-choose"] = "急陷：你可以视为使用【杀】并摸牌，若未造成伤害则失去1点体力",
+  ["#jixian_tip"] = "急陷%arg",
 
   ["$jixian1"] = "全军出击，速攻敌城。",
   ["$jixian2"] = "勿以我为念，攻城！",

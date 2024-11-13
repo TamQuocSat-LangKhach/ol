@@ -1663,7 +1663,7 @@ local sheyan = fk.CreateTriggerSkill{
   end,
   on_cost = function(self, event, target, player, data)
     local to = player.room:askForChoosePlayers(player, self.cost_data, 1, 1,
-    "#sheyan-choose:::"..data.card:toLogString(), self.name, true)
+    "#sheyan-choose:::"..data.card:toLogString(), self.name, true, false, "addandcanceltarget_tip", AimGroup:getAllTargets(data.tos))
     if #to > 0 then
       self.cost_data = to[1]
       return true
@@ -3679,8 +3679,8 @@ local neifa_trigger = fk.CreateTriggerSkill{
   end,
   on_cost = function(self, event, target, player, data)
     local room = player.room
-    local to = room:askForChoosePlayers(player, self.cost_data, 1, 1,
-    "#neifa_trigger-choose:::"..data.card:toLogString(), neifa.name, true)
+    local to = room:askForChoosePlayers(player, self.cost_data, 1, 1, "#neifa_trigger-choose:::"..data.card:toLogString(),
+    neifa.name, true, false, "addandcanceltarget_tip", TargetGroup:getRealTargets(data.tos))
     if #to > 0 then
       self.cost_data = to
       return true
@@ -3762,7 +3762,7 @@ Fk:loadTranslationTable{
   ["@neifa-turn"] = "内伐",
   ["non_basic"] = "非基本牌", -- TODO: 搬运到本体翻译
   ["non_basic_char"] = "非基",
-  ["#neifa_trigger-choose"] = "内伐：你可以为%arg增加/减少一个目标",
+  ["#neifa_trigger-choose"] = "内伐：你可以为%arg增加/减少1个目标",
   ["#neifa_trigger"] = "内伐",
   ["#neifa_draw"] = "内伐",
 

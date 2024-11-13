@@ -1692,7 +1692,8 @@ local zhuosheng = fk.CreateTriggerSkill{
         table.insertTable(targets, TargetGroup:getRealTargets(data.tos))
       end
       table.insertTable(targets, room:getUseExtraTargets(data))
-      local tos = room:askForChoosePlayers(player, targets, 1, 1, "#zhuosheng-choose:::"..data.card:toLogString(), self.name, true)
+      local tos = room:askForChoosePlayers(player, targets, 1, 1, "#zhuosheng-choose:::"..data.card:toLogString(),
+      self.name, true, false, "addandcanceltarget_tip", TargetGroup:getRealTargets(data.tos))
       if #tos > 0 then
         self.cost_data = tos
         return true
