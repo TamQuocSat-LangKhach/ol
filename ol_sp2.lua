@@ -5230,46 +5230,21 @@ local qingyix = fk.CreateActiveSkill{
     for _, id in ipairs(effect.tos) do
       table.insert(targets, room:getPlayerById(id))
     end
-    local cards = {}
     while true do
-      local cardsMap = {}
-      for _, p in ipairs(targets) do
-        cardsMap[p.id] = table.filter(p:getCardIds("he"), function(id)
-          return not p:prohibitDiscard(Fk:getCardById(id))
-        end)
-      end
-      local extra_data = {
-        num = 1,
-        min_num = 1,
-        include_equip = true,
-        skillName = self.name,
-        pattern = ".",
-        reason = self.name,
-      }
-      local toAsk = {}
-      for _, p in ipairs(targets) do
-        if #cardsMap[p.id] > 0 then
-          table.insert(toAsk, p)
-          p.request_data = json.encode({ "discard_skill", "#AskForDiscard:::1:1", false, extra_data })
-        end
-      end
+      local toAsk = table.filter(targets, function(p) return table.find(p:getCardIds("he"), function (id)
+        return not p:prohibitDiscard(id)
+      end) end)
+      if #toAsk == 0 then break end
+      local cardsMap = U.askForJointCard(toAsk, 1, 1, true, self.name, false, ".|.|.|hand,equip", "#AskForDiscard:::1:1", nil, true)
+      local moveInfos = {}
       local chosen = {}
-      if #toAsk > 0 then
-        room:notifyMoveFocus(targets, self.name)
-        room:doBroadcastRequest("AskForUseActiveSkill", toAsk)
-        local moveInfos = {}
-        for _, p in ipairs(toAsk) do
-          local throw
-          if p.reply_ready then
-            local replyCard = json.decode(p.client_reply).card
-            throw = replyCard.subcards
-          else
-            throw = table.random(cardsMap[p.id], 1)
-          end
-          table.insert(chosen, throw[1])
-          table.insertIfNeed(mark, throw[1])
+      for _, p in ipairs(toAsk) do
+        local throw = cardsMap[p.id][1]
+        if throw then
+          table.insert(chosen, throw)
+          table.insertIfNeed(mark, throw)
           table.insert(moveInfos, {
-            ids = throw,
+            ids = {throw},
             from = p.id,
             toArea = Card.DiscardPile,
             moveReason = fk.ReasonDiscard,
@@ -5277,9 +5252,10 @@ local qingyix = fk.CreateActiveSkill{
             skillName = self.name,
           })
         end
-        room:moveCards(table.unpack(moveInfos))
       end
-      if table.find(targets, function(p) return #cardsMap[p.id] == 0 end)
+      if #moveInfos == 0 then break end
+      room:moveCards(table.unpack(moveInfos))
+      if table.find(targets, function(p) return #(cardsMap[p.id] or {}) == 0 end)
       or table.find(targets, function(p) return p:isNude() end)
       or table.find(chosen, function(id) return Fk:getCardById(id).type ~= Fk:getCardById(chosen[1]).type end)
       or not room:askForSkillInvoke(player, self.name, nil, "#qingyi-invoke") then
@@ -5465,7 +5441,7 @@ Fk:loadTranslationTable{
 
   ["#huanfu-invoke"] = "宦浮：你可以弃置至多%arg张牌，若此【杀】造成伤害值等于弃牌数，你摸两倍的牌",
   ["#huanfu_delay"] = "宦浮",
-  ["#qingyix-prompt"] = "清议：你可以与至多其他角色同时弃置一张牌，若弃牌类型相同，你可重复此流程",
+  ["#qingyix-prompt"] = "清议：你可以与至多2名角色同时弃置一张牌，若类型相同，你可重复此流程",
   ["#qingyi-discard"] = "清议：弃置一张牌",
   ["#qingyi-invoke"] = "清议：是否继续发动“清议”？",
   ["#qingyi_get-invoke"] = "清议：可选择获得红色和黑色的卡牌各一张",

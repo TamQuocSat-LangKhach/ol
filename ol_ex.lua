@@ -926,16 +926,17 @@ local ol_ex__guidao = fk.CreateTriggerSkill{
     return player:hasSkill(self) and not player:isNude()
   end,
   on_cost = function(self, event, target, player, data)
-    local card = player.room:askForResponse(player, self.name, ".|.|spade,club|hand,equip",
-    "#ol_ex__guidao-ask::" .. target.id..":"..data.reason, true)
-    if card ~= nil then
-      self.cost_data = card
+    local cards = player.room:askForCard(player, 1, 1, true, self.name, true, ".|.|spade,club", 
+    "#ol_ex__guidao-ask::" .. target.id..":"..data.reason)
+    if #cards == 1 then
+      self.cost_data = {cards = cards}
       return true
     end
   end,
   on_use = function(self, event, target, player, data)
-    player.room:retrial(self.cost_data, player, data, self.name, true)
-    if not player.dead and self.cost_data.suit == Card.Spade and self.cost_data.number > 1 and self.cost_data.number < 10 then
+    local card = Fk:getCardById(self.cost_data.cards[1])
+    player.room:retrial(card, player, data, self.name, true)
+    if not player.dead and card.suit == Card.Spade and card.number > 1 and card.number < 10 then
       player:drawCards(1, self.name)
     end
   end,
