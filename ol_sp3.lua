@@ -1206,9 +1206,7 @@ local miuyan = fk.CreateViewAsSkill{
     card:addSubcard(cards[1])
     return card
   end,
-  enabled_at_play = function(self, player)
-    return player:getMark("@@miuyan-round") == 0
-  end,
+  enabled_at_play = Util.TrueFunc,
 }
 local miuyan_trigger = fk.CreateTriggerSkill{
   name = "#miuyan_trigger",
@@ -1248,7 +1246,7 @@ local miuyan_trigger = fk.CreateTriggerSkill{
         room:moveCards(table.unpack(moveInfos))
       end
     elseif player:getSwitchSkillState("miuyan", true) == fk.SwitchYin and not data.damageDealt then
-      room:setPlayerMark(player, "@@miuyan-round", 1)
+      room:invalidateSkill(player, self.name, "-round")
     end
   end,
 
@@ -1313,7 +1311,7 @@ Fk:loadTranslationTable{
   "阴：你可以将一张黑色牌当【火攻】使用，若此牌未造成伤害，本轮本技能失效。",
   ["shilu"] = "失路",
   [":shilu"] = "锁定技，当你受到伤害后，你摸等同体力值张牌并展示攻击范围内一名其他角色的一张手牌，令此牌视为【杀】。",
-  ["@@miuyan-round"] = "谬焰失效",
+
   ["miuyan-prompt-yang"] = "将一张黑色牌当【火攻】使用，若造成伤害，获得本阶段展示过的所有手牌",
   ["miuyan-prompt-yin"] = "将一张黑色牌当【火攻】使用，若未造成伤害，本轮“谬焰”失效",
   ["#shilu-choose"] = "失路：展示一名角色的一张手牌，此牌视为【杀】",
@@ -4365,11 +4363,20 @@ local jiane = fk.CreateTriggerSkill{
       room:notifySkillInvoked(player, self.name, "control")
       player:broadcastSkillInvoke(self.name)
       local tos = TargetGroup:getRealTargets(data.tos)
+      local tos2 = {}
       for _, p in ipairs(room.alive_players) do
         if p ~= player and p:getMark("@@jiane_debuff-turn") == 0 and table.contains(tos, p.id) then
           room:setPlayerMark(p, "@@jiane_debuff-turn", 1)
+          table.insert(tos2, p.id)
         end
       end
+      local turn_event = room.logic:getCurrentEvent():findParent(GameEvent.Turn, true)
+      if turn_event == nil then return false end
+      room.logic:getEventsByRule(GameEvent.UseCard, 1, function (e)
+        local use = e.data[1]
+        table.insertTableIfNeed(e.data[1].unoffsetableList, tos2)
+        return false
+      end, turn_event.id)
     else
       room:notifySkillInvoked(player, self.name, "defensive")
       player:broadcastSkillInvoke(self.name)
@@ -4405,10 +4412,12 @@ Fk:loadTranslationTable{
   ["designer:ol__lukai"] = "扬林",
 
   ["xuanzhu"] = "玄注",
-  [":xuanzhu"] = "转换技，每回合限一次，阳：你可以将一张牌移出游戏，视为使用任意基本牌；阴：你可以将一张牌移出游戏，视为使用仅指定唯一角色为目标的普通锦囊牌。"..
+  [":xuanzhu"] = "转换技，每回合限一次，阳：你可以将一张牌移出游戏，视为使用任意基本牌；"..
+  "阴：你可以将一张牌移出游戏，视为使用仅指定唯一角色为目标的普通锦囊牌。"..
   "若移出游戏的牌：不为装备牌，你弃置一张牌；为装备牌，你重铸以此法移出游戏的牌。",
   ["jiane"] = "謇谔",
-  [":jiane"] = "锁定技，当你使用的牌对一名角色生效后，你令此牌的所有其他目标角色于当前回合内不能抵消牌；当一名角色使用的牌被你抵消后，你令你于当前回合内不是牌的合法目标。",
+  [":jiane"] = "锁定技，当你使用的牌对一名角色生效后，你令此牌的所有其他目标角色于当前回合内不能抵消牌；"..
+  "当一名角色使用的牌被你抵消后，你令你于当前回合内不是牌的合法目标。",
 
   ["@@jiane_buff-turn"] = "謇谔",
   ["@@jiane_debuff-turn"] = "謇谔",

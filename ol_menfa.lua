@@ -1672,7 +1672,7 @@ local jiexuan = fk.CreateViewAsSkill{
     return "#jiexuan-"..Self:getSwitchSkillState(self.name, false, true)
   end,
   times = function(self)
-    return Self.phase == Player.Play and 1 - Self:usedSkillTimes(self.name, Player.HistoryGame) or -1
+    return 1 - Self:usedSkillTimes(self.name, Player.HistoryGame)
   end,
   card_filter = function(self, to_select, selected)
     if #selected == 0 then
@@ -1706,9 +1706,6 @@ local mingjiew = fk.CreateActiveSkill{
   card_num = 0,
   target_num = 1,
   frequency = Skill.Limited,
-  times = function(self)
-    return Self.phase == Player.Play and 1 - Self:usedSkillTimes(self.name, Player.HistoryGame) or -1
-  end,
   can_use = function(self, player)
     return player:usedSkillTimes(self.name, Player.HistoryGame) == 0
   end,
@@ -2242,7 +2239,7 @@ local xieshu = fk.CreateTriggerSkill{
   anim_type = "drawcard",
   events = {fk.Damage, fk.Damaged},
   can_trigger = function(self, event, target, player, data)
-    return target == player and not player.chained and player:hasSkill(self) and data.card and player:getMark("@@xieshu-turn") == 0
+    return target == player and not player.chained and player:hasSkill(self) and data.card
   end,
   on_cost = function(self, event, target, player, data)
     return player.room:askForSkillInvoke(player, self.name, data,
@@ -2264,7 +2261,7 @@ local xieshu = fk.CreateTriggerSkill{
       if turn_event == nil then return false end
       local dying_events = logic.event_recorder[GameEvent.Dying] or Util.DummyTable
       if #dying_events > 0 and dying_events[#dying_events].id > turn_event.id then
-        room:setPlayerMark(player, "@@xieshu-turn", 1)
+        room:invalidateSkill(player, self.name, "-turn")
       end
     end
   end,
@@ -2290,7 +2287,6 @@ Fk:loadTranslationTable{
   ["yuzhi2"] = "失去〖保族〗",
   [":loseHp"] = "失去1点体力",
   ["#xieshu-invoke"] = "是否发动 挟术，横置自身，然后弃置%arg张牌并摸%arg2张牌",
-  ["@@xieshu-turn"] = "挟术失效",
 
   ["$yuzhi1"] = "我欲行夏禹旧事，为天下人。",
   ["$yuzhi2"] = "汉鹿已失，魏牛犹在，吾欲执其耳。",

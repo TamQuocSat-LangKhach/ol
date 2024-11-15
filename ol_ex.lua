@@ -2540,7 +2540,7 @@ local ol_ex__jiuchi_trigger = fk.CreateTriggerSkill{
   main_skill = ol_ex__jiuchi,
   can_trigger = function(self, event, target, player, data)
     if target == player and player:hasSkill(ol_ex__jiuchi) and data.card and data.card.trueName == "slash"
-        and player:getMark("@@ol_ex__benghuai_invalidity-turn") == 0 then
+        and player:getMark("ol_ex__benghuai_invalidity-turn") == 0 then
       local parentUseData = player.room.logic:getCurrentEvent():findParent(GameEvent.UseCard)
       if parentUseData then
         local drankBuff = parentUseData and (parentUseData.data[1].extra_data or {}).drankBuff or 0
@@ -2553,13 +2553,13 @@ local ol_ex__jiuchi_trigger = fk.CreateTriggerSkill{
     local room = player.room
     room:notifySkillInvoked(player, "ol_ex__jiuchi", "defensive")
     player:broadcastSkillInvoke("ol_ex__jiuchi")
-    room:addPlayerMark(player, "@@ol_ex__benghuai_invalidity-turn")
+    room:addPlayerMark(player, "ol_ex__benghuai_invalidity-turn")
   end,
 }
 local ol_ex__jiuchi_invalidity = fk.CreateInvaliditySkill {
   name = "#ol_ex__jiuchi_invalidity",
   invalidity_func = function(self, from, skill)
-    return from:getMark("@@ol_ex__benghuai_invalidity-turn") > 0 and skill.name == "benghuai"
+    return from:getMark("ol_ex__benghuai_invalidity-turn") > 0 and skill.name == "benghuai"
   end
 }
 local ol_ex__baonue = fk.CreateTriggerSkill{
@@ -2635,7 +2635,6 @@ Fk:loadTranslationTable{
   [":ol_ex__baonue"] = "主公技，当其他群雄角色造成1点伤害后，你可判定，若结果为♠，回复1点体力，然后当判定牌生效后，你获得此牌。",
 
   ["#ol_ex__jiuchi-viewas"] = "发动酒池，将一张♠手牌转化为【酒】使用",
-  ["@@ol_ex__benghuai_invalidity-turn"] = "崩坏失效",
 
   ["$ol_ex__jiuchi1"] = "好酒，痛快！",
   ["$ol_ex__jiuchi2"] = "某，千杯不醉！",

@@ -2551,7 +2551,7 @@ local xuanhui = fk.CreateTriggerSkill{
   anim_type = "control",
   events = {fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self) and player.phase == Player.Start and player:getMark("@@xuanhui") == 0 and
+    return target == player and player:hasSkill(self) and player.phase == Player.Start and
       (player:getMark("@fengji_draw-round") ~= 0 or player:getMark("@fengji_slash-round") ~= 0) and
       table.find(player.room:getOtherPlayers(player), function(p)
         return p:getMark("@fengji_draw-round") ~= 0 or p:getMark("@fengji_slash-round") ~= 0
@@ -2577,21 +2577,21 @@ local xuanhui = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    room:setPlayerMark(player, "@@xuanhui", 1)
     local to = room:getPlayerById(self.cost_data)
     local n1, n2 = player:getMark("@fengji_draw-round"), player:getMark("@fengji_slash-round")
     room:setPlayerMark(player, "@fengji_draw-round", to:getMark("@fengji_draw-round"))
     room:setPlayerMark(player, "@fengji_slash-round", to:getMark("@fengji_slash-round"))
     room:setPlayerMark(to, "@fengji_draw-round", n1)
     room:setPlayerMark(to, "@fengji_slash-round", n2)
+    room:invalidateSkill(player, self.name)
   end,
 
   refresh_events = {fk.Deathed},
   can_refresh = function(self, event, target, player, data)
-    return player:getMark("@@xuanhui") ~= 0
+    return table.contains(player:getTableMark(MarkEnum.InvalidSkills), self.name)
   end,
   on_refresh = function(self, event, target, player, data)
-    player.room:setPlayerMark(player, "@@xuanhui", 0)
+    player.room:validateSkill(player, self.name)
   end,
 }
 fengji:addRelatedSkill(fengji_delay)

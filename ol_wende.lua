@@ -2385,12 +2385,10 @@ local pozhu = fk.CreateViewAsSkill{
   end,
   after_use = function (self, player, use)
     if not player.dead and not use.damageDealt then
-      player.room:setPlayerMark(player, "@@pozhu-turn", 1)
+      player.room:invalidateSkill(player, self.name, "-turn")
     end
   end,
-  enabled_at_play = function (self, player)
-    return player:getMark("@@pozhu-turn") == 0
-  end,
+  enabled_at_play = Util.TrueFunc,
 }
 duyu:addSkill(sanchen)
 duyu:addSkill(zhaotao)
@@ -2410,7 +2408,6 @@ Fk:loadTranslationTable{
   ["#sanchen-discard"] = "三陈：弃置三张牌，若类别各不相同则你摸一张牌且 %src 可以再发动“三陈”",
   ["@sanchen"] = "三陈",
   ["#pozhu"] = "破竹：你可将一张手牌当【出其不意】使用",
-  ["@@pozhu-turn"] = "破竹失效",
 
   ["$sanchen1"] = "陈书弼国，当一而再、再而三。",
   ["$sanchen2"] = "勘除弼事，三陈而就。",
