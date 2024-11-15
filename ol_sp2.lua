@@ -1,7 +1,6 @@
 local extension = Package("ol_sp2")
 extension.extensionName = "ol"
 local U = require "packages/utility/utility"
-local H = require "packages/hegemony/util"
 
 Fk:loadTranslationTable{
   ["ol_sp2"] = "OL专属2",
@@ -5813,16 +5812,18 @@ local ol__diaodu = fk.CreateTriggerSkill{
   can_trigger = function(self, event, target, player, data)
     if not player:hasSkill(self) then return false end
     if event == fk.CardUsing then
-      if H.compareKingdomWith(target, player) and data.card.type == Card.TypeEquip then
+      if target.kingdom == player.kingdom and data.card.type == Card.TypeEquip then
         local _event = player.room.logic:getEventsOfScope(GameEvent.UseCard, 1, function(e)
           local use = e.data[1]
-          return use.card.type == Card.TypeEquip and H.compareKingdomWith(player.room:getPlayerById(use.from), player)
+          return use.card.type == Card.TypeEquip and player.room:getPlayerById(use.from).kingdom == player.kingdom
         end, Player.HistoryTurn)
         return #_event > 0 and _event[1].data[1] == data
       end
     else
-      return target == player and player.phase == Player.Play and table.find(player.room.alive_players, function(p)
-    return H.compareKingdomWith(p, player) and #p:getCardIds(Player.Equip) > 0 end) end
+      return target == player and player.phase == Player.Play and
+        table.find(player.room.alive_players, function(p)
+          return p.kingdom == player.kingdom and #p:getCardIds("e") > 0
+        end) end
   end,
   on_cost = function(self, event, target, player, data)
     local room = player.room
@@ -5830,7 +5831,8 @@ local ol__diaodu = fk.CreateTriggerSkill{
       return room:askForSkillInvoke(target, self.name, nil, "#diaodu-invoke")
     else
       local targets = table.map(table.filter(room.alive_players, function(p)
-        return H.compareKingdomWith(p, player) and #p:getCardIds(Player.Equip) > 0 end), Util.IdMapper)
+        return p.kingdom == player.kingdom and #p:getCardIds("e") > 0
+      end), Util.IdMapper)
       if #targets == 0 then return false end
       local tos = room:askForChoosePlayers(player, targets, 1, 1, "#diaodu-choose", self.name, true)
       if #tos > 0 then

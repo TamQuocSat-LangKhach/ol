@@ -1772,7 +1772,8 @@ local fengshang = fk.CreateActiveSkill{
     return player:getMark("fengshang-phase") == 0 and
       table.find(player:getTableMark("fengshang"), function (id)
         return table.find(player:getTableMark("fengshang"), function (id2)
-          return id ~= id2 and Fk:getCardById(id):compareSuitWith(Fk:getCardById(id2))
+          return id ~= id2 and Fk:getCardById(id):compareSuitWith(Fk:getCardById(id2)) and
+            not table.contains(Self:getTableMark("fengshang-round"), Fk:getCardById(id).suit)
         end)
       end)
   end,
@@ -1794,7 +1795,8 @@ local fengshang = fk.CreateActiveSkill{
     end, Player.HistoryTurn)
     cards = table.filter(cards, function (id)
       return table.find(cards, function (id2)
-        return id ~= id2 and Fk:getCardById(id):compareSuitWith(Fk:getCardById(id2))
+        return id ~= id2 and Fk:getCardById(id):compareSuitWith(Fk:getCardById(id2)) and
+          not table.contains(player:getTableMark("fengshang-round"), Fk:getCardById(id).suit)
       end)
     end)
 
@@ -1819,6 +1821,7 @@ local fengshang = fk.CreateActiveSkill{
       table.removeOne(targets, dat.targets[1])
       list[dat.targets[1]] = dat.cards
       room:setCardMark(Fk:getCardById(dat.cards[1]), "@DistributionTo", Fk:translate(room:getPlayerById(dat.targets[1]).general))
+      room:addTableMark(player, "fengshang-round", Fk:getCardById(dat.cards[1]).suit)
     end
     if #targets > 0 then
       local all_cards = table.filter(cards, function (c)
@@ -1845,8 +1848,17 @@ local fengshang = fk.CreateActiveSkill{
       end
     end
     room:doYiji(list, player.id, self.name)
-    if not player.dead and not list[player.id] then
-      room:useVirtualCard("analeptic", nil, player, player, self.name, true)
+    if not player.dead and not list[player.id] and not player:isProhibited(player, Fk:cloneCard("analeptic")) then
+      room:useCard({
+        card = Fk:cloneCard("analeptic"),
+        from = player.id,
+        tos = {{player.id}},
+        extra_data = {
+          analepticRecover = player.dying
+        },
+        skillName = self.name,
+        extraUse = true,
+      })
     end
   end,
 }
@@ -1871,7 +1883,8 @@ local fengshang_trigger = fk.CreateTriggerSkill{
       end, Player.HistoryTurn)
       return table.find(cards, function (id)
         return table.find(cards, function (id2)
-          return id ~= id2 and Fk:getCardById(id):compareSuitWith(Fk:getCardById(id2))
+          return id ~= id2 and Fk:getCardById(id):compareSuitWith(Fk:getCardById(id2)) and
+            not table.contains(player:getTableMark("fengshang-round"), Fk:getCardById(id).suit)
         end)
       end)
     end
@@ -2004,8 +2017,8 @@ Fk:loadTranslationTable{
   ["xiongni"] = "凶逆",
   [":xiongni"] = "出牌阶段开始时，你可以弃置一张牌，所有其他角色需弃置一张与花色相同的牌，否则你对其造成1点伤害。",
   ["fengshang"] = "封赏",
-  [":fengshang"] = "出牌阶段限一次或当一名角色进入濒死状态时，你可以将本回合弃牌堆中两张花色相同的牌分配给等量角色，若你未以此法获得牌，"..
-  "你视为使用一张不计入次数的【酒】。",
+  [":fengshang"] = "出牌阶段限一次或当一名角色进入濒死状态时，你可以将本回合弃牌堆中两张花色相同的牌分配给等量角色（每轮每种花色限一次），"..
+  "若你未以此法获得牌，你视为使用一张不计入次数的【酒】。",
   ["zhibing"] = "执柄",
   [":zhibing"] = "主公技，锁定技，准备阶段，若其他群雄势力角色累计使用黑色牌达到：3张，你加1点体力上限并回复1体力；6张，你获得〖焚城〗；"..
   "9张，你获得〖崩坏〗",

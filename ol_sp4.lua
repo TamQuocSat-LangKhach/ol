@@ -1239,9 +1239,6 @@ local shuzi = fk.CreateActiveSkill{
   card_num = 2,
   target_num = 1,
   prompt = "#shuzi",
-  times = function (self)
-    return 1 - Self:usedSkillTimes(self.name, Player.HistoryPhase)
-  end,
   can_use = function(self, player)
     return player:usedSkillTimes(self.name, Player.HistoryPhase) == 0
   end,
@@ -1367,9 +1364,6 @@ local zonglue = fk.CreateViewAsSkill{
   name = "zonglue",
   anim_type = "offensive",
   prompt = "#zonglue",
-  times = function (self)
-    return 1 - Self:getMark("zonglue-phase")
-  end,
   card_filter = function(self, to_select, selected)
     return #selected == 0
   end,
@@ -1590,6 +1584,177 @@ Fk:loadTranslationTable{
   ["@@bianyu-inhand"] = "鞭御",
   ["#fengyao-choose"] = "凤瑶：弃置你或 %dest 场上一张♠牌，令你对其造成的伤害+1",
   ["#fengyao-discard"] = "凤瑶：弃置其中一张♠牌",
+}
+
+local caocao = General(extension, "ol_sp__caocao", "qun", 4)
+local xixiang = fk.CreateActiveSkill{
+  name = "xixiang",
+  anim_type = "offensive",
+  prompt = "#xixiang",
+  min_card_num = 1,
+  target_num = 1,
+  interaction = function(self)
+    return U.CardNameBox { choices = {"slash", "duel"} }
+  end,
+  can_use = function(self, player)
+    return player:usedSkillTimes(self.name, Player.HistoryPhase) == 0
+  end,
+  card_filter = function(self, to_select, selected)
+    local card = Fk:cloneCard(self.interaction.data)
+    card.skillName = self.name
+    card:addSubcards(selected)
+    return not Self:prohibitUse(card)
+  end,
+  target_filter = function(self, to_select, selected, selected_cards)
+    if #selected > 0 or to_select == Self.id then return end
+    local card = Fk:cloneCard(self.interaction.data)
+    card.skillName = self.name
+    card:addSubcards(selected_cards)
+    return card.skill:targetFilter(to_select, {}, {}, card, {bypass_distances = true, bypass_times = true})
+  end,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    local target = room:getPlayerById(effect.tos[1])
+    room:useVirtualCard(self.interaction.data, effect.cards, player, target, self.name, true)
+    if player.dead then return end
+    if target.hp > player:getHandcardNum() then
+      player:drawCards(1, self.name)
+    end
+    if player.dead or target.dead then return end
+    if target.hp > player.hp and not target:isNude() then
+      local card = room:askForCardChosen(player, target, "he", self.name, "#xixiang-prey::"..target.id)
+      room:moveCardTo(card, Card.PlayerHand, player, fk.ReasonPrey, self.name, nil, false, player.id)
+    end
+  end,
+}
+local aige = fk.CreateTriggerSkill{
+  name = "aige",
+  anim_type = "special",
+  events = {fk.EnterDying},
+  frequency = Skill.Wake,
+  can_trigger = function(self, event, target, player, data)
+    return player:hasSkill(self) and player:usedSkillTimes(self.name, Player.HistoryGame) == 0
+  end,
+  can_wake = function(self, event, target, player, data)
+    return #player.room.logic:getEventsOfScope(GameEvent.Dying, 3, Util.TrueFunc, Player.HistoryTurn) == 2
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    room:handleAddLoseSkills(player, "-xixiang|zhubei", nil, true, false)
+    local n = target.maxHp
+    if player:getHandcardNum() < n then
+      player:drawCards(n - player:getHandcardNum(), self.name)
+    end
+    if not player.dead and player.hp < n and player.maxHp <= n then
+      room:recover{
+        who = player,
+        num = n - player.hp,
+        recoverBy = player,
+        skillName = self.name,
+      }
+    end
+  end,
+}
+local zhubei = fk.CreateActiveSkill{
+  name = "zhubei",
+  anim_type = "control",
+  prompt = "#zhubei",
+  card_num = 0,
+  target_num = 1,
+  can_use = function(self, player)
+    return player:usedSkillTimes(self.name, Player.HistoryPhase) == 0
+  end,
+  card_filter = Util.FalseFunc,
+  target_filter = function(self, to_select, selected, selected_cards)
+    return #selected == 0 and to_select ~= Self.id and not Fk:currentRoom():getPlayerById(to_select):isNude()
+  end,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    local target = room:getPlayerById(effect.tos[1])
+    local success, dat = room:askForUseActiveSkill(target, "zhubei_active", "#zhubei-use:"..player.id, false)
+    if success and dat then
+      local card = Fk:cloneCard(dat.interaction)
+      card:addSubcards(dat.cards)
+      card.skillName = self.name
+      local use = {
+        from = target.id,
+        tos = {{player.id}},
+        card = card,
+        extraUse = true,
+        extra_data = {
+          zhubei = player.id
+        },
+      }
+      room:useCard(use)
+      if not (use.damageDealt and use.damageDealt[player.id]) then
+        if not player.dead and not target.dead and not (player:isKongcheng() and target:isKongcheng()) and
+          room:askForSkillInvoke(player, self.name, nil, "#zhubei-swap::"..target.id) then
+          U.swapHandCards(room, player, player, target, self.name)
+        end
+      end
+    end
+  end,
+}
+local zhubei_active = fk.CreateActiveSkill{
+  name = "zhubei_active",
+  min_card_num = 1,
+  target_num = 0,
+  interaction = function(self)
+    return U.CardNameBox { choices = {"slash", "duel"} }
+  end,
+  card_filter = function(self, to_select, selected)
+    local card = Fk:cloneCard(self.interaction.data)
+    card.skillName = "zhubei"
+    card:addSubcards(selected)
+    return not Self:prohibitUse(card)  --盲猜无合法性判定
+  end,
+}
+local zhubei_dalay = fk.CreateTriggerSkill{
+  name = "#zhubei_dalay",
+  anim_type = "masochism",
+  events = {fk.Damaged},
+  can_trigger = function(self, event, target, player, data)
+    if target == player and data.card and table.contains(data.card.skillNames, "zhubei") and
+      player.room:getCardArea(data.card) == Card.Processing then
+      local use_event = player.room.logic:getCurrentEvent():findParent(GameEvent.UseCard)
+      if not use_event then return end
+      local use = use_event.data[1]
+      return use.extra_data and use.extra_data.zhubei == player.id
+    end
+  end,
+  on_cost = function (self, event, target, player, data)
+    return player.room:askForSkillInvoke(player, "zhubei", nil, "#zhubei_dalay-invoke")
+  end,
+  on_use = function(self, event, target, player, data)
+    player.room:moveCardTo(data.card, Card.PlayerHand, player, fk.ReasonJustMove, "zhubei", nil, true, player.id)
+  end,
+}
+Fk:addSkill(zhubei_active)
+zhubei:addRelatedSkill(zhubei_dalay)
+caocao:addSkill(xixiang)
+caocao:addSkill(aige)
+caocao:addRelatedSkill(zhubei)
+Fk:loadTranslationTable{
+  ["ol_sp__caocao"] = "曹操",
+  ["#ol_sp__caocao"] = "",
+  --["designer:ol_sp__caocao"] = "",
+
+  ["xixiang"] = "西向",
+  [":xixiang"] = "出牌阶段限一次，你可以将任意张牌当无距离限制的【杀】或【决斗】对一名角色使用。此牌结算后，若其体力值：大于你的手牌数，"..
+  "你摸一张牌；大于你的体力值，你获得其一张牌。",
+  ["aige"] = "哀歌",
+  [":aige"] = "觉醒技，一回合内第二次有角色进入濒死状态后，你失去〖西向〗，获得〖逐北〗，然后将手牌摸至X，体力值回复至X（X为该角色体力上限）。",
+  ["zhubei"] = "逐北",
+  [":zhubei"] = "出牌阶段限一次，你可以选择一名其他角色，令其将任意张牌当【杀】或【决斗】对你使用。若你以此法受到伤害后，你可以获得伤害牌；"..
+  "若你未以此法受到伤害，你可以与其交换手牌。",
+  ["#xixiang"] = "西向：将任意张牌当无距离限制的【杀】或【决斗】使用",
+  ["#xixiang-prey"] = "西向：获得 %dest 一张牌",
+  ["#zhubei"] = "逐北：令一名角色将任意张牌当【杀】或【决斗】对你使用",
+  ["zhubei_active"] = "逐北",
+  ["#zhubei-use"] = "逐北：请将任意张牌当【杀】或【决斗】对 %src 使用",
+  ["#zhubei-swap"] = "逐北：是否与 %dest 交换手牌？",
+  ["#zhubei_dalay"] = "逐北",
+  ["#zhubei_dalay-invoke"] = "逐北：是否获得造成伤害的牌？",
 }
 
 local qinlang = General(extension, "ol__qinlang", "wei", 3)
