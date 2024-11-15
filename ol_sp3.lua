@@ -1246,7 +1246,7 @@ local miuyan_trigger = fk.CreateTriggerSkill{
         room:moveCards(table.unpack(moveInfos))
       end
     elseif player:getSwitchSkillState("miuyan", true) == fk.SwitchYin and not data.damageDealt then
-      room:invalidateSkill(player, self.name, "-round")
+      room:invalidateSkill(player, "miuyan", "-round")
     end
   end,
 
