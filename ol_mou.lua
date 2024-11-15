@@ -1848,17 +1848,20 @@ local fengshang = fk.CreateActiveSkill{
       end
     end
     room:doYiji(list, player.id, self.name)
-    if not player.dead and not list[player.id] and not player:isProhibited(player, Fk:cloneCard("analeptic")) then
-      room:useCard({
-        card = Fk:cloneCard("analeptic"),
-        from = player.id,
-        tos = {{player.id}},
-        extra_data = {
-          analepticRecover = player.dying
-        },
-        skillName = self.name,
-        extraUse = true,
-      })
+    if not player.dead and not list[player.id] then
+      local card = Fk:cloneCard("analeptic")
+      card.skillName = self.name
+      if not player:prohibitUse(Fk:cloneCard("analeptic")) and not player:isProhibited(player, Fk:cloneCard("analeptic")) then
+        room:useCard({
+          card = card,
+          from = player.id,
+          tos = {{player.id}},
+          extra_data = {
+            analepticRecover = player.dying
+          },
+          extraUse = true,
+        })
+      end
     end
   end,
 }

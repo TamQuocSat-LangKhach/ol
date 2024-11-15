@@ -836,13 +836,18 @@ local ol_ex__chunlao = fk.CreateTriggerSkill{
       room:addPlayerMark(player, "ol_ex__chunlao-round", 1)
       room:moveCardTo(self.cost_data, Card.DiscardPile, nil, fk.ReasonPutIntoDiscardPile, self.name, nil, true, player.id)
       if not target.dead then
-        room:useCard({
-          card = Fk:cloneCard("analeptic"),
-          from = target.id,
-          tos = {{target.id}},
-          extra_data = {analepticRecover = true},
-          skillName = self.name,
-        })
+        local card = Fk:cloneCard("analeptic")
+        card.skillName = self.name
+        if not target:prohibitUse(Fk:cloneCard("analeptic")) and not target:isProhibited(target, Fk:cloneCard("analeptic")) then
+          room:useCard({
+            card = Fk:cloneCard("analeptic"),
+            from = target.id,
+            tos = {{target.id}},
+            extra_data = {
+              analepticRecover = true
+            },
+          })
+        end
       end
     end
   end,
