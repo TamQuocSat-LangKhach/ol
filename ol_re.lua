@@ -151,9 +151,8 @@ local ol__lijun = fk.CreateTriggerSkill{
   name = "ol__lijun$",
   events = { fk.CardUseFinished },
   can_trigger = function(self, event, target, player, data)
-    if player:hasSkill(self) and target ~= player and target.kingdom == "wu" and data.card.trueName == "slash" and target.phase == Player.Play and player:usedSkillTimes(self.name, Player.HistoryPhase) == 0 then
-      local cardList = data.card:isVirtual() and data.card.subcards or {data.card.id}
-      return table.find(cardList, function(id) return not player.room:getCardOwner(id) end)
+    if player:hasSkill(self) and target ~= player and target.kingdom == "wu" and data.card and data.card.trueName == "slash" and target.phase == Player.Play and player:usedSkillTimes(self.name, Player.HistoryPhase) == 0 then
+      return table.every(Card:getIdList(data.card), function(id) return player.room:getCardArea(id) == Card.Processing end)
     end
   end,
   on_cost = function (self, event, target, player, data)
@@ -161,10 +160,7 @@ local ol__lijun = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local cardList = data.card:isVirtual() and data.card.subcards or {data.card.id}
-    local cards = table.filter(cardList, function(id) return not room:getCardOwner(id) end)
-    if #cards == 0 then return end
-    room:obtainCard(player, cards, true, fk.ReasonJustMove)
+    room:obtainCard(player, Card:getIdList(data.card), true, fk.ReasonJustMove)
     if not player.dead and not target.dead and room:askForSkillInvoke(player, self.name, data, "#ol__lijun-draw:"..target.id) then
       target:drawCards(1, self.name)
       room:addPlayerMark(target, "ol__lijun_slash-phase")
