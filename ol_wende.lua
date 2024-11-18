@@ -1191,19 +1191,23 @@ local baoqie = fk.CreateTriggerSkill{
   events = {"fk.GeneralAppeared"},
   anim_type = "drawcard",
   can_trigger = function (self, event, target, player, data)
-    return target == player and player:hasShownSkill(self) and #player.room:getCardsFromPileByRule(".|.|.|.|.|treasure") > 0
+    if target == player and player:hasShownSkill(self) then
+      local cards = player.room:getCardsFromPileByRule(".|.|.|.|.|treasure", 1, "allPiles")
+      if #cards ~= 0 then
+        self.cost_data = cards
+        return true
+      end
+    end
   end,
   on_use = function (self, event, target, player, data)
     local room = player.room
-    local ids = room:getCardsFromPileByRule(".|.|.|.|.|treasure")
-    if #ids > 0 then
-      room:moveCardTo(ids, Player.Hand, player, fk.ReasonPrey, self.name)
-      local cid = ids[1]
-      local card = Fk:getCardById(cid)
-      if not player.dead and table.contains(player:getCardIds("h"), cid) and card.type == Card.TypeEquip and
-      player:canUseTo(card, player) and room:askForSkillInvoke(player, self.name, nil, "#baoqie-use:::"..card:toLogString()) then
-        room:useCard{from = player.id, tos = {{player.id}}, card = card}
-      end
+    local ids = self.cost_data
+    room:moveCardTo(ids, Player.Hand, player, fk.ReasonPrey, self.name)
+    local cid = ids[1]
+    local card = Fk:getCardById(cid)
+    if not player.dead and table.contains(player:getCardIds("h"), cid) and card.type == Card.TypeEquip and
+    player:canUseTo(card, player) and room:askForSkillInvoke(player, self.name, nil, "#baoqie-use:::"..card:toLogString()) then
+      room:useCard{from = player.id, tos = {{player.id}}, card = card}
     end
   end,
 }
