@@ -2344,7 +2344,7 @@ local lianji = fk.CreateActiveSkill{
         room:moveCardTo(card, Card.Void, nil, fk.ReasonJustMove, self.name)
         card = room:printCard("seven_stars_sword", Card.Spade, 6)
       end
-      if U.canUseCardTo(room, target, target, card) then
+      if target:canUseTo(card, target) then
         room:useCard({
           from = target.id,
           tos = {{target.id}},

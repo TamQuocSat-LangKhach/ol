@@ -75,7 +75,7 @@ local hunjiangTarget = fk.CreateTriggerSkill{
           return
             table.contains(p:getTableMark("@@hunjiang-phase"), player.id) and
             not table.contains(TargetGroup:getRealTargets(data.tos), p.id) and
-            U.canUseCardTo(room, player, p, data.card, true)
+            player:canUseTo(data.card, p, {bypass_distances = true, bypass_times = true})
         end
       )
   end,
@@ -87,7 +87,7 @@ local hunjiangTarget = fk.CreateTriggerSkill{
         return
           table.contains(p:getTableMark("@@hunjiang-phase"), player.id) and
           not table.contains(TargetGroup:getRealTargets(data.tos), p.id) and
-          U.canUseCardTo(room, player, p, data.card, true)
+          player:canUseTo(data.card, p, {bypass_distances = true, bypass_times = true})
       end
     )
 

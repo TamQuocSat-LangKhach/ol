@@ -3018,7 +3018,7 @@ local xuanbei = fk.CreateActiveSkill{
     local card = Fk:cloneCard("slash")
     card:addSubcard(id)
     local num = 1
-    if U.canUseCardTo(room, target, player, card, false, false) then
+    if target:canUseTo(card, player, {bypass_distances = true, bypass_times = true}) then
       local use = {
         from = target.id,
         tos = {{player.id}},
@@ -3231,7 +3231,7 @@ local maihuo_delay = fk.CreateTriggerSkill{
     local to = room:getPlayerById(player:getMark("maihuo")[1])
     local card = Fk:getCardById(player:getPile("yangzhi_huo")[1])
     room:setPlayerMark(player, "maihuo", 0)
-    if U.canUseCardTo(room, player, to, card, true, true) then
+    if player:canUseTo(card, to, {bypass_distances = true, bypass_times = true}) then
       room:useCard({
         from = player.id,
         tos = {{to.id}},

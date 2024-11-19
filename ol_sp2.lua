@@ -436,8 +436,11 @@ local youlong = fk.CreateViewAsSkill{
     local all_names = U.getAllCardNames((Self:getSwitchSkillState("youlong") == fk.SwitchYang) and "t" or "b")
     local names = U.getViewAsCardNames(Self, "youlong", all_names, {}, Self:getTableMark("@$youlong"))
     if #names > 0 then
-      return UI.ComboBox { choices = names, all_choices = all_names }
+      return U.CardNameBox { choices = names, all_choices = all_names }
     end
+  end,
+  prompt = function (self, selected_cards, selected)
+    return "#youlong-"..Self:getSwitchSkillState("youlong", false, true)
   end,
   card_filter = Util.FalseFunc,
   view_as = function(self, cards)
@@ -448,10 +451,7 @@ local youlong = fk.CreateViewAsSkill{
   end,
   before_use = function(self, player, use)
     local room = player.room
-    local mark = player:getMark("@$youlong")
-    if mark == 0 then mark = {} end
-    table.insert(mark, use.card.trueName)
-    room:setPlayerMark(player, "@$youlong", mark)
+    room:addTableMark(player, "@$youlong", use.card.trueName)
     local state = player:getSwitchSkillState(self.name, true, true)
     room:setPlayerMark(player, "youlong_" .. state .. "-round", 1)
 
@@ -473,11 +473,16 @@ local youlong = fk.CreateViewAsSkill{
   end,
   enabled_at_response = function(self, player, response)
     local state = player:getSwitchSkillState(self.name, false, true)
-    if Fk.currentResponsePattern == "nullification" then
-      --FIXME:没有enabled_at_nullification，只能姑且这么写了……
-      if state == "yin" or table.contains(Self:getTableMark("@$youlong"), "nullification") then return false end
+    if (not response) and player:getMark("youlong_" .. state .. "-round") == 0 and #player:getAvailableEquipSlots() > 0
+      and Fk.currentResponsePattern then
+      local all_names = U.getAllCardNames((state == "yang") and "t" or "b")
+      return table.find(all_names, function (name)
+        local card = Fk:cloneCard(name)
+        if table.contains(Self:getTableMark("@$youlong"), card.trueName) then return false end
+        card.skillName = self.name
+        return Exppattern:Parse(Fk.currentResponsePattern):match(card)
+      end)
     end
-    return (not response) and player:getMark("youlong_" .. state .. "-round") == 0 and #player:getAvailableEquipSlots() > 0
   end,
 }
 local luanfeng = fk.CreateTriggerSkill{
@@ -530,6 +535,8 @@ Fk:loadTranslationTable{
 
   ['@$youlong'] = '游龙',
   ['#youlong-choice'] = '游龙: 请选择废除一个装备栏',
+  ["#youlong-yang"] = "游龙：你可以废除一个装备栏，视为使用一张未以此法使用过的普通锦囊牌",
+  ["#youlong-yin"] = "游龙：你可以废除一个装备栏，视为使用一张未以此法使用过的基本牌",
   ['$youlong1'] = '赤壁献策，再谱春秋！',
   ['$youlong2'] = '卧龙出山，谋定万古！',
   ['$luanfeng1'] = '凤栖枯木，浴火涅槃！',
@@ -2039,7 +2046,7 @@ local juanxia_delay = fk.CreateTriggerSkill{
     for i = 1, n, 1 do
       local slash = Fk:cloneCard("slash")
       slash.skillName = "juanxia"
-      if U.canUseCardTo(room, target, player, slash) and
+      if target:canUseTo(slash, player) and
       room:askForSkillInvoke(target, self.name, nil, "#juanxia-slash:"..player.id.."::"..n..":"..i) then
         room:useCard{
           from = target.id,

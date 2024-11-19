@@ -1524,7 +1524,7 @@ local niluan = fk.CreateTriggerSkill{
     return player:hasSkill(self) and target.phase == Player.Finish and target.hp > player.hp and #player.room.logic:getEventsOfScope(GameEvent.UseCard, 1, function(e)
       local use = e.data[1]
       return use.from == target.id and use.card.trueName == "slash"
-    end, Player.HistoryTurn) > 0 and U.canUseCardTo(player.room, player, target, Fk:cloneCard("slash"))
+    end, Player.HistoryTurn) > 0 and player:canUseTo(Fk:cloneCard("slash"), target)
   end,
   on_cost = function(self, event, target, player, data)
     local cids = player.room:askForCard(player, 1, 1, true, self.name, true, ".|.|club,spade", "#ol__niluan-slash:" .. target.id)
