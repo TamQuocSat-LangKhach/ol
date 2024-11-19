@@ -475,6 +475,131 @@ Fk:loadTranslationTable {
   ["$wuhun_ol__godguanyu2"] = "不杀此人，何以雪恨？",
   ["~ol__godguanyu"] = "夙愿已了，魂归地府。",
 }
+
+local godzhangliao = General(extension, "ol__godzhangliao", "god", 4)
+
+local duorui = fk.CreateTriggerSkill{
+  name = "ol__duorui",
+  anim_type = "control",
+  events = {fk.Damage},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self) and data.to ~= player and not data.to.dead and player.phase == Player.Play
+    and data.to:getMark("@ol__duorui") == 0 and not player._phase_end
+  end,
+  on_cost = function (self, event, target, player, data)
+    local room = player.room
+    local choices = {}
+    for _, skill in ipairs(Fk.generals[data.to.general]:getSkillNameList()) do
+      if data.to:hasSkill(skill, true) then
+        table.insert(choices, skill)
+      end
+    end
+    if data.to.deputyGeneral ~= "" then
+      for _, skill in ipairs(Fk.generals[data.to.deputyGeneral]:getSkillNameList()) do
+        if data.to:hasSkill(skill, true) then
+          table.insertIfNeed(choices, skill)
+        end
+      end
+    end
+    if #choices == 0 then return false end
+    choices = room:askForChoices(player, choices, 1, 1, self.name, "#ol__duorui-choice:"..data.to.id, true, true)
+    if #choices == 1 then
+      self.cost_data = {tos = {data.to.id}, choice = choices[1]}
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    player.room:setPlayerMark(data.to, "@ol__duorui", self.cost_data.choice)
+    player.room:invalidateSkill(data.to, self.cost_data.choice)
+    player:endPlayPhase()
+  end,
+
+  refresh_events = {fk.AfterTurnEnd},
+  can_refresh = function(self, event, target, player, data)
+    return target == player and player:getMark("@ol__duorui") ~= 0
+  end,
+  on_refresh = function (self, event, target, player, data)
+    player.room:validateSkill(player, player:getMark("@ol__duorui"))
+    player.room:setPlayerMark(player, "@ol__duorui", 0)
+  end,
+}
+godzhangliao:addSkill(duorui)
+
+local zhiti = fk.CreateTriggerSkill{
+  name = "ol__zhiti",
+  anim_type = "control",
+  frequency = Skill.Compulsory,
+  events = {fk.DrawNCards, fk.TurnEnd},
+  can_trigger = function(self, event, target, player, data)
+    if target == player and player:hasSkill(self) then
+      local num = #table.filter(player.room.alive_players, function (p) return p:isWounded() end)
+      if event == fk.DrawNCards then
+        return num >= 3
+      else
+        return num >= 5
+      end
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    if event == fk.DrawNCards then
+      data.n = data.n + 1
+    else
+      local targets = table.filter(room:getOtherPlayers(player, false), function (p) return #p:getAvailableEquipSlots() > 0 end)
+      if #targets == 0 then return false end
+      local tos = room:askForChoosePlayers(player, table.map(targets, Util.IdMapper), 1, 1, "#ol__zhiti-choose", self.name, true)
+      if #tos > 0 then
+        local to = room:getPlayerById(tos[1])
+        local slots = to:getAvailableEquipSlots()
+        if #slots > 0 then
+          room:abortPlayerArea(to, table.random(slots))
+        end
+      end
+    end
+  end,
+}
+local zhiti_maxcards = fk.CreateMaxCardsSkill{
+  name = "#zhiti_maxcards",
+  correct_func = function(self, player)
+    local n = 0
+    local players = Fk:currentRoom().alive_players
+    if player:hasSkill(zhiti) and table.find(players, function (p) return p:isWounded() end) then
+      n = 1
+    end
+    if player:isWounded() then
+      for _, p in ipairs(players) do
+        if p:hasSkill(zhiti) and p:inMyAttackRange(player) then
+          n = n - 1
+        end
+      end
+    end
+    return n
+  end,
+}
+zhiti:addRelatedSkill(zhiti_maxcards)
+
+godzhangliao:addSkill(zhiti)
+
+Fk:loadTranslationTable {
+  ["ol__godzhangliao"] = "神张辽",
+  ["#ol__godzhangliao"] = "雁门之刑天",
+
+  ["ol__duorui"] = "夺锐",
+  [":ol__duorui"] = "当你于出牌阶段内对一名其他角色造成伤害后，若其没有因此技能而失效的技能，你可以令其武将牌上的一个技能失效直到其下回合结束，然后结束此阶段。",
+  ["#ol__duorui-choice"] = "夺锐：你可以令 %src 武将牌上的一个技能失效直到其下回合结束，然后结束出牌阶段",
+  ["@ol__duorui"] = "被夺锐",
+
+  ["ol__zhiti"] = "止啼",
+  [":ol__zhiti"] = "锁定技，①你的攻击范围内已受伤的角色手牌上限-1；②若场上已受伤的角色数不小于：1，你的手牌上限+1；3，摸牌阶段，你多摸一张牌；5，回合结束时，你可以废除一名角色一个随机的装备栏。",
+  ["#ol__zhiti-choose"] = "止啼：废除一名角色一个随机的装备栏",
+
+  ["$ol__duorui1"] = "天下雄兵之锐，吾一人可尽夺之！",
+  ["$ol__duorui2"] = "夺旗者勇，夺命者利，夺锐者神！",
+  ["$ol__zhiti1"] = "凌烟常忆张文远，逍遥常哭孙仲谋！",
+  ["$ol__zhiti2"] = "吾名如良药，可医吴儿夜啼！",
+  ["~ol__godzhangliao"] = "辽来，辽来！辽去！辽去……",
+}
+
 local machao = General(extension, "ol__machao", "qun", 4)
 local ol__zhuiji = fk.CreateTriggerSkill{
   name = "ol__zhuiji",
