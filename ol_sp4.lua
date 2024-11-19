@@ -1314,7 +1314,7 @@ hanfu:addSkill(shuzi)
 hanfu:addSkill(kuangshou)
 Fk:loadTranslationTable{
   ["ol__hanfu"] = "韩馥",
-  ["#ol__hanfu"] = "",
+  ["#ol__hanfu"] = "挈瓶之知",
   --["designer:ol__hanfu"] = "",
 
   ["shuzi"] = "束辎",
@@ -1328,6 +1328,12 @@ Fk:loadTranslationTable{
   ["shuzi_damage"] = "对其造成1点伤害",
   ["shuzi_move"] = "将场上一张牌移动至其场上",
   ["#shuzi-move"] = "束辎：你可以选择一名角色，将其场上一张牌移至 %dest 场上",
+
+  ["$shuzi1"] = "本初啊，冀州虽大，却也没有余粮！",
+  ["$shuzi2"] = "不是韩某小气，是实在没有一粒米了。",
+  ["$kuangshou1"] = "常言道以和为贵，打打杀杀作甚？",
+  ["$kuangshou2"] = "诸位都是体面人，不可妄动刀兵。",
+  ["~ol__hanfu"] = "本初，我可是请你吃过饭的！",
 }
 
 local niufu = General(extension, "ol__niufu", "qun", 4)
