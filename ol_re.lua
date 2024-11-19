@@ -510,7 +510,6 @@ local duorui = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     player.room:setPlayerMark(data.to, "@ol__duorui", self.cost_data.choice)
-    player.room:invalidateSkill(data.to, self.cost_data.choice)
     player:endPlayPhase()
   end,
 
@@ -519,10 +518,17 @@ local duorui = fk.CreateTriggerSkill{
     return target == player and player:getMark("@ol__duorui") ~= 0
   end,
   on_refresh = function (self, event, target, player, data)
-    player.room:validateSkill(player, player:getMark("@ol__duorui"))
     player.room:setPlayerMark(player, "@ol__duorui", 0)
   end,
 }
+local duorui_invalidity = fk.CreateInvaliditySkill {
+  name = "#ol__duorui_invalidity",
+  invalidity_func = function(self, player, skill)
+    return player:getMark("@ol__duorui") == skill.name
+  end
+}
+duorui:addRelatedSkill(duorui_invalidity)
+
 godzhangliao:addSkill(duorui)
 
 local zhiti = fk.CreateTriggerSkill{
