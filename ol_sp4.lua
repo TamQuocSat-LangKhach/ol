@@ -1450,6 +1450,14 @@ local jiaoweid_maxcards = fk.CreateMaxCardsSkill{
     return player:hasSkill(jiaoweid) and card.color == Card.Black
   end,
 }
+local jiaoweid_targetmod = fk.CreateTargetModSkill{
+  name = "#jiaoweid_targetmod",
+    bypass_distances =  function(self, player, skill, card, target)
+    if player:hasSkill(jiaoweid) then
+      return card and card.color == Card.Black and target and player.hp >= target.hp
+    end
+  end,
+}
 local bianyu = fk.CreateTriggerSkill{
   name = "bianyu",
   anim_type = "control",
@@ -1467,18 +1475,33 @@ local bianyu = fk.CreateTriggerSkill{
     for _, id in ipairs(cards) do
       room:setCardMark(Fk:getCardById(id), "@@bianyu-inhand", 1)
     end
+    data.to:filterHandcards()
+    cards = player:getCardIds(Player.Hand)
+    if #cards > 0 and table.every(cards, function (id)
+      return Fk:getCardById(id).trueName == "slash"
+    end) then
+      player:drawCards(2, self.name)
+    elseif data.to ~= player then
+      cards = data.to:getCardIds(Player.Hand)
+      if #cards > 0 and table.every(cards, function (id)
+        return Fk:getCardById(id).trueName == "slash"
+      end) then
+        player:drawCards(2, self.name)
+      end
+    end
   end,
 
   refresh_events = {fk.AfterCardUseDeclared},
   can_refresh = function (self, event, target, player, data)
-    return target == player and table.find(player:getCardIds("h"), function (id)
+    return target == player and data.card.type ~= Card.TypeBasic and table.find(player:getCardIds("h"), function (id)
       return Fk:getCardById(id):getMark("@@bianyu-inhand") > 0
-    end) and data.card.type ~= Card.TypeBasic
+    end)
   end,
   on_refresh = function (self, event, target, player, data)
     for _, id in ipairs(player:getCardIds("h")) do
       player.room:setCardMark(Fk:getCardById(id), "@@bianyu-inhand", 0)
     end
+    player:filterHandcards()
   end,
 }
 local bianyu_filter = fk.CreateFilterSkill{
@@ -1562,6 +1585,7 @@ local fengyao = fk.CreateTriggerSkill{
   end,
 }
 jiaoweid:addRelatedSkill(jiaoweid_maxcards)
+jiaoweid:addRelatedSkill(jiaoweid_targetmod)
 bianyu:addRelatedSkill(bianyu_filter)
 bianyu:addRelatedSkill(bianyu_targetmod)
 dongxie:addSkill(jiaoweid)
@@ -1573,10 +1597,10 @@ Fk:loadTranslationTable{
   --["designer:ol__dongxie"] = "",
 
   ["jiaoweid"] = "狡威",
-  [":jiaoweid"] = "锁定技，你的黑色牌不计入手牌上限。若你的手牌数大于体力值，体力值不大于你的角色不能响应你使用的黑色牌。",
+  [":jiaoweid"] = "锁定技，你的黑色牌不计入手牌上限。若你的手牌数大于体力值，你对体力值不大于你的角色使用黑色牌无距离限制且不能被这些角色响应。",
   ["bianyu"] = "鞭御",
   [":bianyu"] = "锁定技，你使用【杀】造成伤害或受到【杀】的伤害后，你选择受伤角色至多X张手牌，这些牌视为无次数限制的【杀】，直到其使用非基本牌"..
-  "（X为其已损失体力值）。",
+  "（X为其已损失体力值）。若你或其手牌均为【杀】，你摸两张牌。",
   ["fengyao"] = "凤瑶",
   [":fengyao"] = "锁定技，当♠牌离开一名角色装备区后，你回复1点体力。当你对其他角色造成伤害时，你弃置你或其场上一张♠牌，令此伤害+1。",
   ["#bianyu-choose"] = "鞭御：选择 %dest 至多%arg张手牌，这些牌视为【杀】",

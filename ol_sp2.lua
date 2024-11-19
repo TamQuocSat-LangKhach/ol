@@ -2046,16 +2046,13 @@ local juanxia_delay = fk.CreateTriggerSkill{
     for i = 1, n, 1 do
       local slash = Fk:cloneCard("slash")
       slash.skillName = "juanxia"
-      if target:canUseTo(slash, player) and
-      room:askForSkillInvoke(target, self.name, nil, "#juanxia-slash:"..player.id.."::"..n..":"..i) then
-        room:useCard{
-          from = target.id,
-          tos = {{player.id}},
-          card = slash,
-        }
-      else
-        break
-      end
+      if not target:canUseTo(slash, player, {bypass_distances = true, bypass_times = true}) or
+      (i == 1 and not room:askForSkillInvoke(target, self.name, nil, "#juanxia-slash:"..player.id.."::"..n)) then break end
+      room:useCard{
+        from = target.id,
+        tos = {{player.id}},
+        card = slash,
+      }
       if player.dead or target.dead then break end
     end
   end
@@ -2093,7 +2090,7 @@ Fk:loadTranslationTable{
   ["#juanxia-choose"] = "狷狭：你可以选择一名角色，依次视为对其使用至多两张仅指定唯一目标的普通锦囊牌",
   ["#juanxia-invoke"] = "狷狭：你可以视为对 %dest 再使用一张锦囊",
   ["#juanxia_delay"] = "狷狭",
-  ["#juanxia-slash"] = "狷狭：是否视为对 %src 使用【杀】？（共%arg张，第%arg2张）",
+  ["#juanxia-slash"] = "狷狭：是否视为对 %src 使用 %arg 张【杀】？",
   ["@juanxia"] = "狷狭",
 
   ["$juanxia1"] = "汝有何功？竟能居我之上！",
