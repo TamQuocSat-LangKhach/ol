@@ -565,7 +565,7 @@ local zhiti = fk.CreateTriggerSkill{
   end,
 }
 local zhiti_maxcards = fk.CreateMaxCardsSkill{
-  name = "#zhiti_maxcards",
+  name = "#ol__zhiti_maxcards",
   correct_func = function(self, player)
     local n = 0
     local players = Fk:currentRoom().alive_players
