@@ -3536,13 +3536,19 @@ Fk:loadTranslationTable{
   ["olz__wangchang"] = "族王昶",
   ["#olz__wangchang"] = "治论识度",
   ["designer:olz__wangchang"] = "玄蝶既白",
-  ["illustrator:olz__wangchang"] = "",
+  --["illustrator:olz__wangchang"] = "",
 
   ["ol__kaiji"] = "开济",
   [":ol__kaiji"] = "出牌阶段限一次，你可以令一名本轮未以此法指定过的角色弃置你一张手牌，然后你可以使用弃置的牌，若如此做，你摸一张牌。",
   ["#ol__kaiji"] = "开济：令一名角色弃置你一张手牌，你可以使用被弃置的牌并摸一张牌",
   ["#ol__kaiji-discard"] = "开济：请弃置 %src 一张手牌",
   ["#ol__kaiji-use"] = "开济：你可以使用这张牌，摸一张牌",
+
+  ["$ol__kaiji1"] = "开济国朝之心，可曰昭昭。",
+  ["$ol__kaiji2"] = "开大胜之世，匡大魏之朝。",
+  ["$zhongliu_olz__wangchang1"] = "吾族以国为重，故可为之中流。",
+  ["$zhongliu_olz__wangchang2"] = "柱国之重担，击水之中流。",
+  ["~olz__wangchang"] = "大任未继，如何长眠九泉……",
 }
 
 Fk:loadTranslationTable{
