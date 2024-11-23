@@ -1795,9 +1795,14 @@ local wuanguo = General(extension, "ol__wuanguo", "qun", 4)
 wuanguo:addSkill("tmp_illustrate")
 wuanguo.hidden = true
 
+local nanhualaoxian = General(extension, "ol__nanhualaoxian", "qun", 4)
+nanhualaoxian:addSkill("tmp_illustrate")
+nanhualaoxian.hidden = true
+
 Fk:loadTranslationTable{
   ["ol__qinlang"] = "秦朗",
   ["ol__wuanguo"] = "武安国",
+  ["ol__nanhualaoxian"] = "南华老仙",
 }
 
 return extension
