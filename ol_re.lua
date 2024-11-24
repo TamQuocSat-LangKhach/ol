@@ -484,7 +484,7 @@ local duorui = fk.CreateTriggerSkill{
   events = {fk.Damage},
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(self) and data.to ~= player and not data.to.dead and player.phase == Player.Play
-    and data.to:getMark("@ol__duorui") == 0 and not player._phase_end
+    and data.to:getMark("@ol__duorui") == 0
   end,
   on_cost = function (self, event, target, player, data)
     local room = player.room
@@ -558,7 +558,14 @@ local zhiti = fk.CreateTriggerSkill{
         local to = room:getPlayerById(tos[1])
         local slots = to:getAvailableEquipSlots()
         if #slots > 0 then
-          room:abortPlayerArea(to, table.random(slots))
+          if table.removeOne(slots, Card.SubtypeDefensiveRide) then
+            table.insertIfNeed(slots, Card.SubtypeOffensiveRide)
+          end
+          local slot = table.random(slots)
+          if slot == Card.SubtypeOffensiveRide then
+            slot = {Card.SubtypeOffensiveRide, Card.SubtypeDefensiveRide}
+          end
+          room:abortPlayerArea(to, slot)
         end
       end
     end

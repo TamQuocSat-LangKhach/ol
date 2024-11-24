@@ -3174,7 +3174,7 @@ local maihuo = fk.CreateTriggerSkill{
   can_trigger = function(self, event, target, player, data)
     if player ~= target or not player:hasSkill(self) then return false end
     if event == fk.TargetConfirmed then
-      if data.card.trueName == "slash" and U.isOnlyTarget(player, data, event) and U.isPureCard(data.card) and data.from then
+      if data.card.trueName == "slash" and AimGroup:isOnlyTarget(player, data) and U.isPureCard(data.card) and data.from then
         if (data.extra_data and data.extra_data.maihuo) then return false end
         local from = player.room:getPlayerById(data.from)
         return from ~= nil and not from.dead and #from:getPile("yangzhi_huo") == 0
@@ -3231,7 +3231,7 @@ local maihuo_delay = fk.CreateTriggerSkill{
     local to = room:getPlayerById(player:getMark("maihuo")[1])
     local card = Fk:getCardById(player:getPile("yangzhi_huo")[1])
     room:setPlayerMark(player, "maihuo", 0)
-    if player:canUseTo(card, to, {bypass_distances = true, bypass_times = true}) then
+    if not to.dead and player:canUseTo(card, to, {bypass_distances = true, bypass_times = true}) then
       room:useCard({
         from = player.id,
         tos = {{to.id}},
