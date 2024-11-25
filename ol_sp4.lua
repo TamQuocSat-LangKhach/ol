@@ -2465,7 +2465,7 @@ for loop = 1, 30, 1 do  --30个肯定够用
           room:removePlayerMark(player, MarkEnum.AddMaxCards, 2)
           room:removePlayerMark(player, "tianshu20", 2)
         end
-        room:removePlayerMark(player, "tianshu24", 0)
+        room:setPlayerMark(player, "tianshu24", 0)
       end
     end,
 

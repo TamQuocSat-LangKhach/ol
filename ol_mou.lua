@@ -1660,7 +1660,7 @@ huaxiong:addSkill(bojue)
 huaxiong:addSkill(yangwei)
 Fk:loadTranslationTable{
   ["olmou__huaxiong"] = "谋华雄",
-  ["#olmou__huaxiong"] = "",
+  ["#olmou__huaxiong"] = "汜水关的死神",
   ["illustrator:olmou__huaxiong"] = "",
   ["~olmou__huaxiong"] = "我已连战三场，匹夫胜之不武！",
 
