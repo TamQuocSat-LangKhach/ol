@@ -1846,6 +1846,15 @@ local ol__shoushu = fk.CreateActiveSkill{
     local choice = room:askForChoice(player, args, self.name, "#ol__shoushu-give::"..target.id)
     local skill = skills[table.indexOf(args, choice)]
     room:handleAddLoseSkills(player, "-"..skill, nil, true, false)
+    if #target:getTableMark("@[tianshu]") >= target:getMark("tianshu_max") then  --不考虑同将，全扬了(=ﾟωﾟ)ﾉ
+      skills = table.map(player:getTableMark("@[tianshu]"), function (info)
+        return info.skillName
+      end)
+      for _, s in ipairs(skills) do
+        target:setSkillUseHistory(s, 0, Player.HistoryGame)
+        room:handleAddLoseSkills(target, "-"..s, nil, true, false)
+      end
+    end
     room:handleAddLoseSkills(target, skill, nil, true, false)
   end,
 }
@@ -1859,8 +1868,7 @@ local qingshu = fk.CreateTriggerSkill{
       if event == fk.GameStart then
         return true
       elseif event == fk.EventPhaseStart then
-        return target == player and (player.phase == Player.Start or player.phase == Player.Finish) and
-          #player:getTableMark("@[tianshu]") < player:getMark("tianshu_max")
+        return target == player and (player.phase == Player.Start or player.phase == Player.Finish)
       end
     end
   end,
@@ -1911,6 +1919,27 @@ local qingshu = fk.CreateTriggerSkill{
     }
     local choice_effect = room:askForChoice(player, choices, self.name,
       "#qingshu-choice_effect:::"..Fk:translate(":"..choice_trigger), true)
+
+    --若将超出上限则舍弃一个已有天书
+    if #player:getTableMark("@[tianshu]") >= player:getMark("tianshu_max") then
+      local skills = table.map(player:getTableMark("@[tianshu]"), function (info)
+        return info.skillName
+      end)
+      local args = {}
+      for _, s in ipairs(skills) do
+        local info = (room:getBanner("tianshu_skills") or {})[string.sub(s, 8)]
+        table.insert(args, Fk:translate(":tianshu_triggers"..info[1]).."，"..Fk:translate(":tianshu_effects"..info[2]).."。")
+      end
+      table.insert(args, "Cancel")
+      local choice = room:askForChoice(player, args, self.name, "#ol__shoushu-discard")
+      if choice ~= "Cancel" then
+        local skill = skills[table.indexOf(args, choice)]
+        player:setSkillUseHistory(skill, 0, Player.HistoryGame)
+        room:handleAddLoseSkills(player, "-"..skill, nil, true, false)
+      else
+        return
+      end
+    end
 
     --房间记录技能信息
     local banner = room:getBanner("tianshu_skills") or {}
@@ -2226,18 +2255,14 @@ for loop = 1, 30, 1 do  --30个肯定够用
       elseif info == 27 then
         return room:askForSkillInvoke(player, self.name, nil, prompt)
       elseif info == 28 then
-        room:setPlayerMark(player, "tianshu28-tmp", "e")
-        local success, dat = room:askForUseActiveSkill(player, "tianshu_active", prompt, true, nil, false)
-        room:setPlayerMark(player, "tianshu28-tmp", "0")
+        local success, dat = room:askForUseActiveSkill(player, "tianshu_active", prompt, true, {tianshu28 = "e"}, false)
         if success and dat then
           room:sortPlayersByAction(dat.targets)
           self.cost_data = {tos = dat.targets}
           return true
         end
       elseif info == 29 then
-        room:setPlayerMark(player, "tianshu28-tmp", "h")
-        local success, dat = room:askForUseActiveSkill(player, "tianshu_active", prompt, true, nil, false)
-        room:setPlayerMark(player, "tianshu28-tmp", "0")
+        local success, dat = room:askForUseActiveSkill(player, "tianshu_active", prompt, true, {tianshu28 = "h"}, false)
         if success and dat then
           room:sortPlayersByAction(dat.targets)
           self.cost_data = {tos = dat.targets}
@@ -2510,15 +2535,14 @@ local tianshu_active = fk.CreateActiveSkill{
   card_num = 0,
   target_num = 2,
   card_filter = Util.FalseFunc,
-  target_filter = function(self, to_select, selected)
+  target_filter = function(self, to_select, selected, selected_cards, _, extra_data)
     if #selected < 2 then
       if #selected == 0 then
         return true
-      else
-        local target1 = Fk:currentRoom():getPlayerById(selected[1])
-        local target2 = Fk:currentRoom():getPlayerById(to_select)
-        local area = Self:getMark("tianshu28-tmp")
-        return not #target1:getCardIds(area) == 0 and #target2:getCardIds(area) == 0
+      elseif #selected == 1 then
+        local area = extra_data.tianshu28
+        return #Fk:currentRoom():getPlayerById(selected[1]):getCardIds(area) > 0 or
+          #Fk:currentRoom():getPlayerById(to_select):getCardIds(area) > 0
       end
     end
   end,
@@ -2543,13 +2567,18 @@ Fk:loadTranslationTable{
   --["designer:ol__nanhualaoxian"] = "",
 
   ["qingshu"] = "青书",
-  [":qingshu"] = "锁定技，游戏开始时，你的准备阶段和结束阶段，你书写一册“天书”。",
+  [":qingshu"] = "锁定技，游戏开始时，你的准备阶段和结束阶段，你书写一册<a href='tianshu_href'>“天书”</a>。",
   ["ol__shoushu"] = "授术",
-  [":ol__shoushu"] = "出牌阶段限一次，你可以将一册未翻开的“天书”交给一名其他角色。",
+  [":ol__shoushu"] = "出牌阶段限一次，你可以将一册未翻开的<a href='tianshu_href'>“天书”</a>交给一名其他角色。",
   ["hedao"] = "合道",
-  [":hedao"] = "锁定技，游戏开始时，你可以至多拥有两册“天书”。你的首次濒死结算后，你可以至多拥有三册“天书”。",
+  [":hedao"] = "锁定技，游戏开始时，你可以至多拥有两册<a href='tianshu_href'>“天书”</a>。你的首次濒死结算后，你可以至多拥有三册"..
+  "<a href='tianshu_href'>“天书”</a>。",
+  ["tianshu_href"] = "从随机三个时机和三个效果中各选择一个组合为一个“天书”技能。<br>"..
+  "“天书”技能初始可使用三次，若交给其他角色则可使用次数改为一次，当次数用完后销毁。<br>"..
+  "当一名角色将获得“天书”时，若数量将超过其可拥有“天书”的上限，则选择一个已有“天书”替换。",
   ["#qingshu-choice_trigger"] = "请为天书选择一个时机",
   ["#qingshu-choice_effect"] = "请为此时机选择一个效果：<br>%arg，",
+  ["#ol__shoushu-discard"] = "你的“天书”超出上限，是否舍弃一个以替换为新“天书”？",
   ["#ol__shoushu"] = "授术：你可以将一册未翻开的“天书”交给一名其他角色",
   ["#ol__shoushu-give"] = "授术：选择交给 %dest 的“天书”",
 
