@@ -1853,6 +1853,9 @@ local ol__shoushu = fk.CreateActiveSkill{
       for _, s in ipairs(skills) do
         target:setSkillUseHistory(s, 0, Player.HistoryGame)
         room:handleAddLoseSkills(target, "-"..s, nil, true, false)
+        local banner = room:getBanner("tianshu_skills") or {}
+        banner[string.sub(s, 8)] = nil
+        room:setBanner("tianshu_skills", banner)
       end
     end
     room:handleAddLoseSkills(target, skill, nil, true, false)
@@ -1930,15 +1933,13 @@ local qingshu = fk.CreateTriggerSkill{
         local info = (room:getBanner("tianshu_skills") or {})[string.sub(s, 8)]
         table.insert(args, Fk:translate(":tianshu_triggers"..info[1]).."，"..Fk:translate(":tianshu_effects"..info[2]).."。")
       end
-      table.insert(args, "Cancel")
       local choice = room:askForChoice(player, args, self.name, "#ol__shoushu-discard")
-      if choice ~= "Cancel" then
-        local skill = skills[table.indexOf(args, choice)]
-        player:setSkillUseHistory(skill, 0, Player.HistoryGame)
-        room:handleAddLoseSkills(player, "-"..skill, nil, true, false)
-      else
-        return
-      end
+      local skill = skills[table.indexOf(args, choice)]
+      player:setSkillUseHistory(skill, 0, Player.HistoryGame)
+      room:handleAddLoseSkills(player, "-"..skill, nil, true, false)
+      local banner = room:getBanner("tianshu_skills") or {}
+      banner[string.sub(skill, 8)] = nil
+      room:setBanner("tianshu_skills", banner)
     end
 
     --房间记录技能信息
@@ -2407,13 +2408,13 @@ for loop = 1, 30, 1 do  --30个肯定够用
         [21] = function ()
           local cards = room:getCardsFromPileByRule(".|.|.|.|.|^basic", 2)
           if #cards > 0 then
-            room:moveCardTo(data.card, Card.PlayerHand, player, fk.ReasonJustMove, self.name, nil, false, player.id)
+            room:moveCardTo(cards, Card.PlayerHand, player, fk.ReasonJustMove, self.name, nil, false, player.id)
           end
         end,
         [22] = function ()
           local cards = room:getCardsFromPileByRule(".|.|.|.|.|trick", 2)
           if #cards > 0 then
-            room:moveCardTo(data.card, Card.PlayerHand, player, fk.ReasonJustMove, self.name, nil, false, player.id)
+            room:moveCardTo(cards, Card.PlayerHand, player, fk.ReasonJustMove, self.name, nil, false, player.id)
           end
         end,
         [23] = function ()
@@ -2578,7 +2579,7 @@ Fk:loadTranslationTable{
   "当一名角色将获得“天书”时，若数量将超过其可拥有“天书”的上限，则选择一个已有“天书”替换。",
   ["#qingshu-choice_trigger"] = "请为天书选择一个时机",
   ["#qingshu-choice_effect"] = "请为此时机选择一个效果：<br>%arg，",
-  ["#ol__shoushu-discard"] = "你的“天书”超出上限，是否舍弃一个以替换为新“天书”？",
+  ["#ol__shoushu-discard"] = "你的“天书”超出上限，请删除一个",
   ["#ol__shoushu"] = "授术：你可以将一册未翻开的“天书”交给一名其他角色",
   ["#ol__shoushu-give"] = "授术：选择交给 %dest 的“天书”",
 
