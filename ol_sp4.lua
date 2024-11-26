@@ -1840,24 +1840,25 @@ local ol__shoushu = fk.CreateActiveSkill{
     end)
     local args = {}
     for _, s in ipairs(skills) do
-      local info = (room:getBanner("tianshu_skills") or {})[string.sub(s, 8)]
+      local info = room:getBanner("tianshu_skills")[s]
       table.insert(args, Fk:translate(":tianshu_triggers"..info[1]).."，"..Fk:translate(":tianshu_effects"..info[2]).."。")
     end
     local choice = room:askForChoice(player, args, self.name, "#ol__shoushu-give::"..target.id)
     local skill = skills[table.indexOf(args, choice)]
-    room:handleAddLoseSkills(player, "-"..skill, nil, true, false)
-    if #target:getTableMark("@[tianshu]") >= target:getMark("tianshu_max") then  --不考虑同将，全扬了(=ﾟωﾟ)ﾉ
-      skills = table.map(player:getTableMark("@[tianshu]"), function (info)
+    if target:getMark("@[tianshu]") ~= 0 and
+      #target:getTableMark("@[tianshu]") >= target:getMark("tianshu_max") then  --不考虑同将，全扬了(=ﾟωﾟ)ﾉ
+      skills = table.map(target:getTableMark("@[tianshu]"), function (info)
         return info.skillName
       end)
       for _, s in ipairs(skills) do
         target:setSkillUseHistory(s, 0, Player.HistoryGame)
         room:handleAddLoseSkills(target, "-"..s, nil, true, false)
-        local banner = room:getBanner("tianshu_skills") or {}
-        banner[string.sub(s, 8)] = nil
+        local banner = room:getBanner("tianshu_skills")
+        banner[s] = nil
         room:setBanner("tianshu_skills", banner)
       end
     end
+    room:handleAddLoseSkills(player, "-"..skill, nil, true, false)
     room:handleAddLoseSkills(target, skill, nil, true, false)
   end,
 }
@@ -1930,24 +1931,24 @@ local qingshu = fk.CreateTriggerSkill{
       end)
       local args = {}
       for _, s in ipairs(skills) do
-        local info = (room:getBanner("tianshu_skills") or {})[string.sub(s, 8)]
+        local info = room:getBanner("tianshu_skills")[s]
         table.insert(args, Fk:translate(":tianshu_triggers"..info[1]).."，"..Fk:translate(":tianshu_effects"..info[2]).."。")
       end
       local choice = room:askForChoice(player, args, self.name, "#ol__shoushu-discard")
       local skill = skills[table.indexOf(args, choice)]
       player:setSkillUseHistory(skill, 0, Player.HistoryGame)
       room:handleAddLoseSkills(player, "-"..skill, nil, true, false)
-      local banner = room:getBanner("tianshu_skills") or {}
-      banner[string.sub(skill, 8)] = nil
+      local banner = room:getBanner("tianshu_skills")
+      banner[skill] = nil
       room:setBanner("tianshu_skills", banner)
     end
 
     --房间记录技能信息
     local banner = room:getBanner("tianshu_skills") or {}
-    local name = "0"
+    local name = "tianshu"
     for i = 1, 30, 1 do
-      if not banner[tostring(i)] then
-        name = tostring(i)
+      if banner["tianshu"..tostring(i)] == nil then
+        name = "tianshu"..tostring(i)
         break
       end
     end
@@ -1956,7 +1957,7 @@ local qingshu = fk.CreateTriggerSkill{
       tonumber(string.sub(choice_effect, 16)),
     }
     room:setBanner("tianshu_skills", banner)
-    room:handleAddLoseSkills(player, "tianshu"..name, nil, true, false)
+    room:handleAddLoseSkills(player, name, nil, true, false)
   end,
 }
 local tianshu_targetmod = fk.CreateTargetModSkill{  --姑且挂在青书上……
@@ -1986,9 +1987,7 @@ for loop = 1, 30, 1 do  --30个肯定够用
     can_trigger = function(self, event, target, player, data)
       if player:hasSkill(self) then
         local room = player.room
-        local info = (room:getBanner("tianshu_skills") or {})[string.sub(self.name, 8)]
-        if info[1] < 1 then return end
-        info = info[1]
+        local info = room:getBanner("tianshu_skills")[self.name][1]
         if info == 1 then
           return event == fk.CardUseFinished and target == player
         elseif info == 2 then
@@ -2098,7 +2097,7 @@ for loop = 1, 30, 1 do  --30个肯定够用
     end,
     on_cost = function(self, event, target, player, data)
       local room = player.room
-      local info = (room:getBanner("tianshu_skills") or {})[string.sub(self.name, 8)][2]
+      local info = room:getBanner("tianshu_skills")[self.name][2]
       local prompt = Fk:translate(":tianshu_effects"..info)
       self.cost_data = nil
       if info == 1 then
@@ -2275,14 +2274,14 @@ for loop = 1, 30, 1 do  --30个肯定够用
     end,
     on_use = function(self, event, target, player, data)
       local room = player.room
+      local info = room:getBanner("tianshu_skills")[self.name][2]
       if player:getMark("tianshu_max") == 0 or player:usedSkillTimes(self.name, Player.HistoryGame) > 2 then
         player:setSkillUseHistory(self.name, 0, Player.HistoryGame)
         room:handleAddLoseSkills(player, "-"..self.name, nil, true, false)
-        local banner = room:getBanner("tianshu_skills") or {}
-        banner[string.sub(self.name, 8)] = nil
+        local banner = room:getBanner("tianshu_skills")
+        banner[self.name] = nil
         room:setBanner("tianshu_skills", banner)
       end
-      local info = (room:getBanner("tianshu_skills") or {})[string.sub(self.name, 8)][2]
       switch(info, {
         [1] = function ()
           player:drawCards(1, self.name)
@@ -2501,7 +2500,7 @@ for loop = 1, 30, 1 do  --30个肯定够用
 
     on_acquire = function (self, player, is_start)
       local room = player.room
-      local info = (room:getBanner("tianshu_skills") or {})[string.sub(self.name, 8)]
+      local info = room:getBanner("tianshu_skills")[self.name]
       local mark = player:getTableMark("@[tianshu]")
       table.insert(mark, {
         skillName = self.name,
