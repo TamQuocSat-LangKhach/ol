@@ -2250,7 +2250,11 @@ for loop = 1, 30, 1 do  --30个肯定够用
     on_use = function(self, event, target, player, data)
       local room = player.room
       if player:getMark("tianshu_max") == 0 or player:usedSkillTimes(self.name, Player.HistoryGame) > 2 then
-        room:invalidateSkill(player, self.name)
+        player:setSkillUseHistory(self.name, 0, Player.HistoryGame)
+        room:handleAddLoseSkills(player, "-"..self.name, nil, true, false)
+        local banner = room:getBanner("tianshu_skills") or {}
+        banner[string.sub(self.name, 8)] = nil
+        room:setBanner("tianshu_skills", banner)
       end
       local info = (room:getBanner("tianshu_skills") or {})[string.sub(self.name, 8)][2]
       switch(info, {
