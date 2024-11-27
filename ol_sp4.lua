@@ -2281,6 +2281,16 @@ for loop = 1, 30, 1 do  --30个肯定够用
         local banner = room:getBanner("tianshu_skills")
         banner[self.name] = nil
         room:setBanner("tianshu_skills", banner)
+      else
+        local mark = player:getTableMark("@[tianshu]")
+        for i = 1, #mark do
+          if mark[i].skillName == self.name then
+            mark[i].skillTimes = (player:getMark("tianshu_max") > 0 and 3 or 1) - player:usedSkillTimes(self.name, Player.HistoryGame)
+            mark[i].visible = player:usedSkillTimes(self.name, Player.HistoryGame) > 0
+            break
+          end
+        end
+        room:setPlayerMark(player, "@[tianshu]", mark)
       end
       switch(info, {
         [1] = function ()
@@ -2506,6 +2516,8 @@ for loop = 1, 30, 1 do  --30个肯定够用
         skillName = self.name,
         skillTimes = (player:getMark("tianshu_max") > 0 and 3 or 1) - player:usedSkillTimes(self.name, Player.HistoryGame),
         skillInfo = Fk:translate(":tianshu_triggers"..info[1]).."，"..Fk:translate(":tianshu_effects"..info[2]).."。",
+        owner = player.id,
+        visible = player:usedSkillTimes(self.name, Player.HistoryGame) > 0,
       })
       room:setPlayerMark(player, "@[tianshu]", mark)
     end,
@@ -2633,7 +2645,7 @@ Fk:loadTranslationTable{
   [":tianshu_effects11"] = "你可以令一名角色非锁定技失效直到其下回合开始",
   [":tianshu_effects12"] = "你可以令一名角色摸2张牌并翻面",
   [":tianshu_effects13"] = "你可以令此牌对你无效",
-  [":tianshu_effects14"] = "你可以令一名其他角色判定，若结果为♠，你对其造成2点雷电伤",
+  [":tianshu_effects14"] = "你可以令一名其他角色判定，若结果为♠，你对其造成2点雷电伤害",
   [":tianshu_effects15"] = "你可以用一张手牌替换判定牌",
   [":tianshu_effects16"] = "你可以获得此判定牌",
   [":tianshu_effects17"] = "若你不是体力上限最高的角色，你可以增加1点体力上限",
