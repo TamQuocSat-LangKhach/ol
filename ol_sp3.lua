@@ -2146,11 +2146,12 @@ local zhenying = fk.CreateActiveSkill{
     for _, p in ipairs(tos) do
       discard_num_map[p.id] = p:getHandcardNum() - tonumber(result[p.id])
     end
-    local toAsk = {}
+    -- local toAsk = {}
+    local req = Request:new(tos, "AskForUseActiveSkill")
     for _, p in ipairs(tos) do
       local num = math.min(discard_num_map[p.id], #cardsMap[p.id])
       if num > 0 then
-        table.insert(toAsk, p)
+        -- table.insert(toAsk, p)
         local extra_data = {
           num = num,
           min_num = num,
@@ -2159,20 +2160,21 @@ local zhenying = fk.CreateActiveSkill{
           pattern = ".",
           reason = self.name,
         }
-        p.request_data = json.encode({ "discard_skill", "#AskForDiscard:::"..num..":"..num, false, extra_data })
+        -- p.request_data = json.encode({ "discard_skill", "#AskForDiscard:::"..num..":"..num, false, extra_data })
+        req:setData(p, { "discard_skill", "#AskForDiscard:::"..num..":"..num, false, extra_data })
+        req:setDefaultReply(p, table.random(cardsMap[p.id], discard_num_map[p.id]))
       end
     end
-    if #toAsk > 0 then
+    req.players = table.filter(req.players, function(p) return req.data[p.id] ~= nil end)
+    if #req.players > 0 then
       local moveInfos = {}
-      room:notifyMoveFocus(tos, self.name)
-      room:doBroadcastRequest("AskForUseActiveSkill", toAsk)
-      for _, p in ipairs(toAsk) do
-        local throw
-        if p.reply_ready then
-          local replyCard = json.decode(p.client_reply).card
-          throw = replyCard.subcards
-        else
-          throw = table.random(cardsMap[p.id], discard_num_map[p.id])
+      req.focus_text = self.name
+      -- room:notifyMoveFocus(tos, self.name)
+      -- room:doBroadcastRequest("AskForUseActiveSkill", toAsk)
+      for _, p in ipairs(req.players) do
+        local throw = req:getResult(p)
+        if throw.card then
+          throw = throw.card.subcards
         end
         table.insert(moveInfos, {
           ids = throw,
@@ -4665,6 +4667,7 @@ local chanshuang = fk.CreateActiveSkill{
     local target = room:getPlayerById(effect.tos[1])
     local tos = {player, target}
     local all_choices = {"chanshuang_recast", "chanshuang_useslash", "chanshuang_discard"}
+    local req = Request:new(tos, "AskForChoice")
     for _, p in ipairs(tos) do
       local choices = {"chanshuang_useslash"}
       local cards = player:getCardIds("he")
@@ -4676,17 +4679,21 @@ local chanshuang = fk.CreateActiveSkill{
           table.insert(choices, "chanshuang_discard")
         end
       end
-      p.request_data = json.encode({choices, all_choices, self.name, "#chanshuang-choice"})
+      req:setData(p, {choices, all_choices, self.name, "#chanshuang-choice"})
+      req:setDefaultReply(p, "chanshuang_useslash")
+      -- p.request_data = json.encode({choices, all_choices, self.name, "#chanshuang-choice"})
     end
-    room:notifyMoveFocus(tos, self.name)
-    room:doBroadcastRequest("AskForChoice", tos)
-    local choice_map = {}
-    for _, p in ipairs(tos) do
-      choice_map[p.id] = p.reply_ready and p.client_reply or "chanshuang_useslash"
-    end
+    req.focus_text = self.name
+    req.receive_decode = false
+    -- room:notifyMoveFocus(tos, self.name)
+    -- room:doBroadcastRequest("AskForChoice", tos)
+    -- local choice_map = {}
+    -- for _, p in ipairs(tos) do
+    --   choice_map[p.id] = p.reply_ready and p.client_reply or "chanshuang_useslash"
+    -- end
     for _, p in ipairs(tos) do
       if not p.dead then
-        local choice = choice_map[p.id]
+        local choice = req:getResult(p)
         if choice == "chanshuang_recast" then
           if not p:isNude() then
             local card = room:askForCard(p, 1, 1, true, self.name, false, ".", "#chanshuang-card")

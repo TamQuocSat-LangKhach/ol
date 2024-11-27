@@ -1520,20 +1520,27 @@ local bojue = fk.CreateActiveSkill{
       skillName = self.name,
       pattern = ".",
     }
-    player.request_data = json.encode({ "discard_skill", "#bojue-ask:"..target.id, true, extra_data })
-    target.request_data = json.encode({ "discard_skill", "#bojue-ask:"..player.id, true, extra_data })
-    room:notifyMoveFocus({player, target}, self.name)
-    room:doBroadcastRequest("AskForUseActiveSkill", {player, target})
+    local req = Request:new({player, target}, "AskForUseActiveSkill")
+    req.focus_text = self.name
+    req:setData(player, { "discard_skill", "#bojue-ask:"..target.id, true, extra_data })
+    req:setData(target, { "discard_skill", "#bojue-ask:"..player.id, true, extra_data })
+    -- player.request_data = json.encode({ "discard_skill", "#bojue-ask:"..target.id, true, extra_data })
+    -- target.request_data = json.encode({ "discard_skill", "#bojue-ask:"..player.id, true, extra_data })
+    -- room:notifyMoveFocus({player, target}, self.name)
+    -- room:doBroadcastRequest("AskForUseActiveSkill", {player, target})
 
     local moves, n = {}, 0
-    for _, p in ipairs({player, target}) do
-      if p.reply_ready then
-        if p.reply_cancel then
+    for _, p in ipairs(req.players) do
+      local result = req:getResult(p)
+      if result then
+        if result == "" then
           n = n + 1
-          p:drawCards(1, self.name)  --FIXME: 万恶的BeforeDrawCard时机
+          if not p.dead then
+            p:drawCards(1, self.name)  --FIXME: 万恶的BeforeDrawCard时机
+          end
         else
           n = n - 1
-          local replyCard = json.decode(p.client_reply).card
+          local replyCard = result.card
           table.insert(moves, {
             ids = replyCard.subcards,
             from = p.id,
@@ -1542,11 +1549,6 @@ local bojue = fk.CreateActiveSkill{
             proposer = p.id,
             skillName = self.name,
           })
-        end
-      else
-        n = n + 1
-        if not p.dead then
-          p:drawCards(1, self.name)
         end
       end
     end
