@@ -9,7 +9,7 @@ ColumnLayout {
     skillName: [],
     skillTimes: [],
     skillInfo: [],
-    owner: 0,
+    owner: [],
   } })
   signal finish()
 
@@ -36,7 +36,7 @@ ColumnLayout {
       width: body.width
       font.pixelSize: 18
       color: "#E4D5A0"
-      text: (Self.id === modelData.owner || modelData.visible || leval(`(function() return ClientInstance:getPlayerById(Self.id):hasSkill("hedao") end)()`) ) ? 
+      text: ( modelData.owner.includes(Self.id) || modelData.visible )? 
         "<b>" + luatr(modelData.skillName) + "</b>: （还剩" + modelData.skillTimes + "次）"+ modelData.skillInfo :
         "<b>未知</b>: （还剩" + modelData.skillTimes + "次）"
 

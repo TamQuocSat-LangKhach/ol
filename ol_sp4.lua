@@ -1804,12 +1804,12 @@ local hedao = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     room:setPlayerMark(player, "hedao_invoked", 1)
-    room:setPlayerMark(player, "tianshu_max", 3)
+    room:setPlayerMark(player, "tianshu_max", 2)
   end,
 
   on_acquire = function (self, player, is_start)  --避免和青书同时机询问
     if is_start and player:hasSkill(self) then
-      player.room:setPlayerMark(player, "tianshu_max", 2)
+      player.room:setPlayerMark(player, "tianshu_max", 1)
     end
   end,
 }
@@ -1845,18 +1845,24 @@ local ol__shoushu = fk.CreateActiveSkill{
     end
     local choice = room:askForChoice(player, args, self.name, "#ol__shoushu-give::"..target.id)
     local skill = skills[table.indexOf(args, choice)]
-    if target:getMark("@[tianshu]") ~= 0 and
-      #target:getTableMark("@[tianshu]") >= target:getMark("tianshu_max") then  --不考虑同将，全扬了(=ﾟωﾟ)ﾉ
+    if #target:getTableMark("@[tianshu]") > target:getMark("tianshu_max") then
       skills = table.map(target:getTableMark("@[tianshu]"), function (info)
         return info.skillName
       end)
-      for _, s in ipairs(skills) do
-        target:setSkillUseHistory(s, 0, Player.HistoryGame)
-        room:handleAddLoseSkills(target, "-"..s, nil, true, false)
-        local banner = room:getBanner("tianshu_skills")
-        banner[s] = nil
-        room:setBanner("tianshu_skills", banner)
+      local to_throw = skills[1]
+      if #skills > 1 then
+        args = {}
+        for _, s in ipairs(skills) do
+          local info = room:getBanner("tianshu_skills")[s]
+          table.insert(args, Fk:translate(":tianshu_triggers"..info[1]).."，"..Fk:translate(":tianshu_effects"..info[2]).."。")
+        end
+        choice = room:askForChoice(target, args, self.name, "#ol__shoushu-discard")
+        to_throw = skills[table.indexOf(args, choice)]
       end
+      room:handleAddLoseSkills(target, "-"..to_throw, nil, true, false)
+      local banner = room:getBanner("tianshu_skills")
+      banner[to_throw] = nil
+      room:setBanner("tianshu_skills", banner)
     end
     room:handleAddLoseSkills(player, "-"..skill, nil, true, false)
     room:handleAddLoseSkills(target, skill, nil, true, false)
@@ -1925,7 +1931,7 @@ local qingshu = fk.CreateTriggerSkill{
       "#qingshu-choice_effect:::"..Fk:translate(":"..choice_trigger), true)
 
     --若将超出上限则舍弃一个已有天书
-    if #player:getTableMark("@[tianshu]") >= player:getMark("tianshu_max") then
+    if #player:getTableMark("@[tianshu]") > player:getMark("tianshu_max") then
       local skills = table.map(player:getTableMark("@[tianshu]"), function (info)
         return info.skillName
       end)
@@ -1934,9 +1940,10 @@ local qingshu = fk.CreateTriggerSkill{
         local info = room:getBanner("tianshu_skills")[s]
         table.insert(args, Fk:translate(":tianshu_triggers"..info[1]).."，"..Fk:translate(":tianshu_effects"..info[2]).."。")
       end
+      table.insert(args, "Cancel")
       local choice = room:askForChoice(player, args, self.name, "#ol__shoushu-discard")
+      if choice == "Cancel" then return false end
       local skill = skills[table.indexOf(args, choice)]
-      player:setSkillUseHistory(skill, 0, Player.HistoryGame)
       room:handleAddLoseSkills(player, "-"..skill, nil, true, false)
       local banner = room:getBanner("tianshu_skills")
       banner[skill] = nil
@@ -1955,9 +1962,35 @@ local qingshu = fk.CreateTriggerSkill{
     banner[name] = {
       tonumber(string.sub(choice_trigger, 17)),
       tonumber(string.sub(choice_effect, 16)),
+      player.id
     }
     room:setBanner("tianshu_skills", banner)
     room:handleAddLoseSkills(player, name, nil, true, false)
+  end,
+
+  --几个持续一段时间的标记效果
+  refresh_events = {fk.TurnStart, fk.AfterTurnEnd},
+  can_refresh = function (self, event, target, player, data)
+    if target == player then
+      if event == fk.TurnStart then
+        return player:getMark("@@tianshu11") > 0
+      elseif event == fk.AfterTurnEnd then
+        return player:getMark("tianshu20") > 0 or player:getMark("tianshu24") ~= 0
+      end
+    end
+  end,
+  on_refresh = function (self, event, target, player, data)
+    local room = player.room
+    if event == fk.TurnStart then
+      room:removePlayerMark(player, MarkEnum.UncompulsoryInvalidity, player:getMark("@@tianshu11"))
+      room:setPlayerMark(player, "@@tianshu11", 0)
+    elseif event == fk.AfterTurnEnd then
+      if player:getMark("tianshu20") > 0 then
+        room:removePlayerMark(player, MarkEnum.AddMaxCards, 2)
+        room:removePlayerMark(player, "tianshu20", 2)
+      end
+      room:setPlayerMark(player, "tianshu24", 0)
+    end
   end,
 }
 local tianshu_targetmod = fk.CreateTargetModSkill{  --姑且挂在青书上……
@@ -1978,10 +2011,12 @@ for loop = 1, 30, 1 do  --30个肯定够用
       fk.EnterDying, fk.AfterCardsMove, fk.CardUsing, fk.CardResponding, fk.AskForRetrial, fk.CardEffectCancelledOut, fk.Deathed,
       fk.FinishJudge, fk.TargetConfirmed, fk.ChainStateChanged, fk.HpChanged, fk.RoundStart, fk.DamageCaused, fk.DamageInflicted},
     times = function (self)
-      if Self:getMark("tianshu_max") == 0 then
-        return 1 - Self:usedSkillTimes(self.name, Player.HistoryGame)
-      else
+      local room = Fk:currentRoom()
+      local info = room:getBanner("tianshu_skills")
+      if info and info[self.name] and info[self.name][3] == Self.id then
         return 3 - Self:usedSkillTimes(self.name, Player.HistoryGame)
+      else
+        return 1 - Self:usedSkillTimes(self.name, Player.HistoryGame)
       end
     end,
     can_trigger = function(self, event, target, player, data)
@@ -2275,7 +2310,8 @@ for loop = 1, 30, 1 do  --30个肯定够用
     on_use = function(self, event, target, player, data)
       local room = player.room
       local info = room:getBanner("tianshu_skills")[self.name][2]
-      if player:getMark("tianshu_max") == 0 or player:usedSkillTimes(self.name, Player.HistoryGame) > 2 then
+      local source = room:getBanner("tianshu_skills")[self.name][3]
+      if source == player.id and player:usedSkillTimes(self.name, Player.HistoryGame) > 2 then
         player:setSkillUseHistory(self.name, 0, Player.HistoryGame)
         room:handleAddLoseSkills(player, "-"..self.name, nil, true, false)
         local banner = room:getBanner("tianshu_skills")
@@ -2285,8 +2321,8 @@ for loop = 1, 30, 1 do  --30个肯定够用
         local mark = player:getTableMark("@[tianshu]")
         for i = 1, #mark do
           if mark[i].skillName == self.name then
-            mark[i].skillTimes = (player:getMark("tianshu_max") > 0 and 3 or 1) - player:usedSkillTimes(self.name, Player.HistoryGame)
-            mark[i].visible = player:usedSkillTimes(self.name, Player.HistoryGame) > 0
+            mark[i].skillTimes = 3 - player:usedSkillTimes(self.name, Player.HistoryGame)
+            mark[i].visible = true
             break
           end
         end
@@ -2483,30 +2519,7 @@ for loop = 1, 30, 1 do  --30个肯定够用
       })
     end,
 
-    --几个持续一段时间的标记效果
-    refresh_events = {fk.TurnStart, fk.AfterTurnEnd},
-    can_refresh = function (self, event, target, player, data)
-      if target == player then
-        if event == fk.TurnStart then
-          return player:getMark("@@tianshu11") > 0
-        elseif event == fk.AfterTurnEnd then
-          return player:getMark("tianshu20") > 0 or player:getMark("tianshu24") ~= 0
-        end
-      end
-    end,
-    on_refresh = function (self, event, target, player, data)
-      local room = player.room
-      if event == fk.TurnStart then
-        room:removePlayerMark(player, MarkEnum.UncompulsoryInvalidity, player:getMark("@@tianshu11"))
-        room:setPlayerMark(player, "@@tianshu11", 0)
-      elseif event == fk.AfterTurnEnd then
-        if player:getMark("tianshu20") > 0 then
-          room:removePlayerMark(player, MarkEnum.AddMaxCards, 2)
-          room:removePlayerMark(player, "tianshu20", 2)
-        end
-        room:setPlayerMark(player, "tianshu24", 0)
-      end
-    end,
+    --几个持续一段时间的标记效果，在青书中清理。
 
     on_acquire = function (self, player, is_start)
       local room = player.room
@@ -2514,10 +2527,10 @@ for loop = 1, 30, 1 do  --30个肯定够用
       local mark = player:getTableMark("@[tianshu]")
       table.insert(mark, {
         skillName = self.name,
-        skillTimes = (player:getMark("tianshu_max") > 0 and 3 or 1) - player:usedSkillTimes(self.name, Player.HistoryGame),
+        skillTimes = info[3] == player.id and 3 or 1,
         skillInfo = Fk:translate(":tianshu_triggers"..info[1]).."，"..Fk:translate(":tianshu_effects"..info[2]).."。",
-        owner = player.id,
-        visible = player:usedSkillTimes(self.name, Player.HistoryGame) > 0,
+        owner = { player.id, info[3] },
+        visible = false
       })
       room:setPlayerMark(player, "@[tianshu]", mark)
     end,
@@ -2530,8 +2543,8 @@ for loop = 1, 30, 1 do  --30个肯定够用
           table.remove(mark, i)
         end
       end
-      if #mark == 0 then mark = 0 end
-      room:setPlayerMark(player, "@[tianshu]", mark)
+      room:setPlayerMark(player, "@[tianshu]", #mark > 0 and mark or 0)
+      player:setSkillUseHistory(self.name, 0, Player.HistoryGame)
     end,
   }
   Fk:addSkill(tianshu)
