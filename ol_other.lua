@@ -2551,7 +2551,7 @@ caocao:addSkill(nengchen)
 caocao:addSkill(huojie)
 Fk:loadTranslationTable{
   ["ol__caocao"] = "忠曹操",
-  ["~ol__caocao"] = "此征西将军曹侯之墓。",
+  ["illustrator:ol__caocao"] = "凡果",
 
   ["dingxi"] = "定西",
   [":dingxi"] = "当你使用伤害牌结算完毕进入弃牌堆后，你可以对你的上家使用其中一张伤害牌（无次数限制），然后将之置于你的武将牌上。结束阶段，"..
@@ -2570,6 +2570,44 @@ Fk:loadTranslationTable{
   ["$nengchen2"] = "为大汉江山鞠躬尽瘁，臣死犹生。",
   ["$huojie1"] = "国虽大，忘战必危，好战必亡。",
   ["$huojie2"] = "这穷兵黩武的罪，让我一人受便可！",
+  ["~ol__caocao"] = "此征西将军曹侯之墓。",
+}
+
+local lvbu = General(extension, "ol__lvbu", "qun", 5)
+lvbu.hidden = true
+local fengzhu = fk.CreateTriggerSkill{
+  name = "fengzhu",
+  anim_type = "drawcard",
+  frequency = Skill.Compulsory,
+  events = {fk.EventPhaseStart},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self) and player.phase == Player.Start and
+      table.find(player.room:getOtherPlayers(player), function (p)
+        return p:isMale()
+      end)
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local fathers = table.filter(room:getOtherPlayers(player), function (p)
+      return p:isMale()
+    end)
+    local father = room:askForChoosePlayers(player, table.map(fathers, Util.IdMapper), 1, 1, "#fengzhu-father", self.name, false)
+    father = room:getPlayerById(father[1])
+    room:setPlayerMark(father, "@@fengzhu_father", 1)
+    if father.hp > 0 then
+      player:drawCards(father.hp, self.name)
+    end
+  end,
+}
+lvbu:addSkill(fengzhu)
+Fk:loadTranslationTable{
+  ["ol__lvbu"] = "战神吕布",
+  ["illustrator:ol__lvbu"] = "鬼画府",
+
+  ["fengzhu"] = "逢主",
+  [":fengzhu"] = "锁定技，准备阶段，你拜一名其他男性角色为“义父”，摸等同于其体力值张牌。",
+  ["#fengzhu-father"] = "逢主：拜一名男性角色为“义父”，摸等同于其体力值张牌",
+  ["@@fengzhu_father"] = "义父",
 }
 
 return extension

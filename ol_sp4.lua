@@ -1787,7 +1787,7 @@ Fk:loadTranslationTable{
   ["#zhubei_dalay-invoke"] = "逐北：是否获得造成伤害的牌？",
 }
 
-local nanhualaoxian = General(extension, "ol__nanhualaoxian", "qun", 4)
+local nanhualaoxian = General(extension, "ol__nanhualaoxian", "qun", 3)
 local hedao = fk.CreateTriggerSkill{
   name = "hedao",
   anim_type = "special",
@@ -2463,7 +2463,7 @@ for loop = 1, 30, 1 do  --30个肯定够用
           end
         end,
         [23] = function ()
-          player:drawCards(4, self.name)
+          player:drawCards(3, self.name)
           if not player.dead then
             player:turnOver()
           end
@@ -2667,7 +2667,7 @@ Fk:loadTranslationTable{
   [":tianshu_effects20"] = "你可以令一名角色的手牌上限+2直到其回合结束",
   [":tianshu_effects21"] = "你可以获得两张非基本牌",
   [":tianshu_effects22"] = "你可以获得两张锦囊牌",
-  [":tianshu_effects23"] = "你可以摸4张牌并翻面",
+  [":tianshu_effects23"] = "你可以摸3张牌并翻面",
   [":tianshu_effects24"] = "你可以令你对一名角色使用牌无距离次数限制直到你的回合结束",
   [":tianshu_effects25"] = "你可以弃置两张牌，令你和一名其他角色各回复1点体力",
   [":tianshu_effects26"] = "你可以令此伤害值+1",

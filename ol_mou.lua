@@ -1303,7 +1303,7 @@ local jinming = fk.CreateTriggerSkill{
         table.removeOne(choices, "jinming"..n)
       end
       local choice = room:askForChoice(player, choices, self.name, "#jinming-choice", false, all_choices)
-      room:setPlayerMark(player, "@jinming", tonumber(choice, choice[8]))
+      room:setPlayerMark(player, "@jinming", tonumber(choice[8]))
     elseif event == fk.TurnEnd then
       local n = player:getMark("@jinming")
       player:drawCards(n, self.name)
@@ -1478,7 +1478,7 @@ Fk:loadTranslationTable{
   "令其中一个目标摸X张牌（X为你上次发动〖矜名〗选择项的序号）。",
   ["yanliangy"] = "厌粱",
   [":yanliangy"] = "主公技，其他群势力角色出牌阶段限一次，其可以交给你一张装备牌，视为使用一张【酒】。",
-  ["#jinming-choice"] = "矜名：选择一项条件，回合结束时摸序号数的牌，若未达到条件则失去1点体力并删除选项",
+  ["#jinming-choice"] = "矜名：选择一项条件，回合结束时摸序号数的牌，若未达到条件则删除选项",
   ["jinming1"] = "[1]回复过1点体力",
   ["jinming2"] = "[2]弃置过两张牌",
   ["jinming3"] = "[3]使用过三张类型的牌",
@@ -1684,7 +1684,7 @@ Fk:loadTranslationTable{
   ["$yangwei2"] = "敌将何在？速来受死！",
 }
 
-local dongzhuo = General(extension, "olmou__dongzhuo", "qun", 5)
+local dongzhuo = General(extension, "olmou__dongzhuo", "qun", 4)
 local guanbian = fk.CreateTriggerSkill{
   name = "guanbian",
   events = {fk.GameStart},
@@ -1873,7 +1873,8 @@ local fengshang_trigger = fk.CreateTriggerSkill{
   mute = true,
   main_skill = fengshang,
   can_trigger = function(self, event, target, player, data)
-    if player:hasSkill(fengshang) then
+    if player:hasSkill(fengshang) and
+      #player.room.logic:getEventsOfScope(GameEvent.Dying, 2, Util.TrueFunc, Player.HistoryTurn) == 1 then
       local cards = {}
       player.room.logic:getEventsOfScope(GameEvent.MoveCards, 1, function (e)
         for _, move in ipairs(e.data) do
@@ -2022,7 +2023,7 @@ Fk:loadTranslationTable{
   ["xiongni"] = "凶逆",
   [":xiongni"] = "出牌阶段开始时，你可以弃置一张牌，所有其他角色需弃置一张与花色相同的牌，否则你对其造成1点伤害。",
   ["fengshang"] = "封赏",
-  [":fengshang"] = "出牌阶段限一次或当一名角色进入濒死状态时，你可以将本回合弃牌堆中两张花色相同的牌分配给等量角色（每轮每种花色限一次），"..
+  [":fengshang"] = "出牌阶段限一次或当每回合首次有角色进入濒死状态时，你可以将本回合弃牌堆中两张花色相同的牌分配给等量角色（每轮每种花色限一次），"..
   "若你未以此法获得牌，你视为使用一张不计入次数的【酒】。",
   ["zhibing"] = "执柄",
   [":zhibing"] = "主公技，锁定技，准备阶段，若其他群雄势力角色累计使用黑色牌达到：3张，你加1点体力上限并回复1体力；6张，你获得〖焚城〗；"..
