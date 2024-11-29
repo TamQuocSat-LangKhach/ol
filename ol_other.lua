@@ -2574,7 +2574,6 @@ Fk:loadTranslationTable{
 }
 
 local lvbu = General(extension, "ol__lvbu", "qun", 5)
-lvbu.hidden = true
 local fengzhu = fk.CreateTriggerSkill{
   name = "fengzhu",
   anim_type = "drawcard",
@@ -2594,20 +2593,202 @@ local fengzhu = fk.CreateTriggerSkill{
     local father = room:askForChoosePlayers(player, table.map(fathers, Util.IdMapper), 1, 1, "#fengzhu-father", self.name, false)
     father = room:getPlayerById(father[1])
     room:setPlayerMark(father, "@@fengzhu_father", 1)
+    fathers = player:getTableMark(self.name)
+    table.insertIfNeed(fathers, father.id)
+    room:setPlayerMark(player, self.name, fathers)
     if father.hp > 0 then
       player:drawCards(father.hp, self.name)
     end
   end,
 }
+local yuyu = fk.CreateTriggerSkill{
+  name = "yuyu",
+  anim_type = "special",
+  frequency = Skill.Compulsory,
+  events = {fk.TurnEnd, fk.Damaged, fk.AfterCardsMove},
+  can_trigger = function(self, event, target, player, data)
+    if player:hasSkill(self) and player:getMark("fengzhu") ~= 0 then
+      if event == fk.TurnEnd then
+        return target == player and
+          table.find(player:getTableMark("fengzhu"), function (id)
+            return not player.room:getPlayerById(id).dead
+          end)
+      else
+        local turn_event = player.room.logic:getCurrentEvent():findParent(GameEvent.Turn)
+        if turn_event == nil or not table.contains(player:getTableMark("fengzhu"), turn_event.data[1].id) or
+          turn_event.data[1].dead then return end
+        if event == fk.Damaged then
+          return target == player
+        elseif event == fk.AfterCardsMove then
+          for _, move in ipairs(data) do
+            if move.from == player.id then
+              for _, info in ipairs(move.moveInfo) do
+                if info.fromArea == Card.PlayerHand or info.fromArea == Card.PlayerEquip then
+                  return true
+                end
+              end
+            end
+          end
+        end
+      end
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    if event == fk.TurnEnd then
+      local fathers = table.filter(player:getTableMark("fengzhu"), function (id)
+        return not room:getPlayerById(id).dead
+      end)
+      local father = room:askForChoosePlayers(player, fathers, 1, 1, "#yuyu-hate", self.name, false)
+      father = room:getPlayerById(father[1])
+      room:addPlayerMark(father, "@lvbu_hate", 1)
+    else
+      local n = 0
+      if event == fk.Damaged then
+        n = data.damage
+      elseif event == fk.AfterCardsMove then
+        for _, move in ipairs(data) do
+          if move.from == player.id then
+            for _, info in ipairs(move.moveInfo) do
+              if info.fromArea == Card.PlayerHand or info.fromArea == Card.PlayerEquip then
+                n = n + 1
+              end
+            end
+          end
+        end
+      end
+      local turn_event = room.logic:getCurrentEvent():findParent(GameEvent.Turn)
+      if turn_event == nil then return end
+      room:addPlayerMark(turn_event.data[1], "@lvbu_hate", n)
+    end
+  end,
+}
+local zhijil = fk.CreateTriggerSkill{
+  name = "zhijil",
+  anim_type = "offensive",
+  frequency = Skill.Compulsory,
+  events = {fk.TargetSpecifying},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self) and
+      table.contains(player:getTableMark("fengzhu"), data.to) and
+      player.room:getPlayerById(data.to):getMark("@lvbu_hate") > 0
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local father = room:getPlayerById(data.to)
+    local n = father:getMark("@lvbu_hate")
+    if data.card.is_damage_card then
+      data.additionalDamage = (data.additionalDamage or 0) + n
+      room:setPlayerMark(father, "@lvbu_hate", 0)
+    else
+      for i = 1, n, 1 do
+        local judge = {
+          who = player,
+          reason = self.name,
+          pattern = "slash,duel;.|.|.|.|.|equip",
+          skipDrop = true,
+        }
+        room:judge(judge)
+        if player.dead then
+          if room:getCardArea(judge.card) == Card.Processing then
+            room:moveCardTo(judge.card, Card.DiscardPile, nil, fk.ReasonJudge)
+          end
+          break
+        end
+        if judge.card.type == Card.TypeEquip then
+          room:handleAddLoseSkills(player, "shenji", nil, true, false)
+          if room:getCardArea(judge.card) == Card.Processing then
+            room:moveCardTo(judge.card, Card.DiscardPile, nil, fk.ReasonJudge)
+          end
+        elseif table.contains({"slash", "duel"}, judge.card.trueName) then
+          room:handleAddLoseSkills(player, "wushuang", nil, true, false)
+          if room:getCardArea(judge.card) == Card.Processing then
+            room:moveCardTo(judge.card, Card.PlayerHand, player, fk.ReasonJustMove, self.name, nil, true, player.id)
+          end
+        end
+        if room:getCardArea(judge.card) == Card.Processing then
+          room:moveCardTo(judge.card, Card.DiscardPile, nil, fk.ReasonJudge)
+        end
+      end
+    end
+  end,
+}
+local jiejiu = fk.CreateViewAsSkill{
+  name = "jiejiu",
+  pattern = ".|.|.|.|.|basic",
+  prompt = "#jiejiu",
+  interaction = function(self)
+    local all_names = U.getAllCardNames("b")
+    local names = U.getViewAsCardNames(Self, self.name, all_names, nil, {"analeptic"})
+    if #names > 0 then
+      return U.CardNameBox { choices = names, all_choices = all_names }
+    end
+  end,
+  card_filter = function(self, to_select, selected)
+    return #selected == 0 and Fk:getCardById(to_select).trueName == "analeptic"
+  end,
+  view_as = function(self, cards)
+    if #cards ~= 1 then return end
+    local card = Fk:cloneCard(self.interaction.data)
+    card:addSubcards(cards)
+    card.skillName = self.name
+    return card
+  end,
+  enabled_at_response = function (self, player, response)
+    return not response
+  end,
+
+  on_acquire = function (self, player, is_start)
+    local room = player.room
+    player:broadcastSkillInvoke(self.name)
+    room:notifySkillInvoked(player, self.name, "negative")
+    for _, p in ipairs(room:getOtherPlayers(player)) do
+      if p:isFemale() then
+        room:handleAddLoseSkills(p, "lijian", nil, true, false)
+      end
+    end
+  end,
+}
+local jiejiu_prohibit = fk.CreateProhibitSkill{
+  name = "#jiejiu_prohibit",
+  prohibit_use = function(self, player, card)
+    if not card or card.trueName ~= "analeptic" or #card.skillNames > 0 then return false end
+    local subcards = Card:getIdList(card)
+    return #subcards > 0 and table.every(subcards, function(id)
+      return table.contains(player:getCardIds("h&"), id)
+    end)
+  end
+}
+jiejiu:addRelatedSkill(jiejiu_prohibit)
 lvbu:addSkill(fengzhu)
+lvbu:addSkill(yuyu)
+lvbu:addSkill(zhijil)
+lvbu:addSkill(jiejiu)
 Fk:loadTranslationTable{
   ["ol__lvbu"] = "战神吕布",
   ["illustrator:ol__lvbu"] = "鬼画府",
 
   ["fengzhu"] = "逢主",
   [":fengzhu"] = "锁定技，准备阶段，你拜一名其他男性角色为“义父”，摸等同于其体力值张牌。",
+  ["yuyu"] = "郁郁",
+  [":yuyu"] = "锁定技，你的回合结束时，你令一名“义父”获得一枚“恨”标记。你于其回合每受到1点伤害或每失去一张牌后，其获得一枚“恨”标记。",
+  ["zhijil"] = "掷戟",
+  [":zhijil"] = "锁定技，你使用非伤害牌指定“义父”为目标时，你判定X次，若判定牌包含：装备牌，你获得〖神戟〗；【杀】或【决斗】，你获得〖无双〗和"..
+  "此判定牌。你使用伤害牌指定“义父”为目标时，你令此牌伤害+X并移除其“恨”标记（X为其“恨”标记的数量）。",
+  ["jiejiu"] = "戒酒",
+  [":jiejiu"] = "锁定技，你的【酒】仅能当其他基本牌使用。其他女性角色均视为拥有〖离间〗。",
   ["#fengzhu-father"] = "逢主：拜一名男性角色为“义父”，摸等同于其体力值张牌",
   ["@@fengzhu_father"] = "义父",
+  ["@lvbu_hate"] = "恨",
+  ["#yuyu-hate"] = "郁郁：令一名“义父”获得一枚“恨”标记",
+  ["#jiejiu"] = "戒酒：仅能将【酒】当其他基本牌使用",
+
+  ["$fengzhu"] = "吕布飘零半生，只恨未逢明主，公若不弃，布愿拜为义父！",
+  ["$yuyu"] = "大丈夫生居天地之间，岂能郁郁久居人下！",
+  ["$zhijil1"] = "老贼，我与你势不两立！",
+  ["$zhijil2"] = "我堂堂大丈夫，安肯为汝之义子！",
+  ["$jiejiu"] = "我被酒色所伤，竟然如此憔悴。自今日始，戒酒！",
+  ["~ol__lvbu"] = "刘备！奸贼！汝乃天下最无信义之人！",
 }
 
 return extension

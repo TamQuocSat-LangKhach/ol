@@ -2189,17 +2189,149 @@ Fk:loadTranslationTable{
   ["#jiewan-use"] = "解腕：将一张手牌当无距离限制的【顺手牵羊】使用",
 }
 
+local gongsunzan = General(extension, "olmou__gongsunzan", "qun", 4)
+local jiaodi = fk.CreateTriggerSkill{
+  name = "jiaodi",
+  anim_type = "offensive",
+  frequency = Skill.Compulsory,
+  events = {fk.TargetSpecifying},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self) and data.card.trueName == "slash" and
+      #AimGroup:getAllTargets(data.tos) == 1
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local to = room:getPlayerById(data.to)
+    if player:getAttackRange() >= to:getAttackRange() then
+      data.additionalDamage = (data.additionalDamage or 0) + 1
+      if not to:isKongcheng() then
+        local card = room:askForCardChosen(player, to, "h", self.name, "#jiaodi-prey::"..to.id)
+        room:moveCardTo(card, Card.PlayerHand, player, fk.ReasonPrey, self.name, nil, false, player.id)
+        if player.dead or to.dead then return end
+      end
+    end
+    if player:getAttackRange() <= to:getAttackRange() then
+      if not to:isAllNude() then
+        local card = room:askForCardChosen(player, to, "hej", self.name, "#jiaodi-discard::"..to.id)
+        room:throwCard(card, self.name, player, player)
+        if player.dead then return end
+      end
+      local targets = room:getUseExtraTargets(data, false, true)
+      if #targets > 0 then
+        local tos = room:askForChoosePlayers(player, targets, 1, 1, "#jiaodi-choose:::"..data.card:toLogString(), self.name, false)
+        AimGroup:addTargets(room, data, tos[1])
+      end
+    end
+  end,
+}
+local jiaodi_attackrange = fk.CreateAttackRangeSkill{
+  name = "#jiaodi_attackrange",
+  frequency = Skill.Compulsory,
+  correct_func = function (self, from, to)
+    if from:hasSkill(jiaodi) then
+      local baseValue = 1
+      local weapons = from:getEquipments(Card.SubtypeWeapon)
+      if #weapons > 0 then
+        baseValue = 0
+        for _, id in ipairs(weapons) do
+          local weapon = Fk:getCardById(id)
+          baseValue = math.max(baseValue, weapon:getAttackRange(from) or 1)
+        end
+      end
+
+      local status_skills = Fk:currentRoom().status_skills[AttackRangeSkill] or Util.DummyTable
+      local max_fixed, correct = nil, 0
+      for _, skill in ipairs(status_skills) do
+        if skill ~= self then
+          local f = skill:getFixed(from)
+          if f ~= nil then
+            max_fixed = max_fixed and math.max(max_fixed, f) or f
+          end
+          local c = skill:getCorrect(from)
+          correct = correct + (c or 0)
+        end
+      end
+
+      return from.hp - math.max(math.max(baseValue, (max_fixed or 0)) + correct, 0)
+    end
+  end,
+}
+local baojing = fk.CreateActiveSkill{
+  name = "baojing",
+  anim_type = "control",
+  card_num = 0,
+  target_num = 1,
+  prompt = "#baojing",
+  interaction = UI.ComboBox {choices = {"+1", "-1"}},
+  can_use = function(self, player)
+    return player:usedSkillTimes(self.name, Player.HistoryPhase) == 0
+  end,
+  card_filter = Util.FalseFunc,
+  target_filter = function(self, to_select, selected, selected_cards)
+    return #selected == 0 and to_select ~= Self.id
+  end,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    local target = room:getPlayerById(effect.tos[1])
+    if self.interaction.data == "+1" then
+      room:addPlayerMark(target, "@baojing_add", 1)
+    else
+      room:addPlayerMark(target, "@baojing_minus", 1)
+    end
+    room:setPlayerMark(player, self.name, {target.id, self.interaction.data})
+  end,
+}
+local baojing_trigger = fk.CreateTriggerSkill{
+  name = "#baojing_trigger",
+
+  refresh_events = {fk.EventPhaseStart},
+  can_refresh = function (self, event, target, player, data)
+    return target == player and player.phase == Player.Play and player:getMark("baojing") ~= 0
+  end,
+  on_refresh = function (self, event, target, player, data)
+    local room = player.room
+    local info = player:getMark("baojing")
+    room:setPlayerMark(player, "baojing", 0)
+    local to = room:getPlayerById(info[1])
+    if not to.dead then
+      local mark = info[2] == "+1" and "@baojing_add" or "@baojing_minus"
+      room:removePlayerMark(to, mark, 1)
+    end
+  end,
+}
+local baojing_attackrange = fk.CreateAttackRangeSkill{
+  name = "#baojing_attackrange",
+  correct_func = function (self, from, to)
+    return from:getMark("@baojing_add") - from:getMark("@baojing_minus")
+  end,
+}
+jiaodi:addRelatedSkill(jiaodi_attackrange)
+baojing:addRelatedSkill(baojing_attackrange)
+baojing:addRelatedSkill(baojing_trigger)
+gongsunzan:addSkill(jiaodi)
+gongsunzan:addSkill(baojing)
+Fk:loadTranslationTable{
+  ["olmou__gongsunzan"] = "谋公孙瓒",
+
+  ["jiaodi"] = "剿狄",
+  [":jiaodi"] = "锁定技，你的攻击范围始终等于你的当前体力值。当你使用【杀】指定唯一目标时，若目标的攻击范围不大于你，你令此【杀】伤害+1，"..
+  "然后获得该角色一张手牌；若目标的攻击范围不小于你，你弃置该角色区域内一张牌，选择一名角色成为此【杀】的额外目标。",
+  ["baojing"] = "保京",
+  [":baojing"] = "出牌阶段限一次，你可以令一名其他角色的攻击范围+1/-1，直到你的下个出牌阶段开始。",
+  ["#jiaodi-prey"] = "剿狄：获得 %dest 一张手牌",
+  ["#jiaodi-discard"] = "剿狄：弃置 %dest 区域内一张牌",
+  ["#jiaodi-choose"] = "剿狄：选择一名角色成为此%arg额外目标",
+  ["#baojing"] = "保京：令一名角色攻击范围+1/-1直到你下个出牌阶段开始",
+  ["@baojing_add"] = "攻击范围+",
+  ["@baojing_minus"] = "攻击范围-",
+}
+
 local huangyueying = General(extension, "olmou__huangyueying", "qun", 3)
 huangyueying:addSkill("tmp_illustrate")
 huangyueying.hidden = true
 
-local gongsunzan = General(extension, "olmou__gongsunzan", "qun", 4)
-gongsunzan:addSkill("tmp_illustrate")
-gongsunzan.hidden = true
-
 Fk:loadTranslationTable{
   ["olmou__huangyueying"] = "谋黄月英",
-  ["olmou__gongsunzan"] = "谋公孙瓒",
 }
 
 return extension
