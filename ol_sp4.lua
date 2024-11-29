@@ -2678,16 +2678,215 @@ Fk:loadTranslationTable{
 }
 
 local qinlang = General(extension, "ol__qinlang", "wei", 3)
-qinlang:addSkill("tmp_illustrate")
-qinlang.hidden = true
-
-local wuanguo = General(extension, "ol__wuanguo", "qun", 4)
-wuanguo:addSkill("tmp_illustrate")
-wuanguo.hidden = true
-
+local xianying = fk.CreateTriggerSkill{
+  name = "xianying",
+  anim_type = "masochism",
+  events = {fk.EventPhaseStart, fk.Damaged},
+  can_trigger = function (self, event, target, player, data)
+    if target == player and player:hasSkill(self) then
+      if event == fk.EventPhaseStart then
+        return player.phase == Player.Start
+      elseif event == fk.Damaged then
+        return true
+      end
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    player:drawCards(2, self.name)
+    if player.dead or player:isNude() then return end
+    local success, dat = room:askForUseActiveSkill(player, "xianying_active", "#xianying-discard", true)
+    if success and dat then
+      room:addTableMark(player, "xianying_num-round", #dat.cards)
+      if table.every(dat.cards, function (id)
+        return Fk:getCardById(id).trueName == Fk:getCardById(dat.cards[1]).trueName
+      end) then
+        local name = Fk:getCardById(dat.cards[1]).trueName
+        if Fk:cloneCard(name).type == Card.TypeBasic or Fk:cloneCard(name):isCommonTrick() then
+          room:addTableMark(player, "xianying-turn", name)
+        end
+      end
+      room:throwCard(dat.cards, self.name, player, player)
+    end
+  end,
+}
+local xianying_delay = fk.CreateTriggerSkill{
+  name = "#xianying_delay",
+  anim_type = "masochism",
+  events = {fk.TurnEnd},
+  can_trigger = function (self, event, target, player, data)
+    return player:getMark("xianying-turn") ~= 0
+  end,
+  on_cost = Util.TrueFunc,
+  on_use = function (self, event, target, player, data)
+    local room = player.room
+    local banner = room:getBanner("xianying") or {}
+    local cards = {}
+    for _, name in ipairs(player:getTableMark("xianying-turn")) do
+      local c
+      local card = table.filter(banner, function (id)
+        return Fk:getCardById(id).name == name and room:getCardArea(id) == Card.Void and not table.contains(cards, id)
+      end)
+      if #card > 0 then
+        c = card[1]
+      else
+        c = room:printCard(name).id
+        table.insert(banner, c)
+      end
+      table.insert(cards, c)
+    end
+    room:setBanner("xianying", banner)
+    while #cards > 0 and not player.dead do
+      local use = U.askForUseRealCard(room, player, cards, nil, "xianying", "#xianying-use",
+        {
+          expand_pile = cards,
+          bypass_times = true,
+        }, true, true)
+      if use then
+        table.removeOne(cards, use.card.id)
+        local card = Fk:cloneCard(use.card.name)
+        card.skillName = "xianying"
+        use = {
+          card = card,
+          from = player.id,
+          tos = use.tos,
+          extraUse = true,
+        }
+        room:useCard(use)
+      else
+        return
+      end
+    end
+  end,
+}
+local xianying_active = fk.CreateActiveSkill{
+  name = "xianying_active",
+  min_card_num = 1,
+  target_num = 0,
+  card_filter = function (self, to_select, selected)
+    return not Self:prohibitDiscard(to_select)
+  end,
+  feasible = function (self, selected, selected_cards)
+    return #selected_cards > 0 and not table.contains(Self:getTableMark("xianying_num-round"), #selected_cards)
+  end,
+}
+xianying:addRelatedSkill(xianying_delay)
+Fk:addSkill(xianying_active)
+qinlang:addSkill(xianying)
 Fk:loadTranslationTable{
   ["ol__qinlang"] = "秦朗",
+
+  ["xianying"] = "贤膺",
+  [":xianying"] = "准备阶段或当你受到伤害后，你可以摸两张牌并弃置任意张牌（不能是本轮以此法弃置过的张数），若弃置牌同名，你可以于本回合结束时"..
+  "视为使用之。",
+  ["#xianying-discard"] = "贤膺：弃置任意张牌（本轮未弃置过的张数），若牌名均相同则本回合结束可以视为使用之",
+  ["#xianying_delay"] = "贤膺",
+  ["#xianying-use"] = "贤膺：你可以视为使用这些牌",
+}
+
+local wuanguo = General(extension, "ol__wuanguo", "qun", 4)
+local liyongw = fk.CreateActiveSkill{
+  name = "liyongw",
+  switch_skill_name = "liyongw",
+  anim_type = "switch",
+  card_num = 1,
+  min_target_num = 1,
+  prompt = function(self)
+    return "#liyongw-"..Self:getSwitchSkillState(self.name, false, true)
+  end,
+  can_use = Util.TrueFunc,
+  card_filter = function (self, to_select, selected)
+    if #selected == 0 then
+      local suit = Fk:getCardById(to_select):getSuitString(true)
+      if suit == "log_nosuit" then return end
+      if Self:getSwitchSkillState(self.name, false) == fk.SwitchYang then
+        local card = Fk:cloneCard("duel")
+        card.skillName = self.name
+        card:addSubcard(to_select)
+        return Self:canUse(card) and not table.contains(Self:getTableMark("@liyongw-turn"), suit)
+      else
+        return table.contains(Self:getTableMark("@liyongw-turn"), suit) and not Self:prohibitDiscard(to_select)
+      end
+    end
+  end,
+  target_filter = function(self, to_select, selected, selected_cards)
+    if Self:getSwitchSkillState(self.name, false) == fk.SwitchYang and #selected_cards == 1 then
+      local card = Fk:cloneCard("duel")
+      card.skillName = self.name
+      card:addSubcards(selected_cards)
+      return card.skill:targetFilter(to_select, selected, {}, card)
+    elseif Self:getSwitchSkillState(self.name, false) == fk.SwitchYin then
+      return #selected == 0 and Fk:currentRoom():getPlayerById(to_select):canUseTo(Fk:cloneCard("duel"), Self)
+    end
+  end,
+  feasible = function (self, selected, selected_cards)
+    if #selected_cards == 1 then
+      if Self:getSwitchSkillState(self.name, false) == fk.SwitchYang then
+        local card = Fk:cloneCard("duel")
+        card.skillName = self.name
+        card:addSubcards(selected_cards)
+        return card.skill:feasible(selected, {}, Self, card)
+      elseif Self:getSwitchSkillState(self.name, false) == fk.SwitchYin then
+        return #selected == 1
+      end
+    end
+  end,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    if player:getSwitchSkillState(self.name, true) == fk.SwitchYang then
+      room:sortPlayersByAction(effect.tos)
+      local targets = table.map(effect.tos, Util.Id2PlayerMapper)
+      room:useVirtualCard("duel", effect.cards, player, targets, self.name)
+    else
+      room:throwCard(effect.cards, self.name, player, player)
+      local target = room:getPlayerById(effect.tos[1])
+      if not player.dead then
+        room:useVirtualCard("duel", nil, target, player, self.name)
+      end
+    end
+  end,
+}
+
+local liyongw_trigger = fk.CreateTriggerSkill{
+  name = "#liyongw_trigger",
+
+  refresh_events = {fk.AfterCardUseDeclared},
+  can_refresh = function(self, event, target, player, data)
+    return target == player and player.phase ~= Player.NotActive and data.card.suit ~= Card.NoSuit
+  end,
+  on_refresh = function(self, event, target, player, data)
+    local mark = player:getTableMark("@liyongw-turn")
+    table.insertIfNeed(mark, data.card:getSuitString(true))
+    player.room:setPlayerMark(player, "@liyongw-turn", mark)
+  end,
+
+  on_acquire = function (self, player, is_start)
+    if not is_start and player.phase ~= Player.NotActive then
+      local room = player.room
+      local mark = {}
+      room.logic:getEventsOfScope(GameEvent.UseCard, 1, function (e)
+        local use = e.data[1]
+        if use.from == player.id and use.card.suit ~= Card.NoSuit then
+          table.insertIfNeed(mark, use.card:getSuitString(true))
+        end
+      end, Player.HistoryTurn)
+      if #mark > 0 then
+        room:setPlayerMark(player, "@liyongw-turn", mark)
+      end
+    end
+  end,
+}
+liyongw:addRelatedSkill(liyongw_trigger)
+wuanguo:addSkill(liyongw)
+Fk:loadTranslationTable{
   ["ol__wuanguo"] = "武安国",
+
+  ["liyongw"] = "历勇",
+  [":liyongw"] = "转换技，出牌阶段，阳：你可以将一张本回合你未使用过的花色的牌当【决斗】使用；阴：你可以弃置一张你本回合使用过的花色的牌，"..
+  "令一名角色视为对你使用一张【决斗】。",
+  ["#liyongw-yang"] = "历勇：将一张本回合未使用花色的牌当【决斗】使用",
+  ["#liyongw-yin"] = "历勇：弃置一张本回合已使用花色的牌，选择一名角色视为对你使用【决斗】",
+  ["@liyongw-turn"] = "历勇",
 }
 
 return extension

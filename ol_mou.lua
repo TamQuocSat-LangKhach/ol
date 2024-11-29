@@ -2037,9 +2037,157 @@ Fk:loadTranslationTable{
   ["@zhibing"] = "执柄",
 }
 
-local dengai = General(extension, "olmou__dengai", "wei", 4)
-dengai:addSkill("tmp_illustrate")
-dengai.hidden = true
+local dengai = General(extension, "olmou__dengai", "wei", 4, 5)
+local jigud = fk.CreateTriggerSkill{
+  name = "jigud",
+  anim_type = "special",
+  frequency = Skill.Compulsory,
+  derived_piles = "dengai_grain",
+  events = {fk.AfterCardsMove, fk.TurnStart},
+  can_trigger = function(self, event, target, player, data)
+    if player:hasSkill(self) then
+      if event == fk.AfterCardsMove and #player:getPile("dengai_grain") < player.maxHp then
+        local room = player.room
+        local cards = {}
+        for _, move in ipairs(data) do
+          if move.from == nil and move.moveReason == fk.ReasonUse then
+            local move_event = room.logic:getCurrentEvent()
+            local use_event = move_event.parent
+            if use_event ~= nil and use_event.event == GameEvent.UseCard then
+              local use = use_event.data[1]
+              if room:getPlayerById(use.from).phase ~= Player.Play then
+                local card_ids = room:getSubcardsByRule(use.card)
+                for _, info in ipairs(move.moveInfo) do
+                  if table.contains(card_ids, info.cardId) and table.contains(room.discard_pile, info.cardId) then
+                    table.insertIfNeed(cards, info.cardId)
+                  end
+                end
+              end
+            end
+          end
+        end
+        cards = U.moveCardsHoldingAreaCheck(room, cards)
+        cards = table.filter(cards, function (id)
+          return Fk:getCardById(id).suit ~= Card.Heart
+        end)
+        if #cards > 0 then
+          self.cost_data = cards
+          return true
+        end
+      elseif event == fk.TurnStart then
+        self.cost_data = nil
+        return target.maxHp == player.maxHp and #player:getPile("dengai_grain") > 0 and not player:isKongcheng()
+      end
+    end
+  end,
+  on_use = function (self, event, target, player, data)
+    if event == fk.AfterCardsMove then
+      player:addToPile("dengai_grain", self.cost_data, true, self.name, player.id)
+    elseif event == fk.TurnStart then
+      local room = player.room
+      local cids = room:askForArrangeCards(player, self.name,
+      {
+        player:getPile("dengai_grain"), player:getCardIds("h"),
+        "dengai_grain", "$Hand"
+      }, "#jigud-exchange", true)
+      U.swapCardsWithPile(player, cids[1], cids[2], self.name, "dengai_grain")
+    end
+  end,
+}
+local jiewan = fk.CreateTriggerSkill{
+  name = "jiewan",
+  anim_type = "control",
+  events = {fk.EventPhaseStart},
+  can_trigger = function(self, event, target, player, data)
+    if player:hasSkill(self) then
+      if target.phase == Player.Start then
+        return not player:isKongcheng()
+      elseif target.phase == Player.Finish then
+        return player:getHandcardNum() == #player:getPile("dengai_grain") and
+          table.find(player.room:getOtherPlayers(player), function (p)
+            return player.maxHp <= p.maxHp
+          end)
+      end
+    end
+  end,
+  on_cost = function (self, event, target, player, data)
+    if target.phase == Player.Start then
+      local success, dat = player.room:askForUseActiveSkill(player, "jiewan_active", "#jiewan-invoke", true)
+      if success and dat then
+        self.cost_data = {cards = dat.cards}
+        return true
+      end
+    elseif target.phase == Player.Finish then
+      return true
+    end
+  end,
+  on_use = function (self, event, target, player, data)
+    local room = player.room
+    if target.phase == Player.Start then
+      if #self.cost_data.cards > 0 then
+        room:moveCardTo(self.cost_data.cards, Card.DiscardPile, nil, fk.ReasonPutIntoDiscardPile, self.name, nil, true, player.id)
+      else
+        room:changeMaxHp(player, -1)
+      end
+      if player.dead or player:isKongcheng() then return end
+      local success, dat = room:askForUseActiveSkill(player, "jiewan_viewas", "#jiewan-use", true, {bypass_distances = true})
+      if success and dat then
+        room:sortPlayersByAction(dat.targets)
+        local targets = table.map(dat.targets, Util.Id2PlayerMapper)
+        room:useVirtualCard("snatch", dat.cards, player, targets, self.name)
+      end
+    elseif target.phase == Player.Finish then
+      room:changeMaxHp(player, 1)
+    end
+  end,
+}
+local jiewan_active = fk.CreateActiveSkill{
+  name = "jiewan_active",
+  min_card_num = 0,
+  max_card_num = 2,
+  target_num = 0,
+  expand_pile = "dengai_grain",
+  card_filter = function(self, to_select, selected)
+    return #selected < 2 and table.contains(Self:getPile("dengai_grain"), to_select)
+  end,
+  feasible = function (self, selected, selected_cards)
+    return #selected_cards == 0 or #selected_cards == 2
+  end,
+}
+local jiewan_viewas = fk.CreateViewAsSkill{
+  name = "jiewan_viewas",
+  card_filter = function(self, to_select, selected)
+    return #selected == 0 and table.contains(Self:getCardIds("h"), to_select)
+  end,
+  view_as = function(self, cards)
+    if #cards ~= 1 then return end
+    local card = Fk:cloneCard("snatch")
+    card.skillName = "jiewan"
+    card:addSubcard(cards[1])
+    return card
+  end,
+}
+Fk:addSkill(jiewan_active)
+Fk:addSkill(jiewan_viewas)
+dengai:addSkill(jigud)
+dengai:addSkill(jiewan)
+Fk:loadTranslationTable{
+  ["olmou__dengai"] = "谋邓艾",
+  ["#olmou__dengai"] = "壮士解腕",
+
+  ["jigud"] = "积谷",
+  [":jigud"] = "锁定技，一名角色于其出牌阶段外使用的牌置入弃牌堆后，若“谷”数小于你的体力上限，将其中的非<font color='red'>♥</font>牌置于"..
+  "你的武将牌上，称为“谷”。体力上限与你相同的角色回合开始时，你用任意张手牌替换等量“谷”。",
+  ["jiewan"] = "解腕",
+  [":jiewan"] = "每个准备阶段，你可以减1点体力上限或移除两张“谷”，然后你可以将一张手牌当无距离限制的【顺手牵羊】使用。每个结束阶段，"..
+  "若你的“谷”数与手牌数相同且你的体力上限不为全场唯一最多，你加1点体力上限。",
+  ["dengai_grain"] = "谷",
+  ["#jigud-exchange"] = "积谷：用任意张手牌交换等量的“谷”",
+  ["jiewan_active"] = "解腕",
+  ["#jiewan-invoke"] = "解腕：移去两张“谷”，或不选“谷”减1点体力上限，然后将一张手牌当无距离限制的【顺手牵羊】使用",
+  ["jiewan_viewas"] = "解腕",
+  ["#jiewan-use"] = "解腕：将一张手牌当无距离限制的【顺手牵羊】使用",
+}
 
 local huangyueying = General(extension, "olmou__huangyueying", "qun", 3)
 huangyueying:addSkill("tmp_illustrate")
@@ -2050,8 +2198,6 @@ gongsunzan:addSkill("tmp_illustrate")
 gongsunzan.hidden = true
 
 Fk:loadTranslationTable{
-  ["olmou__dengai"] = "谋邓艾",
-  ["#olmou__dengai"] = "壮士解腕",
   ["olmou__huangyueying"] = "谋黄月英",
   ["olmou__gongsunzan"] = "谋公孙瓒",
 }
