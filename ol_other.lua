@@ -2752,7 +2752,7 @@ local jiejiu = fk.CreateViewAsSkill{
 local jiejiu_prohibit = fk.CreateProhibitSkill{
   name = "#jiejiu_prohibit",
   prohibit_use = function(self, player, card)
-    if not card or card.trueName ~= "analeptic" or #card.skillNames > 0 then return false end
+    if not player:hasSkill(jiejiu) or not card or card.trueName ~= "analeptic" or #card.skillNames > 0 then return false end
     local subcards = Card:getIdList(card)
     return #subcards > 0 and table.every(subcards, function(id)
       return table.contains(player:getCardIds("h&"), id)
