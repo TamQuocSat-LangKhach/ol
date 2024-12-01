@@ -38,6 +38,14 @@ local tuogu = fk.CreateTriggerSkill{
     end
     room:handleAddLoseSkills(player, choice)
   end,
+
+  refresh_events = {fk.EventLoseSkill},
+  can_refresh = function(self, event, target, player, data)
+    return player == target and player:getMark(self.name) == data.name
+  end,
+  on_refresh = function(self, event, target, player, data)
+    player.room:setPlayerMark(player, self.name, 0)
+  end,
 }
 local shanzhuan = fk.CreateTriggerSkill{
   name = "shanzhuan",
@@ -550,7 +558,7 @@ local weiyi = fk.CreateTriggerSkill{
   events = {fk.Damaged},
   mute = true,
   can_trigger = function(self, event, target, player, data)
-    return player:hasSkill(self) and not target.dead and target:getMark(self.name) == 0 and
+    return player:hasSkill(self) and not target.dead and not table.contains(player:getTableMark("weiyi_targets"), target.id) and
     (target:isWounded() or target.hp >= player.hp)
   end,
   on_cost = function(self, event, target, player, data)
@@ -570,7 +578,7 @@ local weiyi = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    room:addPlayerMark(target, self.name, 1)
+    room:addTableMark(player, "weiyi_targets", target.id)
     if self.cost_data.choice == "loseHp" then
       room:notifySkillInvoked(player, self.name, "offensive", {target.id})
       player:broadcastSkillInvoke(self.name, 1)
@@ -585,6 +593,10 @@ local weiyi = fk.CreateTriggerSkill{
         skillName = self.name
       })
     end
+  end,
+
+  on_lose = function (self, player)
+    player.room:setPlayerMark(player, "weiyi_targets", 0)
   end,
 }
 local jinzhi_active = fk.CreateActiveSkill{
@@ -612,14 +624,15 @@ local jinzhi = fk.CreateViewAsSkill{
   pattern = ".|.|.|.|.|basic",
   interaction = function()
     local all_names = U.getAllCardNames("b")
-    local names = U.getViewAsCardNames(Self, "jinzhi", all_names)
-    if #names > 0 then
-      return UI.ComboBox { choices = names, all_choices = all_names }
-    end
+    return U.CardNameBox {
+      choices = U.getViewAsCardNames(Self, "jinzhi", all_names),
+      all_choices = all_names,
+      default_choice = "AskForCardsChosen",
+    }
   end,
   card_filter = Util.FalseFunc,
   view_as = function(self, cards)
-    if not self.interaction.data then return nil end
+    if Fk.all_card_types[self.interaction.data] == nil then return nil end
     local card = Fk:cloneCard(self.interaction.data)
     card.skillName = self.name
     return card
@@ -658,7 +671,9 @@ local jinzhi = fk.CreateViewAsSkill{
       end
       room:throwCard(toDiscard, self.name, player, player)
     end
-    player:drawCards(1, self.name)
+    if not player.dead then
+      player:drawCards(1, self.name)
+    end
   end,
   enabled_at_play = function(self, player)
     local x = player:usedSkillTimes(self.name, Player.HistoryRound) + 1
@@ -742,11 +757,7 @@ local wangong = fk.CreateTriggerSkill{
     end
   end,
 
-  refresh_events = {fk.EventLoseSkill},
-  can_refresh = function(self, event, target, player, data)
-    return target == player and data == self
-  end,
-  on_refresh = function(self, event, target, player, data)
+  on_lose = function (self, player)
     player.room:setPlayerMark(player, "@@wangong", 0)
   end,
 }
@@ -1716,18 +1727,6 @@ Fk:loadTranslationTable{
 }
 
 local fengfangnv = General(extension, "ol__fengfangnv", "qun", 3, 3, General.Female)
-local zhuangshu_select = fk.CreateActiveSkill{
-  name = "zhuangshu_select",
-  card_num = 1,
-  target_num = 0,
-  expand_pile = function (self)
-    return Self:getTableMark("zhuangshu_cards")
-  end,
-  card_filter = function(self, to_select, selected)
-    return #selected == 0 and table.contains(Self:getTableMark("zhuangshu_cards"), to_select)
-  end,
-}
-Fk:addSkill(zhuangshu_select)
 local zhuangshu_combs = {{"jade_comb", Card.Spade, 12}, {"rhino_comb", Card.Club, 12}, {"golden_comb", Card.Heart, 12}}
 local zhuangshu = fk.CreateTriggerSkill{
   name = "zhuangshu",
@@ -1753,11 +1752,9 @@ local zhuangshu = fk.CreateTriggerSkill{
         return room:getCardArea(id) == Card.Void
       end)
       if #combs == 0 then return false end
-      room:setPlayerMark(player, "zhuangshu_cards", combs)
-      local success, dat = room:askForUseActiveSkill(player, "zhuangshu_select", "#zhuangshu-choose", true, Util.DummyTable, true)
-      room:setPlayerMark(player, "zhuangshu_cards", 0)
-      if success then
-        self.cost_data = dat.cards
+      combs = room:askForCard(player, 1, 1, false, self.name, true, tostring(Exppattern{ id = combs }), "#zhuangshu-choose", combs)
+      if #combs > 0 then
+        self.cost_data = combs
         return true
       end
     elseif event == fk.TurnStart then
@@ -1774,16 +1771,9 @@ local zhuangshu = fk.CreateTriggerSkill{
     room:notifySkillInvoked(player, self.name)
     player:broadcastSkillInvoke(self.name, math.random(2))
     if event == fk.GameStart then
-      room:setCardMark(Fk:getCardById(self.cost_data[1]), MarkEnum.DestructOutEquip, 1)
-      room:moveCards({
-        fromArea = Card.Void,
-        ids = self.cost_data,
-        to = player.id,
-        toArea = Card.PlayerEquip,
-        moveReason = fk.ReasonPut,
-        proposer = player.id,
-        skillName = self.name,
-      })
+      local comb_id = self.cost_data[1]
+      room:setCardMark(Fk:getCardById(comb_id), MarkEnum.DestructOutEquip, 1)
+      room:moveCardIntoEquip(player, comb_id, self.name, true, player)
     elseif event == fk.TurnStart then
       local card_type = Fk:getCardById(self.cost_data[1]):getTypeString()
       room:throwCard(self.cost_data, self.name, player, player)
@@ -1812,21 +1802,6 @@ local zhuangshu = fk.CreateTriggerSkill{
     end
   end,
 }
-local chuiti_viewas = fk.CreateViewAsSkill{
-  name = "chuiti_viewas",
-  expand_pile = function (self)
-    return Self:getTableMark("chuiti_cards")
-  end,
-  card_filter = function(self, to_select, selected)
-    return #selected == 0 and table.contains(Self:getTableMark("chuiti_cards"), to_select)
-  end,
-  view_as = function(self, cards)
-    if #cards == 1 then
-      return Fk:getCardById(cards[1])
-    end
-  end,
-}
-Fk:addSkill(chuiti_viewas)
 local chuiticheck = function (player, move_from)
   if move_from == nil then return false end
   if player.id == move_from then return true end
@@ -1882,18 +1857,25 @@ Fk:loadTranslationTable{
   ["illustrator:ol__fengfangnv"] = "君桓文化",
   ["zhuangshu"] = "妆梳",
   [":zhuangshu"] = "游戏开始时，你可以将一张“宝梳”置入你的装备区。"..
-  "一名角色的回合开始时，你可以弃置一张牌，将一张“宝梳”置入其宝物区"..
-  "（牌的类别决定“宝梳”种类：基本牌-【琼梳】、锦囊牌-【犀梳】、装备牌-【金梳】，若场上已有则改为移至其装备区）。"..
+  "一名角色的回合开始时，你可以弃置一张牌，根据此牌的类别将对应的“宝梳”置入其装备区（"..
+  "基本牌-<a href='jade_comb_href'>【琼梳】</a>、"..
+  "锦囊牌-<a href='rhino_comb_href'>【犀梳】</a>、"..
+  "装备牌-<a href='golden_comb_href'>【金梳】</a>）。"..
   "当“宝梳”进入非装备区时，销毁之。",
   ["chuiti"] = "垂涕",
   [":chuiti"] = "每回合限一次，当你或装备区有“宝梳”的角色的一张牌因弃置而置入弃牌堆后，你可以使用之（有次数限制）。",
 
+  ["jade_comb_href"] = "【<b>琼梳</b>】（♠Q） 装备牌·宝物<br/>" ..
+  "<b>宝物技能</b>：当你受到伤害时，你可以弃置X张牌（X为伤害值），防止此伤害。",
+  ["rhino_comb_href"] = "【<b>犀梳</b>】（♣Q） 装备牌·宝物<br/>" ..
+  "<b>宝物技能</b>：判定阶段开始前，你可选择：1.跳过此阶段；2.跳过此回合的弃牌阶段。",
+  ["golden_comb_href"] = "【<b>金梳</b>】（<font color='#C04040'>♥Q</font>） 装备牌·宝物<br/>" ..
+  "<b>宝物技能</b>：锁定技，出牌阶段结束时，你将手牌补至X张（X为你的手牌上限且至多为5）。",
+
   ["#zhuangshu-choose"] = "是否使用 妆梳，选择一张“宝梳”置入你的装备区",
-  ["zhuangshu_select"] = "妆梳",
   ["#zhuangshu-cost"] = "是否使用妆梳，弃置一张牌，将对应种类的“宝梳”置入%dest的装备区<br>"..
     "基本牌-【琼梳】、锦囊牌-【犀梳】、装备牌-【金梳】",
   ["#chuiti-invoke"] = "是否使用 垂涕，使用其中被弃置的牌",
-  ["chuiti_viewas"] = "垂涕",
 
   ["$zhuangshu1"] = "殿前妆梳，风姿绝世。",
   ["$zhuangshu2"] = "顾影徘徊，丰容靓饰。",
@@ -3348,30 +3330,29 @@ local luochong = fk.CreateTriggerSkill{
     end
   end,
 
-  refresh_events = {fk.RoundStart, fk.EventAcquireSkill, fk.EventLoseSkill},
+  refresh_events = {fk.RoundStart},
   can_refresh = function(self, event, target, player, data)
-    if event == fk.EventAcquireSkill or event == fk.EventLoseSkill then
-      return player == target and data == self
-    end
     return player:hasSkill(self, true)
   end,
   on_refresh = function(self, event, target, player, data)
     local room = player.room
-    if event == fk.EventAcquireSkill then
+    local mark = player:getTableMark("@luochong")
+    if #mark ~= 4 then
       room:setPlayerMark(player, "@luochong", {1, 1, 1, 1})
-    elseif event == fk.RoundStart then
-      local mark = player:getTableMark("@luochong")
-      if #mark ~= 4 then
-        room:setPlayerMark(player, "@luochong", {1, 1, 1, 1})
-      else
-        room:setPlayerMark(player, "@luochong", table.map(mark, function (i)
-          return i == 0 and 1 or i
-        end))
-      end
-    elseif event == fk.EventLoseSkill then
-      room:setPlayerMark(player, "@luochong", 0)
-      room:setPlayerMark(player, "luochong_target-round", 0)
+    else
+      room:setPlayerMark(player, "@luochong", table.map(mark, function (i)
+        return i == 0 and 1 or i
+      end))
     end
+  end,
+
+  on_acquire = function (self, player, is_start)
+    player.room:setPlayerMark(player, "@luochong", {1, 1, 1, 1})
+  end,
+  on_lose = function (self, player, is_death)
+    local room = player.room
+    room:setPlayerMark(player, "@luochong", 0)
+      room:setPlayerMark(player, "luochong_target-round", 0)
   end,
 }
 local aichen = fk.CreateTriggerSkill{
@@ -4776,6 +4757,10 @@ local liangyuan = fk.CreateViewAsSkill{
         end
       end
     end
+  end,
+
+  on_lose = function (self, player, is_death)
+    player.room:setPlayerMark(player, "liangyuan_record-round", 0)
   end,
 }
 local jisi = fk.CreateTriggerSkill{

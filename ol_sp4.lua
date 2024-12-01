@@ -2311,8 +2311,7 @@ for loop = 1, 30, 1 do  --30个肯定够用
       local room = player.room
       local info = room:getBanner("tianshu_skills")[self.name][2]
       local source = room:getBanner("tianshu_skills")[self.name][3]
-      if source == player.id and player:usedSkillTimes(self.name, Player.HistoryGame) > 2 then
-        player:setSkillUseHistory(self.name, 0, Player.HistoryGame)
+      if source ~= player.id or player:usedSkillTimes(self.name, Player.HistoryGame) > 2 then
         room:handleAddLoseSkills(player, "-"..self.name, nil, true, false)
         local banner = room:getBanner("tianshu_skills")
         banner[self.name] = nil
