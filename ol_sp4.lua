@@ -2851,7 +2851,7 @@ local liyongw_trigger = fk.CreateTriggerSkill{
 
   refresh_events = {fk.AfterCardUseDeclared},
   can_refresh = function(self, event, target, player, data)
-    return target == player and player.phase ~= Player.NotActive and data.card.suit ~= Card.NoSuit
+    return target == player and player.phase == Player.Play and data.card.suit ~= Card.NoSuit
   end,
   on_refresh = function(self, event, target, player, data)
     local mark = player:getTableMark("@liyongw-turn")

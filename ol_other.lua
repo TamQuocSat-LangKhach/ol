@@ -2596,9 +2596,7 @@ local fengzhu = fk.CreateTriggerSkill{
     fathers = player:getTableMark(self.name)
     table.insertIfNeed(fathers, father.id)
     room:setPlayerMark(player, self.name, fathers)
-    if father.hp > 0 then
-      player:drawCards(father.hp, self.name)
-    end
+    player:drawCards(3, self.name)
   end,
 }
 local yuyu = fk.CreateTriggerSkill{
@@ -2769,7 +2767,7 @@ Fk:loadTranslationTable{
   ["illustrator:ol__lvbu"] = "鬼画府",
 
   ["fengzhu"] = "逢主",
-  [":fengzhu"] = "锁定技，准备阶段，你拜一名其他男性角色为“义父”，摸等同于其体力值张牌。",
+  [":fengzhu"] = "锁定技，准备阶段，你拜一名其他男性角色为“义父”，摸三张牌。",
   ["yuyu"] = "郁郁",
   [":yuyu"] = "锁定技，你的回合结束时，你令一名“义父”获得一枚“恨”标记。你于其回合每受到1点伤害或每失去一张牌后，其获得一枚“恨”标记。",
   ["zhijil"] = "掷戟",
@@ -2777,7 +2775,7 @@ Fk:loadTranslationTable{
   "此判定牌。你使用伤害牌指定“义父”为目标时，你令此牌伤害+X并移除其“恨”标记（X为其“恨”标记的数量）。",
   ["jiejiu"] = "戒酒",
   [":jiejiu"] = "锁定技，你的【酒】仅能当其他基本牌使用。其他女性角色均视为拥有〖离间〗。",
-  ["#fengzhu-father"] = "逢主：拜一名男性角色为“义父”，摸等同于其体力值张牌",
+  ["#fengzhu-father"] = "逢主：拜一名男性角色为“义父”，摸三张牌",
   ["@@fengzhu_father"] = "义父",
   ["@lvbu_hate"] = "恨",
   ["#yuyu-hate"] = "郁郁：令一名“义父”获得一枚“恨”标记",
