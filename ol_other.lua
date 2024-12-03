@@ -2742,7 +2742,17 @@ local jiejiu = fk.CreateViewAsSkill{
     room:notifySkillInvoked(player, self.name, "negative")
     for _, p in ipairs(room:getOtherPlayers(player)) do
       if p:isFemale() then
-        room:handleAddLoseSkills(p, "lijian", nil, true, false)
+        local skills = {}
+        for _, s in ipairs(p.player_skills) do
+          if s:isPlayerSkill(p) and s.visible then
+            table.insert(skills, s.name)
+          end
+        end
+        if #skills == 0 then
+          room:handleAddLoseSkills(p, "lijian", nil, true, false)
+        else
+          room:handleAddLoseSkills(p, "lijian|-"..table.random(skills), nil, true, false)
+        end
       end
     end
   end,
@@ -2774,7 +2784,7 @@ Fk:loadTranslationTable{
   [":zhijil"] = "锁定技，你使用非伤害牌指定“义父”为目标时，你判定X次，若判定牌包含：装备牌，你获得〖神戟〗；【杀】或【决斗】，你获得〖无双〗和"..
   "此判定牌。你使用伤害牌指定“义父”为目标时，你令此牌伤害+X并移除其“恨”标记（X为其“恨”标记的数量）。",
   ["jiejiu"] = "戒酒",
-  [":jiejiu"] = "锁定技，你的【酒】仅能当其他基本牌使用。其他女性角色均视为拥有〖离间〗。",
+  [":jiejiu"] = "锁定技，你的【酒】仅能当其他基本牌使用。其他女性角色将随机一个技能替换为〖离间〗。",
   ["#fengzhu-father"] = "逢主：拜一名男性角色为“义父”，摸三张牌",
   ["@@fengzhu_father"] = "义父",
   ["@lvbu_hate"] = "恨",
