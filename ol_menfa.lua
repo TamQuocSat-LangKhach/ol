@@ -3551,9 +3551,15 @@ Fk:loadTranslationTable{
   ["~olz__wangchang"] = "大任未继，如何长眠九泉……",
 }
 
+local wangshen = General(extension, "olz__wangshen", "wei", 3)
+wangshen:addSkill("tmp_illustrate")
+wangshen:addSkill("zhongliu")
+wangshen.hidden = true
+
 Fk:loadTranslationTable{
   ["olz__wangjiw"] = "族王机",
   ["#olz__wangjiw"] = "寒花疏寂",
+  ["olz__wangshen"] = "族王沈",
 }
 
 return extension

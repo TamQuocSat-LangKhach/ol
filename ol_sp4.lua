@@ -1204,7 +1204,10 @@ local kuangxiang = fk.CreateTriggerSkill{
   can_refresh = function (self, event, target, player, data)
     if target == player then
       if event == fk.PreCardUse then
-        return data.card.is_damage_card and data.card:getMark("@@kuangxiang-inhand") > 0 and data.card.color == Card.Black
+        if data.card.is_damage_card and data.card.color == Card.Black then
+          local ids = Card:getIdList(data.card)
+          return #ids == 1 and Fk:getCardById(ids[1]):getMark("@@kuangxiang-inhand") > 0
+        end
       elseif event == fk.DrawNCards then
         return player:getMark("@kuangxiang") > 0
       end
@@ -2886,6 +2889,29 @@ Fk:loadTranslationTable{
   ["#liyongw-yang"] = "历勇：将一张本回合未使用花色的牌当【决斗】使用",
   ["#liyongw-yin"] = "历勇：弃置一张本回合已使用花色的牌，选择一名角色视为对你使用【决斗】",
   ["@liyongw-turn"] = "历勇",
+}
+
+local taoqian = General(extension, "ol__taoqian", "qun", 3)
+taoqian:addSkill("tmp_illustrate")
+taoqian.hidden = true
+
+local liubei = General(extension, "ol_sp__liubei", "qun", 4)
+liubei:addSkill("tmp_illustrate")
+liubei.hidden = true
+
+local xuelingyun = General(extension, "ol__xuelingyun", "wei", 3, 3, General.Female)
+xuelingyun:addSkill("tmp_illustrate")
+xuelingyun.hidden = true
+
+local guozhao = General(extension, "ol__guozhao", "wei", 3, 3, General.Female)
+guozhao:addSkill("tmp_illustrate")
+guozhao.hidden = true
+
+Fk:loadTranslationTable{
+  ["ol__taoqian"] = "陶谦",
+  ["ol_sp__liubei"] = "刘备",
+  ["ol__xuelingyun"] = "薛灵芸",
+  ["ol__guozhao"] = "郭照",
 }
 
 return extension

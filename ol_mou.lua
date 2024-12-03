@@ -1662,7 +1662,7 @@ huaxiong:addSkill(bojue)
 huaxiong:addSkill(yangwei)
 Fk:loadTranslationTable{
   ["olmou__huaxiong"] = "谋华雄",
-  ["#olmou__huaxiong"] = "汜水关的死神",
+  ["#olmou__huaxiong"] = "汜水关死神",
   ["illustrator:olmou__huaxiong"] = "",
   ["~olmou__huaxiong"] = "我已连战三场，匹夫胜之不武！",
 
@@ -1873,8 +1873,7 @@ local fengshang_trigger = fk.CreateTriggerSkill{
   mute = true,
   main_skill = fengshang,
   can_trigger = function(self, event, target, player, data)
-    if player:hasSkill(fengshang) and
-      #player.room.logic:getEventsOfScope(GameEvent.Dying, 2, Util.TrueFunc, Player.HistoryTurn) == 1 then
+    if player:hasSkill(fengshang) and player:getMark("fengshang_trigger-turn") == 0 then
       local cards = {}
       player.room.logic:getEventsOfScope(GameEvent.MoveCards, 1, function (e)
         for _, move in ipairs(e.data) do
@@ -1901,6 +1900,7 @@ local fengshang_trigger = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     player:broadcastSkillInvoke("fengshang")
+    room:setPlayerMark(player, "fengshang_trigger-turn", 1)
     fengshang:onUse(room, {
       from = player.id,
       cards = {},
@@ -2023,8 +2023,8 @@ Fk:loadTranslationTable{
   ["xiongni"] = "凶逆",
   [":xiongni"] = "出牌阶段开始时，你可以弃置一张牌，所有其他角色需弃置一张与花色相同的牌，否则你对其造成1点伤害。",
   ["fengshang"] = "封赏",
-  [":fengshang"] = "出牌阶段限一次或当每回合首次有角色进入濒死状态时，你可以将本回合弃牌堆中两张花色相同的牌分配给等量角色（每轮每种花色限一次），"..
-  "若你未以此法获得牌，你视为使用一张不计入次数的【酒】。",
+  [":fengshang"] = "出牌阶段限一次，或有角色进入濒死状态时（每回合限一次），你可以将本回合弃牌堆中两张花色相同的牌分配给等量角色"..
+  "（每轮每种花色限一次），若你未以此法获得牌，你视为使用一张不计入次数的【酒】。",
   ["zhibing"] = "执柄",
   [":zhibing"] = "主公技，锁定技，准备阶段，若其他群雄势力角色累计使用黑色牌达到：3张，你加1点体力上限并回复1体力；6张，你获得〖焚城〗；"..
   "9张，你获得〖崩坏〗",

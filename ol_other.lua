@@ -2582,20 +2582,18 @@ local fengzhu = fk.CreateTriggerSkill{
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(self) and player.phase == Player.Start and
       table.find(player.room:getOtherPlayers(player), function (p)
-        return p:isMale()
+        return p:isMale() and not table.contains(player:getTableMark(self.name), p.id)
       end)
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
     local fathers = table.filter(room:getOtherPlayers(player), function (p)
-      return p:isMale()
+      return p:isMale() and not table.contains(player:getTableMark(self.name), p.id)
     end)
     local father = room:askForChoosePlayers(player, table.map(fathers, Util.IdMapper), 1, 1, "#fengzhu-father", self.name, false)
     father = room:getPlayerById(father[1])
     room:setPlayerMark(father, "@@fengzhu_father", 1)
-    fathers = player:getTableMark(self.name)
-    table.insertIfNeed(fathers, father.id)
-    room:setPlayerMark(player, self.name, fathers)
+    room:addTableMark(player, self.name, father.id)
     player:drawCards(3, self.name)
   end,
 }
@@ -2735,22 +2733,21 @@ local jiejiu = fk.CreateViewAsSkill{
   enabled_at_response = function (self, player, response)
     return not response
   end,
-
-  on_acquire = function (self, player, is_start)
+}
+local jiejiu_trigger = fk.CreateTriggerSkill{
+  name = "#jiejiu_trigger",
+  anim_type = "negative",
+  frequency = Skill.Compulsory,
+  events = {fk.GameStart},
+  can_trigger = function(self, event, target, player, data)
+    return player:hasSkill(jiejiu)
+  end,
+  on_use = function(self, event, target, player, data)
     local room = player.room
-    player:broadcastSkillInvoke(self.name)
-    room:notifySkillInvoked(player, self.name, "negative")
     for _, p in ipairs(room:getOtherPlayers(player)) do
       if p:isFemale() then
-        local skills = {}
-        for _, s in ipairs(p.player_skills) do
-          if s:isPlayerSkill(p) and s.visible then
-            table.insert(skills, s.name)
-          end
-        end
-        if #skills == 0 then
-          room:handleAddLoseSkills(p, "lijian", nil, true, false)
-        else
+        local skills = Fk.generals[p.general]:getSkillNameList(true)
+        if #skills > 0 then
           room:handleAddLoseSkills(p, "lijian|-"..table.random(skills), nil, true, false)
         end
       end
@@ -2767,6 +2764,7 @@ local jiejiu_prohibit = fk.CreateProhibitSkill{
     end)
   end
 }
+jiejiu:addRelatedSkill(jiejiu_trigger)
 jiejiu:addRelatedSkill(jiejiu_prohibit)
 lvbu:addSkill(fengzhu)
 lvbu:addSkill(yuyu)
@@ -2784,12 +2782,13 @@ Fk:loadTranslationTable{
   [":zhijil"] = "锁定技，你使用非伤害牌指定“义父”为目标时，你判定X次，若判定牌包含：装备牌，你获得〖神戟〗；【杀】或【决斗】，你获得〖无双〗和"..
   "此判定牌。你使用伤害牌指定“义父”为目标时，你令此牌伤害+X并移除其“恨”标记（X为其“恨”标记的数量）。",
   ["jiejiu"] = "戒酒",
-  [":jiejiu"] = "锁定技，你的【酒】仅能当其他基本牌使用。其他女性角色将随机一个技能替换为〖离间〗。",
+  [":jiejiu"] = "锁定技，你的【酒】仅能当其他基本牌使用。游戏开始时，将其他女性角色武将牌上随机一个技能替换为〖离间〗。",
   ["#fengzhu-father"] = "逢主：拜一名男性角色为“义父”，摸三张牌",
   ["@@fengzhu_father"] = "义父",
   ["@lvbu_hate"] = "恨",
   ["#yuyu-hate"] = "郁郁：令一名“义父”获得一枚“恨”标记",
   ["#jiejiu"] = "戒酒：仅能将【酒】当其他基本牌使用",
+  ["#jiejiu_trigger"] = "戒酒",
 
   ["$fengzhu"] = "吕布飘零半生，只恨未逢明主，公若不弃，布愿拜为义父！",
   ["$yuyu"] = "大丈夫生居天地之间，岂能郁郁久居人下！",
