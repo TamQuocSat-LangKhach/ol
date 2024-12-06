@@ -1385,6 +1385,14 @@ Fk:loadTranslationTable{
   ["#ol_ex__mieji"] = "灭计：将一张锦囊牌置于牌堆顶，令一名角色弃一张锦囊牌或弃置两张牌",
   ["#ol_ex__mieji-discard1"] = "灭计：请弃置一张锦囊牌，或依次弃置两张牌",
   ["#ol_ex__mieji-discard2"] = "灭计：请再弃置一张牌",
+
+  ["$ol_ex__juece1"] = "汝为孤家寡人，生死自当由我。",
+  ["$ol_ex__juece2"] = "我以拳殴帝，帝可有还手之力？",
+  ["$ol_ex__mieji1"] = "喝了这杯酒，别再理这世闻事。",
+  ["$ol_ex__mieji2"] = "我欲借陛下性命一用。",
+  ["$ty_ex__fencheng_ol_ex__liru1"] = "愿这火光，照亮董公西行之路！",
+  ["$ty_ex__fencheng_ol_ex__liru2"] = "诸公且看，此火可戏天下诸否？",
+  ["~ol_ex__liru"] = "火熄人亡，都结束了……",
 }
 
 -- yj2014

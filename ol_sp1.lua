@@ -3431,7 +3431,7 @@ local lingren = fk.CreateTriggerSkill{
 }
 local lingren_delay = fk.CreateTriggerSkill {
   name = "#lingren_delay",
-  anim_type = "offensive",
+  mute = true,
   events = {fk.DamageInflicted},
   can_trigger = function(self, event, target, player, data)
     if player.dead or data.card == nil or target ~= player then return false end

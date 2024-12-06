@@ -2014,8 +2014,8 @@ dongzhuo:addRelatedSkill("ty_ex__fencheng")
 dongzhuo:addRelatedSkill("benghuai")
 Fk:loadTranslationTable{
   ["olmou__dongzhuo"] = "谋董卓",
-  ["#olmou__dongzhuo"] = "",
-  ["illustrator:olmou__dongzhuo"] = "",
+  ["#olmou__dongzhuo"] = "翦覆四海",
+  --["illustrator:olmou__dongzhuo"] = "",
 
   ["guanbian"] = "观变",
   [":guanbian"] = "锁定技，游戏开始时，你的手牌上限、其他角色与你的距离、你与其他角色的距离+X。首轮结束后或你发动〖凶逆〗或〖封赏〗后，"..
@@ -2035,6 +2035,17 @@ Fk:loadTranslationTable{
   ["#fengshang-choose"] = "封赏：分配其中两张花色相同的牌",
   ["#fengshang_trigger"] = "封赏",
   ["@zhibing"] = "执柄",
+
+  ["$guanbian1"] = "今日，老夫也想尝尝这鹿血的滋味！",
+  ["$guanbian2"] = "这水搅得越浑，这鱼便越好捉。",
+  ["$xiongni1"] = "不愿做我殿上宾客？哼哼！那便做我刀下鬼！",
+  ["$xiongni2"] = "尔等，要试试我宝剑锋利否？",
+  ["$fengshang1"] = "干了这杯酒，你便是老夫生死弟兄！",
+  ["$fengshang2"] = "来来来！金杯共汝饮，荣华共汝享！",
+  ["$zhibing1"] = "老夫为这大汉江山是操碎了心呐。",
+  ["$zhibing2"] = "老夫言尽于此，哪个敢说半个不字？",
+  ["$ty_ex__fencheng_olmou__dongzhuo"] = "焚城为焰，炙脍犒三军！",
+  ["~olmou__dongzhuo"] = "关东鼠辈，怎敢忤逆天命！",
 }
 
 local dengai = General(extension, "olmou__dengai", "wei", 4, 5)

@@ -1602,7 +1602,7 @@ dongxie:addSkill(bianyu)
 dongxie:addSkill(fengyao)
 Fk:loadTranslationTable{
   ["ol__dongxie"] = "董翓",
-  ["#ol__dongxie"] = "",
+  ["#ol__dongxie"] = "魔女",
   --["designer:ol__dongxie"] = "",
 
   ["jiaoweid"] = "狡威",
@@ -1617,6 +1617,14 @@ Fk:loadTranslationTable{
   ["@@bianyu-inhand"] = "鞭御",
   ["#fengyao-choose"] = "凤瑶：弃置你或 %dest 场上一张♠牌，令你对其造成的伤害+1",
   ["#fengyao-discard"] = "凤瑶：弃置其中一张♠牌",
+
+  ["$jiaoweid1"] = "巾帼若动起心思，哪还有男人什么事。",
+  ["$jiaoweid2"] = "没想到本将军还有这招吧？",
+  ["$bianyu1"] = "不挨几鞭子，你还出不了力了？",
+  ["$bianyu2"] = "给我向前冲！把敌人杀光！",
+  ["$fengyao1"] = "尔等看好了，我便是凤瑶军统帅！",
+  ["$fengyao2"] = "青丝为刀剑，弑尽敌血点绛唇。",
+  ["~ol__dongxie"] = "牛家哥哥，我来……与你黄泉作伴……",
 }
 
 local caocao = General(extension, "ol_sp__caocao", "qun", 4)
@@ -2017,7 +2025,7 @@ for loop = 1, 30, 1 do  --30个肯定够用
       local room = Fk:currentRoom()
       local info = room:getBanner("tianshu_skills")
       if info and info[self.name] and info[self.name][3] == Self.id then
-        return 3 - Self:usedSkillTimes(self.name, Player.HistoryGame)
+        return 2 - Self:usedSkillTimes(self.name, Player.HistoryGame)
       else
         return 1 - Self:usedSkillTimes(self.name, Player.HistoryGame)
       end
@@ -2314,7 +2322,7 @@ for loop = 1, 30, 1 do  --30个肯定够用
       local room = player.room
       local info = room:getBanner("tianshu_skills")[self.name][2]
       local source = room:getBanner("tianshu_skills")[self.name][3]
-      if source ~= player.id or player:usedSkillTimes(self.name, Player.HistoryGame) > 2 then
+      if source ~= player.id or player:usedSkillTimes(self.name, Player.HistoryGame) > 1 then
         room:handleAddLoseSkills(player, "-"..self.name, nil, true, false)
         local banner = room:getBanner("tianshu_skills")
         banner[self.name] = nil
@@ -2323,7 +2331,7 @@ for loop = 1, 30, 1 do  --30个肯定够用
         local mark = player:getTableMark("@[tianshu]")
         for i = 1, #mark do
           if mark[i].skillName == self.name then
-            mark[i].skillTimes = 3 - player:usedSkillTimes(self.name, Player.HistoryGame)
+            mark[i].skillTimes = 2 - player:usedSkillTimes(self.name, Player.HistoryGame)
             mark[i].visible = true
             break
           end
@@ -2529,7 +2537,7 @@ for loop = 1, 30, 1 do  --30个肯定够用
       local mark = player:getTableMark("@[tianshu]")
       table.insert(mark, {
         skillName = self.name,
-        skillTimes = info[3] == player.id and 3 or 1,
+        skillTimes = info[3] == player.id and 2 or 1,
         skillInfo = Fk:translate(":tianshu_triggers"..info[1]).."，"..Fk:translate(":tianshu_effects"..info[2]).."。",
         owner = { player.id, info[3] },
         visible = false
@@ -2590,7 +2598,7 @@ nanhualaoxian:addSkill(ol__shoushu)
 nanhualaoxian:addSkill(hedao)
 Fk:loadTranslationTable{
   ["ol__nanhualaoxian"] = "南华老仙",
-  ["#ol__nanhualaoxian"] = "",
+  ["#ol__nanhualaoxian"] = "逍遥仙游",
   --["designer:ol__nanhualaoxian"] = "",
 
   ["qingshu"] = "青书",
@@ -2599,10 +2607,10 @@ Fk:loadTranslationTable{
   [":ol__shoushu"] = "出牌阶段限一次，你可以将一册未翻开的<a href='tianshu_href'>“天书”</a>交给一名其他角色。",
   ["hedao"] = "合道",
   [":hedao"] = "锁定技，游戏开始时，你可以至多拥有两册<a href='tianshu_href'>“天书”</a>。你的首次濒死结算后，你可以至多拥有三册"..
-  "<a href='tianshu_href'>“天书”</a>。",
+    "<a href='tianshu_href'>“天书”</a>。",
   ["tianshu_href"] = "从随机三个时机和三个效果中各选择一个组合为一个“天书”技能。<br>"..
-  "“天书”技能初始可使用三次，若交给其他角色则可使用次数改为一次，当次数用完后销毁。<br>"..
-  "当一名角色将获得“天书”时，若数量将超过其可拥有“天书”的上限，则选择一个已有“天书”替换。",
+    "“天书”技能初始可使用两次，若交给其他角色则可使用次数改为一次，当次数用完后销毁。<br>"..
+    "当一名角色将获得“天书”时，若数量将超过其可拥有“天书”的上限，则选择一个已有“天书”替换。",
   ["#qingshu-choice_trigger"] = "请为天书选择一个时机",
   ["#qingshu-choice_effect"] = "请为此时机选择一个效果：<br>%arg，",
   ["#ol__shoushu-discard"] = "你的“天书”超出上限，请删除一个",
@@ -2677,6 +2685,17 @@ Fk:loadTranslationTable{
   [":tianshu_effects28"] = "你可以交换两名角色装备区的牌",
   [":tianshu_effects29"] = "你可以交换两名角色手牌区的牌",
   [":tianshu_effects30"] = "你可以防止此伤害，令伤害来源摸3张牌",
+
+  ["$qingshu1"] = "赤紫青黄，唯记万变其一。",
+  ["$qingshu2"] = "天地万法，皆在此书之中。",
+  ["$qingshu3"] = "以小篆记大道，则道可道。",
+  ["$ol__shoushu1"] = "此书载天地至理，望汝珍视如命。",
+  ["$ol__shoushu2"] = "天书非凡物，字字皆玄机。",
+  ["$ol__shoushu3"] = "我得道成仙，当出世化生人中。",
+  ["$hedao1"] = "不参黄泉，难悟大道。",
+  ["$hedao2"] = "道者，亦置之死地而后生。",
+  ["$hedao3"] = "因果开茅塞，轮回似醍醐。",
+  ["~ol__nanhualaoxian"] = "尔生异心，必获恶报！",
 }
 
 local qinlang = General(extension, "ol__qinlang", "wei", 3)
