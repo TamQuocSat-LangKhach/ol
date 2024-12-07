@@ -805,9 +805,6 @@ local function doGuanxu(player, target, skill_name)
   local room = player.room
   local cids = target:getCardIds(Player.Hand)
   local cards = room:getNCards(5)
-  for i = #cards, 1, -1 do
-    table.insert(room.draw_pile, 1, cards[i])
-  end
   room:doBroadcastNotify("UpdateDrawPile", tostring(#room.draw_pile))
   local to_ex = U.askForExchange(player, "Top", "$Hand", cards, cids, "#guanxu-exchange", 1)
   if #to_ex ~= 2 then return end

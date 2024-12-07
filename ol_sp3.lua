@@ -1852,7 +1852,6 @@ local tianhou = fk.CreateTriggerSkill{
     {"Top", top_cards, player.general, player:getCardIds{Player.Hand, Player.Equip}}, "#tianhou-exchange")
     U.swapCardsWithPile(player, piles[1], piles[2], self.name, "Top")
     top_cards = room:getNCards(1)
-    table.insert(room.draw_pile, 1, top_cards[1])
     room:doBroadcastNotify("UpdateDrawPile", #room.draw_pile)
     player:showCards(top_cards)
     local suit = Fk:getCardById(top_cards[1], true).suit

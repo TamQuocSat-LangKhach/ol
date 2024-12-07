@@ -82,7 +82,6 @@ local xiongzhi = fk.CreateActiveSkill{
       local cards = room:getNCards(1)
       player:showCards(cards)
       if not U.askForUseRealCard(room, player, cards, ".", self.name, "#xiongzhi-use:::"..Fk:getCardById(cards[1]):toLogString(), {expand_pile = cards, bypass_times = false, extraUse = false}) then
-        table.insert(room.draw_pile, 1, cards[1])
         break
       end
     end
@@ -147,6 +146,7 @@ local quanbian = fk.CreateTriggerSkill{
     local cardmap = room:askForArrangeCards(player, self.name, {all_cards, "Top", "toObtain"}, "", true, 0,
     {#all_cards, 1}, {0, 0}, ".|.|"..table.concat(suits, ","))
     for i = #cardmap[1], 1, -1 do
+      table.removeOne(room.draw_pile, cardmap[1][i])
       table.insert(room.draw_pile, 1, cardmap[1][i])
     end
     if #cardmap[2] > 0 then
@@ -259,6 +259,7 @@ local ol__huishi = fk.CreateTriggerSkill{
     local y = x // 2
     local rusult = room:askForGuanxing(player, card_ids, {x-y, x}, {y, y}, self.name, true, {"Bottom", "toObtain"})
     for i = #rusult.top, 1, -1 do
+      table.removeOne(room.draw_pile, rusult.top[i])
       table.insert(room.draw_pile, rusult.top[i])
     end
     room:moveCardTo(rusult.bottom, Player.Hand, player, fk.ReasonPrey, self.name, "", false, player.id)
@@ -2272,9 +2273,6 @@ local yanxi = fk.CreateActiveSkill{
     local player = room:getPlayerById(effect.from)
     local target = room:getPlayerById(effect.tos[1])
     local cards = room:getNCards(2)
-    for i = #cards, 1, -1 do
-      table.insert(room.draw_pile, 1, cards[i])
-    end
     room:doBroadcastNotify("UpdateDrawPile", #room.draw_pile)
     local id = table.random(target.player_cards[Player.Hand])
     table.insert(cards, id)
