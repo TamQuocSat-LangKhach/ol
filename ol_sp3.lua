@@ -2819,7 +2819,7 @@ local function updateGangshu(player, reset)
     if gangshuTimesCheck(player, card) then
       x3 = "∞"
     else
-      x3 = tostring(card.skill:getMaxUseTime(player, Player.HistoryPhase, card, nil))
+      x3 = tostring(card.skill:getMaxUseTime(player, Player.HistoryPhase, card, nil) or "∞")
     end
     local mark = player:getTableMark("@gangshu")
     if #mark ~= 3 or mark[1] ~= x1 or mark[2] ~= x2 or mark[3] ~= x3 then
@@ -2840,7 +2840,7 @@ local gangshu = fk.CreateTriggerSkill{
         if player:getMark("gangshu2_fix") < 3 then return true end
         if player:getAttackRange() < 5 then return true end
         local card = Fk:cloneCard("slash")
-        return not gangshuTimesCheck(player, card) and card.skill:getMaxUseTime(player, Player.HistoryPhase, card, nil) < 5
+        return not gangshuTimesCheck(player, card) and (card.skill:getMaxUseTime(player, Player.HistoryPhase, card, nil) or 5) < 5
       end
     elseif event == fk.CardEffecting then
       --你使用的以牌为目标的牌生效时，非常抽象的时机
@@ -2860,7 +2860,7 @@ local gangshu = fk.CreateTriggerSkill{
         table.insert(choices, "gangshu2")
       end
       local card = Fk:cloneCard("slash")
-      if not gangshuTimesCheck(player, card) and card.skill:getMaxUseTime(player, Player.HistoryPhase, card, nil) < 5 then
+      if not gangshuTimesCheck(player, card) and (card.skill:getMaxUseTime(player, Player.HistoryPhase, card, nil) or 5) < 5 then
         table.insert(choices, "gangshu3")
       end
       if #choices == 1 then return false end
@@ -2934,8 +2934,8 @@ local jianxuan = fk.CreateTriggerSkill{
       to:drawCards(1, self.name)
       if to.dead or player.dead or not player:hasSkill(gangshu, true) then break end
       n = to:getHandcardNum()
-    until (n ~= player:getAttackRange() and n ~= player:getMark("gangshu2_fix") + 2 and 
-    (gangshuTimesCheck(player, card) or 
+    until (n ~= player:getAttackRange() and n ~= player:getMark("gangshu2_fix") + 2 and
+    (gangshuTimesCheck(player, card) or
     n ~= card.skill:getMaxUseTime(player, Player.HistoryPhase, card, nil)))
   end,
 }
