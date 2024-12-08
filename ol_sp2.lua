@@ -2745,37 +2745,20 @@ local yuanchou = fk.CreateTriggerSkill{
   frequency = Skill.Compulsory,
   events = {fk.TargetSpecified, fk.TargetConfirmed},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self) and data.card and data.card.trueName == "slash" and data.card.color == Card.Black
+    return target == player and player:hasSkill(self) and
+      data.card and data.card.trueName == "slash" and data.card.color == Card.Black
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
     if data.from == player.id then
       player:broadcastSkillInvoke(self.name, 1)
       room:notifySkillInvoked(player, self.name, "offensive")
+      room:getPlayerById(data.to):addQinggangTag(data)
     else
       player:broadcastSkillInvoke(self.name, 2)
       room:notifySkillInvoked(player, self.name, "negative")
+      player:addQinggangTag(data)
     end
-    room:addPlayerMark(room:getPlayerById(data.to), fk.MarkArmorNullified)
-
-    data.extra_data = data.extra_data or {}
-    data.extra_data.yuanchouNullified = data.extra_data.yuanchouNullified or {}
-    data.extra_data.yuanchouNullified[tostring(data.to)] = (data.extra_data.yuanchouNullified[tostring(data.to)] or 0) + 1
-  end,
-
-  refresh_events = { fk.CardUseFinished },
-  can_refresh = function(self, event, target, player, data)
-    return data.extra_data and data.extra_data.yuanchouNullified
-  end,
-  on_refresh = function(self, event, target, player, data)
-    local room = player.room
-    for key, num in pairs(data.extra_data.yuanchouNullified) do
-      local p = room:getPlayerById(tonumber(key))
-      if p:getMark(fk.MarkArmorNullified) > 0 then
-        room:removePlayerMark(p, fk.MarkArmorNullified, num)
-      end
-    end
-    data.yuanchouNullified = nil
   end,
 }
 local juesheng = fk.CreateViewAsSkill{

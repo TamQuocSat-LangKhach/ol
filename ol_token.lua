@@ -1009,28 +1009,6 @@ Fk:loadTranslationTable{
   "<b>武器技能</b>：锁定技，当你使用【杀】指定一名角色为目标后，该角色不能使用点数小于此【杀】的【闪】以抵消此【杀】。",
 }
 
-local qinnu_trigger = fk.CreateTriggerSkill{
-  name = "#qinnu_trigger",
-  attached_equip = "qin_crossbow",
-  frequency = Skill.Compulsory,
-  events = { fk.TargetSpecified },
-  can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self) and
-      data.card and data.card.trueName == "slash"
-  end,
-  on_use = function(self, event, target, player, data)
-    local room = player.room
-    local to = room:getPlayerById(data.to)
-    room:broadcastPlaySound("./packages/standard_cards/_audio/card/crossbow")
-    room:setEmotion(player, "./packages/standard_cards/image/anim/crossbow")
-    local use_event = room.logic:getCurrentEvent():findParent(GameEvent.UseCard, true)
-    if use_event == nil then return end
-    room:addPlayerMark(to, fk.MarkArmorNullified)
-    use_event:addCleaner(function()
-      room:removePlayerMark(to, fk.MarkArmorNullified)
-    end)
-  end,
-}
 local qin_crossbowSkill = fk.CreateTargetModSkill{
   name = "#qin_crossbow_skill",
   attached_equip = "qin_crossbow",
@@ -1038,6 +1016,27 @@ local qin_crossbowSkill = fk.CreateTargetModSkill{
     if player:hasSkill(self) and skill.trueName == "slash_skill" and scope == Player.HistoryPhase then
       return 1
     end
+  end,
+}
+local qinnu_trigger = fk.CreateTriggerSkill{
+  name = "#qinnu_trigger",
+  attached_equip = "qin_crossbow",
+  frequency = Skill.Compulsory,
+  events = { fk.TargetSpecified },
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(qin_crossbowSkill) and data.card and data.card.trueName == "slash" and
+      not player.room:getPlayerById(data.to).dead
+  end,
+  on_cost = function(self, event, target, player, data)
+    self.cost_data = { tos = {data.to} }
+    player.room:doIndicate(player.id, {data.to})
+    return true
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    room:broadcastPlaySound("./packages/standard_cards/_audio/card/crossbow")
+    room:setEmotion(player, "./packages/standard_cards/image/anim/crossbow")
+    room:getPlayerById(data.to):addQinggangTag(data)
   end,
 }
 qin_crossbowSkill:addRelatedSkill(qinnu_trigger)
