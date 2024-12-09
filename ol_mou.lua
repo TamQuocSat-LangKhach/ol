@@ -1411,31 +1411,31 @@ local xiaoshi_delay = fk.CreateTriggerSkill{
 }
 local yanliangy = fk.CreateTriggerSkill{
   name = "yanliangy$",
+  attached_skill_name = "yanliangy&",
 
-  refresh_events = {fk.GameStart, fk.EventAcquireSkill, fk.EventLoseSkill, fk.Deathed},
+  refresh_events = {fk.AfterPropertyChange},
   can_refresh = function(self, event, target, player, data)
-    if event == fk.GameStart then
-      return player:hasSkill(self, true)
-    elseif event == fk.EventAcquireSkill or event == fk.EventLoseSkill then
-      return target == player and data == self and
-        not table.find(player.room:getOtherPlayers(player), function(p) return p:hasSkill(self, true) end)
-    else
-      return target == player and player:hasSkill(self, true, true) and
-        not table.find(player.room:getOtherPlayers(player), function(p) return p:hasSkill(self, true) end)
-    end
+    return target == player
   end,
   on_refresh = function(self, event, target, player, data)
     local room = player.room
-    if event == fk.GameStart or event == fk.EventAcquireSkill then
-      for _, p in ipairs(room:getOtherPlayers(player)) do
-        room:handleAddLoseSkills(p, "yanliangy&", nil, false, true)
-      end
+    if player.kingdom == "qun" and table.find(room.alive_players, function (p)
+      return p ~= player and p:hasSkill(self, true)
+    end) then
+      room:handleAddLoseSkills(player, self.attached_skill_name, nil, false, true)
     else
-      for _, p in ipairs(room:getOtherPlayers(player, true, true)) do
-        room:handleAddLoseSkills(p, "-yanliangy&", nil, false, true)
-      end
+      room:handleAddLoseSkills(player, "-" .. self.attached_skill_name, nil, false, true)
     end
   end,
+
+  on_acquire = function(self, player)
+    local room = player.room
+    for _, p in ipairs(room.alive_players) do
+      if p ~= player and p.kingdom == "qun" then
+        room:handleAddLoseSkills(p, self.attached_skill_name, nil, false, true)
+      end
+    end
+  end
 }
 local yanliangy_active = fk.CreateActiveSkill{
   name = "yanliangy&",

@@ -1442,27 +1442,29 @@ local tairan = fk.CreateTriggerSkill{
 local ruilue = fk.CreateTriggerSkill{
   name = "ruilue$",
 
-  refresh_events = {fk.AfterPropertyChange, fk.EventAcquireSkill, fk.EventLoseSkill, fk.Deathed},
+  refresh_events = {fk.AfterPropertyChange},
   can_refresh = function(self, event, target, player, data)
-    if event == fk.EventAcquireSkill or event == fk.EventLoseSkill then
-      return data == self
-    elseif event == fk.Deathed then
-      return target:hasSkill(self, true, true)
-    elseif event == fk.AfterPropertyChange then
-      return target == player
-    end
+    return target == player
   end,
   on_refresh = function(self, event, target, player, data)
     local room = player.room
-    local attached = player.kingdom == "jin" and table.find(room.alive_players, function (p)
+    if player.kingdom == "jin" and table.find(room.alive_players, function (p)
       return p ~= player and p:hasSkill(self, true)
-    end)
-    if attached and not player:hasSkill("ruilue&", true, true) then
-      room:handleAddLoseSkills(player, "ruilue&", nil, false, true)
-    elseif not attached and player:hasSkill("ruilue&", true, true) then
-      room:handleAddLoseSkills(player, "-ruilue&", nil, false, true)
+    end) then
+      room:handleAddLoseSkills(player, self.attached_skill_name, nil, false, true)
+    else
+      room:handleAddLoseSkills(player, "-" .. self.attached_skill_name, nil, false, true)
     end
   end,
+
+  on_acquire = function(self, player)
+    local room = player.room
+    for _, p in ipairs(room.alive_players) do
+      if p ~= player and p.kingdom == "jin" then
+        room:handleAddLoseSkills(p, self.attached_skill_name, nil, false, true)
+      end
+    end
+  end
 }
 local ruilue_active = fk.CreateActiveSkill{
   name = "ruilue&",
@@ -2593,6 +2595,7 @@ end
 local bolan = fk.CreateTriggerSkill{
   name = "bolan",
   anim_type = "special",
+  attached_skill_name = "bolan&",
   events = {fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(self) and player.phase == Player.Play
@@ -2608,31 +2611,6 @@ local bolan = fk.CreateTriggerSkill{
       room.logic:getCurrentEvent():findParent(GameEvent.Phase):addCleaner(function()
         room:handleAddLoseSkills(player, "-"..choice)
       end)
-    end
-  end,
-
-  refresh_events = {fk.GameStart, fk.EventAcquireSkill, fk.EventLoseSkill, fk.Deathed},
-  can_refresh = function(self, event, target, player, data)
-    if event == fk.GameStart then
-      return player:hasSkill(self, true)
-    elseif event == fk.EventAcquireSkill or event == fk.EventLoseSkill then
-      return target == player and data == self and
-        not table.find(player.room:getOtherPlayers(player), function(p) return p:hasSkill(self, true) end)
-    else
-      return target == player and player:hasSkill(self, true, true) and
-        not table.find(player.room:getOtherPlayers(player), function(p) return p:hasSkill(self, true) end)
-    end
-  end,
-  on_refresh = function(self, event, target, player, data)
-    local room = player.room
-    if event == fk.GameStart or event == fk.EventAcquireSkill then
-      for _, p in ipairs(room:getOtherPlayers(player)) do
-        room:handleAddLoseSkills(p, "bolan&", nil, false, true)
-      end
-    else
-      for _, p in ipairs(room:getOtherPlayers(player, true, true)) do
-        room:handleAddLoseSkills(p, "-bolan&", nil, false, true)
-      end
     end
   end,
 }

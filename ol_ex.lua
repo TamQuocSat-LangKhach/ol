@@ -946,27 +946,29 @@ local ol_ex__huangtian = fk.CreateTriggerSkill{
   name = "ol_ex__huangtian$",
   mute = true,
 
-  refresh_events = {fk.EventAcquireSkill, fk.EventLoseSkill, fk.BuryVictim, fk.AfterPropertyChange},
+  refresh_events = {fk.AfterPropertyChange},
   can_refresh = function(self, event, target, player, data)
-    if event == fk.EventAcquireSkill or event == fk.EventLoseSkill then
-      return data == self
-    elseif event == fk.BuryVictim then
-      return target:hasSkill(self, true, true)
-    elseif event == fk.AfterPropertyChange then
-      return target == player
-    end
+    return target == player
   end,
   on_refresh = function(self, event, target, player, data)
     local room = player.room
-    local attached_huangtian = player.kingdom == "qun" and table.find(room.alive_players, function (p)
+    if player.kingdom == "qun" and table.find(room.alive_players, function (p)
       return p ~= player and p:hasSkill(self, true)
-    end)
-    if attached_huangtian and not player:hasSkill("ol_ex__huangtian_other&", true, true) then
-      room:handleAddLoseSkills(player, "ol_ex__huangtian_other&", nil, false, true)
-    elseif not attached_huangtian and player:hasSkill("ol_ex__huangtian_other&", true, true) then
-      room:handleAddLoseSkills(player, "-ol_ex__huangtian_other&", nil, false, true)
+    end) then
+      room:handleAddLoseSkills(player, self.attached_skill_name, nil, false, true)
+    else
+      room:handleAddLoseSkills(player, "-" .. self.attached_skill_name, nil, false, true)
     end
   end,
+
+  on_acquire = function(self, player)
+    local room = player.room
+    for _, p in ipairs(room.alive_players) do
+      if p ~= player and p.kingdom == "qun" then
+        room:handleAddLoseSkills(p, self.attached_skill_name, nil, false, true)
+      end
+    end
+  end
 }
 local ol_ex__huangtian_other = fk.CreateActiveSkill{
   name = "ol_ex__huangtian_other&",
@@ -3464,6 +3466,7 @@ local ol_ex__hunzi_delay = fk.CreateTriggerSkill{
 
 local ol_ex__zhiba = fk.CreateActiveSkill{
   name = "ol_ex__zhiba$",
+  attached_skill_name = "ol_ex__zhiba_other&",
   anim_type = "control",
   prompt = "#ol_ex__zhiba-active",
   can_use = function(self, player)
@@ -3483,6 +3486,15 @@ local ol_ex__zhiba = fk.CreateActiveSkill{
     local target = room:getPlayerById(effect.tos[1])
     player:pindian({target}, self.name)
   end,
+
+  on_acquire = function(self, player)
+    local room = player.room
+    for _, p in ipairs(room.alive_players) do
+      if p ~= player and p.kingdom == "wu" then
+        room:handleAddLoseSkills(p, self.attached_skill_name, nil, false, true)
+      end
+    end
+  end
 }
 local ol_ex__zhiba_delay = fk.CreateTriggerSkill{
   name = "#ol_ex__zhiba_delay",
@@ -3521,24 +3533,17 @@ local ol_ex__zhiba_delay = fk.CreateTriggerSkill{
     end
   end,
 
-  refresh_events = {fk.EventAcquireSkill, fk.EventLoseSkill, fk.BuryVictim, fk.AfterPropertyChange},
+  refresh_events = {fk.AfterPropertyChange},
   can_refresh = function(self, event, target, player, data)
-    if event == fk.EventAcquireSkill or event == fk.EventLoseSkill then
-      return data == self
-    elseif event == fk.BuryVictim then
-      return target:hasSkill(ol_ex__zhiba, true, true)
-    elseif event == fk.AfterPropertyChange then
-      return target == player
-    end
+    return target == player
   end,
   on_refresh = function(self, event, target, player, data)
     local room = player.room
-    local attached_huangtian = player.kingdom == "wu" and table.find(room.alive_players, function (p)
-      return p ~= player and p:hasSkill(ol_ex__zhiba, true)
-    end)
-    if attached_huangtian and not player:hasSkill("ol_ex__zhiba_other&", true, true) then
+    if player.kingdom == "wu" and table.find(room.alive_players, function (p)
+      return p ~= player and p:hasSkill(self, true)
+    end) then
       room:handleAddLoseSkills(player, "ol_ex__zhiba_other&", nil, false, true)
-    elseif not attached_huangtian and player:hasSkill("ol_ex__zhiba_other&", true, true) then
+    else
       room:handleAddLoseSkills(player, "-ol_ex__zhiba_other&", nil, false, true)
     end
   end,

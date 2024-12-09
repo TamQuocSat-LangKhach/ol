@@ -1410,6 +1410,7 @@ local lianzhuw = fk.CreateActiveSkill{
   name = "lianzhuw",
   anim_type = "switch",
   switch_skill_name = "lianzhuw",
+  attached_skill_name = "lianzhuw&",
   card_num = function()
     if Self:getSwitchSkillState("lianzhuw", false) == fk.SwitchYang then
       return 1
@@ -1484,32 +1485,6 @@ local lianzhuw = fk.CreateActiveSkill{
             end
           end
         end
-      end
-    end
-  end,
-}
-local lianzhuw_trigger = fk.CreateTriggerSkill{
-  name = "#lianzhuw_trigger",
-
-  refresh_events = {fk.GameStart, fk.EventAcquireSkill, fk.EventLoseSkill, fk.Deathed},
-  can_refresh = function(self, event, target, player, data)
-    if event == fk.GameStart then
-      return player:hasSkill(self, true)
-    elseif event == fk.EventAcquireSkill or event == fk.EventLoseSkill then
-      return target == player and data == self
-    else
-      return target == player and player:hasSkill(self, true, true)
-    end
-  end,
-  on_refresh = function(self, event, target, player, data)
-    local room = player.room
-    if event == fk.GameStart or event == fk.EventAcquireSkill then
-      for _, p in ipairs(room:getOtherPlayers(player)) do
-        room:handleAddLoseSkills(p, "lianzhuw&", nil, false, true)
-      end
-    elseif event == fk.EventLoseSkill or event == fk.Deathed then
-      for _, p in ipairs(room:getOtherPlayers(player, true, true)) do
-        room:handleAddLoseSkills(p, "-lianzhuw&", nil, false, true)
       end
     end
   end,
@@ -1629,7 +1604,6 @@ local lianzhuw_active = fk.CreateActiveSkill{
   end,
 }
 Fk:addSkill(lianzhuw_active)
-lianzhuw:addRelatedSkill(lianzhuw_trigger)
 wukuang:addSkill(lianzhuw)
 wukuang:addSkill("muyin")
 Fk:loadTranslationTable{
