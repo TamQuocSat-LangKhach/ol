@@ -945,6 +945,7 @@ local ol_ex__guidao = fk.CreateTriggerSkill{
 local ol_ex__huangtian = fk.CreateTriggerSkill{
   name = "ol_ex__huangtian$",
   mute = true,
+  attached_skill_name = "ol_ex__huangtian_other&",
 
   refresh_events = {fk.AfterPropertyChange},
   can_refresh = function(self, event, target, player, data)
