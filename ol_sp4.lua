@@ -1803,24 +1803,25 @@ local hedao = fk.CreateTriggerSkill{
   name = "hedao",
   anim_type = "special",
   frequency = Skill.Compulsory,
-  events = {fk.AfterDying},
+  events = {fk.AfterDying, fk.GameStart},
+  priority = {
+    [fk.AfterDying] = 1,
+    [fk.GameStart] = 1.1  --避免和青书同时机询问
+  },
   can_trigger = function(self, event, target, player, data)
-    if target == player and player:hasSkill(self) and player:getMark("hedao_invoked") == 0 then
-      local dying_events = player.room.logic:getEventsOfScope(GameEvent.Dying, 1, function(e)
-        return e.data[1].who == player.id
-      end, Player.HistoryGame)
-      return #dying_events > 0 and dying_events[1].data[1] == data
+    if event == fk.GameStart then
+      return player:hasSkill(self)
+    else
+      return target == player and player:hasSkill(self) and player:getMark("hedao_invoked") == 0
     end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    room:setPlayerMark(player, "hedao_invoked", 1)
-    room:setPlayerMark(player, "tianshu_max", 2)
-  end,
-
-  on_acquire = function (self, player, is_start)  --避免和青书同时机询问
-    if is_start and player:hasSkill(self) then
-      player.room:setPlayerMark(player, "tianshu_max", 1)
+    if event == fk.GameStart then
+      room:setPlayerMark(player, "tianshu_max", 1)
+    else
+      room:setPlayerMark(player, "hedao_invoked", 1)
+      room:setPlayerMark(player, "tianshu_max", 2)
     end
   end,
 }
