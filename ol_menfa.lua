@@ -2006,7 +2006,7 @@ local guangu = fk.CreateActiveSkill{
     return "#guangu-"..Self:getSwitchSkillState(self.name, false, true)
   end,
   can_use = function(self, player)
-    return player:usedSkillTimes(self.name, Player.HistoryPhase) == 0
+    return player:usedSkillTimes(self.name, Player.HistoryPhase) == 0 and #Fk:currentRoom().draw_pile > 0
   end,
   card_filter = Util.FalseFunc,
   target_filter = function(self, to_select, selected)

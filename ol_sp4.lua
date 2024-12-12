@@ -2917,8 +2917,250 @@ liubei:addSkill("tmp_illustrate")
 liubei.hidden = true
 
 local xuelingyun = General(extension, "ol__xuelingyun", "wei", 3, 3, General.Female)
-xuelingyun:addSkill("tmp_illustrate")
-xuelingyun.hidden = true
+
+Fk:loadTranslationTable{
+  ["ol__xuelingyun"] = "薛灵芸",
+  --["#ol__xuelingyun"] = "",
+
+  --["~ol__xuelingyun"] = "",
+}
+
+local siqi_active = fk.CreateActiveSkill{
+  name = "siqi_active",
+  card_num = 1,
+  expand_pile = function (self)
+    return self.cards
+  end,
+  card_filter = function(self, to_select, selected)
+    return #selected == 0 and table.contains(self.cards, to_select)
+  end,
+  target_filter = function(self, to_select, selected, selected_cards)
+    if #selected_cards == 0 or #selected > 0 then return false end
+    local card = Fk:getCardById(selected_cards[1], true)
+    local target = Fk:currentRoom():getPlayerById(to_select)
+    return not Self:isProhibited(target, card) and card.skill:modTargetFilter(to_select, {}, Self.id, card, false)
+  end,
+  feasible = function(self, selected, selected_cards)
+    if #selected_cards == 0 then return false end
+    if #selected == 0 then
+      local card = Fk:getCardById(selected_cards[1], true)
+      return not Self:isProhibited(Self, card) and card.skill:modTargetFilter(Self.id, {}, Self.id, card, false)
+    end
+    return true
+  end
+}
+
+Fk:addSkill(siqi_active)
+
+local siqi = fk.CreateTriggerSkill{
+  name = "siqi",
+  mute = true,
+  events = {fk.AfterCardsMove, fk.Damaged},
+  can_trigger = function(self, event, target, player, data)
+    if event == fk.AfterCardsMove then
+      if not player:hasSkill(self) then return false end
+      local room = player.room
+      local logic = room.logic
+      local move_event = logic:getCurrentEvent():findParent(GameEvent.MoveCards, true)
+      if move_event == nil then return false end
+      local subcards = {}
+      local cards
+      local p_event = move_event.parent
+      if p_event ~= nil and (p_event.event == GameEvent.UseCard or p_event == GameEvent.RespondCard) then
+        local p_data = p_event.data[1]
+        if p_data.from == player.id then
+          cards = Card:getIdList(p_data.card)
+          local moveEvents = p_event:searchEvents(GameEvent.MoveCards, 1, function(e)
+            return e.parent and e.parent.id == p_event.id
+          end)
+          if #moveEvents > 0 then
+            for _, move in ipairs(moveEvents[1].data) do
+              if move.from == player.id and (move.moveReason == fk.ReasonUse or move.moveReason == fk.ReasonResonpse) then
+                for _, info in ipairs(move.moveInfo) do
+                  if info.fromArea == Card.PlayerHand or info.fromArea == Card.PlayerEquip then
+                    if table.removeOne(cards, info.cardId) then
+                      table.insert(subcards, info.cardId)
+                    end
+                  end
+                end
+              end
+            end
+          end
+        end
+      end
+      cards = {}
+      for _, move in ipairs(data) do
+        if move.toArea == Card.DiscardPile then
+          if move.from == player.id then
+            for _, info in ipairs(move.moveInfo) do
+              if (info.fromArea == Card.PlayerHand or info.fromArea == Card.PlayerEquip) and
+              Fk:getCardById(info.cardId, true).color == Card.Red then
+                table.insertIfNeed(cards, info.cardId)
+              end
+            end
+          elseif move.from == nil and (move.moveReason == fk.ReasonUse or move.moveReason == fk.ReasonResonpse) then
+            for _, info in ipairs(move.moveInfo) do
+              if info.fromArea == Card.Processing and table.removeOne(subcards, info.cardId) and
+              Fk:getCardById(info.cardId, true).color == Card.Red then
+                table.insertIfNeed(cards, info.cardId)
+              end
+            end
+          end
+        end
+      end
+      cards = U.moveCardsHoldingAreaCheck(room, cards)
+      if #cards > 0 then
+        self.cost_data = cards
+        return true
+      end
+    else
+      return player == target and player:hasSkill(self)
+    end
+  end,
+  on_cost = function (self, event, target, player, data)
+    return event == fk.AfterCardsMove or player.room:askForSkillInvoke(player, self.name)
+  end,
+  on_use = function (self, event, target, player, data)
+    local room = player.room
+    if event == fk.AfterCardsMove then
+      room:notifySkillInvoked(player, self.name, "special")
+      player:broadcastSkillInvoke(self.name)
+      room:moveCards({
+        ids = self.cost_data,
+        toArea = Card.DrawPile,
+        moveReason = fk.ReasonJustMove,
+        skillName = self.name,
+        proposer = player.id,
+        moveVisible = true,
+        drawPilePosition = -1
+      })
+    else
+      room:notifySkillInvoked(player, self.name, "masochism")
+      player:broadcastSkillInvoke(self.name)
+      local dp_cards = room.draw_pile
+      local x = #dp_cards
+      if x == 0 then return false end
+      local id
+      local card
+      local to_show = {}
+      local cards = {}
+      local names = {"peach", "analeptic", "ex_nihilo"}
+      for i = 1, math.min(9, x), 1 do
+        id = dp_cards[x+1-i]
+        card = Fk:getCardById(id, true)
+        if card.color == Card.Red then
+          table.insert(to_show, id)
+          if card.type == Card.TypeEquip or table.contains(names, card.trueName) then
+            table.insert(cards, id)
+          end
+        else
+          break
+        end
+      end
+      if #to_show == 0 then return false end
+      room:moveCards {
+        ids = to_show,
+        toArea = Card.Processing,
+        moveReason = fk.ReasonJustMove,
+        skillName = self.name,
+        proposer = player.id,
+      }
+      local to_use
+      repeat
+        to_use = table.filter(cards, function(cid)
+          if room:getCardArea(cid) ~= Card.Processing then return false end
+          card = Fk:getCardById(id, true)
+          return not (player:prohibitUse(card) or table.every(room.alive_players, function(p)
+            return player:isProhibited(p, card) or not card.skill:modTargetFilter(p.id, {}, player.id, card, false)
+          end))
+        end)
+        if #to_use == 0 then break end
+        local _, dat = room:askForUseViewAsSkill(player, "siqi_active", "#siqi-use", true, { cards = to_use })
+        if dat then
+          room:useCard{
+            card = Fk:getCardById(dat.cards[1], true),
+            from = player.id,
+            tos = #dat.targets > 0 and { dat.targets } or { { player.id } },
+            extraUse = true,
+          }
+        else
+          break
+        end
+      until player.dead
+      room:cleanProcessingArea(to_show, self.name)
+    end
+  end,
+}
+
+Fk:loadTranslationTable{
+  ["siqi"] = "思泣",
+  [":siqi"] = "当你的牌移至弃牌堆后，你将其中的红色牌置于牌堆底。"..
+    "当你受到伤害后，你可以亮出牌堆底至多九张连续的红色牌，然后可以使用其中的【桃】、【酒】、【无中生有】与装备牌（可以对其他角色使用）。",
+
+  ["siqi_active"] = "思泣",
+  ["#siqi-use"] = "思泣：你可以依次使用亮出的牌（可以对其他角色使用）",
+
+  ["$siqi1"] = "",
+  ["$siqi2"] = "",
+}
+
+xuelingyun:addSkill(siqi)
+
+local qiaozhi = fk.CreateActiveSkill{
+  name = "qiaozhi",
+  anim_type = "drawcard",
+  card_num = 1,
+  target_num = 0,
+  prompt = "#qiaozhi-active",
+  can_use = Util.TrueFunc,
+  card_filter = function(self, to_select, selected)
+    return #selected == 0 and not Self:prohibitDiscard(Fk:getCardById(to_select))
+  end,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    room:throwCard(effect.cards, self.name, player, player)
+    if player.dead then return end
+    local cards = room:getNCards(2)
+    room:moveCards {
+      ids = cards,
+      toArea = Card.Processing,
+      moveReason = fk.ReasonJustMove,
+      skillName = self.name,
+      proposer = player.id,
+    }
+    local id = room:askForCardChosen(player, player, {
+      card_data = {
+        { self.name, cards }
+      }
+    }, self.name, "#qiaozhi-choose")
+    room:obtainCard(player, id, true, fk.ReasonJustMove, player.id, self.name, "@@qiaozhi-inhand")
+    room:cleanProcessingArea(cards, self.name)
+  end,
+}
+
+local qiaozhi_invalidity = fk.CreateInvaliditySkill {
+  name = "#qiaozhi_invalidity",
+  invalidity_func = function(self, from, skill)
+    return skill == qiaozhi and not table.every(from:getCardIds(Player.Hand), function (id)
+      return Fk:getCardById(id, true):getMark("@@qiaozhi-inhand") == 0
+    end)
+  end
+}
+
+Fk:loadTranslationTable{
+  ["qiaozhi"] = "巧织",
+  [":qiaozhi"] = "出牌阶段，你可弃置一张牌，你亮出牌堆顶的两张牌，获得其中的一张牌。此技能于你以此法得到的牌从你的手牌区离开之前无效。",
+
+  ["@@qiaozhi-inhand"] = "巧织",
+  ["#qiaozhi-active"] = "发动 巧织，选择要弃置的1张卡牌",
+  ["#qiaozhi-choose"] = "巧织：选择要获得的1张卡牌",
+
+  ["$qiaozhi1"] = "",
+  ["$qiaozhi2"] = "",
+}
+
+qiaozhi:addRelatedSkill(qiaozhi_invalidity)
+xuelingyun:addSkill(qiaozhi)
 
 local guozhao = General(extension, "ol__guozhao", "wei", 3, 3, General.Female)
 guozhao:addSkill("tmp_illustrate")
@@ -2927,7 +3169,6 @@ guozhao.hidden = true
 Fk:loadTranslationTable{
   ["ol__taoqian"] = "陶谦",
   ["ol_sp__liubei"] = "刘备",
-  ["ol__xuelingyun"] = "薛灵芸",
   ["ol__guozhao"] = "郭照",
 }
 
