@@ -1536,8 +1536,7 @@ local ol_ex__lianhuan = fk.CreateActiveSkill{
     else
       room:notifySkillInvoked(player, self.name, "control")
       room:sortPlayersByAction(effect.tos)
-      room:useVirtualCard("iron_chain", effect.cards, player, table.map(effect.tos, function(id)
-        return room:getPlayerById(id) end), self.name)
+      room:useVirtualCard("iron_chain", effect.cards, player, table.map(effect.tos, Util.Id2PlayerMapper), self.name)
     end
   end,
 }
@@ -2738,7 +2737,7 @@ local ol_ex__luanwu = fk.CreateActiveSkill{
     if #slash_targets == 0 or max_num == 0 then return end
     local tos = room:askForChoosePlayers(player, slash_targets, 1, max_num, "#ol_ex__luanwu-choose", self.name, true)
     if #tos > 0 then
-      room:useVirtualCard("slash", nil, player, table.map(tos, function(id) return room:getPlayerById(id) end), self.name, true)
+      room:useVirtualCard("slash", nil, player, table.map(tos, Util.Id2PlayerMapper), self.name, true)
     end
   end,
 }

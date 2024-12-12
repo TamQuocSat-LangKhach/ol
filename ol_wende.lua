@@ -586,7 +586,7 @@ Fk:loadTranslationTable{
 }
 
 local cheliji = General(extension, "cheliji", "qun", 4)
-local chexuan_cart = {{"wheel_cart", Card.Spade, 5}, {"caltrop_cart", Card.Club, 5}, {"grain_cart", Card.Heart, 5}}
+local chexuan_cart = { {"wheel_cart", Card.Spade, 5}, {"caltrop_cart", Card.Club, 5}, {"grain_cart", Card.Heart, 5} }
 local chexuan = fk.CreateActiveSkill{
   name = "chexuan",
   card_num = 1,

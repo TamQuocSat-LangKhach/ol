@@ -1041,7 +1041,7 @@ local gushe = fk.CreateActiveSkill{
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
     room:sortPlayersByAction(effect.tos)
-    local targets = table.map(effect.tos, function(p) return room:getPlayerById(p) end)
+    local targets = table.map(effect.tos, Util.Id2PlayerMapper)
     local pindian = player:pindian(targets, self.name)
     for _, target in ipairs(targets) do
       local losers = {}
@@ -3311,7 +3311,7 @@ local ol__zhennan = fk.CreateActiveSkill{
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
     room:useVirtualCard("savage_assault", effect.cards, player,
-      table.map(effect.tos, function(id) return room:getPlayerById(id) end), self.name)
+      table.map(effect.tos, Util.Id2PlayerMapper), self.name)
   end
 }
 local ol__zhennan_trigger = fk.CreateTriggerSkill{
