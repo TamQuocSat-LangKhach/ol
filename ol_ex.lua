@@ -261,9 +261,6 @@ local ol_ex__shebian = fk.CreateTriggerSkill{
   name = "ol_ex__shebian",
   events = { fk.TurnedOver },
   anim_type = "control",
-  can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self)
-  end,
   on_use = function(self, event, target, player, data)
     local room = player.room
     local to = room:askForChooseToMoveCardInBoard(player, "#ol_ex__shebian-choose", self.name, true, "e")

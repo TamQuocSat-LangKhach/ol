@@ -100,9 +100,6 @@ local jadeCombSkill = fk.CreateTriggerSkill{
   name = "#jade_comb_skill",
   attached_equip = "jade_comb",
   events = {fk.DamageInflicted},
-  can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self)
-  end,
   on_cost = function(self, event, target, player, data)
     local room = player.room
     local x = data.damage

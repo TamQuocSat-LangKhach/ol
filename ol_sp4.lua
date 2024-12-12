@@ -1298,9 +1298,6 @@ local kuangshou = fk.CreateTriggerSkill{
   anim_type = "masochism",
   frequency = Skill.Compulsory,
   events = {fk.Damaged},
-  can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self)
-  end,
   on_use = function(self, event, target, player, data)
     local room = player.room
     player:drawCards(3, self.name)

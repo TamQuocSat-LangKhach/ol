@@ -2763,9 +2763,6 @@ local beizhan = fk.CreateTriggerSkill{
   name = "beizhan",
   anim_type = "drawcard",
   events = {fk.TurnEnd},
-  can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self)
-  end,
   on_cost = function(self, event, target, player, data)
     local to = player.room:askForChoosePlayers(player, table.map(player.room:getAlivePlayers(), Util.IdMapper), 1, 1, "#beizhan-choose", self.name, true)
     if #to > 0 then

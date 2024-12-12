@@ -1268,9 +1268,6 @@ local shilu = fk.CreateTriggerSkill{
   anim_type = "masochism",
   frequency = Skill.Compulsory,
   events = {fk.Damaged},
-  can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self)
-  end,
   on_use = function(self, event, target, player, data)
     local room = player.room
     player:drawCards(player.hp, self.name)
@@ -2913,9 +2910,6 @@ local jianxuan = fk.CreateTriggerSkill{
   name = "jianxuan",
   anim_type = "masochism",
   events = {fk.Damaged},
-  can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self)
-  end,
   on_cost = function(self, event, target, player, data)
     local to = player.room:askForChoosePlayers(player, table.map(player.room:getAlivePlayers(), Util.IdMapper),
       1, 1, "#jianxuan-choose", self.name, true)

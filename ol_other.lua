@@ -1818,9 +1818,6 @@ local qin__zhangzheng = fk.CreateTriggerSkill{
   anim_type = "offensive",
   frequency = Skill.Compulsory,
   events = {fk.TurnStart},
-  can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self)
-  end,
   on_use = function(self, event, target, player, data)
     local room = player.room
     room:doIndicate(player.id, table.map(table.filter(room.alive_players, function (p) return p.kingdom ~= "qin" end), Util.IdMapper))
