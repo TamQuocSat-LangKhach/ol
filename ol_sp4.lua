@@ -3150,7 +3150,7 @@ local siqi = fk.CreateTriggerSkill{
       repeat
         to_use = table.filter(cards, function(cid)
           if room:getCardArea(cid) ~= Card.Processing then return false end
-          card = Fk:getCardById(id, true)
+          card = Fk:getCardById(cid, true)
           return not (player:prohibitUse(card) or table.every(room.alive_players, function(p)
             return player:isProhibited(p, card) or not card.skill:modTargetFilter(p.id, {}, player.id, card, false)
           end))
