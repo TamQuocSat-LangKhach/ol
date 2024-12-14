@@ -1356,7 +1356,10 @@ local yimie = fk.CreateTriggerSkill{
       player:usedSkillTimes(self.name, Player.HistoryTurn) == 0
   end,
   on_cost = function(self, event, target, player, data)
-    return player.room:askForSkillInvoke(player, self.name, nil, "#yimie-invoke::"..data.to.id)
+    if player.room:askForSkillInvoke(player, self.name, nil, "#yimie-invoke::"..data.to.id) then
+      self.cost_data = {tos = {data.to.id}}
+      return true
+    end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
@@ -1518,7 +1521,7 @@ Fk:loadTranslationTable{
   [":ruilue&"] = "出牌阶段限一次，你可以将一张【杀】或伤害锦囊牌交给司马师。",
   ["#ruilue"] = "睿略：你可以将一张伤害牌交给司马师",
   ["#yimie_delay"] = "夷灭",
-  ["#yimie-invoke"] = "夷灭：你可以失去1点体力，令你对 %arg 造成的伤害增加至其体力值！",
+  ["#yimie-invoke"] = "夷灭：你可以失去1点体力，令你对 %dest 造成的伤害增加至其体力值！",
   ["@@tairan-inhand"] = "泰然",
   ["#taoyin-invoke"] = "韬隐：你可以令 %src 本回合的手牌上限-2",
 
