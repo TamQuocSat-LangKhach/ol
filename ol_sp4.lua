@@ -3047,7 +3047,7 @@ local siqi = fk.CreateTriggerSkill{
       local subcards = {}
       local cards
       local p_event = move_event.parent
-      if p_event ~= nil and (p_event.event == GameEvent.UseCard or p_event == GameEvent.RespondCard) then
+      if p_event ~= nil and (p_event.event == GameEvent.UseCard or p_event.event == GameEvent.RespondCard) then
         local p_data = p_event.data[1]
         if p_data.from == player.id then
           cards = Card:getIdList(p_data.card)
