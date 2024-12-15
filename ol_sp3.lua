@@ -3325,14 +3325,7 @@ local cangxin = fk.CreateTriggerSkill{
     local room = player.room
     player:broadcastSkillInvoke(self.name)
     room:notifySkillInvoked(player, self.name, event == fk.EventPhaseStart and "drawcard" or "defensive")
-    local card_ids = room:getNCards(3, "bottom")
-    room:moveCards({
-      ids = card_ids,
-      toArea = Card.Processing,
-      moveReason = fk.ReasonJustMove,
-      skillName = self.name,
-      proposer = player.id
-    })
+    local card_ids = U.turnOverCardsFromDrawPile(player, -3, self.name)
     if event == fk.EventPhaseStart then
       room:delay(1500)
       local x = 0
@@ -3357,26 +3350,18 @@ local cangxin = fk.CreateTriggerSkill{
           if Fk:getCardById(id).suit == Card.Heart then
             x = x + 1
           end
-          table.removeOne(card_ids, id)
         end
         data.damage = data.damage - x
-        room:moveCards({
+        room:moveCards {
           ids = to_throw,
           toArea = Card.DiscardPile,
           moveReason = fk.ReasonPutIntoDiscardPile,
           skillName = self.name,
-        })
+          proposer = player.id
+        }
       end
     end
-    if #card_ids > 0 then
-      room:moveCards({
-        ids = card_ids,
-        toArea = Card.DrawPile,
-        moveReason = fk.ReasonJustMove,
-        skillName = self.name,
-        drawPilePosition = -1,
-      })
-    end
+    U.returnCardsToDrawPile(player, card_ids, self.name, false)
   end,
 }
 local runwei = fk.CreateTriggerSkill{
