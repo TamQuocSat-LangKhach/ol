@@ -3106,7 +3106,7 @@ local siqi = fk.CreateTriggerSkill{
     if event == fk.AfterCardsMove then
       room:notifySkillInvoked(player, self.name, "special")
       player:broadcastSkillInvoke(self.name)
-      room:moveCards({
+      room:moveCards {
         ids = self.cost_data,
         toArea = Card.DrawPile,
         moveReason = fk.ReasonJustMove,
@@ -3114,7 +3114,7 @@ local siqi = fk.CreateTriggerSkill{
         proposer = player.id,
         moveVisible = true,
         drawPilePosition = -1
-      })
+      }
     else
       room:notifySkillInvoked(player, self.name, "masochism")
       player:broadcastSkillInvoke(self.name)
@@ -3139,13 +3139,7 @@ local siqi = fk.CreateTriggerSkill{
         end
       end
       if #to_show == 0 then return false end
-      room:moveCards {
-        ids = to_show,
-        toArea = Card.Processing,
-        moveReason = fk.ReasonJustMove,
-        skillName = self.name,
-        proposer = player.id,
-      }
+      U.turnOverCardsFromDrawPile(player, to_show, self.name)
       local to_use
       repeat
         to_use = table.filter(cards, function(cid)
@@ -3201,14 +3195,7 @@ local qiaozhi = fk.CreateActiveSkill{
     local player = room:getPlayerById(effect.from)
     room:throwCard(effect.cards, self.name, player, player)
     if player.dead then return end
-    local cards = room:getNCards(2)
-    room:moveCards {
-      ids = cards,
-      toArea = Card.Processing,
-      moveReason = fk.ReasonJustMove,
-      skillName = self.name,
-      proposer = player.id,
-    }
+    local cards = U.turnOverCardsFromDrawPile(player, 2, self.name)
     local id = room:askForCardChosen(player, player, {
       card_data = {
         { self.name, cards }

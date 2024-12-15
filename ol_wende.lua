@@ -255,14 +255,11 @@ local ol__huishi = fk.CreateTriggerSkill{
     local room = player.room
     local x = #room.draw_pile % 10
     if x == 0 then return true end
-    local card_ids = room:getNCards(x)
+    local card_ids = U.turnOverCardsFromDrawPile(player, x, self.name, false)
     local y = x // 2
     local rusult = room:askForGuanxing(player, card_ids, {x-y, x}, {y, y}, self.name, true, {"Bottom", "toObtain"})
-    for i = #rusult.top, 1, -1 do
-      table.removeOne(room.draw_pile, rusult.top[i])
-      table.insert(room.draw_pile, rusult.top[i])
-    end
     room:moveCardTo(rusult.bottom, Player.Hand, player, fk.ReasonPrey, self.name, "", false, player.id)
+    U.returnCardsToDrawPile(player, rusult.top, self.name, false, false)
     return true
   end,
 }
@@ -2278,7 +2275,6 @@ local yanxi = fk.CreateActiveSkill{
     local player = room:getPlayerById(effect.from)
     local target = room:getPlayerById(effect.tos[1])
     local cards = room:getNCards(2)
-    room:doBroadcastNotify("UpdateDrawPile", #room.draw_pile)
     local id = table.random(target.player_cards[Player.Hand])
     table.insert(cards, id)
     table.shuffle(cards)

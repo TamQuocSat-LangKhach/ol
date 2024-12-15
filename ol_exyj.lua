@@ -989,8 +989,7 @@ local ol_ex__chengxiang = fk.CreateTriggerSkill{
       num = 5
       room:setPlayerMark(player, self.name, 0)
     end
-    local cards = room:getNCards(num)
-    room:moveCardTo(cards, Card.Processing, nil, fk.ReasonJustMove, self.name, nil, true, player.id)
+    local cards = U.turnOverCardsFromDrawPile(player, num, self.name)
     local get = room:askForArrangeCards(player, self.name, {cards},
       "#chengxiang-choose", false, 0, {num, num}, {0, 1}, ".", "chengxiang_count", {{}, {cards[1]}})[2]
     local n = 0
@@ -1001,10 +1000,7 @@ local ol_ex__chengxiang = fk.CreateTriggerSkill{
       room:setPlayerMark(player, self.name, 1)
     end
     room:moveCardTo(get, Player.Hand, player, fk.ReasonJustMove, self.name, "", true, player.id)
-    cards = table.filter(cards, function(id) return room:getCardArea(id) == Card.Processing end)
-    if #cards > 0 then
-      room:moveCardTo(cards, Card.DiscardPile, nil, fk.ReasonJustMove, self.name, nil, true, player.id)
-    end
+    room:cleanProcessingArea(cards, self.name)
   end
 }
 local ol_ex__renxin = fk.CreateTriggerSkill{

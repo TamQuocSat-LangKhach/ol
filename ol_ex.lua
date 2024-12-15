@@ -747,7 +747,7 @@ local ol_ex__buqu = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local scar_id =room:getNCards(1)[1]
+    local scar_id = room:getNCards(1)[1]
     local scar = Fk:getCardById(scar_id)
     player:addToPile("ol_ex__buqu_scar", scar_id, true, self.name)
     if player.dead or not table.contains(player:getPile("ol_ex__buqu_scar"), scar_id) then return false end
