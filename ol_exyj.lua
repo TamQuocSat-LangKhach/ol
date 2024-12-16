@@ -922,9 +922,7 @@ local ol_ex__zongshi = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local mark = player:getTableMark("@ol_ex__zongshi")
-    table.insert(mark, data.from.kingdom)
-    room:setPlayerMark(player, "@ol_ex__zongshi", mark)
+    room:addTableMark(player, "@ol_ex__zongshi", data.from.kingdom)
     if not data.from.dead then
       room:doIndicate(player.id, {data.from.id})
       data.from:drawCards(1, self.name)

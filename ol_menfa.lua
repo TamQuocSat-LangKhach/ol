@@ -2903,9 +2903,7 @@ local lilun = fk.CreateActiveSkill{
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
     local cards = table.simpleClone(effect.cards)
-    local mark = player:getTableMark("lilun-turn")
-    table.insert(mark, Fk:getCardById(cards[1]).trueName)
-    room:setPlayerMark(player, "lilun-turn", mark)
+    room:addTableMark(player, "lilun-turn", Fk:getCardById(cards[1]).trueName)
     room:recastCard(cards, player, self.name)
     if player.dead then return end
     local card
@@ -3150,12 +3148,8 @@ local shengmo = fk.CreateViewAsSkill{
   end,
   before_use = function(self, player, use)
     local room = player.room
-    local mark = player:getTableMark("shengmo_used")
-    table.insert(mark, use.card.trueName)
-    room:setPlayerMark(player, "shengmo_used", mark)
-    mark = player:getTableMark("@$shengmo")
-    table.removeOne(mark, use.card.trueName)
-    room:setPlayerMark(player, "@$shengmo", mark)
+    room:addTableMark(player, "shengmo_used", use.card.trueName)
+    room:removeTableMark(player, "@$shengmo", use.card.trueName)
     local card_id = use.card:getMark("shengmo_subcards")
     room:obtainCard(player, card_id, true, fk.ReasonPrey, player.id)
   end,

@@ -1082,9 +1082,7 @@ local renxia = fk.CreateActiveSkill{
   end,
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
-    local mark = player:getTableMark("renxia-phase")
-    table.insert(mark, self.interaction.data[7])
-    room:setPlayerMark(player, "renxia-phase", mark)
+    room:addTableMark(player, "renxia-phase", self.interaction.data[7])
     if self.interaction.data == "renxia1" then
       if effect.cards then
         room:throwCard(effect.cards, self.name, player, player)

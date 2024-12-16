@@ -5597,9 +5597,7 @@ local bixin_trigger = fk.CreateTriggerSkill{
   on_refresh = function(self, event, target, player, data)
     local room = player.room
     if event == fk.AfterCardUseDeclared then
-      local mark = player:getTableMark("bixin-round")
-      table.insert(mark, data.card.name)
-      room:setPlayerMark(player, "bixin-round", mark)
+      room:addTableMark(player, "bixin-round", data.card.name)
     else
       if room.logic:getCurrentEvent() then
         local names = {}

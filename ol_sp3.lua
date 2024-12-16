@@ -4365,9 +4365,7 @@ local jiane = fk.CreateTriggerSkill{
   end,
 
   refresh_events = {fk.PreCardUse},
-  can_refresh = function(self, event, target, player, data)
-    return true
-  end,
+  can_refresh = Util.TrueFunc,
   on_refresh = function(self, event, target, player, data)
     data.unoffsetableList = data.unoffsetableList or {}
     for _, p in ipairs(player.room.alive_players) do
@@ -5284,9 +5282,7 @@ local pijingl_delay = fk.CreateTriggerSkill{
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local mark = player:getTableMark("pijingl")
-    table.removeOne(mark, target.id)
-    room:setPlayerMark(player, "pijingl", mark)
+    room:removeTableMark(player, "pijingl", target.id)
     if table.every(room.alive_players, function (p)
       return not table.contains(p:getTableMark("pijingl"), target.id)
     end) then

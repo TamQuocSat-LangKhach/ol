@@ -2438,9 +2438,7 @@ local ol_ex__dimeng = fk.CreateActiveSkill{
     local target1 = room:getPlayerById(effect.tos[1])
     local target2 = room:getPlayerById(effect.tos[2])
     U.swapHandCards(room, player, target1, target2, self.name)
-    local targetRecorded = player:getTableMark("ol_ex__dimeng_target-phase")
-    table.insert(targetRecorded, effect.tos)
-    room:setPlayerMark(player, "ol_ex__dimeng_target-phase", targetRecorded)
+    room:addTableMark(player, "ol_ex__dimeng_target-phase", effect.tos)
   end,
 }
 local ol_ex__dimeng_delay = fk.CreateTriggerSkill{
@@ -2831,9 +2829,7 @@ local ol_ex__qiaobian = fk.CreateTriggerSkill{
     if event == fk.GameStart then
       room:addPlayerMark(player, "@ol_ex__qiaobian_change", 2)
     elseif event == fk.EventPhaseStart then
-      local numberRecorded = player:getTableMark("ol_ex__qiaobian_number")
-      table.insert(numberRecorded, player:getHandcardNum())
-      room:setPlayerMark(player, "ol_ex__qiaobian_number", numberRecorded)
+      room:addTableMark(player, "ol_ex__qiaobian_number", player:getHandcardNum())
       room:addPlayerMark(player, "@ol_ex__qiaobian_change")
     elseif event == fk.EventPhaseChanging then
       if #self.cost_data > 0 then

@@ -831,7 +831,7 @@ local ol__jieyuan = fk.CreateTriggerSkill{
   events = {fk.DamageCaused, fk.DamageInflicted},
   can_trigger = function(self, event, target, player, data)
     if target == player and player:hasSkill(self) and data.from and data.from ~= data.to and not player:isNude() then
-      local mark = type(player:getMark("@ol__fenxin")) == "table" and player:getMark("@ol__fenxin") or {}
+      local mark = player:getTableMark("@ol__fenxin")
       if event == fk.DamageCaused then
         return data.to.hp >= player.hp or table.contains(mark,"abbr_rebel")
       else
@@ -841,7 +841,7 @@ local ol__jieyuan = fk.CreateTriggerSkill{
   end,
   on_cost = function(self, event, target, player, data)
     local pattern, prompt
-    local mark = type(player:getMark("@ol__fenxin")) == "table" and player:getMark("@ol__fenxin") or {}
+    local mark = player:getTableMark("@ol__fenxin")
     if event == fk.DamageCaused then
       if not table.contains(mark,"abbr_renegade") then
         pattern = ".|.|spade,club|hand"
@@ -888,7 +888,7 @@ local ol__fenxin = fk.CreateTriggerSkill{
     return player:hasSkill(self) and table.contains({"loyalist", "rebel", "renegade"}, target.role)
   end,
   on_use = function(self, event, target, player, data)
-    local mark = type(player:getMark("@ol__fenxin")) == "table" and player:getMark("@ol__fenxin") or {}
+    local mark = player:getTableMark("@ol__fenxin")
     table.insertIfNeed(mark, "abbr_"..target.role)
     player.room:setPlayerMark(player, "@ol__fenxin", mark)
   end,
@@ -2231,9 +2231,7 @@ local ol__jingce = fk.CreateTriggerSkill{
   on_refresh = function (self, event, target, player, data)
     local room = player.room
     if event == fk.CardUsing then
-      local mark = player:getTableMark("@ol__jingce-turn")
-      table.insert(mark, data.card:getSuitString(true))
-      room:setPlayerMark(player, "@ol__jingce-turn", mark)
+      room:addTableMark(player, "@ol__jingce-turn", data.card:getSuitString(true))
     else
       local mark = {}
       player.room.logic:getEventsOfScope(GameEvent.UseCard, 999, function(e)
