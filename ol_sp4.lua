@@ -3332,6 +3332,9 @@ local neixun = fk.CreateTriggerSkill{
     else
       local card = room:askForCardChosen(player, target, "he", self.name, "#neixun-prey::"..target.id)
       room:moveCardTo(card, Card.PlayerHand, player, fk.ReasonPrey, self.name, nil, false, player.id, "@@neixun-inhand")
+      if not target.dead then
+        target:drawCards(1, self.name)
+      end
     end
   end,
 
