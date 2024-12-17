@@ -2987,14 +2987,6 @@ Fk:loadTranslationTable{
   ["@liyongw-turn"] = "历勇",
 }
 
-local taoqian = General(extension, "ol__taoqian", "qun", 3)
-taoqian:addSkill("tmp_illustrate")
-taoqian.hidden = true
-
-local liubei = General(extension, "ol_sp__liubei", "qun", 4)
-liubei:addSkill("tmp_illustrate")
-liubei.hidden = true
-
 local xuelingyun = General(extension, "ol__xuelingyun", "wei", 3, 3, General.Female)
 
 Fk:loadTranslationTable{
@@ -3213,6 +3205,9 @@ local qiaozhi_invalidity = fk.CreateInvaliditySkill {
   end
 }
 
+qiaozhi:addRelatedSkill(qiaozhi_invalidity)
+xuelingyun:addSkill(qiaozhi)
+
 Fk:loadTranslationTable{
   ["qiaozhi"] = "巧织",
   [":qiaozhi"] = "出牌阶段，你可弃置一张牌，你亮出牌堆顶的两张牌，获得其中的一张牌。此技能于你以此法得到的牌从你的手牌区离开之前无效。",
@@ -3225,17 +3220,170 @@ Fk:loadTranslationTable{
   ["$qiaozhi2"] = "",
 }
 
-qiaozhi:addRelatedSkill(qiaozhi_invalidity)
-xuelingyun:addSkill(qiaozhi)
-
 local guozhao = General(extension, "ol__guozhao", "wei", 3, 3, General.Female)
-guozhao:addSkill("tmp_illustrate")
-guozhao.hidden = true
+local jiaoyu = fk.CreateTriggerSkill{
+  name = "jiaoyu",
+  anim_type = "support",
+  frequency = Skill.Compulsory,
+  events = {fk.RoundStart, fk.EventPhaseEnd},
+  can_trigger = function(self, event, target, player, data)
+    if event == fk.RoundStart then
+      return player:hasSkill(self)
+    elseif event == fk.EventPhaseEnd then
+      return target == player and player.phase == Player.Finish and player:getMark("jiaoyu_extra_phase-round") > 0
+    end
+  end,
+  on_use = function (self, event, target, player, data)
+    local room = player.room
+    if event == fk.RoundStart then
+      room:setPlayerMark(player, "jiaoyu_extra_phase-round", 1)
+      local n = math.max(#player:getCardIds("e"), 1)
+      local cards = {}
+      for _ = 1, n, 1 do
+        local judge = {
+          who = player,
+          reason = self.name,
+          pattern = ".",
+          skipDrop = true,
+        }
+        room:judge(judge)
+        if judge.card then
+          table.insert(cards, judge.card.id)
+        end
+      end
+      cards = table.filter(cards, function (id)
+        return room:getCardArea(id) == Card.Processing
+      end)
+      if player.dead then
+        if #cards > 0 then
+          room:moveCardTo(cards, Card.DiscardPile, nil, fk.ReasonJudge)
+        end
+      else
+        local color = room:askForChoice(player, {"red", "black"}, self.name, "#jiaoyu-choice")
+        room:setPlayerMark(player, "@jiaoyu-round", color)
+        local get = table.filter(cards, function (id)
+          return Fk:getCardById(id):getColorString() == color
+        end)
+        if #get > 0 then
+          room:moveCardTo(get, Card.PlayerHand, player, fk.ReasonJustMove, self.name, nil, true, player.id)
+        end
+        cards = table.filter(cards, function (id)
+          return room:getCardArea(id) == Card.Processing
+        end)
+        if #cards > 0 then
+          room:moveCardTo(cards, Card.DiscardPile, nil, fk.ReasonJudge)
+        end
+      end
+    elseif event == fk.EventPhaseEnd then
+      room:setPlayerMark(player, "jiaoyu_extra_phase-round", 0)
+      room:setPlayerMark(player, "jiaoyu_prohibit-turn", 1)
+      player:gainAnExtraPhase(Player.Play)
+    end
+  end,
+
+  refresh_events = {fk.EventPhaseStart},
+  can_refresh = function (self, event, target, player, data)
+    return target == player and player.phase == Player.Play and player:getMark("jiaoyu_prohibit-turn") > 0
+  end,
+  on_refresh = function (self, event, target, player, data)
+    local room = player.room
+    room:setPlayerMark(player, "jiaoyu_prohibit-turn", 0)
+    room:setPlayerMark(player, "jiaoyu_prohibit-phase", 1)
+  end,
+}
+local jiaoyu_prohibit = fk.CreateProhibitSkill{
+  name = "#jiaoyu_prohibit",
+  prohibit_use = function(self, player, card)
+    return player.phase == Player.Play and player:getMark("jiaoyu_prohibit-phase") > 0 and
+      card:getColorString() ~= player:getMark("@jiaoyu-round")
+  end,
+}
+local neixun = fk.CreateTriggerSkill{
+  name = "neixun",
+  anim_type = "control",
+  frequency = Skill.Compulsory,
+  events = {fk.CardUseFinished},
+  can_trigger = function(self, event, target, player, data)
+    if player:hasSkill(self) and player:getMark("@jiaoyu-round") ~= 0 and target ~= player and not target.dead and
+      data.card.type ~= Card.TypeEquip then
+      local turn_event = player.room.logic:getCurrentEvent():findParent(GameEvent.Turn)
+      if turn_event == nil or turn_event.data[1] ~= target then return end
+      local events = player.room.logic:getEventsOfScope(GameEvent.UseCard, 1, function (e)
+        local use = e.data[1]
+        return use.from == target.id and use.card.type ~= Card.TypeEquip
+      end, Player.HistoryTurn)
+      if #events == 1 and events[1] == player.room.logic:getCurrentEvent() then
+        if data.card:getColorString() == player:getMark("@jiaoyu-round") then
+          return not player:isNude()
+        else
+          return not target:isNude()
+        end
+      end
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    if data.card:getColorString() == player:getMark("@jiaoyu-round") then
+      local card = room:askForCard(player, 1, 1, true, self.name, false, nil, "#neixun-give::"..target.id)
+      room:moveCardTo(card, Card.PlayerHand, target, fk.ReasonGive, self.name, nil, false, player.id)
+      if not player.dead then
+        player:drawCards(1, self.name, "top", "@@neixun-inhand")
+      end
+    else
+      local card = room:askForCardChosen(player, target, "he", self.name, "#neixun-prey::"..target.id)
+      room:moveCardTo(card, Card.PlayerHand, player, fk.ReasonPrey, self.name, nil, false, player.id, "@@neixun-inhand")
+    end
+  end,
+
+  refresh_events = {fk.AfterTurnEnd},
+  can_refresh = function (self, event, target, player, data)
+    return target == player and not player:isKongcheng()
+  end,
+  on_refresh = function (self, event, target, player, data)
+    for _, id in ipairs(player:getCardIds("h")) do
+      player.room:setCardMark(Fk:getCardById(id), "@@neixun-inhand", 0)
+    end
+  end,
+}
+local neixun_maxcards = fk.CreateMaxCardsSkill{
+  name = "#neixun_maxcards",
+  exclude_from = function(self, player, card)
+    return card:getMark("@@neixun-inhand") > 0
+  end,
+}
+jiaoyu:addRelatedSkill(jiaoyu_prohibit)
+neixun:addRelatedSkill(neixun_maxcards)
+guozhao:addSkill(jiaoyu)
+guozhao:addSkill(neixun)
+Fk:loadTranslationTable{
+  ["ol__guozhao"] = "郭照",
+  ["#ol__zhangyiy"] = "",
+  ["illustrator:ol__zhangyiy"] = "",
+
+  ["jiaoyu"] = "椒遇",
+  [":jiaoyu"] = "锁定技，每轮开始时，你进行X次判定（X为你装备区内牌数且至少为1），然后声明一种颜色并获得此颜色的判定牌。你的下回合结束时，"..
+  "你执行一个出牌阶段（此阶段你不能使用与声明颜色不同的牌）。",
+  ["neixun"] = "内训",
+  [":neixun"] = "锁定技，其他角色于回合内使用第一张非装备牌后，若此牌与你“椒遇”声明的颜色相同/不同，你交给/获得其一张牌，然后失去牌的角色"..
+  "摸一张牌。你以此法获得的牌不计入手牌上限直到你回合结束。",
+  ["@jiaoyu-round"] = "椒遇",
+  ["#jiaoyu-choice"] = "椒遇：选择获得一种颜色的判定牌",
+  ["#neixun-give"] = "内训：你需交给 %dest 一张牌",
+  ["#neixun-prey"] = "内训：获得 %dest 一张牌",
+  ["@@neixun-inhand"] = "内训",
+}
+
+local taoqian = General(extension, "ol__taoqian", "qun", 3)
+taoqian:addSkill("tmp_illustrate")
+taoqian.hidden = true
+
+local liubei = General(extension, "ol_sp__liubei", "qun", 4)
+liubei:addSkill("tmp_illustrate")
+liubei.hidden = true
 
 Fk:loadTranslationTable{
   ["ol__taoqian"] = "陶谦",
   ["ol_sp__liubei"] = "刘备",
-  ["ol__guozhao"] = "郭照",
 }
 
 return extension
