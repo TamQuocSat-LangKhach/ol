@@ -452,10 +452,10 @@ local ol__wushen_targetmod = fk.CreateTargetModSkill{
   name = "#ol__wushen_targetmod",
   frequency = Skill.Compulsory,
   bypass_times = function(self, player, skill, scope, card, to)
-    return player:hasSkill(self) and skill.trueName == "slash_skill" and card.suit == Card.Heart
+    return card and player:hasSkill(self) and skill.trueName == "slash_skill" and card.suit == Card.Heart
   end,
   bypass_distances = function(self, player, skill, card, to)
-    return player:hasSkill(self) and skill.trueName == "slash_skill" and card.suit == Card.Heart
+    return card and player:hasSkill(self) and skill.trueName == "slash_skill" and card.suit == Card.Heart
   end,
 }
 ol__wushen:addRelatedSkill(ol__wushen_filter)
@@ -759,7 +759,7 @@ local ol__huxiao = fk.CreateTriggerSkill{
 local ol__huxiao_targetmod = fk.CreateTargetModSkill{
   name = "#ol__huxiao_targetmod",
   bypass_times = function(self, player, skill, scope, card, to)
-    return table.contains(to:getTableMark("@@ol__huxiao-turn"), player.id)
+    return card and table.contains(to:getTableMark("@@ol__huxiao-turn"), player.id)
   end,
 }
 ol__huxiao:addRelatedSkill(ol__huxiao_targetmod)

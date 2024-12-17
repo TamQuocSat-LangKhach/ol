@@ -5911,10 +5911,10 @@ local shengzhi = fk.CreateTriggerSkill{
 local shengzhi_targetmod = fk.CreateTargetModSkill{
   name = "#shengzhi_targetmod",
   bypass_times = function(self, player, skill, scope, card, to)
-    return player:getMark("@@shengzhi-turn") > 0
+    return card and player:getMark("@@shengzhi-turn") > 0
   end,
   bypass_distances =  function(self, player, skill, card, to)
-    return player:getMark("@@shengzhi-turn") > 0
+    return card and player:getMark("@@shengzhi-turn") > 0
   end,
 }
 local quandao = fk.CreateTriggerSkill{

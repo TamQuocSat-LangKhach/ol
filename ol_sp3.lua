@@ -3112,10 +3112,10 @@ local tuoshi_prohibit = fk.CreateProhibitSkill{
 local tuoshi_targetmod = fk.CreateTargetModSkill{
   name = "#tuoshi_targetmod",
   bypass_times = function(self, player, skill, scope, card, to)
-    return player:getMark("@@tuoshi") > 0 and to and to:getHandcardNum() < player:getHandcardNum()
+    return card and player:getMark("@@tuoshi") > 0 and to and to:getHandcardNum() < player:getHandcardNum()
   end,
   bypass_distances =  function(self, player, skill, card, to)
-    return player:getMark("@@tuoshi") > 0 and to and to:getHandcardNum() < player:getHandcardNum()
+    return card and player:getMark("@@tuoshi") > 0 and to and to:getHandcardNum() < player:getHandcardNum()
   end,
 }
 xiaofan:addRelatedSkill(xiaofan_trigger)
