@@ -1441,7 +1441,7 @@ local tairan = fk.CreateTriggerSkill{
 }
 local ruilue = fk.CreateTriggerSkill{
   name = "ruilue$",
-
+  attached_skill_name = "ruilue&",
   refresh_events = {fk.AfterPropertyChange},
   can_refresh = function(self, event, target, player, data)
     return target == player
