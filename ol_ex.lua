@@ -999,9 +999,7 @@ local ol_ex__huangtian_other = fk.CreateActiveSkill{
     local target = room:getPlayerById(effect.tos[1])
     room:notifySkillInvoked(player, ol_ex__huangtian.name)
     target:broadcastSkillInvoke(ol_ex__huangtian.name)
-    local targetRecorded = player:getTableMark("ol_ex__huangtian_sources-phase")
-    table.insertIfNeed(targetRecorded, target.id)
-    room:setPlayerMark(player, "ol_ex__huangtian_sources-phase", targetRecorded)
+    room:addTableMarkIfNeed(player, "ol_ex__huangtian_sources-phase", target.id)
     room:moveCardTo(effect.cards, Player.Hand, target, fk.ReasonGive, self.name, nil, true)
   end,
 }
@@ -1202,9 +1200,7 @@ local ol_ex__qiangxi = fk.CreateActiveSkill{
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
     local target = room:getPlayerById(effect.tos[1])
-    local qiangxiRecorded = player:getTableMark("ol_ex__qiangxi_targets-phase")
-    table.insertIfNeed(qiangxiRecorded, target.id)
-    room:setPlayerMark(player, "ol_ex__qiangxi_targets-phase", qiangxiRecorded)
+    room:addTableMarkIfNeed(player, "ol_ex__qiangxi_targets-phase", target.id)
     if #effect.cards > 0 then
       room:throwCard(effect.cards, self.name, player)
     else
@@ -1845,9 +1841,7 @@ local ol_ex__shuangxiong_trigger = fk.CreateTriggerSkill{
     if event == fk.EventPhaseEnd then
       local color = Fk:getCardById(self.cost_data[1]):getColorString()
       room:throwCard(self.cost_data, self.name, player, player)
-      local colorsRecorded = player:getTableMark("@ol_ex__shuangxiong-turn")
-      table.insertIfNeed(colorsRecorded, color)
-      room:setPlayerMark(player, "@ol_ex__shuangxiong-turn", colorsRecorded)
+      room:addTableMarkIfNeed(player, "@ol_ex__shuangxiong-turn", color)
     elseif event == fk.EventPhaseStart then
       room:obtainCard(player, self.cost_data, true, fk.ReasonJustMove)
     end
@@ -3568,9 +3562,7 @@ local ol_ex__zhiba_other = fk.CreateActiveSkill{
     local target = room:getPlayerById(effect.tos[1])
     room:notifySkillInvoked(player, ol_ex__zhiba.name)
     target:broadcastSkillInvoke(ol_ex__zhiba.name)
-    local targetRecorded = player:getTableMark("ol_ex__zhiba_sources-phase")
-    table.insertIfNeed(targetRecorded, target.id)
-    room:setPlayerMark(player, "ol_ex__zhiba_sources-phase", targetRecorded)
+    room:addTableMarkIfNeed(player, "ol_ex__zhiba_sources-phase", target.id)
 
     if room:askForChoice(target, {"ol_ex__zhiba_accept", "ol_ex__zhiba_refuse"}, ol_ex__zhiba.name,
     "#ol_ex__zhiba-ask:" .. player.id) == "ol_ex__zhiba_accept" then

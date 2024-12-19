@@ -1218,9 +1218,7 @@ local lianhe = fk.CreateTriggerSkill{
       local p = room:getPlayerById(id)
       if not p.dead then
         p:setChainState(true)
-        local mark = p:getTableMark("@@lianhe")
-        table.insertIfNeed(mark, player.id)
-        room:setPlayerMark(p, "@@lianhe", mark)
+        room:addTableMarkIfNeed(p, "@@lianhe", player.id)
       end
     end
   end,
@@ -2521,9 +2519,7 @@ local qiuxin = fk.CreateActiveSkill{
     local player = room:getPlayerById(effect.from)
     local target = room:getPlayerById(effect.tos[1])
     local choice = room:askForChoice(target, {"slash", "trick"}, self.name, "#qiuxin-choice:"..player.id)
-    local mark = target:getTableMark("@qiuxin")
-    table.insertIfNeed(mark, choice)
-    room:setPlayerMark(target, "@qiuxin", mark)
+    room:addTableMarkIfNeed(target, "@qiuxin", choice)
   end,
 }
 local qiuxin_trigger = fk.CreateTriggerSkill{
@@ -3328,9 +3324,7 @@ local chengqi_trigger = fk.CreateTriggerSkill{
   on_refresh = function(self, event, target, player, data)
     local room = player.room
     if event == fk.AfterCardUseDeclared then
-      local mark = player:getTableMark("chengqi-turn")
-      table.insertIfNeed(mark, data.card.trueName)
-      room:setPlayerMark(player, "chengqi-turn", mark)
+      room:addTableMarkIfNeed(player, "chengqi-turn", data.card.trueName)
     else
       local mark = {}
       local turn_event = room.logic:getCurrentEvent():findParent(GameEvent.Turn)

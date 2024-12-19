@@ -3357,9 +3357,7 @@ local cihuang = fk.CreateTriggerSkill{
   on_refresh = function(self, event, target, player, data)
     local room = player.room
     if event == fk.AfterCardUseDeclared then
-      local mark = player:getTableMark("cihuang-round")
-      table.insertIfNeed(mark, data.card.name)
-      room:setPlayerMark(player, "cihuang-round", mark)
+      room:addTableMarkIfNeed(player, "cihuang-round", data.card.name)
     else
       local mark = {}
       room.logic:getEventsOfScope(GameEvent.UseCard, 1, function(e)

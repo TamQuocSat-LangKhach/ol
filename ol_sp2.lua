@@ -3285,11 +3285,9 @@ local luochong = fk.CreateTriggerSkill{
     local to = room:getPlayerById(self.cost_data.tos[1])
     local choice = self.cost_data.choice
 
-    local mark = player:getTableMark("luochong_target-round")
-    table.insertIfNeed(mark, to.id)
-    room:setPlayerMark(player, "luochong_target-round", mark)
+    room:addTableMarkIfNeed(player, "luochong_target-round", to.id)
 
-    mark = player:getTableMark("@luochong")
+    local mark = player:getTableMark("@luochong")
     mark[tonumber(string.sub(choice, 9))] = 0
     room:setPlayerMark(player, "@luochong", mark)
 

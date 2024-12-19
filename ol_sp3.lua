@@ -612,9 +612,7 @@ local qiejian = fk.CreateTriggerSkill{
       local id = room:askForCardChosen(player, to, 'ej', self.name)
       room:throwCard({id}, self.name, to, player)
     else
-      local targetRecorded = player:getTableMark("qiejian_prohibit-round")
-      table.insertIfNeed(targetRecorded, target.id)
-      room:setPlayerMark(player, "qiejian_prohibit-round", targetRecorded)
+      room:addTableMarkIfNeed(player, "qiejian_prohibit-round", target.id)
     end
   end,
 }
@@ -6133,9 +6131,7 @@ local xufa = fk.CreateActiveSkill{
   target_filter = Util.FalseFunc,
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
-    local xufaChosen = player:getTableMark("xufaChosen-phase")
-    table.insertIfNeed(xufaChosen, self.interaction.data)
-    room:setPlayerMark(player, "xufaChosen-phase", xufaChosen)
+    room:addTableMarkIfNeed(player, "xufaChosen-phase", self.interaction.data)
 
     local cardsToSearch = effect.cards
     if self.interaction.data == "xufa_put" then

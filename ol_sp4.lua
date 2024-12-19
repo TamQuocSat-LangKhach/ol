@@ -39,9 +39,7 @@ local hunjiang = fk.CreateActiveSkill{
       end
 
       if choice:startsWith("hunjiang_extra_target") then
-        local hunjiangUsers = p:getTableMark("@@hunjiang-phase")
-        table.insertIfNeed(hunjiangUsers, player.id)
-        room:setPlayerMark(p, "@@hunjiang-phase", hunjiangUsers)
+        room:addTableMarkIfNeed(p, "@@hunjiang-phase", player.id)
       else
         player:drawCards(1, self.name)
       end
@@ -52,9 +50,7 @@ local hunjiang = fk.CreateActiveSkill{
         if firstChosen:startsWith("hunjiang_extra_target") then
           player:drawCards(1, self.name)
         else
-          local hunjiangUsers = p:getTableMark("@@hunjiang-phase")
-          table.insertIfNeed(hunjiangUsers, player.id)
-          room:setPlayerMark(p, "@@hunjiang-phase", hunjiangUsers)
+          room:addTableMarkIfNeed(p, "@@hunjiang-phase", player.id)
         end
       end
     end
@@ -627,9 +623,7 @@ local jieyan = fk.CreateTriggerSkill{
         }
       end
       if not player.dead and not to.dead then
-        local mark = player:getTableMark(self.name)
-        table.insertIfNeed(mark, to.id)
-        room:setPlayerMark(player, self.name, mark)
+        room:addTableMarkIfNeed(player, self.name, to.id)
       end
     end
   end,
