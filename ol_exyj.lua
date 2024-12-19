@@ -717,6 +717,121 @@ Fk:loadTranslationTable{
   ["~ol_ex__wangyi"] = "",
 }
 
+local liaohua = General(extension, "ol_ex__liaohua", "shu", 4)
+local dangxian = fk.CreateTriggerSkill{
+  name = "ol_ex__dangxian",
+  anim_type = "offensive",
+  frequency = Skill.Compulsory,
+  events = {fk.TurnStart, fk.EventPhaseStart},
+  can_trigger = function(self, event, target, player, data)
+    if target == player and player:hasSkill(self) then
+      if event == fk.TurnStart then
+        return true
+      else
+        return player.phase == Player.Play and player:getMark("ol_ex__dangxian-phase") > 0
+      end
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    if event == fk.TurnStart then
+      room:setPlayerMark(player, "ol_ex__dangxian-phase", 1)
+      player:gainAnExtraPhase(Player.Play)
+    else
+      if room:askForSkillInvoke(player, self.name, nil, "#ol_ex__dangxian-invoke") then
+        local cards = room:getCardsFromPileByRule("slash", 1, "allPiles")
+        if #cards > 0 then
+          room:moveCardTo(cards, Card.PlayerHand, player, fk.ReasonJustMove, self.name, nil, true, player.id, "@@ol_ex__dangxian-inhand")
+        end
+      else
+        room:setPlayerMark(player, "ol_ex__dangxian-phase", 0)
+      end
+    end
+  end,
+}
+local dangxian_delay = fk.CreateTriggerSkill{
+  name = "#ol_ex__dangxian_delay",
+  anim_type = "negative",
+  frequency = Skill.Compulsory,
+  events = {fk.EventPhaseEnd},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player.phase == Player.Play and
+      player:getMark("ol_ex__dangxian-phase") > 0 and not player.dead and
+      #player.room.logic:getActualDamageEvents(1, function (e)
+        return e.data[1].from == player
+      end, Player.HistoryPhase) == 0
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    room:damage{
+      from = player,
+      to = player,
+      damage = 1,
+      skillName = "ol_ex__dangxian",
+    }
+  end,
+}
+local dangxian_targetmod = fk.CreateTargetModSkill{
+  name = "#ol_ex__dangxian_targetmod",
+  bypass_distances =  function(self, player, skill, card)
+    return skill.trueName == "slash_skill" and card and card:getMark("@@ol_ex__dangxian-inhand") > 0
+  end,
+}
+local fuli = fk.CreateTriggerSkill{
+  name = "ol_ex__fuli",
+  anim_type = "defensive",
+  frequency = Skill.Limited,
+  events = {fk.AskForPeaches},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self) and player.dying and player:usedSkillTimes(self.name, Player.HistoryGame) == 0
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local kingdoms = {}
+    for _, p in ipairs(room:getAlivePlayers()) do
+      table.insertIfNeed(kingdoms, p.kingdom)
+    end
+    room:recover{
+      who = player,
+      num = math.min(#kingdoms, player.maxHp) - player.hp,
+      recoverBy = player,
+      skillName = self.name,
+    }
+    if player.dead then return end
+    if player:getHandcardNum() < #kingdoms then
+      player:drawCards(#kingdoms - player:getHandcardNum())
+      if player.dead then return end
+    end
+    local n = 0
+    room.logic:getActualDamageEvents(1, function (e)
+      local damage = e.data[1]
+      if damage.from == player then
+        n = n + damage.damage
+      end
+    end, Player.HistoryGame)
+    if #kingdoms > n then
+      player:turnOver()
+    end
+  end,
+}
+dangxian:addRelatedSkill(dangxian_delay)
+dangxian:addRelatedSkill(dangxian_targetmod)
+liaohua:addSkill(dangxian)
+liaohua:addSkill(fuli)
+Fk:loadTranslationTable{
+  ["ol_ex__liaohua"] = "界廖化",
+  ["#ol_ex__liaohua"] = "历尽沧桑",
+
+  ["ol_ex__dangxian"] = "当先",
+  [":ol_ex__dangxian"] = "锁定技，回合开始时，你执行一个额外的出牌阶段；此阶段开始时，你可以从牌堆或弃牌堆获得一张【杀】"..
+  "（使用此【杀】无距离限制），若如此做，此阶段结束时，若你此阶段未造成过伤害，你对自己造成1点伤害。",
+  ["ol_ex__fuli"] = "伏枥",
+  [":ol_ex__fuli"] = "限定技，当你处于濒死状态时，你可以将体力回复至X点且手牌摸至X张（X为全场势力数），若X大于你本局游戏造成的伤害值，你翻面。",
+  ["#ol_ex__dangxian-invoke"] = "当先：是否获得一张无距离限制的【杀】？若此阶段未造成伤害则对自己造成1点伤害",
+  ["#ol_ex__dangxian_delay"] = "当先",
+  ["@@ol_ex__dangxian-inhand"] = "当先",
+}
+
 local chengpu = General(extension, "ol_ex__chengpu", "wu", 4)
 local ol_ex__lihuo = fk.CreateTriggerSkill{
   name = "ol_ex__lihuo",

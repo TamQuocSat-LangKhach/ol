@@ -2613,8 +2613,137 @@ Fk:loadTranslationTable{
   ["#xutu-give"] = "徐图：令一名角色获得“资”",
 }
 
---local zhangfei = General(extension, "olmou__zhangfei", "shu", 4)
+local zhangfei = General(extension, "olmou__zhangfei", "shu", 4)
+local jingxian = fk.CreateActiveSkill{
+  name = "jingxian",
+  anim_type = "support",
+  min_card_num = 1,
+  max_card_num = 2,
+  target_num = 1,
+  prompt = "#jingxian",
+  can_use = Util.TrueFunc,
+  card_filter = function(self, to_select, selected)
+    return #selected < 2 and Fk:getCardById(to_select).type ~= Card.TypeBasic
+  end,
+  target_filter = function(self, to_select, selected, selected_cards)
+    return #selected == 0 and to_select ~= Self.id and not table.contains(Self:getTableMark("jingxian-phase"), to_select)
+  end,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    local target = room:getPlayerById(effect.tos[1])
+    room:addTableMark(player, "jingxian-phase", target.id)
+    room:moveCardTo(effect.cards, Card.PlayerHand, target, fk.ReasonGive, self.name, nil, false, player.id)
+    if player.dead or target.dead then return end
+    if #effect.cards == 2 then
+      target:drawCards(1, self.name)
+      if player.dead then return end
+      player:drawCards(1, self.name)
+      if player.dead then return end
+      local cards = room:getCardsFromPileByRule("slash", 1, "drawPile")
+      if #cards > 0 then
+        room:moveCardTo(cards, Card.PlayerHand, player, fk.ReasonJustMove, self.name, nil, true, player.id)
+      end
+    else
+      local choice = room:askForChoice(target, {"jingxian1:"..player.id, "jingxian2:"..player.id}, self.name)
+      if choice[9] == "1" then
+        target:drawCards(1, self.name)
+        if player.dead then return end
+        player:drawCards(1, self.name)
+      end
+    end
+  end,
+}
+local xiayong = fk.CreateActiveSkill{
+  name = "xiayong",
+  anim_type = "offensive",
+  card_num = 0,
+  target_num = 1,
+  prompt = "#xiayong",
+  can_use = function(self, player)
+    return player:usedSkillTimes(self.name, Player.HistoryPhase) == 0
+  end,
+  card_filter = Util.FalseFunc,
+  target_filter = function(self, to_select, selected, selected_cards)
+    return #selected == 0 and to_select ~= Self.id
+  end,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    local target = room:getPlayerById(effect.tos[1])
+    room:addTableMark(player, self.name, target.id)
+    if player.drank == 0 then
+      player.drank = 1
+      room:broadcastProperty(player, "drank")
+    end
+  end,
+}
+local xiayong_delay = fk.CreateTriggerSkill{
+  name = "#xiayong_delay",
+  anim_type = "offensive",
+  events = {fk.CardUseFinished},
+  can_trigger = function(self, event, target, player, data)
+    return table.contains(player:getTableMark("xiayong"), target.id) and data.tos and not target.dead and
+      table.find(TargetGroup:getRealTargets(data.tos), function (id)
+        return id ~= target.id
+      end)
+  end,
+  on_cost = Util.TrueFunc,
+  on_use = function (self, event, target, player, data)
+    local room = player.room
+    local use = room:askForUseCard(player, "xiayong", "slash", "#xiayong-invoke::"..target.id, true,
+      {
+        must_targets = {target.id},
+        bypass_distances = true,
+      })
+    if use then
+      use.extraUse = true
+      use.extra_data = use.extra_data or {}
+      use.extra_data.xiayongUser = player.id
+      room:useCard(use)
+    end
+  end,
 
+  refresh_events = {fk.TargetSpecified, fk.AfterTurnEnd, fk.AfterCardUseDeclared, fk.EventTurnChanging},
+  can_refresh = function (self, event, target, player, data)
+    if event == fk.TargetSpecified then
+      return target == player and (data.extra_data or {}).xiayongUser == player.id
+    elseif event == fk.AfterTurnEnd then
+      return table.contains(player:getTableMark("xiayong"), target.id)
+    elseif player:getMark("xiayong") ~= 0 and player.drank == 0 then
+      if event == fk.AfterCardUseDeclared then
+        return target == player
+      elseif event == fk.EventTurnChanging then
+        return true
+      end
+    end
+  end,
+  on_refresh = function (self, event, target, player, data)
+    local room = player.room
+    if event == fk.TargetSpecified then
+      local to = room:getPlayerById(data.to)
+      if not to.dead then
+        to:addQinggangTag(data)
+      end
+    elseif event == fk.AfterTurnEnd then
+      local mark = player:getTableMark("xiayong")
+      for i = #mark, 1, -1 do
+        if mark[i] == target.id then
+          table.remove(mark, i)
+        end
+      end
+      if #mark == 0 then
+        room:setPlayerMark(player, "xiayong", 0)
+      else
+        room:setPlayerMark(player, "xiayong", mark)
+      end
+    else
+      player.drank = 1
+      room:broadcastProperty(player, "drank")
+    end
+  end
+}
+xiayong:addRelatedSkill(xiayong_delay)
+zhangfei:addSkill(jingxian)
+zhangfei:addSkill(xiayong)
 Fk:loadTranslationTable{
   ["olmou__zhangfei"] = "谋张飞",
   ["#olmou__zhangfei"] = "虎烈匡国",
@@ -2624,6 +2753,12 @@ Fk:loadTranslationTable{
   ["xiayong"] = "狭勇",
   [":xiayong"] = "出牌阶段限一次，你可以选择一名其他角色，直到其下个回合结束：你处于【酒】的状态；其对除其以外的角色使用牌后，你可以对其使用"..
   "一张无视防具的【杀】。",
+  ["#jingxian"] = "敬贤：交给一名角色至多两张非基本牌，其选择等量项",
+  ["jingxian1"] = "与 %src 各摸一张牌",
+  ["jingxian2"] = "%src 获得一张【杀】",
+  ["#xiayong"] = "狭勇：选择一名角色，直到其回合结束，你始终处于“酒”状态且当其使用牌后可以对其使用【杀】",
+  ["#xiayong_delay"] = "狭勇",
+  ["#xiayong-invoke"] = "狭勇：是否对 %dest 使用一张无视防具的【杀】？",
 }
 
 local zhaoyun = General(extension, "olmou__zhaoyun", "shu", 4)
@@ -2757,6 +2892,13 @@ Fk:loadTranslationTable{
   ["#nilan_delay"] = "逆澜",
   ["#nilan-invoke"] = "逆澜：是否%arg",
   ["#jueya"] = "绝崖：视为使用一张基本牌",
+}
+
+local zhangxiu = General(extension, "olmou__zhangxiu", "qun", 4)
+zhangxiu:addSkill("tmp_illustrate")
+zhangxiu.hidden = true
+Fk:loadTranslationTable{
+  ["olmou__zhangxiu"] = "谋张绣",
 }
 
 return extension

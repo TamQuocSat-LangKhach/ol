@@ -3541,15 +3541,32 @@ local anran = fk.CreateTriggerSkill{
     local room = player.room
     local n = math.min(player:usedSkillTimes(self.name, Player.HistoryGame), 4)
     if #self.cost_data.tos == 1 and self.cost_data.tos[1] == player.id then
-      player:drawCards(n, self.name)
+      player:drawCards(n, self.name, "top", "@@anran-inhand-turn")
     else
       for _, id in ipairs(self.cost_data.tos) do
         local p = room:getPlayerById(id)
         if not p.dead then
-          p:drawCards(1, self.name)
+          p:drawCards(1, self.name, "top", "@@anran-inhand-turn")
         end
       end
     end
+  end,
+
+  refresh_events = {fk.AfterCardUseDeclared},
+  can_refresh = function (self, event, target, player, data)
+    return target == player
+  end,
+  on_refresh = function (self, event, target, player, data)
+    U.clearHandMark(player, "@@anran-inhand-turn")
+  end,
+}
+local anran_prohibit = fk.CreateProhibitSkill{
+  name = "#anran_prohibit",
+  prohibit_use = function(self, player, card)
+    local subcards = card:isVirtual() and card.subcards or {card.id}
+    return #subcards > 0 and table.find(subcards, function(id)
+      return Fk:getCardById(id):getMark("@@anran-inhand-turn") > 0
+    end)
   end,
 }
 anran.scope_type = Player.HistoryGame
@@ -3598,6 +3615,7 @@ local gaobian = fk.CreateTriggerSkill{
     end
   end,
 }
+anran:addRelatedSkill(anran_prohibit)
 wangshen:addSkill(anran)
 wangshen:addSkill(gaobian)
 wangshen:addSkill("zhongliu")
@@ -3611,6 +3629,7 @@ Fk:loadTranslationTable{
   ["gaobian"] = "告变",
   [":gaobian"] = "锁定技，其他角色回合结束时，若本回合仅有一名角色受到过伤害，你令此受伤角色使用本回合进入弃牌堆的一张【杀】或失去1点体力。",
   ["#anran-choose"] = "岸然：只选择自己摸%arg张牌，或选择至多%arg名角色各摸一张牌",
+  ["@@anran-inhand-turn"] = "岸然",
   ["#gaobian-use"] = "告变：使用其中一张【杀】，或点“取消”失去1点体力",
 }
 
