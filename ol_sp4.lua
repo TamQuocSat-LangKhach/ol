@@ -3377,15 +3377,164 @@ Fk:loadTranslationTable{
 }
 
 local taoqian = General(extension, "ol__taoqian", "qun", 3)
-taoqian:addSkill("tmp_illustrate")
-taoqian.hidden = true
+local zhaohuo = fk.CreateTriggerSkill{
+  name = "ol__zhaohuo",
+  anim_type = "control",
+  frequency = Skill.Compulsory,
+  events = {fk.Damaged},
+  can_trigger = function (self, event, target, player, data)
+    if target ~= player and player:hasSkill(self) and not target:isKongcheng() and not target.dead then
+      local turn_event = player.room.logic:getCurrentEvent():findParent(GameEvent.Turn)
+      if turn_event == nil or turn_event.data[1] ~= player then return end
+      local events = player.room.logic:getActualDamageEvents(1, function(e)
+        return e.data[1].to == target
+      end, Player.HistoryTurn)
+      if #events == 1 and events[1] == player.room.logic:getCurrentEvent() then
+        self.cost_data = {tos = {target.id}}
+        return true
+      end
+    end
+  end,
+  on_use = function (self, event, target, player, data)
+    local room = player.room
+    local card = room:askForCard(target, 1, 1, false, self.name, false, nil, "#ol__zhaohuo-give:"..player.id)
+    room:moveCardTo(card, Card.PlayerHand, player, fk.ReasonGive, self.name, nil, false, target.id, "@@ol__zhaohuo-inhand-turn")
+  end,
+}
+local zhaohuo_prohibit = fk.CreateProhibitSkill{
+  name = "#ol__zhaohuo_prohibit",
+  prohibit_use = function(self, player, card)
+    local subcards = card:isVirtual() and card.subcards or {card.id}
+    return #subcards > 0 and table.find(subcards, function(id)
+      return Fk:getCardById(id):getMark("@@ol__zhaohuo-inhand-turn") > 0
+    end)
+  end,
+  prohibit_response = function(self, player, card)
+    local subcards = card:isVirtual() and card.subcards or {card.id}
+    return #subcards > 0 and table.find(subcards, function(id)
+      return Fk:getCardById(id):getMark("@@ol__zhaohuo-inhand-turn") > 0
+    end)
+  end,
+  prohibit_discard = function(self, player, card)
+    local subcards = card:isVirtual() and card.subcards or {card.id}
+    return #subcards > 0 and table.find(subcards, function(id)
+      return Fk:getCardById(id):getMark("@@ol__zhaohuo-inhand-turn") > 0
+    end)
+  end,
+}
+local wenren = fk.CreateActiveSkill{
+  name = "wenren",
+  anim_type = "support",
+  card_num = 0,
+  min_target_num = 1,
+  prompt = "#wenren",
+  can_use = function(self, player)
+    return player:usedSkillTimes(self.name, Player.HistoryPhase) == 0
+  end,
+  card_filter = Util.FalseFunc,
+  target_filter = Util.TrueFunc,
+  target_tip = function(self, to_select, selected, selected_cards, card, selectable)
+    local p = Fk:currentRoom():getPlayerById(to_select)
+    local n = 0
+    if p:getHandcardNum() <= Self:getHandcardNum() then
+      n = 1
+    end
+    if p:isKongcheng() then
+      n = n + 1
+    end
+    return "#wenren_tip:::"..n
+  end,
+  on_use = function(self, room, effect)
+    local player = room:getPlayerById(effect.from)
+    room:sortPlayersByAction(effect.tos)
+    local info = table.map(effect.tos, function (id)
+      local p = room:getPlayerById(id)
+      local n = 0
+      if p:getHandcardNum() <= player:getHandcardNum() then
+        n = 1
+      end
+      if p:isKongcheng() then
+        n = n + 1
+      end
+      return n
+    end)
+    for i = 1, #effect.tos, 1 do
+      local p = room:getPlayerById(effect.tos[i])
+      if not p.dead and info[i] > 0 then
+        p:drawCards(info[i], self.name)
+      end
+    end
+  end,
+}
+local zongluan = fk.CreateTriggerSkill{
+  name = "zongluan",
+  anim_type = "offensive",
+  events = {fk.EventPhaseStart},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self) and player.phase == Player.Start
+  end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    local to = room:askForChoosePlayers(player, table.map(room.alive_players, Util.IdMapper), 1, 1,
+      "#zongluan-choose", self.name, true)
+    if #to > 0 then
+      self.cost_data = {tos = to}
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local to = room:getPlayerById(self.cost_data.tos[1])
+    local card = Fk:cloneCard("slash")
+    card.skillName = self.name
+    local targets = table.filter(room:getOtherPlayers(to), function (p)
+      return to:inMyAttackRange(p) and to:canUseTo(card, p, {bypass_times = true})
+    end)
+    if #targets == 0 then return end
+    local tos = room:askForChoosePlayers(to, table.map(targets, Util.IdMapper), 1, 10, "#zongluan-slash", self.name, false)
+    room:sortPlayersByAction(tos)
+    local n = 0
+    for _, id in ipairs(tos) do
+      local p = room:getPlayerById(id)
+      if not p.dead then
+        local use = room:useVirtualCard("slash", nil, to, p, self.name, true)
+        if use and use.damageDealt and use.damageDealt[p.id] then
+          n = n + 1
+        end
+      end
+    end
+    if not player.dead and n > 0 then
+      room:askForDiscard(player, n, n, true, self.name, false)
+    end
+  end,
+}
+zhaohuo:addRelatedSkill(zhaohuo_prohibit)
+taoqian:addSkill(zhaohuo)
+taoqian:addSkill(wenren)
+taoqian:addSkill(zongluan)
+Fk:loadTranslationTable{
+  ["ol__taoqian"] = "陶谦",
+  ["#ol__taoqian"] = "恭谦忍顺",
+
+  ["ol__zhaohuo"] = "招祸",
+  [":ol__zhaohuo"] = "锁定技，一名角色于你的回合内首次受到伤害后，其须交给你一张手牌。本回合你不能使用、打出或弃置这些牌。",
+  ["wenren"] = "温仁",
+  [":wenren"] = "出牌阶段限一次，你可以选择任意名角色，其每满足一项便摸一张牌：1.没有手牌；2.手牌数不大于你。",
+  ["zongluan"] = "纵乱",
+  [":zongluan"] = "准备阶段，你可以选择一名角色，其视为对其攻击范围内的任意名角色各使用一张【杀】，然后你弃置X张牌（X为以此法受到伤害的角色数）。",
+  ["#ol__zhaohuo-give"] = "招祸：请交给 %src 一张手牌",
+  ["@@ol__zhaohuo-inhand-turn"] = "招祸",
+  ["#wenren"] = "温仁：令任意名手牌数不大于你的角色摸牌",
+  ["#wenren_tip"] = "摸%arg张牌",
+  ["#zongluan-choose"] = "纵乱：令一名角色视为对其攻击范围内任意名角色各使用一张【杀】，你弃置受伤角色数的牌",
+  ["#zongluan-slash"] = "纵乱：视为对攻击范围内任意名角色各使用一张【杀】！",
+}
+
 
 local liubei = General(extension, "ol_sp__liubei", "qun", 4)
 liubei:addSkill("tmp_illustrate")
 liubei.hidden = true
-
 Fk:loadTranslationTable{
-  ["ol__taoqian"] = "陶谦",
   ["ol_sp__liubei"] = "刘备",
 }
 

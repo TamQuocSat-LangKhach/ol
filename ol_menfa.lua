@@ -14,7 +14,7 @@ local isFamilyMember = function (player, famaly)
     ["xun"] = {"xunshu", "xunchen", "xuncai", "xuncan", "xunyu", "xunyou"},
     ["wu"] = {"wuxian", "wuyi", "wuban", "wukuang", "wuqiao"},
     ["han"] = {"hanshao", "hanrong"},
-    ["wang"] = {"wangyun", "wangling", "wangchang", "wanghun", "wanglun", "wangguang", "wangmingshan"},
+    ["wang"] = {"wangyun", "wangling", "wangchang", "wanghun", "wanglun", "wangguang", "wangmingshan", "wangshen"},
     ["zhong"] = {"zhongyao", "zhongyu", "zhonghui", "zhongyan"},
   }
   local names = familyMap[famaly] or {}
@@ -3513,14 +3513,111 @@ Fk:loadTranslationTable{
 }
 
 local wangshen = General(extension, "olz__wangshen", "wei", 3)
-wangshen:addSkill("tmp_illustrate")
+local anran = fk.CreateTriggerSkill{
+  name = "anran",
+  anim_type = "masochism",
+  events = {fk.EventPhaseStart, fk.Damaged},
+  can_trigger = function (self, event, target, player, data)
+    if target == player and player:hasSkill(self) then
+      if event == fk.EventPhaseStart then
+        return player.phase == Player.Play
+      elseif event == fk.Damaged then
+        return true
+      end
+    end
+  end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    local n = math.min(player:usedSkillTimes(self.name, Player.HistoryGame) + 1, 4)
+    local tos = room:askForChoosePlayers(player, table.map(room.alive_players, Util.IdMapper), 1, n,
+      "#anran-choose:::"..n, self.name, true)
+    if #tos > 0 then
+      room:sortPlayersByAction(tos)
+      self.cost_data = {tos = tos}
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local n = math.min(player:usedSkillTimes(self.name, Player.HistoryGame), 4)
+    if #self.cost_data.tos == 1 and self.cost_data.tos[1] == player.id then
+      player:drawCards(n, self.name)
+    else
+      for _, id in ipairs(self.cost_data.tos) do
+        local p = room:getPlayerById(id)
+        if not p.dead then
+          p:drawCards(1, self.name)
+        end
+      end
+    end
+  end,
+}
+anran.scope_type = Player.HistoryGame
+local gaobian = fk.CreateTriggerSkill{
+  name = "gaobian",
+  anim_type = "negative",
+  frequency = Skill.Compulsory,
+  events = {fk.TurnEnd},
+  can_trigger = function (self, event, target, player, data)
+    if player:hasSkill(self) then
+      local to, yes = nil, true
+      player.room.logic:getActualDamageEvents(1, function (e)
+        if to == nil then
+          to = e.data[1].to
+        elseif to ~= e.data[1].to then
+          yes = false
+        end
+      end, Player.HistoryTurn)
+      if yes and to and not to.dead then
+        self.cost_data = {tos = {to.id}}
+        return true
+      end
+    end
+  end,
+  on_use = function (self, event, target, player, data)
+    local room = player.room
+    local cards = {}
+    room.logic:getEventsOfScope(GameEvent.MoveCards, 1, function (e)
+      for _, move in ipairs(e.data) do
+        if move.toArea == Card.DiscardPile then
+          for _, info in ipairs(move.moveInfo) do
+            if Fk:getCardById(info.cardId).trueName == "slash" and table.contains(player.room.discard_pile, info.cardId) then
+              table.insertIfNeed(cards, info.cardId)
+            end
+          end
+        end
+      end
+    end, Player.HistoryTurn)
+    local to = room:getPlayerById(self.cost_data.tos[1])
+    if #cards == 0 or not U.askForUseRealCard(room, to, cards, nil, self.name, "#gaobian-use", {
+      bypass_times = true,
+      extraUse = true,
+      expand_pile = cards,
+    }, false, true) then
+      room:loseHp(to, 1, self.name)
+    end
+  end,
+}
+wangshen:addSkill(anran)
+wangshen:addSkill(gaobian)
 wangshen:addSkill("zhongliu")
-wangshen.hidden = true
+Fk:loadTranslationTable{
+  ["olz__wangshen"] = "族王沈",
+  ["#olz__wangshen"] = "崇虎田光",
+
+  ["anran"] = "岸然",
+  [":anran"] = "出牌阶段开始时或当你受到伤害后，你可以选择：1.摸X张牌；2.令至多X名角色各摸一张牌。然后以此法获得牌的角色本回合使用的下一张牌不能"..
+  "是这些牌（X为此技能发动次数，至多为4）。",
+  ["gaobian"] = "告变",
+  [":gaobian"] = "锁定技，其他角色回合结束时，若本回合仅有一名角色受到过伤害，你令此受伤角色使用本回合进入弃牌堆的一张【杀】或失去1点体力。",
+  ["#anran-choose"] = "岸然：只选择自己摸%arg张牌，或选择至多%arg名角色各摸一张牌",
+  ["#gaobian-use"] = "告变：使用其中一张【杀】，或点“取消”失去1点体力",
+}
+
 
 Fk:loadTranslationTable{
   ["olz__wangjiw"] = "族王机",
   ["#olz__wangjiw"] = "寒花疏寂",
-  ["olz__wangshen"] = "族王沈",
 }
 
 return extension

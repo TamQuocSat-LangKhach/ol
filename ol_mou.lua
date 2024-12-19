@@ -1467,7 +1467,7 @@ yuanshu:addSkill(xiaoshi)
 yuanshu:addSkill(yanliangy)
 Fk:loadTranslationTable{
   ["olmou__yuanshu"] = "谋袁术",
-  ["#olmou__yuanshu"] = "",
+  ["#olmou__yuanshu"] = "画脂镂冰",
   ["illustrator:olmou__yuanshu"] = "",
 
   ["jinming"] = "矜名",
@@ -2323,6 +2323,8 @@ gongsunzan:addSkill(jiaodi)
 gongsunzan:addSkill(baojing)
 Fk:loadTranslationTable{
   ["olmou__gongsunzan"] = "谋公孙瓒",
+  ["#olmou__gongsunzan"] = "辽海龙吟",
+  ["illustrator:olmou__gongsunzan"] = "西国红云",
 
   ["jiaodi"] = "剿狄",
   [":jiaodi"] = "锁定技，你的攻击范围始终等于你的当前体力值。当你使用【杀】指定唯一目标时，若目标的攻击范围不大于你，你令此【杀】伤害+1，"..
@@ -2337,12 +2339,424 @@ Fk:loadTranslationTable{
   ["@baojing_minus"] = "攻击范围-",
 }
 
-local huangyueying = General(extension, "olmou__huangyueying", "qun", 3)
-huangyueying:addSkill("tmp_illustrate")
-huangyueying.hidden = true
-
+local huangyueying = General(extension, "olmou__huangyueying", "shu", 3, 3, General.Female)
+local bingcai = fk.CreateTriggerSkill{
+  name = "bingcai",
+  anim_type = "control",
+  events = {fk.CardUsing},
+  can_trigger = function(self, event, target, player, data)
+    if player:hasSkill(self) and data.card.type == Card.TypeBasic and not player:isKongcheng() then
+      local events = player.room.logic:getEventsOfScope(GameEvent.UseCard, 1, function (e)
+        local use = e.data[1]
+        return use.card.type == Card.TypeBasic
+      end, Player.HistoryTurn)
+      return #events == 1 and events[1] == player.room.logic:getCurrentEvent()
+    end
+  end,
+  on_cost = function(self, event, target, player, data)
+    local i = data.card.is_damage_card and 1 or 2
+    local card = player.room:askForCard(player, 1, 1, false, self.name, true, ".|.|.|.|.|trick",
+      "#bingcai"..i.."-invoke:::"..data.card:toLogString())
+    if #card > 0 then
+      self.cost_data = {cards = card}
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local card = Fk:getCardById(self.cost_data.cards[1])
+    room:recastCard(self.cost_data.cards, player, self.name)
+    if (card.is_damage_card and data.card.is_damage_card) or
+      (not card.is_damage_card and not data.card.is_damage_card) then
+      data.additionalEffect = (data.additionalEffect or 0) + 1
+    end
+  end,
+}
+local lixian = fk.CreateViewAsSkill{
+  name = "lixian",
+  frequency = Skill.Compulsory,
+  pattern = "slash,jink",
+  prompt = "#lixian",
+  interaction = function(self)
+    local all_names = {"slash", "jink"}
+    local names = U.getViewAsCardNames(Self, self.name, all_names)
+    if #names > 0 then
+      return U.CardNameBox { choices = names, all_choices = all_names }
+    end
+  end,
+  card_filter = function(self, to_select, selected)
+    return #selected == 0 and Fk:getCardById(to_select):getMark("@@lixian-inhand") > 0
+  end,
+  view_as = function(self, cards)
+    if #cards ~= 1 then return end
+    local card = Fk:cloneCard(self.interaction.data)
+    card:addSubcards(cards)
+    card.skillName = self.name
+    return card
+  end,
+  enabled_at_response = function (self, player, response)
+    return not response
+  end,
+}
+local lixian_trigger = fk.CreateTriggerSkill{
+  name = "#lixian_trigger",
+  anim_type = "drawcard",
+  frequency = Skill.Compulsory,
+  events = {fk.EventPhaseStart},
+  can_trigger = function(self, event, target, player, data)
+    if player:hasSkill(lixian) and target.phase == Player.Finish then
+      local cards = {}
+      player.room.logic:getEventsOfScope(GameEvent.UseCard, 1, function(e)
+        local use = e.data[1]
+        if use.card.type == Card.TypeTrick and not use.card:isVirtual() and table.contains(player.room.discard_pile, use.card.id) and
+          use.tos and table.contains(TargetGroup:getRealTargets(use.tos), player.id) then
+          table.insertIfNeed(cards, use.card.id)
+        end
+      end, Player.HistoryTurn)
+      if #cards > 0 then
+        self.cost_data = {cards = cards}
+        return true
+      end
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    player.room:moveCardTo(self.cost_data.cards, Card.PlayerHand, player, fk.ReasonJustMove, "lixian", nil, true, player.id,
+      "@@lixian-inhand")
+  end,
+}
+local lixian_prohibit = fk.CreateProhibitSkill{
+  name = "#lixian_prohibit",
+  prohibit_use = function(self, player, card)
+    return card:getMark("@@lixian-inhand") > 0
+  end
+}
+lixian:addRelatedSkill(lixian_trigger)
+lixian:addRelatedSkill(lixian_prohibit)
+huangyueying:addSkill(bingcai)
+huangyueying:addSkill(lixian)
 Fk:loadTranslationTable{
   ["olmou__huangyueying"] = "谋黄月英",
+  ["#olmou__huangyueying"] = "才惠双绝",
+
+  ["bingcai"] = "并才",
+  [":bingcai"] = "每回合第一张基本牌被使用时，你可以重铸一张锦囊牌。若这两张牌均为伤害类或非伤害类，则此牌额外结算一次。",
+  ["lixian"] = "理贤",
+  [":lixian"] = "锁定技，每个结束阶段，你获得弃牌堆中所有本回合使用的目标包含你的锦囊牌。你以此法获得的牌仅可当作【杀】或【闪】使用。",
+  ["#bingcai1-invoke"] = "并才：是否重铸一张锦囊牌？若为伤害类，此%arg额外结算一次",
+  ["#bingcai2-invoke"] = "并才：是否重铸一张锦囊牌？若不为伤害类，此%arg额外结算一次",
+  ["#lixian_trigger"] = "理贤",
+  ["#lixian"] = "理贤：将“理贤”牌当【杀】或【闪】使用",
+  ["@@lixian-inhand"] = "理贤",
+}
+
+local jvshou = General(extension, "olmou__jvshou", "qun", 3)
+local guliang = fk.CreateTriggerSkill{
+  name = "guliang",
+  anim_type = "defensive",
+  events = {fk.TargetConfirmed},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self) and data.from ~= player.id and
+      player:usedSkillTimes(self.name, Player.HistoryTurn) == 0
+  end,
+  on_cost = function(self, event, target, player, data)
+    return player.room:askForSkillInvoke(player, self.name, nil, "#guliang-invoke::"..data.from..":"..data.card:toLogString())
+  end,
+  on_use = function(self, event, target, player, data)
+    if data.card.sub_type == Card.SubtypeDelayedTrick then
+      AimGroup:cancelTarget(data, player.id)
+    else
+      table.insertIfNeed(data.nullifiedTargets, player.id)
+    end
+    player.room:setPlayerMark(player, "@@guliang-turn", data.from)
+  end,
+}
+local guliang_delay = fk.CreateTriggerSkill{
+  name = "#guliang_delay",
+  anim_type = "negative",
+  events = {fk.CardUsing},
+  can_trigger = function(self, event, target, player, data)
+    return player:getMark("@@guliang-turn") == target.id and
+      (data.card.trueName == "slash" or data.card:isCommonTrick()) and
+      table.contains(TargetGroup:getRealTargets(data.tos), player.id)
+  end,
+  on_cost = Util.TrueFunc,
+  on_use = function(self, event, target, player, data)
+    data.disresponsiveList = data.disresponsiveList or {}
+    table.insertIfNeed(data.disresponsiveList, player.id)
+  end,
+}
+local xutu = fk.CreateTriggerSkill{
+  name = "xutu",
+  anim_type = "drawcard",
+  frequency = Skill.Compulsory,
+  derived_piles = "xutu_supplies",
+  events = {fk.GameStart, fk.EventPhaseStart},
+  can_trigger = function(self, event, target, player, data)
+    if player:hasSkill(self) then
+      if event == fk.GameStart then
+        return true
+      elseif event == fk.EventPhaseStart and target.phase == Player.Finish and #player:getPile("xutu_supplies") > 0 then
+        local cards = {}
+        player.room.logic:getEventsOfScope(GameEvent.MoveCards, 1, function (e)
+          for _, move in ipairs(e.data) do
+            if move.toArea == Card.DiscardPile then
+              for _, info in ipairs(move.moveInfo) do
+                if table.contains(player.room.discard_pile, info.cardId) then
+                  table.insertIfNeed(cards, info.cardId)
+                end
+              end
+            end
+          end
+        end, Player.HistoryTurn)
+        if #cards > 0 then
+          self.cost_data = cards
+          return true
+        end
+      end
+    end
+  end,
+  on_use = function (self, event, target, player, data)
+    local room = player.room
+    if event == fk.GameStart then
+      player:addToPile("xutu_supplies", room:getNCards(3), true, self.name, player.id)
+    elseif event == fk.EventPhaseStart then
+      local card_data = {
+        {"xutu_supplies", player:getPile("xutu_supplies")},
+        {"pile_discard", self.cost_data},
+      }
+      local cards = room:askForPoxi(player, self.name, card_data, nil, false)
+      local cards1, cards2 = {cards[1]}, {cards[2]}
+      if table.contains(player:getPile("xutu_supplies"), cards[2]) then
+        cards1, cards2 = {cards[2]}, {cards[1]}
+      end
+      room:moveCards({
+        ids = cards1,
+        from = player.id,
+        toArea = Card.DiscardPile,
+        moveReason = fk.ReasonExchange,
+        skillName = self.name,
+        proposer = player.id,
+        moveVisible = true,
+      },
+      {
+        ids = cards2,
+        to = player.id,
+        toArea = Card.PlayerSpecial,
+        specialName = "xutu_supplies",
+        moveReason = fk.ReasonExchange,
+        skillName = self.name,
+        proposer = player.id,
+        moveVisible = true,
+      })
+      if player.dead then return end
+      local pile = player:getPile("xutu_supplies")
+      if #pile == 3 and
+        (table.every(pile, function (id)
+          return Fk:getCardById(id).number == Fk:getCardById(pile[1]).number
+        end) or
+        table.every(pile, function (id)
+          return Fk:getCardById(id):compareSuitWith(Fk:getCardById(pile[1]))
+        end)) then
+        local to = room:askForChoosePlayers(player, table.map(room.alive_players, Util.IdMapper), 1, 1, "#xutu-give", self.name, false)
+        to = room:getPlayerById(to[1])
+        room:moveCardTo(player:getPile("xutu_supplies"), Card.PlayerHand, to, fk.ReasonJustMove, self.name, nil, true, to.id)
+        if player:hasSkill(self) and #player:getPile("xutu_supplies") < 3 then
+          player:addToPile("xutu_supplies", room:getNCards(3 - #player:getPile("xutu_supplies")), true, self.name, player.id)
+        end
+      end
+    end
+  end,
+}
+Fk:addPoxiMethod{
+  name = "xutu",
+  prompt = function (data, extra_data)
+    return "#xutu"
+  end,
+  card_filter = function (to_select, selected, data, extra_data)
+    if data and #selected < 2 then
+      for _, id in ipairs(selected) do
+        for _, v in ipairs(data) do
+          if table.contains(v[2], id) and table.contains(v[2], to_select) then
+            return false
+          end
+        end
+      end
+      return true
+    end
+  end,
+  feasible = function(selected, data)
+    return data and #selected == 2
+  end,
+  default_choice = function(data)
+    if not data then return {} end
+    local cids = table.map(data, function(v) return v[2][1] end)
+    return cids
+  end,
+}
+guliang:addRelatedSkill(guliang_delay)
+jvshou:addSkill(guliang)
+jvshou:addSkill(xutu)
+Fk:loadTranslationTable{
+  ["olmou__jvshou"] = "谋沮授",
+  ["#olmou__jvshou"] = "三军监统",
+
+  ["guliang"] = "固粮",
+  [":guliang"] = "每回合限一次，其他角色对你使用牌时，你可令此牌对你无效，若如此做，你无法响应其对你使用的牌直到回合结束。",
+  ["xutu"] = "徐图",
+  [":xutu"] = "锁定技，游戏开始时，你将牌堆顶三张牌置于你的武将牌上，称为“资”。每个结束阶段，你将本回合弃牌堆的一张牌与一张“资”交换，然后"..
+  "令一名角色获得三张花色或点数相同的“资”，若如此做，你将“资”补至三张。",
+  ["#guliang-invoke"] = "固粮：是否令 %dest 对你使用的%arg无效，本回合你不能响应其对你使用的牌？",
+  ["@@guliang-turn"] = "固粮",
+  ["#guliang_delay"] = "固粮",
+  ["xutu_supplies"] = "资",
+  ["#xutu"] = "徐图：将本回合弃牌堆的一张牌与一张“资”交换",
+  ["#xutu-give"] = "徐图：令一名角色获得“资”",
+}
+
+--local zhangfei = General(extension, "olmou__zhangfei", "shu", 4)
+
+Fk:loadTranslationTable{
+  ["olmou__zhangfei"] = "谋张飞",
+  ["#olmou__zhangfei"] = "虎烈匡国",
+
+  ["jingxian"] = "敬贤",
+  [":jingxian"] = "出牌阶段每名角色限一次，你可以交给其至多两张非基本牌，然后其选择等量项：1.其与你各摸一张牌；2.令你从牌堆中获得一张【杀】。",
+  ["xiayong"] = "狭勇",
+  [":xiayong"] = "出牌阶段限一次，你可以选择一名其他角色，直到其下个回合结束：你处于【酒】的状态；其对除其以外的角色使用牌后，你可以对其使用"..
+  "一张无视防具的【杀】。",
+}
+
+local zhaoyun = General(extension, "olmou__zhaoyun", "shu", 4)
+local nilan = fk.CreateTriggerSkill{
+  name = "nilan",
+  anim_type = "offensive",
+  events = {fk.Damage},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self) and data.skillName ~= self.name
+  end,
+  on_cost = function(self, event, target, player, data)
+    local choices = {"draw2", "Cancel"}
+    if table.find(player:getCardIds("h"), function (id)
+      return not player:prohibitDiscard(id)
+    end) then
+      table.insert(choices, 1, "nilan1")
+    end
+    local choice = player.room:askForChoice(player, choices, self.name, "#nilan-choice", false, {"nilan1", "draw2", "Cancel"})
+    if choice ~= "Cancel" then
+      self.cost_data = {choice = choice}
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    if not (self.cost_data and self.cost_data.extra_data and self.cost_data.nilan_delay) then
+      if self.cost_data.choice == "nilan1" then
+        room:addTableMark(player, self.name, "draw2")
+      else
+        room:addTableMark(player, self.name, "nilan1")
+      end
+    end
+    if self.cost_data.choice == "nilan1" then
+      local yes = table.find(player:getCardIds("h"), function (id)
+        return not player:prohibitDiscard(id) and Fk:getCardById(id).trueName == "slash"
+      end)
+      player:throwAllCards("h")
+      if not player.dead and yes and #room:getOtherPlayers(player) > 0 then
+        local to = room:askForChoosePlayers(player, table.map(room:getOtherPlayers(player), Util.IdMapper), 1, 1,
+          "#nilan-damage", self.name, true)
+        if #to > 0 then
+          to = room:getPlayerById(to[1])
+          room:damage{
+            from = player,
+            to = to,
+            damage = 1,
+            skillName = self.name,
+          }
+        end
+      end
+    else
+      player:drawCards(2, self.name)
+    end
+  end,
+}
+local nilan_delay = fk.CreateTriggerSkill{
+  name = "#nilan_delay",
+  anim_type = "masochism",
+  events = {fk.Damaged},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:getMark("nilan") ~= 0
+  end,
+  on_trigger = function (self, event, target, player, data)
+    local room = player.room
+    local choices = player:getTableMark("nilan")
+    room:setPlayerMark(player, "nilan", 0)
+    for _, choice in ipairs(choices) do
+      if player.dead then return end
+      if choice == "draw2" or
+        table.find(player:getCardIds("h"), function (id)
+          return not player:prohibitDiscard(id)
+        end) then
+        self.cost_data = {choice = choice}
+        self:doCost(event, target, player, data)
+      end
+    end
+  end,
+  on_cost = function (self, event, target, player, data)
+    return player.room:askForSkillInvoke(player, "nilan", nil, "#nilan-invoke:::"..self.cost_data.choice)
+  end,
+  on_use = function (self, event, target, player, data)
+    nilan.cost_data = {choice = self.cost_data.choice, extra_data = {nilan_delay = true}}
+    nilan:use(event, target, player, data)
+  end,
+}
+local jueya = fk.CreateViewAsSkill{
+  name = "jueya",
+  pattern = ".|.|.|.|.|basic",
+  prompt = "#jueya",
+  interaction = function(self)
+    local all_names = U.getAllCardNames("b")
+    return U.CardNameBox {
+      choices = U.getViewAsCardNames(Self, self.name, all_names, nil, Self:getTableMark(self.name)),
+      all_choices = all_names,
+    }
+  end,
+  card_filter = Util.FalseFunc,
+  view_as = function(self)
+    if not self.interaction.data then return end
+    local card = Fk:cloneCard(self.interaction.data)
+    card.skillName = self.name
+    return card
+  end,
+  before_use = function (self, player, use)
+    player.room:addTableMark(player, self.name, use.card.trueName)
+  end,
+  enabled_at_play = function(self, player)
+    return player:isKongcheng() and
+      #U.getViewAsCardNames(player, self.name, U.getAllCardNames("b"), nil, player:getTableMark(self.name)) > 0
+  end,
+  enabled_at_response = function(self, player, response)
+    if response or not player:isKongcheng() then return end
+    return #U.getViewAsCardNames(player, self.name, U.getAllCardNames("b"), nil, player:getTableMark(self.name)) > 0
+  end,
+}
+nilan:addRelatedSkill(nilan_delay)
+zhaoyun:addSkill(nilan)
+zhaoyun:addSkill(jueya)
+Fk:loadTranslationTable{
+  ["olmou__zhaoyun"] = "谋赵云",
+  ["#olmou__zhaoyun"] = "白首之心",
+
+  ["nilan"] = "逆澜",
+  [":nilan"] = "当你不因此技能造成伤害后，你可以执行一项：1.弃置所有手牌，若其中有【杀】，则你可以对一名其他角色造成1点伤害；2.摸两张牌。"..
+  "若如此做，你下一次受到伤害后可以执行另一项。",
+  ["jueya"] = "绝崖",
+  [":jueya"] = "若你没有手牌，你可以于需要时视为使用一张基本牌（每种牌名限一次）。",
+  ["#nilan-choice"] = "逆澜：你可以执行一项，下次受到伤害后可以执行另一项",
+  ["nilan1"] = "弃置所有手牌，若其中有【杀】，可以对一名角色造成1点伤害",
+  ["#nilan-damage"] = "逆澜：你可以对一名其他角色造成1点伤害",
+  ["#nilan_delay"] = "逆澜",
+  ["#nilan-invoke"] = "逆澜：是否%arg",
+  ["#jueya"] = "绝崖：视为使用一张基本牌",
 }
 
 return extension
