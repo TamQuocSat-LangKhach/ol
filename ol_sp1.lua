@@ -2903,9 +2903,7 @@ local moushi = fk.CreateActiveSkill{
     local target = room:getPlayerById(effect.tos[1])
     room:moveCardTo(effect.cards, Card.PlayerHand, target, fk.ReasonGive, self.name, nil, false, player.id)
     if not player.dead and not target.dead then
-      local mark = target:getTableMark("moushi_record")
-      table.insertIfNeed(mark, player.id)
-      room:setPlayerMark(target, "moushi_record", mark)
+      room:addTableMarkIfNeed(target, "moushi_record", player.id)
     end
   end,
 }
