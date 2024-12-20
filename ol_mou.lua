@@ -2739,7 +2739,7 @@ local xiayong_delay = fk.CreateTriggerSkill{
       player.drank = 1
       room:broadcastProperty(player, "drank")
     end
-  end
+  end,
 }
 xiayong:addRelatedSkill(xiayong_delay)
 zhangfei:addSkill(jingxian)
@@ -2895,10 +2895,162 @@ Fk:loadTranslationTable{
 }
 
 local zhangxiu = General(extension, "olmou__zhangxiu", "qun", 4)
-zhangxiu:addSkill("tmp_illustrate")
-zhangxiu.hidden = true
+local zhuijiao = fk.CreateTriggerSkill{
+  name = "zhuijiao",
+  anim_type = "offensive",
+  frequency = Skill.Compulsory,
+  events = {fk.CardUsing},
+  can_trigger = function(self, event, target, player, data)
+    if target == player and player:hasSkill(self) and data.card.trueName == "slash" then
+      local dat = nil
+      player.room.logic:getEventsByRule(GameEvent.UseCard, 1, function (e)
+        if e.id ~= player.room.logic:getCurrentEvent().id then
+          local use = e.data[1]
+          if use.from == player.id then
+            dat = use
+            return true
+          end
+        end
+      end, 1)
+      return dat and not dat.damageDealt
+    end
+  end,
+  on_use = function (self, event, target, player, data)
+    data.additionalDamage = (data.additionalDamage or 0) + 1
+    data.extra_data = data.extra_data or {}
+    data.extra_data.zhuijiao = true
+    player:drawCards(1, self.name)
+  end,
+}
+local zhuijiao_delay = fk.CreateTriggerSkill{
+  name = "#zhuijiao_delay",
+  anim_type = "negative",
+  frequency = Skill.Compulsory,
+  events = {fk.CardUseFinished},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and not data.damageDealt and data.extra_data and data.extra_data.zhuijiao and
+      not player.dead and not player:isNude()
+  end,
+  on_use = function (self, event, target, player, data)
+    player.room:askForDiscard(player, 1, 1, true, "zhuijiao", false)
+  end,
+}
+local choulie = fk.CreateTriggerSkill{
+  name = "choulie",
+  anim_type = "offensive",
+  frequency = Skill.Limited,
+  events = {fk.TurnStart},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self) and player:usedSkillTimes(self.name, Player.HistoryGame) == 0 and
+      #player.room:getOtherPlayers(player) > 0
+  end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    local to = room:askForChoosePlayers(player, table.map(room:getOtherPlayers(player), Util.IdMapper), 1, 1,
+      "#choulie-choose", self.name, true)
+    if #to > 0 then
+      self.cost_data = {tos = to}
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local to = room:getPlayerById(self.cost_data.tos[1])
+    room:setPlayerMark(to, "@@choulie-turn", 1)
+    room:setPlayerMark(player, "choulie-turn", to.id)
+  end,
+}
+local choulie_delay = fk.CreateTriggerSkill{
+  name = "#choulie_delay",
+  anim_type = "offensive",
+  events = {fk.EventPhaseStart},
+  can_trigger = function(self, event, target, player, data)
+    if target == player and player:usedSkillTimes("choulie", Player.HistoryTurn) > 0 and
+      player.phase >= Player.Start and player.phase <= Player.Finish and not player:isNude() then
+      local to = player.room:getPlayerById(player:getMark("choulie-turn"))
+      return not to.dead and player:canUseTo(Fk:cloneCard("slash"), to, {bypass_distances = true, bypass_times = true})
+    end
+  end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    local card = room:askForDiscard(player, 1, 1, true, "choulie", true, nil, "#choulie-slash::"..player:getMark("choulie-turn"), true)
+    if #card > 0 then
+      self.cost_data = {cards = card}
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local to = room:getPlayerById(player:getMark("choulie-turn"))
+    room:throwCard(self.cost_data.cards, "choulie", player, player)
+    if not to.dead then
+      local card = Fk:cloneCard("slash")
+      card.skillName = "choulie"
+      local use = {
+        from = player.id,
+        tos = {{to.id}},
+        card = card,
+      }
+      use.extraUse = true
+      use.extra_data = use.extra_data or {}
+      use.extra_data.choulieUser = player.id
+      room:useCard(use)
+    end
+  end,
+
+  refresh_events = {fk.TargetSpecified},
+  can_refresh = function (self, event, target, player, data)
+    return target == player and (data.extra_data or {}).choulieUser == player.id
+  end,
+  on_refresh = function (self, event, target, player, data)
+    local room = player.room
+    local to = room:getPlayerById(data.to)
+    if not to.dead then
+      to:addQinggangTag(data)
+    end
+  end,
+}
+local choulie_trigger = fk.CreateTriggerSkill{
+  name = "#choulie_trigger",
+  mute = true,
+  events = {fk.TargetConfirmed},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and table.contains(data.card.skillNames, "choulie") and not player:isNude()
+  end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    local card = room:askForDiscard(player, 1, 1, true, "choulie", true, ".|.|.|.|.|basic,weapon", "#choulie-discard", true)
+    if #card > 0 then
+      self.cost_data = {cards = card}
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    player.room:throwCard(self.cost_data.cards, "choulie", player, player)
+    data.nullifiedTargets = data.nullifiedTargets or {}
+    table.insertIfNeed(data.nullifiedTargets, player.id)
+  end,
+}
+choulie:addRelatedSkill(choulie_delay)
+choulie:addRelatedSkill(choulie_trigger)
+zhuijiao:addRelatedSkill(zhuijiao_delay)
+zhangxiu:addSkill(choulie)
+zhangxiu:addSkill(zhuijiao)
 Fk:loadTranslationTable{
   ["olmou__zhangxiu"] = "谋张绣",
+
+  ["choulie"] = "仇猎",
+  [":choulie"] = "限定技，回合开始时，你可以选择一名其他角色，本回合你的每个阶段开始时，你可以弃置一张牌视为对其使用一张无视防具的【杀】，"..
+  "其可以弃置一张基本牌或武器牌令此【杀】无效。",
+  ["zhuijiao"] = "追剿",
+  [":zhuijiao"] = "锁定技，你使用【杀】时，若你使用的上一张牌未造成伤害，则你摸一张牌并令此【杀】伤害+1，此【杀】结算后，若仍未造成伤害，"..
+  "你弃置一张牌。",
+  ["#choulie-choose"] = "仇猎：选择一名其他角色，本回合每个阶段开始时，你可以弃一张牌视为对其使用无视防具的【杀】！",
+  ["@@choulie-turn"] = "仇猎",
+  ["#choulie_delay"] = "仇猎",
+  ["#choulie-slash"] = "仇猎：是否弃置一张牌，视为对 %dest 使用一张无视防具的【杀】？",
+  ["#choulie_trigger"] = "仇猎",
+  ["#choulie-discard"] = "仇猎：是否弃置一张基本牌或武器牌，令此【杀】对你无效？",
 }
 
 return extension
