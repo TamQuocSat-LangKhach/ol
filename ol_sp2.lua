@@ -4170,7 +4170,9 @@ local tongxie = fk.CreateTriggerSkill{
     local nums = {}
     local targets = table.map(self.cost_data, Util.Id2PlayerMapper)
     for _, p in ipairs(targets) do
-      room:addTableMark(p, "@@tongxie", self.cost_data)
+      local record = p:getTableMark("@@tongxie")
+      table.insertTable(record, self.cost_data)
+      room:setPlayerMark(p, "@@tongxie", record)
       table.insert(nums, p:getHandcardNum())
     end
     local n = math.min(table.unpack(nums))
