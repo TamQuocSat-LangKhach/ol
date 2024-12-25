@@ -2944,7 +2944,7 @@ local liyongw_trigger = fk.CreateTriggerSkill{
 
   refresh_events = {fk.AfterCardUseDeclared},
   can_refresh = function(self, event, target, player, data)
-    return target == player and player.phase == Player.Play and data.card.suit ~= Card.NoSuit
+    return target == player and player:hasSkill("liyongw", true) and player.phase == Player.Play and data.card.suit ~= Card.NoSuit
   end,
   on_refresh = function(self, event, target, player, data)
     local mark = player:getTableMark("@liyongw-turn")
@@ -3528,8 +3528,14 @@ Fk:loadTranslationTable{
 local liubei = General(extension, "ol_sp__liubei", "qun", 4)
 liubei:addSkill("tmp_illustrate")
 liubei.hidden = true
+
+local liuzhang = General(extension, "ol__liuzhang", "qun", 3)
+liuzhang:addSkill("tmp_illustrate")
+liuzhang.hidden = true
+
 Fk:loadTranslationTable{
   ["ol_sp__liubei"] = "刘备",
+  ["ol__liuzhang"] = "刘璋",
 }
 
 return extension
