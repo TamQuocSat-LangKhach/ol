@@ -3109,13 +3109,12 @@ local siqi = fk.CreateTriggerSkill{
       local card
       local to_show = {}
       local cards = {}
-      local names = {"peach", "ex_nihilo"}
       for i = 1, math.min(5, x), 1 do
         id = dp_cards[x+1-i]
         card = Fk:getCardById(id, true)
         if card.color == Card.Red then
           table.insert(to_show, id)
-          if card.type == Card.TypeEquip or table.contains(names, card.trueName) then
+          if card.type == Card.TypeEquip or card.trueName == "peach" or card.trueName == "ex_nihilo" then
             table.insert(cards, id)
           end
         else
@@ -3126,15 +3125,24 @@ local siqi = fk.CreateTriggerSkill{
       U.turnOverCardsFromDrawPile(player, to_show, self.name)
       local to_use
       repeat
+        local default_use = nil
         to_use = table.filter(cards, function(cid)
           if room:getCardArea(cid) ~= Card.Processing then return false end
           card = Fk:getCardById(cid, true)
-          return not (player:prohibitUse(card) or table.every(room.alive_players, function(p)
-            return player:isProhibited(p, card) or not card.skill:modTargetFilter(p.id, {}, player.id, card, false)
-          end))
+          if not player:prohibitUse(card) then
+            local default_p = table.find(room.alive_players, function(p)
+              return not player:isProhibited(p, card) and card.skill:modTargetFilter(p.id, {}, player.id, card, false)
+            end)
+            if default_p ~= nil then
+              if default_use == nil then
+                default_use = {cid, default_p.id}
+              end
+              return true
+            end
+          end
         end)
-        if #to_use == 0 then break end
-        local _, dat = room:askForUseViewAsSkill(player, "siqi_active", "#siqi-use", true, { cards = to_use })
+        if default_use == nil then break end
+        local _, dat = room:askForUseViewAsSkill(player, "siqi_active", "#siqi-use", false, { cards = to_use })
         if dat then
           room:useCard{
             card = Fk:getCardById(dat.cards[1], true),
@@ -3143,10 +3151,21 @@ local siqi = fk.CreateTriggerSkill{
             extraUse = true,
           }
         else
-          break
+          room:useCard{
+            card = Fk:getCardById(default_use[1], true),
+            from = player.id,
+            tos = { { default_use[2] } },
+            extraUse = true,
+          }
         end
       until player.dead
-      room:cleanProcessingArea(to_show, self.name)
+      cards = table.filter(to_show, function(cid) return room:getCardArea(cid) == Card.Processing end)
+      if #cards > 0 then
+        if not player.dead then
+          player:drawCards(#cards, self.name)
+        end
+        room:moveCardTo(cards, Card.DiscardPile, nil, fk.ReasonPutIntoDiscardPile, self.name)
+      end
     end
   end,
 }
@@ -3154,7 +3173,8 @@ local siqi = fk.CreateTriggerSkill{
 Fk:loadTranslationTable{
   ["siqi"] = "思泣",
   [":siqi"] = "当你的牌移至弃牌堆后，你将其中的红色牌置于牌堆底。"..
-    "当你受到伤害后，你可以亮出牌堆底至多五张连续的红色牌，然后可以使用其中的【桃】、【无中生有】与装备牌（可以对其他角色使用）。",
+    "当你受到伤害后，你可以亮出牌堆底的X张牌（X为从牌堆底开始连续的红色牌数且至多为5），"..
+    "使用其中的所有【桃】、【无中生有】与装备牌（可以对其他角色使用），然后摸等同于剩余牌数的牌。",
 
   ["siqi_active"] = "思泣",
   ["#siqi-use"] = "思泣：你可以依次使用亮出的牌（可以对其他角色使用）",
