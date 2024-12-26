@@ -3109,8 +3109,8 @@ local siqi = fk.CreateTriggerSkill{
       local card
       local to_show = {}
       local cards = {}
-      local names = {"peach", "analeptic", "ex_nihilo"}
-      for i = 1, math.min(9, x), 1 do
+      local names = {"peach", "ex_nihilo"}
+      for i = 1, math.min(5, x), 1 do
         id = dp_cards[x+1-i]
         card = Fk:getCardById(id, true)
         if card.color == Card.Red then
@@ -3154,7 +3154,7 @@ local siqi = fk.CreateTriggerSkill{
 Fk:loadTranslationTable{
   ["siqi"] = "思泣",
   [":siqi"] = "当你的牌移至弃牌堆后，你将其中的红色牌置于牌堆底。"..
-    "当你受到伤害后，你可以亮出牌堆底至多九张连续的红色牌，然后可以使用其中的【桃】、【酒】、【无中生有】与装备牌（可以对其他角色使用）。",
+    "当你受到伤害后，你可以亮出牌堆底至多五张连续的红色牌，然后可以使用其中的【桃】、【无中生有】与装备牌（可以对其他角色使用）。",
 
   ["siqi_active"] = "思泣",
   ["#siqi-use"] = "思泣：你可以依次使用亮出的牌（可以对其他角色使用）",
@@ -3524,18 +3524,106 @@ Fk:loadTranslationTable{
   ["#zongluan-slash"] = "纵乱：视为对攻击范围内任意名角色各使用一张【杀】！",
 }
 
+local liuzhang = General(extension, "ol__liuzhang", "qun", 3)
+local fengwei = fk.CreateTriggerSkill{
+  name = "fengwei",
+  anim_type = "drawcard",
+  frequency = Skill.Compulsory,
+  events = {fk.RoundStart},
+  can_trigger = function (self, event, target, player, data)
+    return player:hasSkill(self)
+  end,
+  on_use = function (self, event, target, player, data)
+    local room = player.room
+    local choice = room:askForChoice(player, {"1", "2", "3", "4"}, self.name, "#fengwei-choice")
+    local n = tonumber(choice)
+    room:setPlayerMark(player, "@fengwei-round", n)
+    player:drawCards(n, self.name, "top", "@@fengwei-inhand-round")
+  end,
+}
+local fengwei_delay = fk.CreateTriggerSkill{
+  name = "#fengwei_delay",
+  anim_type = "negative",
+  frequency = Skill.Compulsory,
+  events = {fk.DamageInflicted},
+  can_trigger = function (self, event, target, player, data)
+    return target == player and player:getMark("@fengwei-round") > 0
+  end,
+  on_use = function (self, event, target, player, data)
+    player.room:removePlayerMark(player, "@fengwei-round", 1)
+    data.damage = data.damage + 1
+  end,
+}
+local fengwei_maxcards = fk.CreateMaxCardsSkill{
+  name = "#fengwei_maxcards",
+  exclude_from = function(self, player, card)
+    return card:getMark("@@fengwei-inhand-round") > 0
+  end,
+}
+local zonghu = fk.CreateViewAsSkill{
+  name = "zonghu",
+  pattern = "slash,jink",
+  prompt = function (self)
+    return "#zonghu:::"..(Self:usedSkillTimes(self.name, Player.HistoryRound) + 1)
+  end,
+  interaction = function(self)
+    local all_names = {"slash", "jink"}
+    local names = U.getViewAsCardNames(Self, self.name, all_names)
+    if #names > 0 then
+      return U.CardNameBox {choices = names, all_choices = all_names}
+    end
+  end,
+  card_filter = Util.FalseFunc,
+  view_as = function(self)
+    if not self.interaction.data then return end
+    local card = Fk:cloneCard(self.interaction.data)
+    card.skillName = self.name
+    return card
+  end,
+  before_use = function (self, player, use)
+    local room = player.room
+    local n = player:usedSkillTimes(self.name, Player.HistoryRound)
+    local to, cards = room:askForChooseCardsAndPlayers(player, n, n, table.map(room:getOtherPlayers(player), Util.IdMapper), 1, 1, nil,
+      "#zonghu-give:::"..n, self.name, false, false)
+    room:moveCardTo(cards, Card.PlayerHand, to[1], fk.ReasonGive, self.name, nil, false, player.id)
+  end,
+  enabled_at_play = function(self, player)
+    return player:usedSkillTimes(self.name, Player.HistoryTurn) == 0 and
+      #player:getCardIds("he") > player:usedSkillTimes(self.name, Player.HistoryRound)
+  end,
+  enabled_at_response = function(self, player, response)
+    return not response and player:usedSkillTimes(self.name, Player.HistoryTurn) == 0 and
+      #player:getCardIds("he") > player:usedSkillTimes(self.name, Player.HistoryRound) and
+      #Fk:currentRoom().alive_players > 1 and
+      #U.getViewAsCardNames(player, self.name, {"slash", "jink"}) > 0
+  end,
+}
+fengwei:addRelatedSkill(fengwei_maxcards)
+fengwei:addRelatedSkill(fengwei_delay)
+liuzhang:addSkill(fengwei)
+liuzhang:addSkill(zonghu)
+Fk:loadTranslationTable{
+  ["ol__liuzhang"] = "刘璋",
+  ["#ol__liuzhang"] = "",
+
+  ["fengwei"] = "丰蔚",
+  [":fengwei"] = "锁定技，每轮开始时，你摸至多四张牌（本轮不计入手牌上限），然后本轮你受到的前等量次伤害+1。",
+  ["zonghu"] = "宗护",
+  [":zonghu"] = "每回合限一次，当你需要使用【杀】或【闪】时，你可以将X张牌交给一名其他角色，然后视为你使用之（X为本轮此技能的发动次数）。",
+  ["#fengwei-choice"] = "丰蔚：摸至多四张牌，本轮受到的前等量次伤害+1",
+  ["@fengwei-round"] = "丰蔚",
+  ["@@fengwei-inhand-round"] = "丰蔚",
+  ["#fengwei_delay"] = "丰蔚",
+  ["#zonghu"] = "宗护：交给一名角色%arg张牌，视为使用【杀】或【闪】（先选择要使用的牌和目标，再交出牌）",
+  ["#zonghu-give"] = "宗护：交给一名角色%arg张牌",
+}
 
 local liubei = General(extension, "ol_sp__liubei", "qun", 4)
 liubei:addSkill("tmp_illustrate")
 liubei.hidden = true
 
-local liuzhang = General(extension, "ol__liuzhang", "qun", 3)
-liuzhang:addSkill("tmp_illustrate")
-liuzhang.hidden = true
-
 Fk:loadTranslationTable{
   ["ol_sp__liubei"] = "刘备",
-  ["ol__liuzhang"] = "刘璋",
 }
 
 return extension

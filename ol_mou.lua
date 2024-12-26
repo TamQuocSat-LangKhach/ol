@@ -3032,7 +3032,7 @@ local choulie_trigger = fk.CreateTriggerSkill{
   end,
 }
 choulie:addRelatedSkill(choulie_delay)
-choulie:addRelatedSkill(choulie_trigger)
+--choulie:addRelatedSkill(choulie_trigger)
 zhuijiao:addRelatedSkill(zhuijiao_delay)
 zhangxiu:addSkill(choulie)
 zhangxiu:addSkill(zhuijiao)
@@ -3040,15 +3040,15 @@ Fk:loadTranslationTable{
   ["olmou__zhangxiu"] = "谋张绣",
 
   ["choulie"] = "仇猎",
-  [":choulie"] = "限定技，回合开始时，你可以选择一名其他角色，本回合你的每个阶段开始时，你可以弃置一张牌视为对其使用一张无视防具的【杀】，"..
+  [":choulie"] = "限定技，回合开始时，你可以选择一名其他角色，本回合你的每个阶段开始时，你可以弃置一张牌视为对其使用一张【杀】，"..
   "其可以弃置一张基本牌或武器牌令此【杀】无效。",
   ["zhuijiao"] = "追剿",
   [":zhuijiao"] = "锁定技，你使用【杀】时，若你使用的上一张牌未造成伤害，则你摸一张牌并令此【杀】伤害+1，此【杀】结算后，若仍未造成伤害，"..
   "你弃置一张牌。",
-  ["#choulie-choose"] = "仇猎：选择一名其他角色，本回合每个阶段开始时，你可以弃一张牌视为对其使用无视防具的【杀】！",
+  ["#choulie-choose"] = "仇猎：选择一名其他角色，本回合每个阶段开始时，你可以弃一张牌视为对其使用【杀】！",
   ["@@choulie-turn"] = "仇猎",
   ["#choulie_delay"] = "仇猎",
-  ["#choulie-slash"] = "仇猎：是否弃置一张牌，视为对 %dest 使用一张无视防具的【杀】？",
+  ["#choulie-slash"] = "仇猎：是否弃置一张牌，视为对 %dest 使用一张【杀】？",
   ["#choulie_trigger"] = "仇猎",
   ["#choulie-discard"] = "仇猎：是否弃置一张基本牌或武器牌，令此【杀】对你无效？",
 }
