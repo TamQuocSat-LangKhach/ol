@@ -1847,7 +1847,7 @@ caocao:addSkill(aige)
 caocao:addRelatedSkill(zhubei)
 Fk:loadTranslationTable{
   ["ol_sp__caocao"] = "曹操",
-  ["#ol_sp__caocao"] = "",
+  ["#ol_sp__caocao"] = "踌躇的孤雁",
   --["designer:ol_sp__caocao"] = "",
 
   ["xixiang"] = "西向",
@@ -3642,8 +3642,13 @@ local liubei = General(extension, "ol_sp__liubei", "qun", 4)
 liubei:addSkill("tmp_illustrate")
 liubei.hidden = true
 
+local yuanhuan = General(extension, "ol__yuanhuan", "qun", 3)
+yuanhuan:addSkill("tmp_illustrate")
+yuanhuan.hidden = true
+
 Fk:loadTranslationTable{
   ["ol_sp__liubei"] = "刘备",
+  ["ol__yuanhuan"] = "袁涣",
 }
 
 return extension

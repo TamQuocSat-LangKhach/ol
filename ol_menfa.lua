@@ -3616,6 +3616,7 @@ wangshen:addSkill("zhongliu")
 Fk:loadTranslationTable{
   ["olz__wangshen"] = "族王沈",
   ["#olz__wangshen"] = "崇虎田光",
+  ["designer:olz__wangshen"] = "张浩",
 
   ["anran"] = "岸然",
   [":anran"] = "出牌阶段开始时或当你受到伤害后，你可以选择：1.摸X张牌；2.令至多X名角色各摸一张牌。然后以此法获得牌的角色本回合使用的下一张牌不能"..
