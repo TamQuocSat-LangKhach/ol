@@ -1217,14 +1217,17 @@ local kuangxiang = fk.CreateTriggerSkill{
 chenggongying:addSkill(kuangxiang)
 Fk:loadTranslationTable{
   ["chenggongying"] = "成公英",
-  ["#chenggongying"] = "",
-  --["designer:chenggongying"] = "",
+  ["#chenggongying"] = "尽欢竭忠",
 
   ["kuangxiang"] = "匡襄",
   [":kuangxiang"] = "准备阶段，你可以令一名角色将手牌数调整为4，其以此法获得的黑色牌造成伤害+1，其以此法每获得一张红色牌，其下个摸牌阶段摸牌数-1。",
   ["#kuangxiang-choose"] = "匡襄：令一名角色将手牌数调整为4，其摸到的牌具有额外效果",
   ["@@kuangxiang-inhand"] = "匡襄",
   ["@kuangxiang"] = "摸牌数-",
+
+  ["$kuangxiang1"] = "胜败乃兵家常事，主公不可言弃。",
+  ["$kuangxiang2"] = "我等纵横数十载，必能东山再起。",
+  ["~chenggongying"] = "假使英本主人在，实不来此也。",
 }
 
 local hanfu = General(extension, "ol__hanfu", "qun", 4)
@@ -1848,7 +1851,6 @@ caocao:addRelatedSkill(zhubei)
 Fk:loadTranslationTable{
   ["ol_sp__caocao"] = "曹操",
   ["#ol_sp__caocao"] = "踌躇的孤雁",
-  --["designer:ol_sp__caocao"] = "",
 
   ["xixiang"] = "西向",
   [":xixiang"] = "出牌阶段各限一次，你可以将至少X张牌当【杀】或【决斗】对一名角色使用（X为所有角色本回合使用基本牌数+1）。此牌结算后，若其体力值："..
@@ -1866,6 +1868,14 @@ Fk:loadTranslationTable{
   ["#zhubei-swap"] = "逐北：是否与 %dest 交换手牌？",
   ["#zhubei_dalay"] = "逐北",
   ["#zhubei_dalay-invoke"] = "逐北：是否获得造成伤害的牌？",
+
+  ["$xixiang1"] = "挥剑断浮云，诸君共西向！",
+  ["$xixiang2"] = "西望故都，何忍君父辱于匹夫之手！",
+  ["$aige1"] = "奈何力不齐，踌躇而雁行。",
+  ["$aige2"] = "生民百遗一，念之断人肠。",
+  ["$zhubei1"] = "虎踞青兖，欲补薄暮苍天！",
+  ["$zhubei2"] = "欲止戈，必先执戈！",
+  ["~ol_sp__caocao"] = "尔等，算什么大汉忠臣！",
 }
 
 local nanhualaoxian = General(extension, "ol__nanhualaoxian", "qun", 3)
@@ -2867,6 +2877,7 @@ Fk:addSkill(xianying_active)
 qinlang:addSkill(xianying)
 Fk:loadTranslationTable{
   ["ol__qinlang"] = "秦朗",
+  ["#ol__qinlang"] = "跼高蹐厚",
 
   ["xianying"] = "贤膺",
   [":xianying"] = "准备阶段或当你受到伤害后，你可以摸两张牌并弃置任意张牌（不能是本轮以此法弃置过的张数），若弃置牌同名，你可以于本回合结束时"..
@@ -2874,6 +2885,10 @@ Fk:loadTranslationTable{
   ["#xianying-discard"] = "贤膺：弃置任意张牌（本轮未弃置过的张数），若牌名均相同则本回合结束可以视为使用之",
   ["#xianying_delay"] = "贤膺",
   ["#xianying-use"] = "贤膺：你可以视为使用这些牌",
+
+  ["$xianying1"] = "古之贤良，不以一己之得失论成败。",
+  ["$xianying2"] = "朗感亚父大恩，纵百死亦衔环相报。",
+  ["~ol__qinlang"] = "我秦姓人，非属高门。",
 }
 
 local wuanguo = General(extension, "ol__wuanguo", "qun", 4)

@@ -974,7 +974,8 @@ Fk:loadTranslationTable{
   ["ol_ex__chengpu"] = "界程普",
   ["#ol_ex__chengpu"] = "三朝虎臣",
   --["designer:ol_ex__chengpu"] = "",
-  --["illustrator:ol_ex__chengpu"] = "",
+  ["illustrator:ol_ex__chengpu"] = "monkey",
+
   ["ol_ex__lihuo"] = "疬火",
   [":ol_ex__lihuo"] = "你使用非火【杀】可以改为火【杀】，此牌结算后，若造成了伤害，你弃置一张牌或失去1点体力。你使用火【杀】时可以增加一个目标。",
   ["ol_ex__chunlao"] = "醇醪",
@@ -986,6 +987,12 @@ Fk:loadTranslationTable{
   ["ol_ex__chengpu_chun"] = "醇",
   ["#ol_ex__chunlao-invoke"] = "醇醪：你可以将%arg张“醇”置入弃牌堆，视为 %dest 使用一张【酒】",
   ["#ol_ex__chunlao-prey"] = "醇醪：你可以获得至多两张“醇”",
+
+  ["$ol_ex__lihuo1"] = "此火只为全歼敌寇，无需妇人之仁。",
+  ["$ol_ex__lihuo2"] = "战胜攻取，以火修功。",
+  ["$ol_ex__chunlao1"] = "备下佳酿，以做庆功之用。",
+  ["$ol_ex__chunlao2"] = "饮此壮行酒，当立先头功。",
+  ["~ol_ex__chengpu"] = "以暴讨贼，竟遭报应吗？",
 }
 
 local liubiao = General(extension, "ol_ex__liubiao", "qun", 3)
