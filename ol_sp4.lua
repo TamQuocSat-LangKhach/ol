@@ -891,20 +891,44 @@ local jieyan = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local card = player:drawCards(1, self.name)[1]
-    local suit1 = Fk:getCardById(card).suit
-    local suit2 = Card.NoSuit
-    if not player.dead and table.contains(player:getCardIds("h"), card) then
-      player:showCards(card)
+    local a = player.seat
+    local b = target.seat
+    local c = room.current.seat
+    if a < c then
+      a = a + c
     end
-    if not target.dead then
-      card = target:drawCards(1, self.name, "bottom")[1]
-      suit2 = Fk:getCardById(card).suit
-      if not target.dead and table.contains(target:getCardIds("h"), card) then
-        target:showCards(card)
+    if b < c then
+      b = b + c
+    end
+    local playerA, playerB
+    if a < b then
+      playerA = player
+      playerB = target
+    else
+      playerA = target
+      playerB = player
+    end
+    local cards = playerA:drawCards(1, self.name)
+    local suit = Card.NoSuit
+    local invalidateSkill = false
+    if #cards > 0 then
+      suit = Fk:getCardById(cards[1]).suit
+      if not playerA.dead and table.contains(playerA:getCardIds("h"), cards[1]) then
+        playerA:showCards(cards[1])
       end
     end
-    if not player.dead and suit1 ~= suit2 and suit1 ~= Card.NoSuit and suit2 ~= Card.NoSuit then
+    if not playerB.dead then
+      cards = playerB:drawCards(1, self.name, "bottom")
+      if #cards > 0 then
+        if suit == Card.NoSuit or suit ~= Fk:getCardById(cards[1]).suit then
+          invalidateSkill = true
+        end
+        if not playerB.dead and table.contains(playerB:getCardIds("h"), cards[1]) then
+          playerB:showCards(cards[1])
+        end
+      end
+    end
+    if player:hasSkill(self, true) and invalidateSkill then
       room:invalidateSkill(player, self.name, "-turn")
     end
   end,
@@ -923,7 +947,7 @@ local jinghua = fk.CreateTriggerSkill{
 }
 local jinghua_delay = fk.CreateTriggerSkill{
   name = "#jinghua_delay",
-  anim_type = "control",
+  anim_type = "negative",
   frequency = Skill.Compulsory,
   events = {fk.TurnStart},
   can_trigger = function (self, event, target, player, data)
@@ -933,9 +957,13 @@ local jinghua_delay = fk.CreateTriggerSkill{
       end)
   end,
   on_use = function (self, event, target, player, data)
+    local room = player.room
     local cards = table.filter(player:getCardIds("h"), function (id)
       return Fk:getCardById(id):getMark("@@jinghua-inhand") > 0
     end)
+    if #cards > 1 then
+      cards = room:askForArrangeCards(player, self.name, {cards, "Bottom"}, "", true, 0, {#cards}, {#cards})[1]
+    end
     player.room:moveCards{
       ids = cards,
       from = player.id,
@@ -961,7 +989,7 @@ local shuiyue = fk.CreateTriggerSkill{
 }
 local shuiyue_delay = fk.CreateTriggerSkill{
   name = "#shuiyue_delay",
-  anim_type = "control",
+  anim_type = "negative",
   frequency = Skill.Compulsory,
   events = {fk.RoundEnd},
   can_trigger = function (self, event, target, player, data)
@@ -970,9 +998,14 @@ local shuiyue_delay = fk.CreateTriggerSkill{
       end)
   end,
   on_use = function (self, event, target, player, data)
+    local room = player.room
     local cards = table.filter(player:getCardIds("h"), function (id)
       return Fk:getCardById(id):getMark("@@shuiyue-inhand") > 0
     end)
+    if #cards > 1 then
+      cards = room:askForArrangeCards(player, self.name, {cards, "Top"}, "", true, 0, {#cards}, {#cards})[1]
+      cards = table.reverse(cards)
+    end
     player.room:moveCards{
       ids = cards,
       from = player.id,
@@ -991,7 +1024,7 @@ yuanji:addSkill(jinghua)
 yuanji:addSkill(shuiyue)
 Fk:loadTranslationTable{
   ["ol__yuanji"] = "袁姬",
-  ["#ol__yuanji"] = "",
+  --["#ol__yuanji"] = "",
 
   ["jieyan"] = "节言",
   [":jieyan"] = "一名角色一次失去恰好两张牌后，你可以与其从牌堆两端各摸一张牌并展示，若花色不同，此技能本回合失效。",
@@ -1884,7 +1917,7 @@ local aige = fk.CreateTriggerSkill{
     if player:getHandcardNum() < n then
       player:drawCards(n - player:getHandcardNum(), self.name)
     end
-    if not player.dead and player.hp < n and player.maxHp <= n then
+    if not player.dead and player.hp < n and player:isWounded() then
       room:recover{
         who = player,
         num = n - player.hp,
@@ -2020,7 +2053,7 @@ Fk:loadTranslationTable{
   [":xixiang"] = "出牌阶段各限一次，你可以将至少X张牌当【杀】或【决斗】对一名角色使用（X为所有角色本回合使用基本牌数+1）。此牌结算后，若其体力值："..
   "大于你的手牌数，你摸一张牌；大于你的体力值，你回复1点体力，然后获得其一张牌。",
   ["aige"] = "哀歌",
-  [":aige"] = "觉醒技，一回合内第二次有角色进入濒死状态后，你失去〖西向〗，获得〖逐北〗，然后将手牌摸至X，体力值回复至X（X为该角色体力上限）。",
+  [":aige"] = "觉醒技，一回合内第二次有角色进入濒死状态后，你失去〖西向〗，获得〖逐北〗，然后将手牌摸至X张，体力值回复至X点。（X为该角色体力上限）",
   ["zhubei"] = "逐北",
   [":zhubei"] = "出牌阶段各限一次，你可以选择一名其他角色，令其将至少X张牌当【杀】或【决斗】对你使用（X为所有角色本回合使用基本牌数+1）。"..
   "若你以此法受到伤害后，你可以获得伤害牌；若你未以此法受到伤害，你回复1点体力，然后可以与其交换手牌。",
@@ -3353,7 +3386,7 @@ Fk:loadTranslationTable{
   ["siqi"] = "思泣",
   [":siqi"] = "当你的牌移至弃牌堆后，你将其中的红色牌置于牌堆底。"..
     "当你受到伤害后，你可以亮出牌堆底的X张牌（X为从牌堆底开始连续的红色牌数且至多为5），"..
-    "使用其中的所有【桃】、【无中生有】与装备牌（可以对其他角色使用），然后摸等同于剩余牌数的牌。",
+    "使用其中的所有【桃】、【无中生有】和装备牌（可以对其他角色使用），然后摸等同于剩余牌数的牌。",
 
   ["siqi_active"] = "思泣",
   ["#siqi-use"] = "思泣：你可以依次使用亮出的牌（可以对其他角色使用）",
@@ -3437,34 +3470,20 @@ local jiaoyu = fk.CreateTriggerSkill{
           who = player,
           reason = self.name,
           pattern = ".",
-          skipDrop = true,
         }
         room:judge(judge)
         if judge.card then
           table.insert(cards, judge.card.id)
         end
       end
-      cards = table.filter(cards, function (id)
-        return room:getCardArea(id) == Card.Processing
-      end)
-      if player.dead then
-        if #cards > 0 then
-          room:moveCardTo(cards, Card.DiscardPile, nil, fk.ReasonJudge)
-        end
-      else
+      if not player.dead then
         local color = room:askForChoice(player, {"red", "black"}, self.name, "#jiaoyu-choice")
         room:setPlayerMark(player, "@jiaoyu-round", color)
         local get = table.filter(cards, function (id)
-          return Fk:getCardById(id):getColorString() == color
+          return Fk:getCardById(id):getColorString() == color and room:getCardArea(id) == Card.DiscardPile
         end)
         if #get > 0 then
           room:moveCardTo(get, Card.PlayerHand, player, fk.ReasonJustMove, self.name, nil, true, player.id)
-        end
-        cards = table.filter(cards, function (id)
-          return room:getCardArea(id) == Card.Processing
-        end)
-        if #cards > 0 then
-          room:moveCardTo(cards, Card.DiscardPile, nil, fk.ReasonJudge)
         end
       end
     elseif event == fk.EventPhaseEnd then
@@ -3553,15 +3572,15 @@ guozhao:addSkill(jiaoyu)
 guozhao:addSkill(neixun)
 Fk:loadTranslationTable{
   ["ol__guozhao"] = "郭照",
-  ["#ol__zhangyiy"] = "",
-  ["illustrator:ol__zhangyiy"] = "",
+  --["#ol__guozhao"] = "",
+  --["illustrator:ol__guozhao"] = "",
 
   ["jiaoyu"] = "椒遇",
-  [":jiaoyu"] = "锁定技，每轮开始时，你进行X次判定（X为你装备区内牌数且至少为1），然后声明一种颜色并获得此颜色的判定牌。你的下回合结束时，"..
-  "你执行一个出牌阶段（此阶段你不能使用与声明颜色不同的牌）。",
+  [":jiaoyu"] = "锁定技，每轮开始时，你判定X次（X为你装备区内牌数且至少为1），然后声明一种颜色并获得弃牌堆里此颜色的判定牌。"..
+  "你的下个结束阶段结束时，你获得一个额外出牌阶段，且你于此额外阶段内不能使用与声明颜色不同的牌。",
   ["neixun"] = "内训",
-  [":neixun"] = "锁定技，其他角色于回合内使用第一张非装备牌后，若此牌与你“椒遇”声明的颜色相同/不同，你交给/获得其一张牌，然后失去牌的角色"..
-  "摸一张牌。你以此法获得的牌不计入手牌上限直到你回合结束。",
+  [":neixun"] = "锁定技，其他角色于其回合内使用第一张不为装备牌的牌后，若此牌与你上次发动〖椒遇〗时声明的颜色相同/不同，"..
+  "你将一张牌交给其/获得其一张牌，你/其摸一张牌。直到你的下个回合结束之前，你以此法得到的牌不计入手牌上限。",
   ["@jiaoyu-round"] = "椒遇",
   ["#jiaoyu-choice"] = "椒遇：选择获得一种颜色的判定牌",
   ["#neixun-give"] = "内训：你需交给 %dest 一张牌",

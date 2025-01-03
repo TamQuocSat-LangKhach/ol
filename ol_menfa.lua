@@ -934,6 +934,17 @@ local yirong = fk.CreateActiveSkill{
     end
   end,
 }
+Fk:addQmlMark{
+  name = "guixiang",
+  qml_path = "",
+  how_to_show = function(name, value, p)
+    local x = p:getMaxCards() + 1
+    if x > 1 and x < 8 then
+      return Fk:translate(Util.PhaseStrMapper(x))
+    end
+    return " "
+  end,
+}
 local guixiang = fk.CreateTriggerSkill{
   name = "guixiang",
   anim_type = "special",
@@ -960,6 +971,13 @@ local guixiang = fk.CreateTriggerSkill{
     }
     data.to = Player.Play
   end,
+
+  on_acquire = function (self, player)
+    player.room:setPlayerMark(player, "@[guixiang]", 1)
+  end,
+  on_lose = function (self, player)
+    player.room:setPlayerMark(player, "@[guixiang]", 0)
+  end,
 }
 olz__wuxian:addSkill(yirong)
 olz__wuxian:addSkill(guixiang)
@@ -974,9 +992,11 @@ Fk:loadTranslationTable{
   [":yirong"] = "出牌阶段限两次，你可以将手牌摸/弃至手牌上限并令你手牌上限-1/+1。",
   ["guixiang"] = "贵相",
   [":guixiang"] = "锁定技，你回合内第X个阶段改为出牌阶段（X为你的手牌上限）。",
+
   ["#yirong-discard"] = "发动 移荣，弃置%arg张手牌，令你的手牌上限+1",
   ["#yirong-draw"] = "发动 移荣，摸%arg张牌，令你的手牌上限-1",
   ["#PhaseChanged"] = "%from 的 %arg 被改为了 %arg2",
+  ["@[guixiang]"] = "贵相",
 
   ["$yirong1"] = "花开彼岸，繁荣不减当年。",
   ["$yirong2"] = "移花接木，花容更胜从前。",
