@@ -3079,6 +3079,7 @@ Fk:loadTranslationTable{
   ["xianying"] = "贤膺",
   [":xianying"] = "准备阶段或当你受到伤害后，你可以摸两张牌并弃置任意张牌（不能是本轮以此法弃置过的张数），若弃置牌同名，你可以于本回合结束时"..
   "视为使用之。",
+  ["xianying_active"] = "贤膺",
   ["#xianying-discard"] = "贤膺：弃置任意张牌（本轮未弃置过的张数），若牌名均相同则本回合结束可以视为使用之",
   ["#xianying_delay"] = "贤膺",
   ["#xianying-use"] = "贤膺：你可以视为使用这些牌",

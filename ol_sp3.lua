@@ -5115,6 +5115,14 @@ local qushi_delay = fk.CreateTriggerSkill{
     end
   end,
 }
+local qushi_visibility = fk.CreateVisibilitySkill{
+  name = "#qushi_visibility",
+  card_visible = function(self, player, card)
+    if player:getPileNameOfId(card.id) == "$qushi_pile" then
+      return false
+    end
+  end
+}
 local weijie = fk.CreateViewAsSkill{
   name = "weijie",
   anim_type = "defensive",
@@ -5165,6 +5173,7 @@ local weijie = fk.CreateViewAsSkill{
   end,
 }
 qushi:addRelatedSkill(qushi_delay)
+qushi:addRelatedSkill(qushi_visibility)
 guotu:addSkill(qushi)
 guotu:addSkill(weijie)
 Fk:loadTranslationTable{
