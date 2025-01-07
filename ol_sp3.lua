@@ -498,7 +498,7 @@ local chenglie_delay = fk.CreateTriggerSkill{
           if table.contains(resp_players, pid) then
             if not (to:isNude() or player.dead) then
               local card = room:askForCard(to, 1, 1, true, "chenglie", false, ".", "#chenglie-card:"..player.id)
-              room:obtainCard(player.id, card[1], false, fk.ReasonGive, to.id)
+              room:obtainCard(player.id, card[1], false, fk.ReasonGive, to.id, "chenglie")
             end
           elseif to:isWounded() then
             room:recover{
@@ -761,7 +761,7 @@ local bihun = fk.CreateTriggerSkill{
     local room = player.room
     local to = room:getPlayerById(data.to)
     if not to.dead and U.isOnlyTarget(to, data, event) and data.firstTarget and U.hasFullRealCard(room, data.card) then
-      room:obtainCard(to, data.card, true, fk.ReasonJustMove)
+      room:obtainCard(to, data.card, true, fk.ReasonJustMove, player.id, self.name)
     end
     AimGroup:cancelTarget(data, data.to)
     return true
@@ -1453,7 +1453,7 @@ local zenrun = fk.CreateTriggerSkill{
     local n = data.num
     data.num = 0
     local cards = room:askForCardsChosen(player, to, n, n, "he", self.name)
-    room:obtainCard(player.id, cards, false, fk.ReasonPrey)
+    room:obtainCard(player.id, cards, false, fk.ReasonPrey, player.id, self.name)
     local choice = room:askForChoice(to, {"zenrun_draw", "zenrun_forbid"}, self.name, "#zenrun-choice:"..player.id)
     if choice == "zenrun_draw" then
       to:drawCards(n, self.name)
@@ -2058,7 +2058,7 @@ local chenshuo = fk.CreateTriggerSkill{
         break
       end
     end
-    room:obtainCard(player.id, cards, true, fk.ReasonJustMove)
+    room:obtainCard(player.id, cards, true, fk.ReasonJustMove, player.id, self.name)
   end,
 }
 zhouqun:addSkill(tianhou)
@@ -3772,7 +3772,7 @@ local suji = fk.CreateTriggerSkill{
     room:useCard(use)
     if use.damageDealt and use.damageDealt[target.id] and not player.dead and not target:isNude() then
       local id = room:askForCardChosen(player, target, "he", self.name)
-      room:obtainCard(player, id, false, fk.ReasonPrey)
+      room:obtainCard(player, id, false, fk.ReasonPrey, player.id, self.name)
     end
   end,
 }
@@ -5956,7 +5956,7 @@ local jiangwan = General(extension, "ol__jiangwan", "shu", 3)
 Fk:loadTranslationTable{
   ["ol__jiangwan"] = "蒋琬",
   ["#ol__jiangwan"] = "社稷之器",
-  ["designer:ol__jiangwan"] = "那个背影",
+  ["designer:ol__jiangwan"] = "玄蝶即白",
   ["~ol__jiangwan"] = "臣既暗弱，加婴疾疢，规方无成……",
 }
 
