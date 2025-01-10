@@ -593,7 +593,7 @@ local ol_ex__tianxiang = fk.CreateTriggerSkill{
     local ids = table.filter(player:getCardIds("he"), function(id)
       return not player:prohibitDiscard(Fk:getCardById(id)) and Fk:getCardById(id).suit == Card.Heart
     end)
-    local tar, card =  player.room:askForChooseCardAndPlayers(player, table.map(player.room:getOtherPlayers(player), Util.IdMapper), 1, 1, tostring(Exppattern{ id = ids }), "#ol_ex__tianxiang-choose", self.name, true)
+    local tar, card =  player.room:askForChooseCardAndPlayers(player, table.map(player.room:getOtherPlayers(player, false), Util.IdMapper), 1, 1, tostring(Exppattern{ id = ids }), "#ol_ex__tianxiang-choose", self.name, true)
     if #tar > 0 and card then
       self.cost_data = {tar[1], card}
       return true
@@ -1083,7 +1083,7 @@ local ol_ex__guhuo = fk.CreateViewAsSkill{
     end
 
     local canuse = true
-    local players = table.filter(room:getOtherPlayers(player), function(p) return not p:hasSkill("ol_ex__chanyuan") end)
+    local players = table.filter(room:getOtherPlayers(player, false), function(p) return not p:hasSkill("ol_ex__chanyuan") end)
     if #players > 0 then
       local questioners = {}
       local result = U.askForJointChoice(players, {"noquestion", "question"}, self.name,
@@ -2269,7 +2269,7 @@ local ol_ex__wulie = fk.CreateTriggerSkill{
       player:usedSkillTimes(self.name, Player.HistoryGame) < 1 and player.hp > 0
   end,
   on_cost = function(self, event, target, player, data)
-    local tos = player.room:askForChoosePlayers(player, table.map(player.room:getOtherPlayers(player), Util.IdMapper), 1, player.hp, "#ol_ex__wulie-choose", self.name, true)
+    local tos = player.room:askForChoosePlayers(player, table.map(player.room:getOtherPlayers(player, false), Util.IdMapper), 1, player.hp, "#ol_ex__wulie-choose", self.name, true)
     if #tos > 0 then
       player.room:sortPlayersByAction(tos)
       self.cost_data = {tos = tos}
@@ -2718,7 +2718,7 @@ local ol_ex__luanwu = fk.CreateActiveSkill{
     if player:prohibitUse(slash) then return end
     local max_num = slash.skill:getMaxTargetNum(player, slash)
     local slash_targets = {}
-    for _, p in ipairs(room:getOtherPlayers(player)) do
+    for _, p in ipairs(room:getOtherPlayers(player, false)) do
       if not player:isProhibited(p, slash) then
         table.insert(slash_targets, p.id)
       end
@@ -2833,7 +2833,7 @@ local ol_ex__qiaobian = fk.CreateTriggerSkill{
         room:removePlayerMark(player, "@ol_ex__qiaobian_change")
       end
       if data.to == Player.Draw then
-        local tos = room:askForChoosePlayers(player, table.map(table.filter(room:getOtherPlayers(player), function(p)
+        local tos = room:askForChoosePlayers(player, table.map(table.filter(room:getOtherPlayers(player, false), function(p)
           return not p:isKongcheng() end), Util.IdMapper), 1, 2, "#ol_ex__qiaobian-prey", self.name, true)
         if #tos > 0 then
           room:sortPlayersByAction(tos)
@@ -3117,7 +3117,7 @@ local ol_ex__fangquan_delay = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     room:notifySkillInvoked(player, ol_ex__fangquan.name, "support")
-    local tar, card =  room:askForChooseCardAndPlayers(player, table.map(room:getOtherPlayers(player), Util.IdMapper), 1, 1, ".|.|.|hand", "#ol_ex__fangquan-choose", ol_ex__fangquan.name, true)
+    local tar, card =  room:askForChooseCardAndPlayers(player, table.map(room:getOtherPlayers(player, false), Util.IdMapper), 1, 1, ".|.|.|hand", "#ol_ex__fangquan-choose", ol_ex__fangquan.name, true)
     if #tar > 0 and card then
       room:throwCard(card, ol_ex__fangquan.name, player, player)
       room:getPlayerById(tar[1]):gainAnExtraTurn()
@@ -3134,7 +3134,7 @@ local ol_ex__ruoyu = fk.CreateTriggerSkill{
       player.phase == Player.Start
   end,
   can_wake = function(self, event, target, player, data)
-    return table.every(player.room:getOtherPlayers(player), function(p) return p.hp >= player.hp end)
+    return table.every(player.room:getOtherPlayers(player, false), function(p) return p.hp >= player.hp end)
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
@@ -3242,7 +3242,7 @@ local jijiang = fk.CreateViewAsSkill{
       room:doIndicate(player.id, TargetGroup:getRealTargets(use.tos))
     end
     for _, p in ipairs(room:getOtherPlayers(player)) do
-      if p.kingdom == "shu" then
+      if p.kingdom == "shu" and p:isAlive() then
         local cardResponded = room:askForResponse(p, "slash", "slash", "#jijiang-ask:" .. player.id, true)
         if cardResponded then
           room:responseCard({

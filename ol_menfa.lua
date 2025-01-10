@@ -47,11 +47,11 @@ local sankuang = fk.CreateTriggerSkill{
         return false
       end, Player.HistoryRound)
     end
-    return mark == use_event.id and #room:getOtherPlayers(player) > 0
+    return mark == use_event.id and #room:getOtherPlayers(player, false) > 0
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local to = room:askForChoosePlayers(player, table.map(room:getOtherPlayers(player), Util.IdMapper), 1, 1,
+    local to = room:askForChoosePlayers(player, table.map(room:getOtherPlayers(player, false), Util.IdMapper), 1, 1,
       "#sankuang-choose:::"..data.card:toLogString(), self.name, false, false, "sankuang_tip")
     to = room:getPlayerById(to[1])
     if player:getMark("beishi") == 0 then
@@ -1471,7 +1471,7 @@ local lianzhuw = fk.CreateActiveSkill{
         end
       end
     else
-      local targets = table.map(table.filter(room:getOtherPlayers(player), function(p)
+      local targets = table.map(table.filter(room:getOtherPlayers(player, false), function(p)
         return player:inMyAttackRange(p) end), Util.IdMapper)
       if #targets == 0 then return end
       local target = room:askForChoosePlayers(player, targets, 1, 1, "#lianzhuw1-choose", self.name, false)
@@ -1581,7 +1581,7 @@ local lianzhuw_active = fk.CreateActiveSkill{
         end
       end
     else
-      local targets = table.map(table.filter(room:getOtherPlayers(player), function(p)
+      local targets = table.map(table.filter(room:getOtherPlayers(player, false), function(p)
         return (player:inMyAttackRange(p) or src:inMyAttackRange(p)) and p ~= src end), Util.IdMapper)
       if #targets == 0 then return end
       local target = room:askForChoosePlayers(src, targets, 1, 1, "#lianzhuw2-choose:"..player.id, "lianzhuw", false)

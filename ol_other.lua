@@ -21,7 +21,7 @@ local shenfu = fk.CreateTriggerSkill{
     local room = player.room
     if #player:getCardIds("h") % 2 == 1 then
       while true do
-        local tos = room:askForChoosePlayers(player, table.map(room:getOtherPlayers(player), Util.IdMapper),
+        local tos = room:askForChoosePlayers(player, table.map(room:getOtherPlayers(player, false), Util.IdMapper),
           1, 1, "#shenfu-damage", self.name, true)
         if #tos > 0 then
           local to = room:getPlayerById(tos[1])
@@ -1069,7 +1069,7 @@ local qin__xichu = fk.CreateTriggerSkill{
     if target == player and player:hasSkill(self) and data.card.trueName == "slash" then
       local room = player.room
       return not room:getPlayerById(data.from).dead and
-        table.find(room:getOtherPlayers(player), function(p)
+        table.find(room:getOtherPlayers(player, false), function(p)
         return room:getPlayerById(data.from):inMyAttackRange(p) and
           table.contains(player.room:getUseExtraTargets(data, false, true), p.id)
       end)
@@ -1078,7 +1078,7 @@ local qin__xichu = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     if #room:askForDiscard(room:getPlayerById(data.from), 1, 1, true, self.name, true, ".|6", "#qin__xichu-discard:"..player.id) == 0 then
-      local targets = table.map(table.filter(room:getOtherPlayers(player), function(p)
+      local targets = table.map(table.filter(room:getOtherPlayers(player, false), function(p)
         return room:getPlayerById(data.from):inMyAttackRange(p) and table.contains(room:getUseExtraTargets(data, false, true), p.id)
       end), Util.IdMapper)
       local tos = room:askForChoosePlayers(player, targets, 1, 1, "#qin__xichu-choose::"..data.from, self.name, true) or table.random(targets)
@@ -1772,8 +1772,9 @@ local qin__huoluan = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    room:doIndicate(player.id, table.map(room:getOtherPlayers(player), Util.IdMapper))
-    for _, p in ipairs(room:getOtherPlayers(player)) do
+    local targets = room:getOtherPlayers(player)
+    room:doIndicate(player.id, table.map(targets, Util.IdMapper))
+    for _, p in ipairs(targets) do
       if not p.dead then
         room:damage{
           from = player,
@@ -2578,13 +2579,13 @@ local fengzhu = fk.CreateTriggerSkill{
   events = {fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(self) and player.phase == Player.Start and
-      table.find(player.room:getOtherPlayers(player), function (p)
+      table.find(player.room:getOtherPlayers(player, false), function (p)
         return p:isMale() and not table.contains(player:getTableMark(self.name), p.id)
       end)
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local fathers = table.filter(room:getOtherPlayers(player), function (p)
+    local fathers = table.filter(room:getOtherPlayers(player, false), function (p)
       return p:isMale() and not table.contains(player:getTableMark(self.name), p.id)
     end)
     local father = room:askForChoosePlayers(player, table.map(fathers, Util.IdMapper), 1, 1, "#fengzhu-father", self.name, false)

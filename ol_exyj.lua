@@ -379,7 +379,7 @@ local ol_ex__xuanfeng = fk.CreateTriggerSkill{
             end
           end
           if n > 1 then
-            return table.find(player.room:getOtherPlayers(player), function(p) return not p:isNude() end)
+            return table.find(player.room:getOtherPlayers(player, false), function(p) return not p:isNude() end)
           end
         end
       end
@@ -387,7 +387,7 @@ local ol_ex__xuanfeng = fk.CreateTriggerSkill{
   end,
   on_cost = function(self, event, target, player, data)
     local room = player.room
-    local targets = table.map(table.filter(room:getOtherPlayers(player), function(p)
+    local targets = table.map(table.filter(room:getOtherPlayers(player, false), function(p)
       return not p:isNude() end), Util.IdMapper)
     while player.room:askForSkillInvoke(player, self.name) do
       local to = room:askForChoosePlayers(player, targets, 1, 1, "#xuanfeng-choose", self.name, true)
@@ -402,7 +402,7 @@ local ol_ex__xuanfeng = fk.CreateTriggerSkill{
     local to = room:getPlayerById(self.cost_data)
     local card = room:askForCardChosen(player, to, "he", self.name)
     room:throwCard({card}, self.name, to, player)
-    local targets = table.map(table.filter(room:getOtherPlayers(player), function(p)
+    local targets = table.map(table.filter(room:getOtherPlayers(player, false), function(p)
       return not p:isNude() end), Util.IdMapper)
     if #targets == 0 or player.dead then return end
     to = room:askForChoosePlayers(player, targets, 1, 1, "#xuanfeng-choose", self.name, true)
@@ -1423,13 +1423,13 @@ local juece = fk.CreateTriggerSkill{
   events = {fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(self) and player.phase == Player.Finish
-    and table.find(player.room:getOtherPlayers(player), function (p)
+    and table.find(player.room:getOtherPlayers(player, false), function (p)
       return p:getHandcardNum() <= player:getHandcardNum()
     end)
   end,
   on_cost = function(self, event, target, player, data)
     local room = player.room
-    local targets = table.filter(room:getOtherPlayers(player), function (p)
+    local targets = table.filter(room:getOtherPlayers(player, false), function (p)
       return p:getHandcardNum() <= player:getHandcardNum()
     end)
     local to = room:askForChoosePlayers(player, table.map(targets, Util.IdMapper), 1, 1, "#ol_ex__juece-choose", self.name, true)

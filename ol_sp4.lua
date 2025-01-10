@@ -274,7 +274,7 @@ local yongzu = fk.CreateTriggerSkill{
   end,
   on_cost = function (self, event, target, player, data)
     local room = player.room
-    local to = room:askForChoosePlayers(player, table.map(room:getOtherPlayers(player), Util.IdMapper), 1, 1,
+    local to = room:askForChoosePlayers(player, table.map(room:getOtherPlayers(player, false), Util.IdMapper), 1, 1,
       "#yongzu-choose", self.name, true, true)
     if #to > 0 then
       self.cost_data = {tos = to}
@@ -1198,7 +1198,7 @@ local fuchao = fk.CreateTriggerSkill{
       "#fuchao-choice::"..to.id..":"..use.card:toLogString(), false, all_choices)
     if choice == "fuchao2" then
       if use.tos then  --抵消无懈
-        use.nullifiedTargets = table.map(room:getOtherPlayers(player), Util.IdMapper)
+        use.nullifiedTargets = table.map(room:getOtherPlayers(player, false), Util.IdMapper)
         use.additionalEffect = (use.additionalEffect or 0) + 1
       end
     else
@@ -1211,7 +1211,7 @@ local fuchao = fk.CreateTriggerSkill{
       end
 
       use.disresponsiveList = use.disresponsiveList or {}
-      table.insertTableIfNeed(use.disresponsiveList, table.map(room:getOtherPlayers(player), Util.IdMapper))
+      table.insertTableIfNeed(use.disresponsiveList, table.map(room:getOtherPlayers(player, false), Util.IdMapper))
     end
   end,
 }
@@ -2424,7 +2424,7 @@ for loop = 1, 30, 1 do  --30个肯定够用
       if info == 1 then
         return room:askForSkillInvoke(player, self.name, nil, prompt)
       elseif info == 2 then
-        local targets = table.filter(room:getOtherPlayers(player), function (p)
+        local targets = table.filter(room:getOtherPlayers(player, false), function (p)
           return not p:isAllNude()
         end)
         if table.find(player:getCardIds("hej"), function (id)
@@ -2458,7 +2458,7 @@ for loop = 1, 30, 1 do  --30个肯定够用
           return true
         end
       elseif info == 7 then
-        local targets = table.filter(room:getOtherPlayers(player), function (p)
+        local targets = table.filter(room:getOtherPlayers(player, false), function (p)
           return not p:isAllNude()
         end)
         if #player:getCardIds("ej") > 0 then
@@ -2495,7 +2495,7 @@ for loop = 1, 30, 1 do  --30个肯定够用
       elseif info == 13 then
         return room:askForSkillInvoke(player, self.name, nil, prompt)
       elseif info == 14 then
-        local targets = room:getOtherPlayers(player)
+        local targets = room:getOtherPlayers(player, false)
         if #targets == 0 then return end
         local to = room:askForChoosePlayers(player, table.map(targets, Util.IdMapper), 1, 1, prompt, self.name, true)
         if #to > 0 then
@@ -2522,7 +2522,7 @@ for loop = 1, 30, 1 do  --30个肯定够用
         end
       elseif info == 18 then
         if player:isKongcheng() then return end
-        local targets = table.filter(room:getOtherPlayers(player), function (p)
+        local targets = table.filter(room:getOtherPlayers(player, false), function (p)
           return p:isWounded() and player:canPindian(p)
         end)
         if #targets == 0 then return end
@@ -2558,7 +2558,7 @@ for loop = 1, 30, 1 do  --30个肯定够用
         end
       elseif info == 25 then
         if #player:getCardIds("he") < 2 then return end
-        local targets = table.filter(room:getOtherPlayers(player), function (p)
+        local targets = table.filter(room:getOtherPlayers(player, false), function (p)
           return p:isWounded()
         end)
         if #targets == 0 then return end
@@ -3799,7 +3799,7 @@ local zonghu = fk.CreateViewAsSkill{
   before_use = function (self, player, use)
     local room = player.room
     local n = player:usedSkillTimes(self.name, Player.HistoryRound)
-    local to, cards = room:askForChooseCardsAndPlayers(player, n, n, table.map(room:getOtherPlayers(player), Util.IdMapper), 1, 1, nil,
+    local to, cards = room:askForChooseCardsAndPlayers(player, n, n, table.map(room:getOtherPlayers(player, false), Util.IdMapper), 1, 1, nil,
       "#zonghu-give:::"..n, self.name, false, false)
     room:moveCardTo(cards, Card.PlayerHand, to[1], fk.ReasonGive, self.name, nil, false, player.id)
   end,
@@ -3843,7 +3843,7 @@ local xudai = fk.CreateTriggerSkill{
   can_trigger = function(self, event, target, player, data)
     if target == player and player:hasSkill(self) and data.responseToEvent and
       player:usedSkillTimes(self.name, Player.HistoryGame) == 0 and
-      #player.room:getOtherPlayers(player) > 0 then
+      #player.room:getOtherPlayers(player, false) > 0 then
       if event == fk.CardUseFinished then
         return data.toCard
       elseif event == fk.CardRespondFinished then

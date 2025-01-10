@@ -548,7 +548,7 @@ local naxiang = fk.CreateTriggerSkill{
     local room = player.room
     for _, id in ipairs(player:getMark(self.name)) do
       local p = room:getPlayerById(id)
-      if not p.dead and not table.find(room:getOtherPlayers(player), function(to)
+      if not p.dead and not table.find(room:getOtherPlayers(player, false), function(to)
         return to:getMark(self.name) ~= 0 and table.contains(to:getMark(self.name), p.id) end) then
         room:setPlayerMark(p, "@@naxiang", 0)
       end
@@ -733,7 +733,7 @@ local ol__caozhao = fk.CreateActiveSkill{
       "#ol__caozhao-choice:"..player.id.."::"..Fk:getCardById(id, true):toLogString()..":"..self.interaction.data)
     if choice then
       room:setCardMark(Fk:getCardById(id), "@@ol__caozhao", self.interaction.data)
-      local to = room:askForChoosePlayers(player, table.map(room:getOtherPlayers(player), Util.IdMapper),
+      local to = room:askForChoosePlayers(player, table.map(room:getOtherPlayers(player, false), Util.IdMapper),
         1, 1, "#ol__caozhao-choose", self.name, true)
       if #to > 0 then
         room:moveCardTo(effect.cards, Card.PlayerHand, room:getPlayerById(to[1]), fk.ReasonGive, self.name, nil, true, player.id)
@@ -1938,12 +1938,12 @@ local zhaoran_trigger = fk.CreateTriggerSkill{
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    if table.every(room:getOtherPlayers(player), function(p) return p:isNude() end) then
+    if table.every(room:getOtherPlayers(player, false), function(p) return p:isNude() end) then
       player:broadcastSkillInvoke("zhaoran")
       room:notifySkillInvoked(player, "zhaoran", "drawcard")
       player:drawCards(1, "zhaoran")
     else
-      local targets = table.map(table.filter(room:getOtherPlayers(player), function (p)
+      local targets = table.map(table.filter(room:getOtherPlayers(player, false), function (p)
         return not p:isNude() end), Util.IdMapper)
       local to = room:askForChoosePlayers(player, targets, 1, 1, "#zhaoran-discard", "zhaoran", true)
       player:broadcastSkillInvoke("zhaoran")
@@ -2450,7 +2450,7 @@ local zhongyun = fk.CreateTriggerSkill{
     local room = player.room
     if event == fk.AfterCardsMove then
       room:setPlayerMark(player, "zhongyun2-turn", 1)
-      local targets = table.filter(room:getOtherPlayers(player), function (p) return not p:isNude() end)
+      local targets = table.filter(room:getOtherPlayers(player, false), function (p) return not p:isNude() end)
       if #targets > 0 then
         local to = room:askForChoosePlayers(player, table.map(targets, Util.IdMapper), 1, 1, "#zhongyun-discard", self.name, true)
         if #to > 0 then
@@ -2462,7 +2462,7 @@ local zhongyun = fk.CreateTriggerSkill{
       player:drawCards(1, self.name)
     else
       room:setPlayerMark(player, "zhongyun1-turn", 1)
-      local targets = table.filter(room:getOtherPlayers(player), function (p) return player:inMyAttackRange(p) end)
+      local targets = table.filter(room:getOtherPlayers(player, false), function (p) return player:inMyAttackRange(p) end)
       if #targets > 0 then
         local to = room:askForChoosePlayers(player, table.map(targets, Util.IdMapper), 1, 1, "#zhongyun-damage", self.name,
         player:isWounded())

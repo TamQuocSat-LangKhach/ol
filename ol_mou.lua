@@ -1743,7 +1743,7 @@ local xiongni = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    room:doIndicate(player.id, table.map(room:getOtherPlayers(player), Util.IdMapper))
+    room:doIndicate(player.id, table.map(room:getOtherPlayers(player, false), Util.IdMapper))
     local suit = Fk:getCardById(self.cost_data.cards[1]):getSuitString()
     room:throwCard(self.cost_data.cards, self.name, player, player)
     for _, p in ipairs(room:getOtherPlayers(player)) do
@@ -2115,7 +2115,7 @@ local jiewan = fk.CreateTriggerSkill{
         return not player:isKongcheng()
       elseif target.phase == Player.Finish then
         return player:getHandcardNum() == #player:getPile("dengai_grain") and
-          table.find(player.room:getOtherPlayers(player), function (p)
+          table.find(player.room:getOtherPlayers(player, false), function (p)
             return player.maxHp <= p.maxHp
           end)
       end
@@ -2796,8 +2796,8 @@ local nilan = fk.CreateTriggerSkill{
         return not player:prohibitDiscard(id) and Fk:getCardById(id).trueName == "slash"
       end)
       player:throwAllCards("h")
-      if not player.dead and yes and #room:getOtherPlayers(player) > 0 then
-        local to = room:askForChoosePlayers(player, table.map(room:getOtherPlayers(player), Util.IdMapper), 1, 1,
+      if not player.dead and yes and #room:getOtherPlayers(player, false) > 0 then
+        local to = room:askForChoosePlayers(player, table.map(room:getOtherPlayers(player, false), Util.IdMapper), 1, 1,
           "#nilan-damage", self.name, true)
         if #to > 0 then
           to = room:getPlayerById(to[1])
@@ -2942,11 +2942,11 @@ local choulie = fk.CreateTriggerSkill{
   events = {fk.TurnStart},
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(self) and player:usedSkillTimes(self.name, Player.HistoryGame) == 0 and
-      #player.room:getOtherPlayers(player) > 0
+      #player.room:getOtherPlayers(player, false) > 0
   end,
   on_cost = function(self, event, target, player, data)
     local room = player.room
-    local to = room:askForChoosePlayers(player, table.map(room:getOtherPlayers(player), Util.IdMapper), 1, 1,
+    local to = room:askForChoosePlayers(player, table.map(room:getOtherPlayers(player, false), Util.IdMapper), 1, 1,
       "#choulie-choose", self.name, true)
     if #to > 0 then
       self.cost_data = {tos = to}

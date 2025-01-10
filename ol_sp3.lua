@@ -212,11 +212,11 @@ local ol__tongdu = fk.CreateTriggerSkill{
   events = {fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(self) and player.phase == Player.Start and
-      not table.every(player.room:getOtherPlayers(player), function(p) return p:isKongcheng() end)
+      not table.every(player.room:getOtherPlayers(player, false), function(p) return p:isKongcheng() end)
   end,
   on_cost = function(self, event, target, player, data)
     local room = player.room
-    local to = room:askForChoosePlayers(player, table.map(table.filter(room:getOtherPlayers(player), function(p)
+    local to = room:askForChoosePlayers(player, table.map(table.filter(room:getOtherPlayers(player, false), function(p)
       return not p:isKongcheng() end), Util.IdMapper), 1, 1, "#ol__tongdu-choose", self.name, true)
     if #to > 0 then
       self.cost_data = to[1]
@@ -1096,7 +1096,7 @@ local kenshang = fk.CreateViewAsSkill{
   end,
   before_use = function(self, player, use)
     local room = player.room
-    local targets = table.map(table.filter(room:getOtherPlayers(player), function(p)
+    local targets = table.map(table.filter(room:getOtherPlayers(player, false), function(p)
       return not player:isProhibited(p, use.card) end), Util.IdMapper)
     local n = math.min(#targets, #use.card.subcards)
     local tos = room:askForChoosePlayers(player, targets, n, n, "#kenshang-choose:::"..n, self.name, true)
@@ -1438,7 +1438,7 @@ local zenrun = fk.CreateTriggerSkill{
   on_cost = function(self, event, target, player, data)
     local room = player.room
     local n = data.num
-    local targets = table.map(table.filter(room:getOtherPlayers(player), function(p)
+    local targets = table.map(table.filter(room:getOtherPlayers(player, false), function(p)
       return p:getMark(self.name) == 0 and #p:getCardIds{Player.Hand, Player.Equip} >= n end), Util.IdMapper)
     if #targets == 0 then return end
     local to = room:askForChoosePlayers(player, targets, 1, 1, "#zenrun-choose:::"..n, self.name, true)
@@ -2409,7 +2409,7 @@ local guangao = fk.CreateTriggerSkill{
       if event == fk.AfterCardTargetDeclared then
         local orig_tos = TargetGroup:getRealTargets(data.tos)
         if target == player then
-          return table.find(player.room:getOtherPlayers(player), function(p)
+          return table.find(player.room:getOtherPlayers(player, false), function(p)
           return not table.contains(orig_tos, p.id) and not player:isProhibited(p, data.card)
           and data.card.skill:modTargetFilter(p.id, orig_tos, data.from, data.card, true)
           end)
@@ -2428,7 +2428,7 @@ local guangao = fk.CreateTriggerSkill{
     local room = player.room
     if target == player then
       local orig_tos = TargetGroup:getRealTargets(data.tos)
-      local targets = table.filter(room:getOtherPlayers(player), function(p)
+      local targets = table.filter(room:getOtherPlayers(player, false), function(p)
         return not table.contains(TargetGroup:getRealTargets(data.tos), p.id) and not player:isProhibited(p, data.card)
         and data.card.skill:modTargetFilter(p.id, orig_tos, data.from, data.card, true)
       end)
@@ -3445,7 +3445,7 @@ local fudao = fk.CreateTriggerSkill{
       local room = player.room
       player:drawCards(3, self.name)
       if player.dead then return end
-      local targets = table.map(room:getOtherPlayers(player), Util.IdMapper)
+      local targets = table.map(room:getOtherPlayers(player, false), Util.IdMapper)
       if not player:isKongcheng() and #targets > 0 then
         local tos, cards = room:askForChooseCardsAndPlayers(player, 1, 3, targets, 1, 1, ".|.|.|hand", "#ol__fudao-give", self.name, true)
         if #tos > 0 then
