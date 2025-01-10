@@ -223,22 +223,22 @@ local ol_ex__xuanhuo = fk.CreateTriggerSkill{
   anim_type = "control",
   events = {fk.EventPhaseEnd},
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self) and player.phase == Player.Draw and player:getHandcardNum() > 1 and
+    return target == player and player:hasSkill(self) and player.phase == Player.Draw and #player:getCardIds("he") > 1 and
       #player.room.alive_players > 1
   end,
   on_cost = function(self, event, target, player, data)
     local _, dat = player.room:askForUseActiveSkill(player, "ol_ex__xuanhuo_choose", "#ol_ex__xuanhuo-invoke", true)
     if dat then
-      self.cost_data = dat
+      self.cost_data = {tos = dat.targets, cards = dat.cards}
       return true
     end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local to = room:getPlayerById(self.cost_data.targets[1])
+    local to = room:getPlayerById(self.cost_data.tos[1])
     room:moveCardTo(self.cost_data.cards, Card.PlayerHand, to, fk.ReasonGive, self.name, nil, false, player.id)
     if to.dead then return end
-    local victim = room:getPlayerById(self.cost_data.targets[2])
+    local victim = room:getPlayerById(self.cost_data.tos[2])
     local use = room:askForUseCard(to, "slash", nil, "#ol_ex__xuanhuo-use:"..player.id..":"..victim.id, nil,
       {must_targets = {victim.id}, bypass_times = true, bypass_distances = true})
     if use then
@@ -257,7 +257,7 @@ local ol_ex__xuanhuo_choose = fk.CreateActiveSkill{
   card_num = 2,
   target_num = 2,
   card_filter = function(self, to_select, selected)
-    return #selected < 2 and Fk:currentRoom():getCardArea(to_select) ~= Player.Equip
+    return #selected < 2
   end,
   target_filter = function(self, to_select, selected, cards)
     if #cards == 2 then

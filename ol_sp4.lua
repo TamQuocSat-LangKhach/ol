@@ -115,6 +115,7 @@ mawan:addSkill("mashu")
 Fk:loadTranslationTable{
   ["mawan"] = "马玩",
   ["#mawan"] = "驱率羌胡",
+  ["illustrator:mawan"] = "君桓文化",
   ["designer:mawan"] = "大宝",
 
   ["hunjiang"] = "浑疆",
@@ -206,30 +207,22 @@ local kouchao = fk.CreateViewAsSkill{
       end
     end
   end,
-}
-local kouchao_trigger = fk.CreateTriggerSkill{
-  name = "#kouchao_trigger",
 
-  refresh_events = {fk.EventLoseSkill, fk.EventAcquireSkill},
-  can_refresh = function(self, event, target, player, data)
-    return target == player and data == kouchao
-  end,
-  on_refresh = function(self, event, target, player, data)
+  on_acquire = function (self, player, is_start)
     local room = player.room
-    if event == fk.EventAcquireSkill then
-      room:setPlayerMark(player, "kouchao1", "slash")
-      room:setPlayerMark(player, "kouchao2", "fire_attack")
-      room:setPlayerMark(player, "kouchao3", "dismantlement")
-      room:setPlayerMark(player, "@$kouchao", {"slash", "fire_attack", "dismantlement"})
-    else
-      room:setPlayerMark(player, "kouchao1", 0)
-      room:setPlayerMark(player, "kouchao2", 0)
-      room:setPlayerMark(player, "kouchao3", 0)
-      room:setPlayerMark(player, "@$kouchao", 0)
-    end
+    room:setPlayerMark(player, "kouchao1", "slash")
+    room:setPlayerMark(player, "kouchao2", "fire_attack")
+    room:setPlayerMark(player, "kouchao3", "dismantlement")
+    room:setPlayerMark(player, "@$kouchao", {"slash", "fire_attack", "dismantlement"})
+  end,
+  on_lose = function (self, player, is_death)
+    local room = player.room
+    room:setPlayerMark(player, "kouchao1", 0)
+    room:setPlayerMark(player, "kouchao2", 0)
+    room:setPlayerMark(player, "kouchao3", 0)
+    room:setPlayerMark(player, "@$kouchao", 0)
   end,
 }
-kouchao:addRelatedSkill(kouchao_trigger)
 budugen:addSkill(kouchao)
 Fk:loadTranslationTable{
   ["budugen"] = "步度根",
@@ -369,6 +362,7 @@ caoteng:addRelatedSkill("tianming")
 Fk:loadTranslationTable{
   ["caoteng"] = "曹腾",
   ["#caoteng"] = "魏高帝",
+  ["illustrator:caoteng"] = "君桓文化",
 
   ["yongzu"] = "拥族",
   [":yongzu"] = "准备阶段，你可以选择一名其他角色，你与其依次选择不同的一项：<br>1.摸两张牌；<br>2.回复1点体力；<br>3.复原武将牌。<br>"..
@@ -491,6 +485,7 @@ sunru:addSkill(weimian)
 Fk:loadTranslationTable{
   ["ol__sunru"] = "孙茹",
   ["#ol__sunru"] = "淑慎温良",
+  ["illustrator:ol__sunru"] = "土豆",
 
   ["chishi"] = "持室",
   [":chishi"] = "每回合限一次，当前回合角色失去其一个区域内最后一张牌后，你可以令其摸两张牌且本回合手牌上限+2。",
@@ -568,7 +563,8 @@ kebineng:addSkill(pingduan)
 Fk:loadTranslationTable{
   ["ol__kebineng"] = "轲比能",
   ["#ol__kebineng"] = "瀚海鲸波",
-  ["designer:ol__kebineng"] = "CYC",
+  ["illustrator:ol__kebineng"] = "黯荧岛",
+  ["designer:ol__kebineng"] = "cyc",
   ["~ol__kebineng"] = "未驱青马饮于黄河，死难瞑目。",
 
   ["pingduan"] = "平端",
@@ -1333,6 +1329,7 @@ wangkuang:addSkill(renxia)
 Fk:loadTranslationTable{
   ["wangkuang"] = "王匡",
   ["#wangkuang"] = "任侠纵横",
+  ["illustrator:wangkuang"] = "花狐貂",
   ["designer:wangkuang"] = "U",
 
   ["renxia"] = "任侠",
@@ -1852,7 +1849,7 @@ local xixiang = fk.CreateActiveSkill{
     local card = Fk:cloneCard(self.interaction.data)
     card.skillName = self.name
     card:addSubcards(selected_cards)
-    return card.skill:targetFilter(to_select, {}, {}, card, {bypass_times = true})
+    return card.skill:targetFilter(to_select, {}, {}, card, {bypass_distances = true, bypass_times = true})
   end,
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
@@ -2050,8 +2047,8 @@ Fk:loadTranslationTable{
   ["#ol_sp__caocao"] = "踌躇的孤雁",
 
   ["xixiang"] = "西向",
-  [":xixiang"] = "出牌阶段各限一次，你可以将至少X张牌当【杀】或【决斗】对一名角色使用（X为所有角色本回合使用基本牌数+1）。此牌结算后，若其体力值："..
-  "大于你的手牌数，你摸一张牌；大于你的体力值，你回复1点体力，然后获得其一张牌。",
+  [":xixiang"] = "出牌阶段各限一次，你可以将至少X张牌当【杀】或【决斗】对一名角色使用（无距离限制，X为所有角色本回合使用基本牌数+1）。"..
+  "此牌结算后，若其体力值：大于你的手牌数，你摸一张牌；大于你的体力值，你回复1点体力，然后获得其一张牌。",
   ["aige"] = "哀歌",
   [":aige"] = "觉醒技，一回合内第二次有角色进入濒死状态后，你失去〖西向〗，获得〖逐北〗，然后将手牌摸至X张，体力值回复至X点。（X为该角色体力上限）",
   ["zhubei"] = "逐北",
@@ -4073,6 +4070,14 @@ Fk:loadTranslationTable{
   [":linjie"] = "锁定技，当你受到伤害后，伤害来源须弃置一张手牌，若为【杀】，你摸一张牌。",
   ["#deru"] = "德辱：选择一名角色，猜测其手牌中的基本牌牌名",
   ["#deru-choice"] = "德辱：选择你认为 %dest 手牌中有的基本牌",
+}
+
+local yangfeng = General(extension, "ol__yangfeng", "qun", 4)
+yangfeng.hidden = true
+yangfeng:addSkill("tmp_illustrate")
+Fk:loadTranslationTable{
+  ["ol__yangfeng"] = "杨奉",
+  ["#ol__yangfeng"] = "",
 }
 
 return extension

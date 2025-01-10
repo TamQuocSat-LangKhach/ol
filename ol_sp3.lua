@@ -4385,6 +4385,7 @@ lukai:addSkill(jiane)
 Fk:loadTranslationTable{
   ["ol__lukai"] = "陆凯",
   ["#ol__lukai"] = "节概梗梗",
+  ["illustrator:ol__lukai"] = "空山MBYK",
   ["designer:ol__lukai"] = "扬林",
 
   ["xuanzhu"] = "玄注",
@@ -4595,6 +4596,7 @@ caoyu:addSkill(xiangzuo)
 Fk:loadTranslationTable{
   ["caoyu"] = "曹宇",
   ["#caoyu"] = "大魏燕王",
+  ["illustrator:caoyu"] = "匠人绘",
   ["designer:caoyu"] = "廷玉",
 
   ["gongjie"] = "恭节",
@@ -4801,7 +4803,7 @@ liyi:addSkill(zhanjin)
 Fk:loadTranslationTable{
   ["liyi"] = "李异",
   ["#liyi"] = "兼人之勇",
-  --["illustrator:liyi"] = "",
+  ["illustrator:liyi"] = "匠人绘",
   ["designer:liyi"] = "玄蝶既白",
 
   ["chanshuang"] = "缠双",
@@ -4875,7 +4877,7 @@ tianchou:addSkill(shandao)
 Fk:loadTranslationTable{
   ["tianchou"] = "田畴",
   ["#tianchou"] = "乱世族隐",
-  --["illustrator:tianchou"] = "",
+  ["illustrator:tianchou"] = "君桓文化",
   ["designer:tianchou"] = "扬林",
 
   ["shandao"] = "善刀",
@@ -5018,6 +5020,8 @@ hujinding:addSkill(chongshen)
 Fk:loadTranslationTable{
   ["ol__hujinding"] = "胡金定",
   ["#ol__hujinding"] = "怀子求怜",
+  ["illustrator:ol__hujinding"] = "君桓文化",
+
   ["qingyuan"] = "轻缘",
   [":qingyuan"] = "锁定技，游戏开始时，你选择一名其他角色；当你首次受到伤害后，你再选择一名其他角色。"..
   "每回合限一次，当以此法选择的角色获得牌后，你获得其中随机一名角色的随机一张手牌。",
@@ -5144,14 +5148,14 @@ local weijie = fk.CreateViewAsSkill{
   before_use = function(self, player)
     local room = player.room
     local targets = table.filter(room.alive_players, function (p)
-      return p ~= player and not p:isKongcheng() and player:distanceTo(p) == 1
+      return p ~= player and not p:isNude() and player:distanceTo(p) == 1
     end)
     if #targets == 0 then return "" end
     local name = Fk:cloneCard(self.interaction.data).trueName
     targets = room:askForChoosePlayers(player, table.map(targets, Util.IdMapper), 1, 1,
     "#weijie-choose:::" .. name, self.name, false)
     local target = room:getPlayerById(targets[1])
-    local card = Fk:getCardById(room:askForCardChosen(player, target, "h", self.name))
+    local card = Fk:getCardById(room:askForCardChosen(player, target, "he", self.name))
     room:throwCard({card.id}, self.name, target, player)
     if card.trueName ~= name then return "" end
   end,
@@ -5179,6 +5183,7 @@ guotu:addSkill(weijie)
 Fk:loadTranslationTable{
   ["guotu"] = "郭图",
   ["#guotu"] = "凶臣",
+  ["illustrator:guotu"] = "厦门塔普",
   ["cv:guotu"] = "杨超然",
 
   ["qushi"] = "趋势",
@@ -5315,7 +5320,8 @@ liupan:addSkill(pijingl)
 Fk:loadTranslationTable{
   ["liupan"] = "刘磐",
   ["#liupan"] = "骁隽悍勇",
-  ["designer:liupan"] = "CYC",
+  ["illustrator:liupan"] = "君桓文化",
+  ["designer:liupan"] = "cyc",
 
   ["pijingl"] = "披荆",
   [":pijingl"] = "每回合限一次，当你使用【杀】或普通锦囊牌指定第一个目标时，"..
@@ -5434,6 +5440,7 @@ liupi:addSkill(yichengl)
 Fk:loadTranslationTable{
   ["ol__liupi"] = "刘辟",
   ["#ol__liupi"] = "易城报君",
+  ["illustrator:ol__liupi"] = "君桓文化",
   ["designer:ol__liupi"] = "那个背影",
 
   ["yichengl"] = "易城",
@@ -5543,6 +5550,7 @@ sunce:addSkill(liantao)
 Fk:loadTranslationTable{
   ["ol_sp__sunce"] = "孙策",
   ["#ol_sp__sunce"] = "壮武命世",
+  ["illustrator:ol_sp__sunce"] = "君桓文化",
   ["designer:ol_sp__sunce"] = "韩旭",
 
   ["liantao"] = "连讨",
@@ -5811,6 +5819,7 @@ caimao:addSkill(jingzhou)
 Fk:loadTranslationTable{
   ["caimao"] = "蔡瑁",
   ["#caimao"] = "蛟海腾云",
+  ["illustrator:caimao"] = "depp",
   ["designer:caimao"] = "步穗",
 
   ["zuolian"] = "佐练",
@@ -5965,6 +5974,7 @@ local jiangwan = General(extension, "ol__jiangwan", "shu", 3)
 Fk:loadTranslationTable{
   ["ol__jiangwan"] = "蒋琬",
   ["#ol__jiangwan"] = "社稷之器",
+  ["illustrator:ol__jiangwan"] = "错落宇宙",
   ["designer:ol__jiangwan"] = "玄蝶即白",
   ["~ol__jiangwan"] = "臣既暗弱，加婴疾疢，规方无成……",
 }

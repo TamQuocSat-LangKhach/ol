@@ -2224,7 +2224,7 @@ local jiaodi = fk.CreateTriggerSkill{
     if player:getAttackRange() <= to:getAttackRange() then
       if not to:isAllNude() then
         local card = room:askForCardChosen(player, to, "hej", self.name, "#jiaodi-discard::"..to.id)
-        room:throwCard(card, self.name, player, player)
+        room:throwCard(card, self.name, to, player)
         if player.dead then return end
       end
       local targets = room:getUseExtraTargets(data, false, true)
