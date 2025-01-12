@@ -189,7 +189,7 @@ Fk:loadTranslationTable{
   ["~godcaopi"] = "曹魏锦绣，孤还未看尽……",
 }
 
-local lvbu3 = General(extension, "hulao3__godlvbu", "god", 4)
+local lvbu3 = General(extension, "hulao3__godlvbu", "god", 6)
 lvbu3.hulao_status = 2
 --lvbu3.hidden = true
 
@@ -229,14 +229,14 @@ local jiwu = fk.CreateActiveSkill{
   card_num = 1,
   target_num = 0,
   interaction = function(self)
-    local jiwu_skills = table.filter({"ol_ex__qiangxi", "ex__tieji", "ty_ex__xuanfeng", "ol_ex__wansha"}, function (skill_name)
+    local jiwu_skills = table.filter({"qiangxi", "ex__tieji", "xuanfeng", "wansha"}, function (skill_name)
       return not Self:hasSkill(skill_name, true)
     end)
     if #jiwu_skills == 0 then return false end
     return UI.ComboBox { choices = jiwu_skills }
   end,
   can_use = function(self, player)
-    local jiwu_skills = {"ol_ex__qiangxi", "ex__tieji", "ty_ex__xuanfeng", "ol_ex__wansha"}
+    local jiwu_skills = {"qiangxi", "ex__tieji", "xuanfeng", "wansha"}
     return not table.every(jiwu_skills, function (skill_name) return player:hasSkill(skill_name, true) end)
   end,
   card_filter = function(self, to_select, selected)
@@ -260,10 +260,10 @@ local jiwu = fk.CreateActiveSkill{
 lvbu3:addSkill("wushuang")
 lvbu3:addSkill(shenqu)
 lvbu3:addSkill(jiwu)
-lvbu3:addRelatedSkill("ol_ex__qiangxi")
+lvbu3:addRelatedSkill("qiangxi")
 lvbu3:addRelatedSkill("ex__tieji")
-lvbu3:addRelatedSkill("ty_ex__xuanfeng")
-lvbu3:addRelatedSkill("ol_ex__wansha")
+lvbu3:addRelatedSkill("xuanfeng")
+lvbu3:addRelatedSkill("wansha")
 
 Fk:loadTranslationTable{
   ["hulao3__godlvbu"] = "神吕布",
@@ -285,14 +285,14 @@ Fk:loadTranslationTable{
   ["$shenqu2"] = "虎牢关，我一人镇守足矣。",
   ["$jiwu1"] = "我！是不可战胜的！",
   ["$jiwu2"] = "今天！就让你们感受一下真正的绝望！",
-  ["$ol_ex__qiangxi_hulao3__godlvbu1"] = "这么想死，那我就成全你！",
-  ["$ol_ex__qiangxi_hulao3__godlvbu2"] = "项上人头，待我来取！",
+  ["$qiangxi_hulao3__godlvbu1"] = "这么想死，那我就成全你！",
+  ["$qiangxi_hulao3__godlvbu2"] = "项上人头，待我来取！",
   ["$ex__tieji_hulao3__godlvbu1"] = "哈哈哈！破绽百出！",
   ["$ex__tieji_hulao3__godlvbu2"] = "我要让这虎牢关下，血流成河！",
-  ["$ty_ex__xuanfeng_hulao3__godlvbu1"] = "千钧之势，力贯苍穹！",
-  ["$ty_ex__xuanfeng_hulao3__godlvbu2"] = "风扫六合，威震八荒！",
-  ["$ol_ex__wansha_hulao3__godlvbu1"] = "蝼蚁！怎容偷生！",
-  ["$ol_ex__wansha_hulao3__godlvbu2"] = "沉沦吧！在这无边的恐惧！",
+  ["$xuanfeng_hulao3__godlvbu1"] = "千钧之势，力贯苍穹！",
+  ["$xuanfeng_hulao3__godlvbu2"] = "风扫六合，威震八荒！",
+  ["$wansha_hulao3__godlvbu1"] = "蝼蚁！怎容偷生！",
+  ["$wansha_hulao3__godlvbu2"] = "沉沦吧！在这无边的恐惧！",
   ["~hulao3__godlvbu"] = "你们的项上人头，我改日再取！",
 }
 

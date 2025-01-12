@@ -3335,24 +3335,15 @@ local siqi = fk.CreateTriggerSkill{
       U.turnOverCardsFromDrawPile(player, to_show, self.name)
       local to_use
       repeat
-        local default_use = nil
         to_use = table.filter(cards, function(cid)
           if room:getCardArea(cid) ~= Card.Processing then return false end
           card = Fk:getCardById(cid, true)
-          if not player:prohibitUse(card) then
-            local default_p = table.find(room.alive_players, function(p)
-              return not player:isProhibited(p, card) and card.skill:modTargetFilter(p.id, {}, player.id, card, false)
-            end)
-            if default_p ~= nil then
-              if default_use == nil then
-                default_use = {cid, default_p.id}
-              end
-              return true
-            end
-          end
+          return not (player:prohibitUse(card) or table.every(room.alive_players, function(p)
+            return player:isProhibited(p, card) or not card.skill:modTargetFilter(p.id, {}, player.id, card, false)
+          end))
         end)
-        if default_use == nil then break end
-        local _, dat = room:askForUseViewAsSkill(player, "siqi_active", "#siqi-use", false, { cards = to_use })
+        if #to_use == 0 then break end
+        local _, dat = room:askForUseViewAsSkill(player, "siqi_active", "#siqi-use", true, { cards = to_use })
         if dat then
           room:useCard{
             card = Fk:getCardById(dat.cards[1], true),
@@ -3361,21 +3352,16 @@ local siqi = fk.CreateTriggerSkill{
             extraUse = true,
           }
         else
-          room:useCard{
-            card = Fk:getCardById(default_use[1], true),
-            from = player.id,
-            tos = { { default_use[2] } },
-            extraUse = true,
-          }
+          break
         end
       until player.dead
-      cards = table.filter(to_show, function(cid) return room:getCardArea(cid) == Card.Processing end)
-      if #cards > 0 then
-        if not player.dead then
-          player:drawCards(#cards, self.name)
+      if not player.dead then
+        x = #to_show - #cards
+        if x > 0 then
+          room:drawCards(player, x, self.name)
         end
-        room:moveCardTo(cards, Card.DiscardPile, nil, fk.ReasonPutIntoDiscardPile, self.name)
       end
+      room:cleanProcessingArea(to_show, self.name)
     end
   end,
 }
@@ -3384,7 +3370,7 @@ Fk:loadTranslationTable{
   ["siqi"] = "思泣",
   [":siqi"] = "当你的牌移至弃牌堆后，你将其中的红色牌置于牌堆底。"..
     "当你受到伤害后，你可以亮出牌堆底的X张牌（X为从牌堆底开始连续的红色牌数且至多为4），"..
-    "使用其中的所有【桃】、【无中生有】和装备牌（可以对其他角色使用），然后摸等同于剩余牌数的牌。",
+    "依次可以使用其中的所有【桃】、【无中生有】和装备牌（可以对其他角色使用），然后摸等同于其他牌数的牌。",
 
   ["siqi_active"] = "思泣",
   ["#siqi-use"] = "思泣：你可以依次使用亮出的牌（可以对其他角色使用）",
