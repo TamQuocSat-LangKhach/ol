@@ -61,9 +61,7 @@ local duwu = fk.CreateActiveSkill{
   name = "duwu",
   anim_type = "offensive",
   target_num = 1,
-  can_use = function(self, player)
-    return player:getMark("@@duwu-turn") == 0
-  end,
+  can_use = Util.TrueFunc,
   card_filter = function(self, to_select)
     return not Self:prohibitDiscard(to_select)
   end,
@@ -105,7 +103,7 @@ local duwu_trigger = fk.CreateTriggerSkill{
     local room = player.room
     player:broadcastSkillInvoke("duwu")
     room:notifySkillInvoked(player, "duwu", "negative")
-    room:setPlayerMark(player, "@@duwu-turn", 1)
+    room:invalidateSkill(player, "duwu", "-turn")
     room:loseHp(player, 1, "duwu")
   end,
 
@@ -133,7 +131,6 @@ Fk:loadTranslationTable{
   [":duwu"] = "出牌阶段，你可以弃置X张牌对你攻击范围内的一名其他角色造成1点伤害（X为该角色的体力值）。"..
   "若其因此进入濒死状态且被救回，则濒死状态结算后你失去1点体力，且本回合不能再发动〖黩武〗。",
   ["#aocai"] = "傲才：你可以使用或打出其中你需要的基本牌",
-  ["@@duwu-turn"] = "黩武失效",
   ["#duwu_trigger"] = "黩武",
 
   ["$aocai1"] = "哼，易如反掌。",
@@ -2764,19 +2761,22 @@ local beizhan = fk.CreateTriggerSkill{
   anim_type = "drawcard",
   events = {fk.TurnEnd},
   on_cost = function(self, event, target, player, data)
-    local to = player.room:askForChoosePlayers(player, table.map(player.room:getAlivePlayers(), Util.IdMapper), 1, 1, "#beizhan-choose", self.name, true)
+    local room = player.room
+    local to = room:askForChoosePlayers(player, table.map(room.alive_players, Util.IdMapper), 1, 1, "#beizhan-choose", self.name, true)
     if #to > 0 then
-      self.cost_data = to[1]
+      self.cost_data = {tos = to}
       return true
     end
   end,
   on_use = function(self, event, target, player, data)
-    local to = player.room:getPlayerById(self.cost_data)
-    local n = math.min(to.maxHp, 5) - #to.player_cards[Player.Hand]
+    local room = player.room
+    local to = room:getPlayerById(self.cost_data.tos[1])
+    local n = math.min(to.maxHp, 5) - to:getHandcardNum()
     if n > 0 then
       to:drawCards(n, self.name)
+      if to.dead then return end
     end
-    player.room:addPlayerMark(to, self.name, 1)
+    room:setPlayerMark(to, self.name, 1)
   end,
 }
 local beizhan_delay = fk.CreateTriggerSkill{

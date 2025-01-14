@@ -850,9 +850,7 @@ local kuangxi = fk.CreateActiveSkill{
   card_num = 0,
   target_num = 1,
   prompt = "#kuangxi",
-  can_use = function(self, player)
-    return player:getMark("@@kuangxi-turn") == 0
-  end,
+  can_use = Util.TrueFunc,
   card_filter = Util.FalseFunc,
   target_filter = function(self, to_select, selected, selected_cards)
     return #selected == 0 and to_select ~= Self.id
@@ -861,12 +859,14 @@ local kuangxi = fk.CreateActiveSkill{
     local player = room:getPlayerById(effect.from)
     local target = room:getPlayerById(effect.tos[1])
     room:loseHp(player, 1, self.name)
-    room:damage{
-      from = player,
-      to = target,
-      damage = 1,
-      skillName = self.name,
-    }
+    if not target.dead then
+      room:damage{
+        from = player,
+        to = target,
+        damage = 1,
+        skillName = self.name,
+      }
+    end
   end,
 }
 local kuangxi_trigger = fk.CreateTriggerSkill{
@@ -877,7 +877,7 @@ local kuangxi_trigger = fk.CreateTriggerSkill{
     return data.damage and data.damage.skillName == "kuangxi" and data.damage.from and data.damage.from == player and not player.dead
   end,
   on_refresh = function(self, event, target, player, data)
-    player.room:setPlayerMark(player, "@@kuangxi-turn", 1)
+    player.room:invalidateSkill(player, "kuangxi", "-turn")
   end,
 }
 local mojun = fk.CreateTriggerSkill{
@@ -898,7 +898,6 @@ local mojun = fk.CreateTriggerSkill{
     }
     room:judge(judge)
     if judge.card.color == Card.Black then
-      pt(U.GetFriends(room, player))
       for _, p in ipairs(U.GetFriends(room, player)) do
         if not p.dead then
           p:drawCards(1, self.name)
@@ -917,7 +916,6 @@ Fk:loadTranslationTable{
   ["mojun"] = "魔军",
   [":mojun"] = "锁定技，当友方角色使用【杀】造成伤害后，你判定，若结果为黑色，友方角色各摸一张牌。",
   ["#kuangxi"] = "狂袭：失去1点体力，对一名其他角色造成1点伤害！",
-  ["@@kuangxi-turn"] = "狂袭失效",
 
   ["$kuangxi1"] = "",
   ["$kuangxi2"] = "",

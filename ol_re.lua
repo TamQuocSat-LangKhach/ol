@@ -1358,7 +1358,7 @@ local zhixip = fk.CreateProhibitSkill{
   end,
 }
 zhixi:addRelatedSkill(zhixip)
-ol__sunluyu:addSkill(zhixi)
+ol__sunluyu:addRelatedSkill(zhixi)
 Fk:loadTranslationTable{
   ['ol__sunluyu'] = '孙鲁育',
   ['#ol__sunluyu'] = '舍身饲虎',

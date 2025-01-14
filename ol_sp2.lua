@@ -2595,7 +2595,6 @@ Fk:loadTranslationTable{
   ["@fengji_draw-round"] = "丰积:摸牌",
   ["@fengji_slash-round"] = "丰积:使用杀",
   ["#fengji-choose"] = "丰积：你可以令一名其他角色本轮%arg+2",
-  ["@@xuanhui"] = "旋回失效",
   ["#xuanhui-invoke"] = "旋回：是否与 %dest 交换丰积效果？",
   ["#xuanhui-choose"] = "旋回：你可以与一名角色交换丰积效果",
 
