@@ -1469,7 +1469,7 @@ yuanshu:addSkill(yanliangy)
 Fk:loadTranslationTable{
   ["olmou__yuanshu"] = "谋袁术",
   ["#olmou__yuanshu"] = "画脂镂冰",
-  ["illustrator:olmou__yuanshu"] = "",
+  --["illustrator:olmou__yuanshu"] = "",
 
   ["jinming"] = "矜名",
   [":jinming"] = "锁定技，回合开始时，你选择一项条件：1.回复过1点体力；2.弃置过两张牌；3.使用过三种类型的牌；4.造成过4点伤害。"..
@@ -1491,6 +1491,14 @@ Fk:loadTranslationTable{
   ["yanliangy&"] = "厌粱",
   [":yanliangy&"] = "出牌阶段限一次，你可以交给谋袁术一张装备牌，视为使用一张【酒】。",
   ["#yanliangy&"] = "厌粱：你可以交给谋袁术一张装备牌，视为使用一张【酒】",
+
+  ["$jinming1"] = "士举义或举利，吾，当举大名耳！",
+  ["$jinming2"] = "人生百代，我欲垂名于青史。",
+  ["$xiaoshi1"] = "胸有欲壑，泰山难填、息壤难掩。",
+  ["$xiaoshi2"] = "子欲奉汝之骨肉为宴否？",
+  ["$yanliangy1"] = "此酒酸涩，快！去取我的金浆酒来！",
+  ["$yanliangy2"] = "诸君且饮此杯，待明日沙场建功！",
+  ["~olmou__yuanshu"] = "谋事在人，奈何成事不在人……",
 }
 
 local huaxiong = General(extension, "olmou__huaxiong", "qun", 6)
