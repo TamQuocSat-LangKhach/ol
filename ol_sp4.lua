@@ -4059,11 +4059,84 @@ Fk:loadTranslationTable{
 }
 
 local yangfeng = General(extension, "ol__yangfeng", "qun", 4)
-yangfeng.hidden = true
-yangfeng:addSkill("tmp_illustrate")
+local jiawei = fk.CreateTriggerSkill{
+  name = "jiawei",
+  anim_type = "offensive",
+  events = {fk.TurnEnd},
+  can_trigger = function (self, event, target, player, data)
+    if player:hasSkill(self) and not player:isKongcheng() then
+      local targets = {}
+      player.room.logic:getEventsOfScope(GameEvent.CardEffect, 1, function (e)
+        local effect = e.data[1]
+        if effect.card.trueName == "slash" and effect.isCancellOut then
+          local to = player.room:getPlayerById(effect.to)
+          if to ~= player and not to.dead then
+            table.insertIfNeed(targets, effect.to)
+          end
+        end
+      end, Player.HistoryTurn)
+      if #targets > 0 then
+        self.cost_data = {tos = targets}
+        return true
+      end
+    end
+  end,
+  on_cost = function (self, event, target, player, data)
+    local success, dat = player.room:askForUseActiveSkill(player, "jiawei_viewas", "#jiawei-use", true,
+      {
+        exclusive_targets = self.cost_data.tos,
+      })
+    if success and dat then
+      self.cost_data = {tos = dat.targets, cards = dat.cards}
+      return true
+    end
+  end,
+  on_use = function (self, event, target, player, data)
+    local room = player.room
+    local use = room:useVirtualCard("duel", self.cost_data.cards, player, table.map(self.cost_data.tos, Util.Id2PlayerMapper), self.name)
+    if use and use.damageDealt and not player.dead and player:getMark("jiawei-round") == 0 then
+      local tos = {}
+      if player:getHandcardNum() < math.min(player:getMaxCards(), 5) then
+        table.insert(tos, player.id)
+      end
+      if not target.dead and target:getHandcardNum() < math.min(target:getMaxCards(), 5) then
+        table.insertIfNeed(tos, target.id)
+      end
+      if #tos > 0 then
+        local to = room:askForChoosePlayers(player, tos, 1, 1, "#jiawei-choose", self.name, true)
+        if #to > 0 then
+          room:setPlayerMark(player, "jiawei-round", 1)
+          to = room:getPlayerById(to[1])
+          to:drawCards(math.min(to:getMaxCards(), 5) - to:getHandcardNum(), self.name)
+        end
+      end
+    end
+  end,
+}
+local jiawei_viewas = fk.CreateViewAsSkill{
+  name = "jiawei_viewas",
+  card_filter = function(self, to_select, selected)
+    return table.contains(Self:getCardIds("h"), to_select)
+  end,
+  view_as = function(self, cards)
+    local card = Fk:cloneCard("duel")
+    card:addSubcards(cards)
+    card.skillName = "jiawei"
+    return card
+  end,
+}
+Fk:addSkill(jiawei_viewas)
+yangfeng:addSkill(jiawei)
 Fk:loadTranslationTable{
   ["ol__yangfeng"] = "杨奉",
   ["#ol__yangfeng"] = "",
+
+  ["jiawei"] = "假威",
+  [":jiawei"] = "【杀】被抵消的回合结束时，你可以将任意张手牌当【决斗】对本回合抵消过【杀】的一名角色使用。每轮限一次，若此【决斗】造成伤害，"..
+  "你可以令你或当前回合角色将手牌摸至手牌上限（至多摸至5）。",
+  ["jiawei_viewas"] = "假威",
+  ["#jiawei-use"] = "假威：你可以将任意张手牌当【决斗】对其中一名角色使用",
+  ["#jiawei-choose"] = "假威：你可以令一名角色将手牌摸至手牌上限",
 }
 
 return extension
