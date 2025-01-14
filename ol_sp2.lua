@@ -959,6 +959,7 @@ local juguan = fk.CreateViewAsSkill{
   anim_type = "offensive",
   pattern = "slash,duel",
   interaction = UI.ComboBox {choices = {"slash", "duel"}},
+  handly_pile = true,
   card_filter = function(self, to_select, selected)
     return #selected == 0 and Fk:currentRoom():getCardArea(to_select) ~= Player.Equip
   end,
@@ -3533,6 +3534,7 @@ local qiaoli = fk.CreateViewAsSkill{
     end
     return ""
   end,
+  handly_pile = true,
   card_filter = function(self, to_select, selected)
     if #selected == 0 then
       if self.interaction.data == "qiaoli1-phase" then
@@ -4419,9 +4421,10 @@ local yilie = fk.CreateViewAsSkill{
       return not table.contains(mark, card.trueName)
     end)
     if #names > 0 then
-      return UI.ComboBox { choices = names, all_choices = all_names }
+      return U.CardNameBox { choices = names, all_choices = all_names }
     end
   end,
+  handly_pile = true,
   card_filter = function(self, to_select, selected)
     if Fk:currentRoom():getCardArea(to_select) ~= Player.Equip then
       if #selected == 0 then
@@ -4662,7 +4665,7 @@ local liangyuan = fk.CreateViewAsSkill{
       end
     end
     if #names == 0 then return end
-    return UI.ComboBox {choices = names}
+    return U.CardNameBox {choices = names}
   end,
   card_filter = Util.FalseFunc,
   view_as = function(self, cards)
@@ -4984,6 +4987,7 @@ local kanpod = fk.CreateViewAsSkill{
   anim_type = "offensive",
   pattern = "slash",
   prompt = "#kanpod-prompt",
+  handly_pile = true,
   card_filter = function(self, to_select, selected)
     return #selected == 0 and Fk:currentRoom():getCardArea(to_select) ~= Player.Equip
   end,

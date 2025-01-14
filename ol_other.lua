@@ -930,6 +930,7 @@ local qin__bianfa = fk.CreateViewAsSkill{
   anim_type = "offensive",
   pattern = "shangyang_reform",
   prompt = "#qin__bianfa",
+  handly_pile = true,
   card_filter = function(self, to_select, selected)
     return #selected == 0 and Fk:getCardById(to_select):isCommonTrick()
   end,
@@ -1202,6 +1203,7 @@ local qin__shashen = fk.CreateViewAsSkill{
   anim_type = "offensive",
   pattern = "slash",
   prompt = "#qin__shashen",
+  handly_pile = true,
   card_filter = function(self, to_select, selected)
     return #selected == 0 and Fk:currentRoom():getCardArea(to_select) ~= Player.Equip
   end,
@@ -1525,6 +1527,7 @@ local qin__zhilu = fk.CreateViewAsSkill{
   name = "qin__zhilu",
   pattern = "slash,jink",
   prompt = "#qin__zhilu",
+  handly_pile = true,
   card_filter = function(self, to_select, selected)
     if #selected == 0 and Fk:currentRoom():getCardArea(to_select) ~= Player.Equip then
       local card = Fk:getCardById(to_select)

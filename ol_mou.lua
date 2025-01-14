@@ -272,8 +272,9 @@ local weilingy = fk.CreateViewAsSkill{
       end
     end
     if #names == 0 then return false end
-    return UI.ComboBox { choices = names, all_choices = all_names }
+    return U.CardNameBox { choices = names, all_choices = all_names }
   end,
+  handly_pile = true,
   card_filter = function(self, to_select, selected)
     return #selected == 0
   end,
@@ -2140,7 +2141,7 @@ local jiewan = fk.CreateTriggerSkill{
       else
         room:changeMaxHp(player, -1)
       end
-      if player.dead or player:isKongcheng() then return end
+      if player.dead or #player:getCardIds("h&") == 0 then return end
       local success, dat = room:askForUseActiveSkill(player, "jiewan_viewas", "#jiewan-use", true, {bypass_distances = true})
       if success and dat then
         room:sortPlayersByAction(dat.targets)
@@ -2167,8 +2168,9 @@ local jiewan_active = fk.CreateActiveSkill{
 }
 local jiewan_viewas = fk.CreateViewAsSkill{
   name = "jiewan_viewas",
+  handly_pile = true,
   card_filter = function(self, to_select, selected)
-    return #selected == 0 and table.contains(Self:getCardIds("h"), to_select)
+    return #selected == 0 and table.contains(Self:getHandlyIds(true), to_select)
   end,
   view_as = function(self, cards)
     if #cards ~= 1 then return end

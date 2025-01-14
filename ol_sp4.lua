@@ -152,9 +152,10 @@ local kouchao = fk.CreateViewAsSkill{
       end
     end
     if #names > 0 then
-      return UI.ComboBox { choices = names, all_choices = all_names }
+      return U.CardNameBox { choices = names, all_choices = all_names }
     end
   end,
+  handly_pile = true,
   card_filter = function(self, to_select, selected)
     return #selected == 0 and self.interaction.data
   end,
@@ -1049,6 +1050,7 @@ local leiluan = fk.CreateViewAsSkill{
       return U.CardNameBox { choices = names, all_choices = all_names }
     end
   end,
+  handly_pile = true,
   card_filter = function (self, to_select, selected)
     return #selected < math.max(Self:getMark("leiluan_count"), 1)
   end,
@@ -1560,6 +1562,7 @@ local zonglue = fk.CreateViewAsSkill{
   name = "zonglue",
   anim_type = "offensive",
   prompt = "#zonglue",
+  handly_pile = true,
   card_filter = function(self, to_select, selected)
     return #selected == 0
   end,
@@ -3861,6 +3864,7 @@ local zhujiu = fk.CreateViewAsSkill{
   prompt = function (self, selected_cards, selected)
     return "#zhujiu:::"..(Self:getMark("zhujiu-turn") + 1)
   end,
+  handly_pile = true,
   card_filter = function(self, to_select, selected)
     return #selected < Self:getMark("zhujiu-turn") + 1 and Fk:getCardById(to_select).suit == Card.Club
   end,
@@ -4064,7 +4068,7 @@ local jiawei = fk.CreateTriggerSkill{
   anim_type = "offensive",
   events = {fk.TurnEnd},
   can_trigger = function (self, event, target, player, data)
-    if player:hasSkill(self) and not player:isKongcheng() then
+    if player:hasSkill(self) and #player:getHandlyIds() > 0 then
       local targets = {}
       player.room.logic:getEventsOfScope(GameEvent.CardEffect, 1, function (e)
         local effect = e.data[1]
@@ -4115,8 +4119,9 @@ local jiawei = fk.CreateTriggerSkill{
 }
 local jiawei_viewas = fk.CreateViewAsSkill{
   name = "jiawei_viewas",
+  handly_pile = true,
   card_filter = function(self, to_select, selected)
-    return table.contains(Self:getCardIds("h"), to_select)
+    return table.contains(Self:getHandlyIds(), to_select)
   end,
   view_as = function(self, cards)
     local card = Fk:cloneCard("duel")

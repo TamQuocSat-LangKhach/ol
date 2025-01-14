@@ -254,7 +254,7 @@ local shenjun_viewas = fk.CreateViewAsSkill{
       end
     end
     if #names == 0 then return end
-    return UI.ComboBox {choices = names}
+    return U.CardNameBox {choices = names}
   end,
   card_filter = function(self, to_select, selected)
     return #selected < #Self:getMark("@$shenjun")
@@ -798,6 +798,7 @@ local zhanding = fk.CreateViewAsSkill{
   name = "zhanding",
   pattern = "slash",
   prompt = "#zhanding",
+  handly_pile = true,
   card_filter = Util.TrueFunc,
   view_as = function(self, cards)
     if #cards == 0 then return end
@@ -1666,6 +1667,7 @@ local jiexuan = fk.CreateViewAsSkill{
   times = function(self)
     return 1 - Self:usedSkillTimes(self.name, Player.HistoryGame)
   end,
+  handly_pile = true,
   card_filter = function(self, to_select, selected)
     if #selected == 0 then
       if Self:getSwitchSkillState(self.name, false) == fk.SwitchYang then
@@ -2358,6 +2360,7 @@ local fuxun_viewas = fk.CreateViewAsSkill{
       return U.CardNameBox { choices = names, all_choices = all_names }
     end
   end,
+  handly_pile = true,
   card_filter = function(self, to_select, selected)
     return #selected == 0
   end,
@@ -3277,9 +3280,10 @@ local chengqi = fk.CreateViewAsSkill{
       return not table.contains(mark, card.trueName)
     end)
     if #names > 0 then
-      return UI.ComboBox { choices = names, all_choices = all_names }
+      return U.CardNameBox { choices = names, all_choices = all_names }
     end
   end,
+  handly_pile = true,
   card_filter = function(self, to_select, selected)
     return Fk:currentRoom():getCardArea(to_select) ~= Card.PlayerEquip
   end,

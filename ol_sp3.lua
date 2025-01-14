@@ -11,6 +11,7 @@ local huiyun = fk.CreateViewAsSkill{
   name = "huiyun",
   anim_type = "support",
   pattern = "fire_attack",
+  handly_pile = true,
   card_filter = function(self, to_select, selected)
     return #selected == 0
   end,
@@ -1086,6 +1087,7 @@ local maxiumatie = General(extension, "maxiumatie", "qun", 4)
 local kenshang = fk.CreateViewAsSkill{
   name = "kenshang",
   pattern = "slash",
+  handly_pile = true,
   card_filter = Util.TrueFunc,
   view_as = function(self, cards)
     if #cards < 2 then return end
@@ -1194,6 +1196,7 @@ local miuyan = fk.CreateViewAsSkill{
   prompt = function ()
     return "miuyan-prompt-".. Self:getSwitchSkillState("miuyan", false, true)
   end,
+  handly_pile = true,
   card_filter = function(self, to_select, selected)
     return #selected == 0 and Fk:getCardById(to_select).color == Card.Black
   end,
@@ -2319,20 +2322,20 @@ local goude = fk.CreateTriggerSkill{
     while choice ~= "Cancel" do
       choice = room:askForChoice(player, choices, self.name, "#goude-choice", false, {"Cancel", "draw1", "goude2", "goude3", "goude4"})
       if choice == "draw1" or choice == "goude4" then
-        self.cost_data = {choice}
+        self.cost_data = {choice = choice}
         return true
       elseif choice == "goude2" then
         local targets = table.map(table.filter(room.alive_players, function(pl)
           return not pl:isKongcheng() end), Util.IdMapper)
         local to = room:askForChoosePlayers(player, targets, 1, 1, "#goude-choose", self.name, true)
         if #to > 0 then
-          self.cost_data = {choice, to[1]}
+          self.cost_data = {choice = choice, tos = to}
           return true
         end
       elseif choice == "goude3" then
-        local success, dat = room:askForUseActiveSkill(player, "goude_viewas", "#goude-slash", true)
-        if success then
-          self.cost_data = {choice, dat}
+        local use = U.askForUseVirtualCard(room, player, "slash", nil, self.name, "#goude-slash", true, true, false, true, nil, true)
+        if use then
+          self.cost_data = {choice = choice, extra_data = use}
           return true
         end
       end
@@ -2340,21 +2343,15 @@ local goude = fk.CreateTriggerSkill{
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    if self.cost_data[1] == "draw1" then
+    if self.cost_data.choice == "draw1" then
       player:drawCards(1, self.name)
-    elseif self.cost_data[1] == "goude2" then
-      local to = room:getPlayerById(self.cost_data[2])
+    elseif self.cost_data.choice == "goude2" then
+      local to = room:getPlayerById(self.cost_data.tos[1])
       local id = room:askForCardChosen(player, to, "h", self.name)
       room:throwCard({id}, self.name, to, player)
-    elseif self.cost_data[1] == "goude3" then
-      local card = Fk.skills["goude_viewas"]:viewAs(self.cost_data[2].cards)
-      room:useCard{
-        from = player.id,
-        tos = table.map(self.cost_data[2].targets, function(id) return {id} end),
-        card = card,
-        extraUse = true,
-      }
-    elseif self.cost_data[1] == "goude4" then
+    elseif self.cost_data.choice == "goude3" then
+      room:useCard(self.cost_data.extra_data)
+    elseif self.cost_data.choice == "goude4" then
       local allKingdoms = {"wei", "shu", "wu", "qun", "jin"}
       local exceptedKingdoms = {player.kingdom}
       for _, kingdom in ipairs(exceptedKingdoms) do
@@ -2365,17 +2362,6 @@ local goude = fk.CreateTriggerSkill{
     end
   end,
 }
-local goude_viewas = fk.CreateViewAsSkill{
-  name = "goude_viewas",
-  pattern = "slash",
-  card_filter = Util.FalseFunc,
-  view_as = function(self, cards)
-    local card = Fk:cloneCard("slash")
-    card.skillName = "goude"
-    return card
-  end,
-}
-Fk:addSkill(goude_viewas)
 mengda:addSkill(goude)
 Fk:loadTranslationTable{
   ["ol__mengda"] = "孟达",
@@ -2391,7 +2377,6 @@ Fk:loadTranslationTable{
   ["goude4"] = "变更势力",
   ["#goude-choose"] = "苟得：选择一名角色，弃置其一张手牌",
   ["#goude-slash"] = "苟得：视为使用一张【杀】",
-  ["goude_viewas"] = "苟得",
 
   ["$goude1"] = "蝼蚁尚且偷生，况我大将军乎。",
   ["$goude2"] = "为保身家性命，做奔臣又如何？",
@@ -2520,7 +2505,7 @@ local xieju = fk.CreateActiveSkill{
   on_use = function(self, room, effect)
     for _, id in ipairs(effect.tos) do
       local target = room:getPlayerById(id)
-      if not target.dead and not target:isNude() then
+      if not target.dead and (not target:isNude() or #target:getCardIds("&") > 0) then
         local success, dat = room:askForUseViewAsSkill(target, "xieju_viewas", "#xieju-slash", true, {bypass_times = true})
         if dat then
           local card = Fk.skills["xieju_viewas"]:viewAs(dat.cards)
@@ -2554,6 +2539,7 @@ local xieju_record = fk.CreateTriggerSkill{
 local xieju_viewas = fk.CreateViewAsSkill{
   name = "xieju_viewas",
   pattern = "slash",
+  handly_pile = true,
   card_filter = function(self, to_select, selected)
     return #selected == 0 and Fk:getCardById(to_select).color == Card.Black
   end,
@@ -3780,6 +3766,7 @@ zhangyan:addSkill(suji)
 local suji_viewas = fk.CreateViewAsSkill{
   name = "suji_viewas",
   card_num = 1,
+  handly_pile = true,
   card_filter = function(self, to_select, selected)
     return #selected == 0 and Fk:getCardById(to_select).color == Card.Black
   end,
@@ -4251,7 +4238,7 @@ local xuanzhu = fk.CreateViewAsSkill{
     end
     local names = U.getViewAsCardNames(Self, "xuanzhu", all_names)
     if #names > 0 then
-      return UI.ComboBox { choices = names, all_choices = all_names }
+      return U.CardNameBox { choices = names, all_choices = all_names }
     end
   end,
   card_filter = function(self, to_select, selected)
@@ -5136,7 +5123,7 @@ local weijie = fk.CreateViewAsSkill{
     local all_names = U.getAllCardNames("b")
     local names = U.getViewAsCardNames(Self, "weijie", all_names)
     if #names > 0 then
-      return UI.ComboBox { choices = names, all_choices = all_names }
+      return U.CardNameBox { choices = names, all_choices = all_names }
     end
   end,
   card_filter = Util.FalseFunc,
@@ -6107,6 +6094,7 @@ local xufaViewAs = fk.CreateViewAsSkill{
   interaction = function()
     return UI.ComboBox { choices = Self:getTableMark("xufa_tricks") }
   end,
+  handly_pile = true,
   card_filter = function(self, to_select, selected)
     return #selected == 0
   end,

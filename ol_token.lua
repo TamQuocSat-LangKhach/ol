@@ -345,7 +345,7 @@ local qinSealSkill = fk.CreateTriggerSkill{
 local qinSealViewAs = fk.CreateViewAsSkill{
   name = "qin_seal_viewas",
   interaction = function()
-    return UI.ComboBox {choices = {"savage_assault", "archery_attack", "god_salvation", "amazing_grace"}}
+    return U.CardNameBox {choices = {"savage_assault", "archery_attack", "god_salvation", "amazing_grace"}}
   end,
   card_filter = Util.FalseFunc,
   view_as = function(self, cards)
@@ -688,7 +688,7 @@ local py_belt = fk.CreateArmor{
 extension:addCard(py_belt)
 Fk:loadTranslationTable{
   ["py_belt"] = "玲珑狮蛮带",
-  [":py_belt"] = "装备牌·防具<br /><b>防具技能</b>：当其他角色使用牌指定你为唯一目标后，你可以进行一次判定，若判定结果为红桃，则此牌对你无效。",
+  [":py_belt"] = "装备牌·防具<br /><b>防具技能</b>：当其他角色使用牌指定你为唯一目标后，你可以进行一次判定，若判定结果为<font color='red'>♥</font>，则此牌对你无效。",
   ["#py_belt_skill"] = "玲珑狮蛮带",
 }
 

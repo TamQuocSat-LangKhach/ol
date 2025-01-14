@@ -1489,6 +1489,7 @@ local fanghun = fk.CreateViewAsSkill{
   name = "fanghun",
   prompt = "#fanghun",
   pattern = "slash,jink",
+  handly_pile = true,
   card_filter = function(self, to_select, selected)
     if #selected == 1 then return false end
     local c = Fk:getCardById(to_select)
@@ -2408,11 +2409,9 @@ local jingong = fk.CreateViewAsSkill{
     if names == 0 then
       names = {"dismantlement", "ex_nihilo", "daggar_in_smile"}  --很难想象什么时候会用到这个默认值
     end
-    return UI.ComboBox {choices = names}
+    return U.CardNameBox {choices = names}
   end,
-  enabled_at_play = function(self, player)
-    return player:usedSkillTimes(self.name, Player.HistoryPhase) == 0 and not player:isKongcheng()
-  end,
+  handly_pile = true,
   card_filter = function(self, to_select, selected)
     local card = Fk:getCardById(to_select)
     return #selected == 0 and (card.trueName == "slash" or card.type == Card.TypeEquip)
@@ -2423,6 +2422,9 @@ local jingong = fk.CreateViewAsSkill{
     card:addSubcard(cards[1])
     card.skillName = self.name
     return card
+  end,
+  enabled_at_play = function(self, player)
+    return player:usedSkillTimes(self.name, Player.HistoryPhase) == 0
   end,
 }
 local jingong_record = fk.CreateTriggerSkill{
@@ -3187,7 +3189,7 @@ local weijing = fk.CreateViewAsSkill{
       end
     end
     if #names == 0 then return end
-    return UI.ComboBox {choices = names}
+    return U.CardNameBox {choices = names}
   end,
   card_filter = Util.FalseFunc,
   view_as = function(self)

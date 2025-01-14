@@ -405,7 +405,7 @@ Fk:loadTranslationTable{
   [":ol_ex__jushou"] = "结束阶段，你可翻面，你摸四张牌，选择：1.使用一张为装备牌的手牌；2.弃置一张不为装备牌的手牌。",
   ["ol_ex__jiewei"] = "解围",
   ["#ol_ex__jiewei_trigger"] = "解围",
-  [":ol_ex__jiewei"] = "①你可将一张装备区里的牌转化为普【无懈可击】使用。②当你翻面后，若你的武将牌正面朝上，你可弃置一张牌，你可将一名角色装备区或判定区里的一张牌置入另一名角色的相同区域。",
+  [":ol_ex__jiewei"] = "①你可将一张装备区里的牌当为【无懈可击】使用。②当你翻面后，若你的武将牌正面朝上，你可弃置一张牌，你可将一名角色装备区或判定区里的一张牌置入另一名角色的相同区域。",
 
   ["#ol_ex__jushou-select"] = "据守：选择使用手牌中的一张装备牌或弃置手牌中的一张非装备牌",
   ["#ol_ex__jiewei-discard"] = "解围：弃置一张牌发动，之后可以移动场上的一张牌",
@@ -1014,18 +1014,18 @@ Fk:loadTranslationTable{
   ["#ol_ex__zhangjiao"] = "天公将军",
   ["illustrator:ol_ex__zhangjiao"] = "青骑士",
   ["ol_ex__leiji"] = "雷击",
-  [":ol_ex__leiji"] = "①当你使用或打出【闪】或【闪电】时，你可判定。②当你的判定结果确定后，若结果为：黑桃，你可对一名其他角色造成2点雷电伤害；梅花，你回复1点体力，然后你可对一名其他角色造成1点雷电伤害。",
+  [":ol_ex__leiji"] = "①当你使用或打出【闪】或【闪电】时，你可判定。②当你的判定结果确定后，若结果为：♠，你可对一名其他角色造成2点雷电伤害；♣，你回复1点体力，然后你可对一名其他角色造成1点雷电伤害。",
   ["ol_ex__guidao"] = "鬼道",
-  [":ol_ex__guidao"] = "当一名角色的判定结果确定前，你可打出一张黑色牌代替之，你获得原判定牌，若你打出的牌是黑桃2~9，你摸一张牌。",
+  [":ol_ex__guidao"] = "当一名角色的判定结果确定前，你可打出一张黑色牌代替之，你获得原判定牌，若你打出的牌是♠2~9，你摸一张牌。",
   ["ol_ex__huangtian"] = "黄天",
-  [":ol_ex__huangtian"] = "主公技，其他群势力角色的出牌阶段限一次，该角色可以将一张【闪】或黑桃手牌（正面朝上移动）交给你。",
+  [":ol_ex__huangtian"] = "主公技，其他群势力角色的出牌阶段限一次，该角色可以将一张【闪】或♠手牌（正面朝上移动）交给你。",
 
   ["ol_ex__huangtian_other&"] = "黄天",
-  [":ol_ex__huangtian_other&"] = "出牌阶段限一次，你可将一张【闪】或黑桃手牌（正面朝上移动）交给张角。",
+  [":ol_ex__huangtian_other&"] = "出牌阶段限一次，你可将一张【闪】或♠手牌（正面朝上移动）交给张角。",
 
   ["#ol_ex__leiji-choose"] = "雷击：你可以选择一名其他角色，对其造成%arg点雷电伤害",
   ["#ol_ex__guidao-ask"] = "鬼道：可以打出一张黑色牌替换 %dest 的“%arg”判定，若打出♠2~9，你摸一张牌",
-  ["#ol_ex__huangtian-active"] = "发动黄天，选择一张【闪】或黑桃手牌（正面朝上移动）交给一名拥有“黄天”的角色",
+  ["#ol_ex__huangtian-active"] = "发动黄天，选择一张【闪】或♠手牌（正面朝上移动）交给一名拥有“黄天”的角色",
 
   ["$ol_ex__leiji1"] = "疾雷迅电，不可趋避！",
   ["$ol_ex__leiji2"] = "雷霆之诛，灭军毁城！",
@@ -1376,6 +1376,7 @@ local ol_ex__huoji = fk.CreateViewAsSkill{
   anim_type = "offensive",
   pattern = "fire_attack",
   prompt = "#ol_ex__huoji-viewas",
+  handly_pile = true,
   card_filter = function(self, to_select, selected)
     return #selected == 0 and Fk:getCardById(to_select).color == Card.Red
   end,
@@ -1410,6 +1411,7 @@ local ol_ex__kanpo = fk.CreateViewAsSkill{
   anim_type = "control",
   pattern = "nullification",
   prompt = "#ol_ex__kanpo-viewas",
+  handly_pile = true,
   card_filter = function(self, to_select, selected)
     return #selected == 0 and Fk:getCardById(to_select).color == Card.Black
   end,
@@ -1762,6 +1764,7 @@ local ol_ex__shuangxiong = fk.CreateViewAsSkill{
   anim_type = "offensive",
   pattern = "duel",
   prompt = "#ol_ex__shuangxiong-viewas",
+  handly_pile = true,
   card_filter = function(self, to_select, selected)
     if #selected == 1 or type(Self:getMark("@ol_ex__shuangxiong-turn")) ~= "table" then return false end
     local color = Fk:getCardById(to_select):getColorString()
@@ -1873,6 +1876,7 @@ local ol_ex__luanji = fk.CreateViewAsSkill{
   anim_type = "offensive",
   pattern = "archery_attack",
   prompt = "#ol_ex__luanji-viewas",
+  handly_pile = true,
   card_filter = function(self, to_select, selected)
     if #selected == 1 then
       return Fk:currentRoom():getCardArea(to_select) ~= Player.Equip and Fk:getCardById(to_select).suit == Fk:getCardById(selected[1]).suit
@@ -1990,6 +1994,7 @@ local ol_ex__duanliang = fk.CreateViewAsSkill{
   anim_type = "control",
   pattern = "supply_shortage",
   prompt = "#ol_ex__duanliang-viewas",
+  handly_pile = true,
   card_filter = function(self, to_select, selected)
     return #selected == 0 and Fk:getCardById(to_select).color == Card.Black and Fk:getCardById(to_select).type ~= Card.TypeTrick
   end,
@@ -2096,6 +2101,7 @@ local ol_ex__changbiao = fk.CreateViewAsSkill{
   anim_type = "offensive",
   pattern = "slash",
   prompt = "#ol_ex__changbiao-active",
+  handly_pile = true,
   card_filter = function(self, to_select, selected)
     return Fk:currentRoom():getCardArea(to_select) ~= Player.Equip
   end,
@@ -2159,7 +2165,7 @@ Fk:loadTranslationTable{
 
   ["ol_ex__changbiao"] = "长标",
   ["#ol_ex__changbiao_trigger"] = "长标",
-  [":ol_ex__changbiao"] = "出牌阶段限一次，你可将至少一张手牌转化为普【杀】使用（无距离关系的限制），此阶段结束时，若此【杀】造成过伤害，你摸x张牌（X为以此法转化的牌数）。",
+  [":ol_ex__changbiao"] = "出牌阶段限一次，你可将至少一张手牌转化为【杀】使用（无距离限制），此阶段结束时，若此【杀】造成过伤害，你摸x张牌（X为以此法转化的牌数）。",
 
   ["#ol_ex__changbiao-active"] = "发动长标，将任意数量的手牌转化为【杀】使用（无距离限制）",
   ["@ol_ex__changbiao_draw-phase"] = "长标",
@@ -2507,6 +2513,7 @@ local ol_ex__jiuchi = fk.CreateViewAsSkill{
   anim_type = "offensive",
   pattern = "analeptic",
   prompt = "#ol_ex__jiuchi-viewas",
+  handly_pile = true,
   card_filter = function(self, to_select, selected)
     return #selected == 0 and Fk:getCardById(to_select).suit == Card.Spade and Fk:currentRoom():getCardArea(to_select) ~= Player.Equip
   end,
@@ -2984,7 +2991,7 @@ Fk:loadTranslationTable{
   ["illustrator:ol_ex__dengai"] = "君桓文化",
   ["ol_ex__tuntian"] = "屯田",
   ["#ol_ex__tuntian_delay"] = "屯田",
-  [":ol_ex__tuntian"] = "当你于回合外失去牌后，或于回合内因弃置而失去【杀】后，你可以进行判定，若结果不为红桃，你将判定牌置于你的武将牌上，称为“田”；你计算与其他角色的距离-X（X为“田”的数量）。",
+  [":ol_ex__tuntian"] = "当你于回合外失去牌后，或于回合内因弃置而失去【杀】后，你可以进行判定，若结果不为<font color='red'>♥</font>，你将判定牌置于你的武将牌上，称为“田”；你计算与其他角色的距离-X（X为“田”的数量）。",
   ["ol_ex__zaoxian"] = "凿险",
   [":ol_ex__zaoxian"] = "觉醒技，准备阶段，若“田”的数量大于等于3，你减1点体力上限，然后获得“急袭”。此回合结束后，你获得一个额外回合。",
   ["ol_ex__jixi"] = "急袭",

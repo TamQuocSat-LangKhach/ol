@@ -80,20 +80,21 @@ local xiongzhi = fk.CreateActiveSkill{
     local player = room:getPlayerById(effect.from)
     while not player.dead do
       local cards = room:getNCards(1)
-      player:showCards(cards)
-      if not U.askForUseRealCard(room, player, cards, ".", self.name, "#xiongzhi-use:::"..Fk:getCardById(cards[1]):toLogString(), {expand_pile = cards, bypass_times = false, extraUse = false}) then
+      room:moveCardTo(cards, Card.Processing, nil, fk.ReasonJustMove, self.name, nil, true, player.id)
+      if not U.askForUseRealCard(room, player, cards, nil, self.name,
+        "#xiongzhi-use:::"..Fk:getCardById(cards[1]):toLogString(), {
+          expand_pile = cards,
+          bypass_times = false,
+          extraUse = false
+        }) then
+        room:moveCards({
+          ids = cards,
+          toArea = Card.DrawPile,
+          moveReason = fk.ReasonJustMove,
+          skillName = self.name,
+        })
         break
       end
-    end
-  end,
-}
-local xiongzhi_viewas = fk.CreateViewAsSkill{
-  name = "xiongzhi_viewas",
-  card_filter = Util.FalseFunc,
-  view_as = function(self, cards)
-    local card = Fk:getCardById(Self:getMark("xiongzhi-tmp")[1])
-    if Self:canUse(card) and not Self:prohibitUse(card) then
-      return card
     end
   end,
 }
@@ -176,7 +177,6 @@ local quanbian_prohibit = fk.CreateProhibitSkill{
   end,
 }
 quanbian:addRelatedSkill(quanbian_prohibit)
-Fk:addSkill(xiongzhi_viewas)
 simayi:addSkill(buchen)
 simayi:addSkill(yingshis)
 simayi:addSkill(xiongzhi)
@@ -2376,8 +2376,9 @@ local pozhu = fk.CreateViewAsSkill{
   name = "pozhu",
   anim_type = "offensive",
   prompt = "#pozhu",
+  handly_pile = true,
   card_filter = function(self, to_select, selected)
-    return #selected == 0 and table.contains(Self:getHandlyIds(true), to_select)
+    return #selected == 0 and table.contains(Self:getHandlyIds(), to_select)
   end,
   view_as = function(self, cards)
     if #cards ~= 1 then return end
@@ -2931,7 +2932,7 @@ local bingxin = fk.CreateViewAsSkill{
     local all_names = U.getAllCardNames("b")
     local names = U.getViewAsCardNames(Self, "bingxin", all_names, {}, Self:getTableMark("bingxin-turn"))
     if #names > 0 then
-      return UI.ComboBox { choices = names, all_choices = all_names }
+      return U.CardNameBox { choices = names, all_choices = all_names }
     end
   end,
   card_filter = Util.FalseFunc,
