@@ -354,6 +354,8 @@ RougeUtil:addBuffTalent { 1, "rouge_kuangbao3" }
 RougeUtil:addBuffTalent { 2, "rouge_kuangbao4" }
 RougeUtil:addBuffTalent { 2, "rouge_mopai" }
 RougeUtil:addBuffTalent { 4, "rouge_mopai2" }
+RougeUtil:addBuffTalent { 2, "rouge_houfaxianzhi" }
+RougeUtil:addBuffTalent { 3, "rouge_muniuliuma" }
 RougeUtil:addBuffTalent { 4, "rouge_wendinghouqin" }
 rule:addRelatedSkill(fk.CreateTriggerSkill{
   name = "#rougelike1v1_rule_draw_n_cards",
@@ -364,7 +366,7 @@ rule:addRelatedSkill(fk.CreateTriggerSkill{
     return (target == player and RougeUtil.hasOneOfTalents(player,
       { "rouge_buzhen", "rouge_buzhen2", "rouge_buzhen3", "rouge_chijiuzhan3",
       "rouge_kuangbao3", "rouge_kuangbao4", "rouge_mopai", "rouge_mopai2",
-      "rouge_wendinghouqin" })) or (
+      "rouge_houfaxianzhi", "rouge_muniuliuma", "rouge_wendinghouqin" })) or (
         RougeUtil.isEnemy(player, target) and RougeUtil.hasOneOfTalents(player,
         { "rouge_duanliangcao2" })
       )
@@ -432,6 +434,16 @@ rule:addRelatedSkill(fk.CreateTriggerSkill{
       RougeUtil.sendTalentLog(player, "rouge_mopai2")
       data.n = data.n + 2
     end
+
+    if RougeUtil.hasTalent(player, "rouge_houfaxianzhi") then
+      RougeUtil.sendTalentLog(player, "rouge_houfaxianzhi")
+      data.n = math.max(data.n - 1, 0)
+    end
+
+    if RougeUtil.hasTalent(player, "rouge_muniuliuma") then
+      RougeUtil.sendTalentLog(player, "rouge_muniuliuma")
+      data.n = data.n + 2
+    end
   end
 })
 Fk:loadTranslationTable{
@@ -458,6 +470,12 @@ Fk:loadTranslationTable{
   ["rouge_mopai2"] = "摸牌Ⅱ",
   [":rouge_mopai2"] = "摸牌阶段，你的摸牌数+2",
 
+  ["rouge_houfaxianzhi"] = "后发先至",
+  [":rouge_houfaxianzhi"] = "摸牌阶段，你的摸牌数-1；你的回合结束时，你摸3张牌",
+
+  ["rouge_muniuliuma"] = "木牛流马",
+  [":rouge_muniuliuma"] = "你的摸牌阶段，你额外摸2张牌,手牌上限-1",
+
   ["rouge_wendinghouqin"] = "稳定后勤",
   [":rouge_wendinghouqin"] = "摸牌阶段摸牌数固定为5",
 }
@@ -474,7 +492,7 @@ rule:addRelatedSkill(fk.CreateTriggerSkill{
   mute = true,
   can_trigger = function(self, event, target, player, data)
     return target == player and RougeUtil.hasOneOfTalents(player,
-      { "rouge_yuanzhu", "rouge_yuanzhu2", "rouge_yuanzhu3" })
+      { "rouge_yuanzhu", "rouge_yuanzhu2", "rouge_yuanzhu3", "rouge_houfaxianzhi" })
   end,
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
@@ -489,6 +507,10 @@ rule:addRelatedSkill(fk.CreateTriggerSkill{
     if RougeUtil.hasTalent(player, "rouge_yuanzhu3") then
       RougeUtil.sendTalentLog(player, "rouge_yuanzhu3")
       player:drawCards(3, "rouge_yuanzhu3")
+    end
+    if RougeUtil.hasTalent(player, "rouge_houfaxianzhi") then
+      RougeUtil.sendTalentLog(player, "rouge_houfaxianzhi")
+      player:drawCards(3, "rouge_houfaxianzhi")
     end
   end
 })
@@ -599,6 +621,10 @@ rule:addRelatedSkill(fk.CreateMaxCardsSkill{
     end
     if hasTalent(player, "rouge_pinang3") then
       ret = ret + 5
+    end
+
+    if hasTalent(player, "rouge_muniuliuma") then
+      ret = ret - 1
     end
     return ret
   end,
