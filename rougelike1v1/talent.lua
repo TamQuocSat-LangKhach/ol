@@ -113,7 +113,7 @@ rule:addRelatedSkill(fk.CreateTriggerSkill{
     if RougeUtil.hasTalent(player, "rouge_banyun") then
       RougeUtil.sendTalentLog(player, "rouge_banyun")
       local enemys = table.filter(room.alive_players, function(p)
-        return p.role ~= player.role and not p:isKongcheng()
+        return RougeUtil.isEnemy(player, p) and not p:isKongcheng()
       end)
       if #enemys ~= 0 then
         local card = table.random(table.random(enemys):getCardIds("h"))
@@ -216,7 +216,7 @@ Fk:loadTranslationTable{
   [":rouge_fuyiqu__snatch"] = "你的回合开始时，你获得1张【顺手牵羊】",
 
   ["rouge_fenjin"] = "奋进",
-  [":rougerouge_fenjin"] = "当体力大于2点，回合开始时失去1点体力并摸2张牌",
+  [":rouge_fenjin"] = "当体力大于2点，回合开始时失去1点体力并摸2张牌",
 
   ["rouge_yuanmou"] = "远谋Ⅰ",
   [":rouge_yuanmou"] = "第3轮你的回合开始时，你回复2点体力",
@@ -224,6 +224,112 @@ Fk:loadTranslationTable{
   [":rouge_yuanmou2"] = "第3轮你的回合开始时，你回复3点体力",
   ["rouge_yuanmou3"] = "远谋Ⅲ",
   [":rouge_yuanmou3"] = "第2轮你的回合开始时，你回复2点体力",
+}
+
+-- 额定摸牌数相关：布阵、...
+
+RougeUtil:addBuffTalent { 2, "rouge_buzhen" }
+RougeUtil:addBuffTalent { 1, "rouge_buzhen2" }
+RougeUtil:addBuffTalent { 1, "rouge_buzhen3" }
+RougeUtil:addBuffTalent { 3, "rouge_duanliangcao2" }
+RougeUtil:addBuffTalent { 2, "rouge_chijiuzhan3" }
+RougeUtil:addBuffTalent { 1, "rouge_kuangbao3" }
+RougeUtil:addBuffTalent { 2, "rouge_kuangbao4" }
+RougeUtil:addBuffTalent { 2, "rouge_mopai" }
+RougeUtil:addBuffTalent { 4, "rouge_mopai2" }
+rule:addRelatedSkill(fk.CreateTriggerSkill{
+  name = "#rougelike1v1_rule_draw_n_cards",
+  events = {fk.DrawNCards},
+  priority = 0.002,
+  mute = true,
+  can_trigger = function(self, event, target, player, data)
+    return (target == player and RougeUtil.hasOneOfTalents(player,
+      { "rouge_buzhen", "rouge_buzhen2", "rouge_buzhen3", "rouge_chijiuzhan3",
+      "rouge_kuangbao3", "rouge_kuangbao4", "rouge_mopai", "rouge_mopai2" })) or (
+        RougeUtil.isEnemy(player, target) and RougeUtil.hasOneOfTalents(player,
+        { "rouge_duanliangcao2" })
+      )
+  end,
+  on_cost = Util.TrueFunc,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    if RougeUtil.hasTalent(player, "rouge_buzhen") then
+      if room:getTag("RoundCount") >= 3 then
+        RougeUtil.sendTalentLog(player, "rouge_buzhen")
+        data.n = data.n + 1
+      end
+    end
+    if RougeUtil.hasTalent(player, "rouge_buzhen2") then
+      if room:getTag("RoundCount") >= 5 then
+        RougeUtil.sendTalentLog(player, "rouge_buzhen2")
+        data.n = data.n + 1
+      end
+    end
+    if RougeUtil.hasTalent(player, "rouge_buzhen3") then
+      if room:getTag("RoundCount") >= 7 then
+        RougeUtil.sendTalentLog(player, "rouge_buzhen3")
+        data.n = data.n + 1
+      end
+    end
+
+    if RougeUtil.hasTalent(player, "rouge_duanliangcao2") then
+      RougeUtil.sendTalentLog(player, "rouge_duanliangcao2")
+      data.n = data.n - 1
+    end
+
+    if RougeUtil.hasTalent(player, "rouge_chijiuzhan3") then
+      if player:getMark("rouge_money") >= 7 then
+        RougeUtil.sendTalentLog(player, "rouge_chijiuzhan3")
+        data.n = data.n + 1
+      end
+    end
+
+    if RougeUtil.hasTalent(player, "rouge_kuangbao3") then
+      if player.hp <= 3 then
+        RougeUtil.sendTalentLog(player, "rouge_kuangbao3")
+        data.n = data.n + 1
+      end
+    end
+    if RougeUtil.hasTalent(player, "rouge_kuangbao4") then
+      if player.hp <= 5 then
+        RougeUtil.sendTalentLog(player, "rouge_kuangbao4")
+        data.n = data.n + 1
+      end
+    end
+
+    if RougeUtil.hasTalent(player, "rouge_mopai") then
+      RougeUtil.sendTalentLog(player, "rouge_mopai")
+      data.n = data.n + 1
+    end
+    if RougeUtil.hasTalent(player, "rouge_mopai2") then
+      RougeUtil.sendTalentLog(player, "rouge_mopai2")
+      data.n = data.n + 2
+    end
+  end
+})
+Fk:loadTranslationTable{
+  ["rouge_buzhen"] = "布阵Ⅰ",
+  [":rouge_buzhen"] = "从第3轮开始，你的摸牌数+1",
+  ["rouge_buzhen2"] = "布阵Ⅱ",
+  [":rouge_buzhen2"] = "从第5轮开始，你的摸牌数+1",
+  ["rouge_buzhen3"] = "布阵Ⅲ",
+  [":rouge_buzhen3"] = "从第7轮开始，你的摸牌数+1",
+
+  ["rouge_duanliangcao2"] = "断粮草Ⅱ",
+  [":rouge_duanliangcao2"] = "回合结束时，你摸3张牌",
+
+  ["rouge_chijiuzhan3"] = "持久战Ⅲ",
+  [":rouge_chijiuzhan3"] = "虎符数量达到7后，摸牌数+1",
+
+  ["rouge_kuangbao3"] = "狂暴Ⅲ",
+  [":rouge_kuangbao3"] = "当你的体力值不大于3时，你摸牌数+1",
+  ["rouge_kuangbao4"] = "狂暴Ⅳ",
+  [":rouge_kuangbao4"] = "当你的体力值不大于5时，你摸牌数+1",
+
+  ["rouge_mopai"] = "摸牌Ⅰ",
+  [":rouge_mopai"] = "摸牌阶段，你的摸牌数+1",
+  ["rouge_mopai2"] = "摸牌Ⅱ",
+  [":rouge_mopai2"] = "摸牌阶段，你的摸牌数+2",
 }
 
 -- 回合结束相关：援助、...
@@ -309,7 +415,7 @@ rule:addRelatedSkill(fk.CreateTargetModSkill{
     end
 
     ret = ret - #table.filter(room.alive_players, function(p)
-      return p.role ~= player.role and hasTalent(p, "rouge_danliangboduo")
+      return RougeUtil.isEnemy(player, p) and hasTalent(p, "rouge_danliangboduo")
     end)
 
     return ret

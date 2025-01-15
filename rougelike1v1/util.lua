@@ -160,6 +160,12 @@ end
 -------------------------
 
 ---@param player ServerPlayer
+---@param target ServerPlayer
+function RougeUtil.isEnemy(player, target)
+  return player.role ~= target.role
+end
+
+---@param player ServerPlayer
 ---@param talent string
 function RougeUtil.sendTalentLog(player, talent)
   player.room:sendLog{
@@ -234,9 +240,22 @@ function RougeUtil:askForShopping(players)
     local n = 4
     local a = math.random(0, 2)
     local b = math.random(0, 2)
-    local talents = table.random(self.talents, n - a - b)
+
+    local p_talents = p:getTableMark("@[rouge1v1]mark")
+    local p_skills = table.map(p.player_skills, Util.NameMapper)
+
+    local await = {
+      talents = table.filter(self.talents, function(t)
+        return not table.contains(p_talents, t[2])
+      end),
+      skills = table.filter(self.skills, function(s)
+        return not table.contains(p_skills, s[2])
+      end)
+    }
+
+    local talents = table.random(await.talents, n - a - b)
     local cards = table.random(self.cards, b)
-    local skills = table.random(self.skills, a)
+    local skills = table.random(await.skills, a)
 
     local data = {}
     for _, t in ipairs(talents) do
