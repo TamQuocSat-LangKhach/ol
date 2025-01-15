@@ -17,6 +17,7 @@ local rule = fk.CreateTriggerSkill{
     local round = room:getTag("RoundCount")
     if round > 3 then
       for _, p in ipairs(room.alive_players) do
+        local n = 2
         RougeUtil.changeMoney(p, 2)
       end
     else
@@ -45,6 +46,7 @@ local rule = fk.CreateTriggerSkill{
 -- 商店：领取初始战法后，刷新商店；回合结束时，购买并刷新商店
 -- TODO: 再说吧
 
+-- 即时效果
 -- 喜从天降
 
 RougeUtil:addTalent { 0, "rouge_xicongtianjiang", function(self, player)
@@ -77,6 +79,97 @@ Fk:loadTranslationTable{
   [":rouge_zengshou"] = "体力上限+1（不改变当前体力）",
   ["rouge_zengshou2"] = "增寿Ⅱ",
   [":rouge_zengshou2"] = "体力上限+2（不改变当前体力）",
+}
+
+-- 体魄
+
+RougeUtil:addTalent { 3, "rouge_tipo", function(self, player)
+  RougeUtil.sendTalentLog(player, self)
+  player.room:changeMaxHp(player, 1)
+  player.room:recover{
+    who = player,
+    num = 1,
+    skillName = self
+  }
+end}
+RougeUtil:addTalent { 4, "rouge_tipo2", function(self, player)
+  RougeUtil.sendTalentLog(player, self)
+  player.room:changeMaxHp(player, 2)
+  player.room:recover{
+    who = player,
+    num = 2,
+    skillName = self
+  }
+end}
+RougeUtil:addTalent { 4, "rouge_tipo3", function(self, player)
+  RougeUtil.sendTalentLog(player, self)
+  player.room:changeMaxHp(player, 3)
+  player.room:recover{
+    who = player,
+    num = 3,
+    skillName = self
+  }
+end}
+Fk:loadTranslationTable{
+  ["rouge_tipo"] = "体魄Ⅰ",
+  [":rouge_tipo"] = "增加1点体力上限并回复等量体力",
+  ["rouge_tipo2"] = "体魄Ⅱ",
+  [":rouge_tipo2"] = "增加2点体力上限并回复等量体力",
+  ["rouge_tipo3"] = "体魄Ⅲ",
+  [":rouge_tipo3"] = "增加3点体力上限并回复等量体力",
+}
+
+-- 天降！
+
+RougeUtil:addTalent { 2, "rouge_tianjiang__trick", function(self, player)
+  RougeUtil.sendTalentLog(player, self)
+  local room = player.room
+  local cards = room:getCardsFromPileByRule('.|.|.|.|.|trick', 3, "allPiles")
+  room:obtainCard(player, cards, true, fk.ReasonPrey, player.id, self)
+end}
+RougeUtil:addTalent { 2, "rouge_tianjiang__basic", function(self, player)
+  RougeUtil.sendTalentLog(player, self)
+  local room = player.room
+  local cards = room:getCardsFromPileByRule('.|.|.|.|.|basic', 4, "allPiles")
+  room:obtainCard(player, cards, true, fk.ReasonPrey, player.id, self)
+end}
+RougeUtil:addTalent { 2, "rouge_tianjiang__equip", function(self, player)
+  RougeUtil.sendTalentLog(player, self)
+  local room = player.room
+  local cards = room:getCardsFromPileByRule('.|.|.|.|.|equip', 4, "allPiles")
+  room:obtainCard(player, cards, true, fk.ReasonPrey, player.id, self)
+end}
+RougeUtil:addTalent { 2, "rouge_tianjiang__any", function(self, player)
+  RougeUtil.sendTalentLog(player, self)
+  local room = player.room
+  local cards = room:getCardsFromPileByRule('.', 3, "allPiles")
+  room:obtainCard(player, cards, true, fk.ReasonPrey, player.id, self)
+end}
+Fk:loadTranslationTable{
+  ["rouge_tianjiang__trick"] = "天降锦囊",
+  [":rouge_tianjiang__trick"] = "获取3张锦囊牌",
+  ["rouge_tianjiang__basic"] = "天降横财",
+  [":rouge_tianjiang__basic"] = "获取4张基本牌",
+  ["rouge_tianjiang__equip"] = "天降装备",
+  [":rouge_tianjiang__equip"] = "获取4张装备牌",
+  ["rouge_tianjiang__any"] = "天降卡牌",
+  [":rouge_tianjiang__any"] = "获取3张牌",
+}
+
+-- 士气剥夺
+
+RougeUtil:addTalent { 3, "rouge_shiqiboduo", function(self, player)
+  RougeUtil.sendTalentLog(player, self)
+  local room = player.room
+  for _, p in ipairs(room.alive_players) do
+    if RougeUtil.isEnemy(player, p) and p.maxHp > 1 then
+      player.room:changeMaxHp(p, -1)
+    end
+  end
+end}
+Fk:loadTranslationTable{
+  ["rouge_shiqiboduo"] = "士气剥夺",
+  [":rouge_shiqiboduo"] = "所有敌方的体力上限-1，最低为1",
 }
 
 -- 回合开始相关：搬运、博闻、...
@@ -317,7 +410,7 @@ Fk:loadTranslationTable{
   [":rouge_buzhen3"] = "从第7轮开始，你的摸牌数+1",
 
   ["rouge_duanliangcao2"] = "断粮草Ⅱ",
-  [":rouge_duanliangcao2"] = "回合结束时，你摸3张牌",
+  [":rouge_duanliangcao2"] = "敌方摸牌数-1",
 
   ["rouge_chijiuzhan3"] = "持久战Ⅲ",
   [":rouge_chijiuzhan3"] = "虎符数量达到7后，摸牌数+1",
