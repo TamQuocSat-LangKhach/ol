@@ -197,6 +197,23 @@ function RougeUtil.hasOneOfTalents(player, talents)
   return false
 end
 
+---@param player ServerPlayer
+---@param skill_name string
+function RougeUtil.attachSkillToPlayer(player, skill_name)
+  local room = player.room
+  room:handleAddLoseSkills(player, skill_name, nil, false)
+  local mark = player:getTableMark("rouge_skills")
+  -- TODO: 忘记初始技能的地方
+  local n = 2
+  if #mark >= n then
+    local tolose = room:askForChoice(player, mark, "rougelike1v1", "#rouge-lose", true)
+    room:handleAddLoseSkills(player, "-" .. tolose, nil, true)
+    table.removeOne(mark, tolose)
+  end
+  table.insert(mark, skill_name)
+  room:setPlayerMark(player, "rouge_skills", mark)
+end
+
 ---@param players ServerPlayer[]
 function RougeUtil:askForShopping(players)
   local room = players[1].room
@@ -206,11 +223,11 @@ function RougeUtil:askForShopping(players)
 
   for _, p in ipairs(players) do
     local n = 4
-    local a = math.random(0, n)
-    local b = math.random(0, n - a)
-    local talents = table.random(self.talents, a)
+    local a = math.random(0, 2)
+    local b = math.random(0, 2)
+    local talents = table.random(self.talents, n - a - b)
     local cards = table.random(self.cards, b)
-    local skills = table.random(self.skills, n - a - b)
+    local skills = table.random(self.skills, a)
 
     local data = {}
     for _, t in ipairs(talents) do
@@ -233,24 +250,37 @@ function RougeUtil:askForShopping(players)
   for _, p in ipairs(players) do
     local result = req:getResult(p)
     if result ~= "" then
-      local money = p:getMark("rouge_money")
       for _, dat in ipairs(result) do
-        money = money - dat[2]
+        RougeUtil.changeMoney(p, -dat[2])
         if dat[1] == "talent" then
+          for _, t in ipairs(RougeUtil.talents) do
+            if t[2] == dat[3] then
+              room:sendLog {
+                type = "#rouge_shop_buy_talent",
+                from = p.id,
+                arg = t[2],
+              }
+              t[3](t[2], p)
+              break
+            end
+          end
         elseif dat[1] == "skill" then
+          room:sendLog {
+            type = "#rouge_shop_buy_skill",
+            from = p.id,
+            arg = dat[3],
+          }
+          RougeUtil.attachSkillToPlayer(p, dat[3])
         elseif dat[1] == "card" then
           local card = room:printCard(dat[3], dat[5], dat[4])
-          room:setCardMark(card, MarkEnum.DestructIntoDiscard, 1)
           room:sendLog {
             type = "#rouge_shop_buy_card",
             from = p.id,
             card = { card.id },
-            toast = true,
           }
-          room:obtainCard(p, card, true, fk.ReasonJustMove, nil, "rouge1v1")
+          room:obtainCard(p, card, true, fk.ReasonJustMove, nil, "rougelike1v1", MarkEnum.DestructIntoDiscard)
         end
       end
-      room:setPlayerMark(p, "rouge_money", money)
     end
   end
 end
@@ -273,10 +303,12 @@ Fk:loadTranslationTable{
   ["rouge_shop"] = "虎符商店",
   ["#rouge_shop"] = "虎符商店：请选择要购买的能力",
   ["rouge_shop_ok"] = "完成购买",
-  ["#rouge_shop_buy_skill"] = "%from 从虎符商店购买了技能 %arg",
-  ["#rouge_shop_buy_card"] = "%from 从虎符商店购买了卡牌 %card",
-  ["#rouge_shop_buy_talent"] = "%from 从虎符商店购买了战法 %arg",
-  ["#rouge_talent_effect"] = "%from 的战法 %arg 生效：%arg2",
+  ["#rouge_shop_buy_skill"] = "%from 从虎符商店购买了 <font color='blue'>技能</font> %arg",
+  ["#rouge_shop_buy_card"] = "%from 从虎符商店购买了 <font color='orange'>卡牌</font> %card",
+  ["#rouge_shop_buy_talent"] = "%from 从虎符商店购买了 <font color='purple'>战法</font> %arg",
+  ["#rouge_talent_effect"] = "%from 的 <font color='purple'>战法</font> %arg 生效：%arg2",
+
+  ["#rouge-lose"] = "单骑无双：技能槽已满，请选择要失去的技能",
 }
 
 return RougeUtil
