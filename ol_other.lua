@@ -1,5 +1,7 @@
-local extension = Package("ol_other")
+local extension = Package:new("ol_other")
 extension.extensionName = "ol"
+
+extension:addGameMode(require "packages.ol.rougelike1v1")
 
 local U = require "packages/utility/utility"
 
