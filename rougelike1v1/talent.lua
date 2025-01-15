@@ -69,6 +69,60 @@ Fk:loadTranslationTable{
   [":rouge_zengshou2"] = "体力上限+2（不改变当前体力）",
 }
 
+-- 回合开始相关：搬运、博闻、...
+
+RougeUtil:addBuffTalent { 2, "rouge_banyun" }
+RougeUtil:addBuffTalent { 3, "rouge_bowen" }
+RougeUtil:addBuffTalent { 4, "rouge_bowen2" }
+RougeUtil:addBuffTalent { 4, "rouge_bowen3" }
+rule:addRelatedSkill(fk.CreateTriggerSkill{
+  name = "#rougelike1v1_rule_turnstart",
+  events = {fk.TurnStart},
+  priority = 0.002,
+  mute = true,
+  can_trigger = function(self, event, target, player, data)
+    return target == player and RougeUtil.hasOneOfTalents(player,
+      { "rouge_banyun", "rouge_bowen", "rouge_bowen2", "rouge_bowen3" })
+  end,
+  on_cost = Util.TrueFunc,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    if RougeUtil.hasTalent(player, "rouge_banyun") then
+      RougeUtil.sendTalentLog(player, "rouge_banyun")
+      local enemys = table.filter(room.alive_players, function(p)
+        return p.role ~= player.role and not p:isKongcheng()
+      end)
+      local card = room:askForCardChosen(player, table.random(enemys), "h", "rouge_banyun")
+      room:obtainCard(player, card, false, fk.ReasonPrey, player.id, "rouge_banyun")
+    end
+    if RougeUtil.hasTalent(player, "rouge_bowen") then
+      RougeUtil.sendTalentLog(player, "rouge_bowen")
+      local tricks = room:getCardsFromPileByRule('.|.|.|.|.|trick', 1, "drawPile")
+      room:obtainCard(player, tricks, true, fk.ReasonPrey, player.id, "rouge_bowen")
+    end
+    if RougeUtil.hasTalent(player, "rouge_bowen2") then
+      RougeUtil.sendTalentLog(player, "rouge_bowen2")
+      local tricks = room:getCardsFromPileByRule('.|.|.|.|.|trick', 2, "drawPile")
+      room:obtainCard(player, tricks, true, fk.ReasonPrey, player.id, "rouge_bowen3")
+    end
+    if RougeUtil.hasTalent(player, "rouge_bowen3") then
+      RougeUtil.sendTalentLog(player, "rouge_bowen3")
+      local tricks = room:getCardsFromPileByRule('.|.|.|.|.|trick', 3, "drawPile")
+      room:obtainCard(player, tricks, true, fk.ReasonPrey, player.id, "rouge_bowen3")
+    end
+  end
+})
+Fk:loadTranslationTable{
+  ["rouge_banyun"] = "搬运",
+  [":rouge_banyun"] = "你的回合开始时，从随机敌方手牌区获得1张牌",
+  ["rouge_bowen"] = "博闻Ⅰ",
+  [":rouge_bowen"] = "你的回合开始时，从牌堆中获得1张随机锦囊牌",
+  ["rouge_bowen2"] = "博闻Ⅱ",
+  [":rouge_bowen2"] = "你的回合开始时，从牌堆中获得2张随机锦囊牌",
+  ["rouge_bowen3"] = "博闻Ⅲ",
+  [":rouge_bowen3"] = "你的回合开始时，从牌堆中获得3张随机锦囊牌",
+}
+
 -- 回合结束相关：援助、...
 
 RougeUtil:addBuffTalent { 2, "rouge_yuanzhu" }
