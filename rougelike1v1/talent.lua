@@ -1,5 +1,6 @@
 local RougeUtil = require "packages.ol.rougelike1v1.util"
 local hasTalent = RougeUtil.hasTalent
+local sendTalentLog = RougeUtil.sendTalentLog
 
 local rule = fk.CreateTriggerSkill{
   name = "#rougelike1v1_rule",
@@ -496,6 +497,165 @@ Fk:loadTranslationTable{
   [":rouge_wendingchengzai"] = "手牌上限基础值为8",
   ["rouge_xinshounianlai"] = "信手拈来",
   [":rouge_xinshounianlai"] = "你的手牌上限不因体力值改变而改变",
+}
+
+-- 回复体力时相关
+------------------------
+
+RougeUtil:addBuffTalent { 2, "rouge_jiemeng" }
+RougeUtil:addBuffTalent { 4, "rouge_shixue" }
+RougeUtil:addBuffTalent { 3, "rouge_yaoli1" }
+RougeUtil:addBuffTalent { 4, "rouge_yaoli2" }
+rule:addRelatedSkill(fk.CreateTriggerSkill{
+  name = "#rougelike1v1_rule_prehprecover",
+  events = {fk.PreHpRecover},
+  priority = 0.002,
+  mute = true,
+  can_trigger = function(self, event, target, player, data)
+    return target == player and RougeUtil.hasOneOfTalents(player,
+      { "rouge_jiemeng", "rouge_shixue", "rouge_yaoli1", "rouge_yaoli2" })
+  end,
+  on_cost = Util.TrueFunc,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    if hasTalent(player, "rouge_shixue") then
+      sendTalentLog(player, "rouge_shixue")
+      player:drawCards(1, "rouge_shixue")
+    end
+
+    if hasTalent(player, "rouge_yaoli1") then
+      sendTalentLog(player, "rouge_yaoli1")
+      data.num = data.num + 1
+    end
+    if hasTalent(player, "rouge_yaoli2") then
+      sendTalentLog(player, "rouge_yaoli2")
+      data.num = data.num + 2
+    end
+
+    if hasTalent(player, "rouge_jiemeng") and data.card and data.card.trueName == "god_salvation" then
+      local use = room.logic:getCurrentEvent():findParent(GameEvent.CardEffect)
+      if use then
+        use = use.data[1]
+        if use.from and room:getPlayerById(use.from).role == player.role then
+          sendTalentLog(player, "rouge_jiemeng")
+          data.num = data.num * 2
+        end
+      end
+    end
+  end
+})
+Fk:loadTranslationTable{
+  ["rouge_jiemeng"] = "结盟",
+  [":rouge_jiemeng"] = "你使用的【桃园结义】友方角色回复双倍体力",
+  ["rouge_shixue"] = "噬血Ⅰ",
+  [":rouge_shixue"] = "回复体力时，摸1张牌",
+  ["rouge_yaoli1"] = "药理Ⅰ",
+  [":rouge_yaoli1"] = "回复体力时，额外回复1点",
+  ["rouge_yaoli2"] = "药理Ⅱ",
+  [":rouge_yaoli2"] = "回复体力时，额外回复2点",
+}
+
+-- 造成伤害时相关
+------------------------
+
+RougeUtil:addBuffTalent { 1, "rouge_zhongjiji" }
+rule:addRelatedSkill(fk.CreateTriggerSkill{
+  name = "#rougelike1v1_zhongjiji",
+  events = {fk.DamageCaused},
+  priority = 0.002,
+  mute = true,
+  can_trigger = function(self, event, target, player, data)
+    if player ~= target then return end
+    return hasTalent(player, "rouge_zhongjiji") and data.damage >= 3 and
+      data.to.role ~= data.from.role
+  end,
+  on_cost = Util.TrueFunc,
+  on_use = function(self, event, target, player, data)
+    sendTalentLog(player, "rouge_zhongjiji")
+    player:drawCards(1, "rouge_zhongjiji")
+  end
+})
+RougeUtil:addBuffTalent { 1, "rouge_yuanjiji" }
+rule:addRelatedSkill(fk.CreateTriggerSkill{
+  name = "#rougelike1v1_yuanjiji",
+  events = {fk.DamageCaused},
+  priority = 0.002,
+  mute = true,
+  can_trigger = function(self, event, target, player, data)
+    if player ~= target then return end
+    return hasTalent(player, "rouge_yuanjiji") and player:distanceTo(data.to) > 1
+  end,
+  on_cost = Util.TrueFunc,
+  on_use = function(self, event, target, player, data)
+    sendTalentLog(player, "rouge_yuanjiji")
+    data.damage = data.damage + 1
+  end
+})
+RougeUtil:addBuffTalent { 3, "rouge_yuzhanyuyong1" }
+RougeUtil:addBuffTalent { 2, "rouge_yuzhanyuyong2" }
+RougeUtil:addBuffTalent { 1, "rouge_yuzhanyuyong3" }
+RougeUtil:addBuffTalent { 4, "rouge_wendingshiqi" }
+RougeUtil:addBuffTalent { 3, "rouge_tijiashu" }
+RougeUtil:addBuffTalent { 2, "rouge_sanbanfu1" }
+RougeUtil:addBuffTalent { 4, "rouge_sanbanfu2" }
+RougeUtil:addBuffTalent { 4, "rouge_ruoxi" }
+RougeUtil:addBuffTalent { 3, "rouge_miaoji1" }
+RougeUtil:addBuffTalent { 4, "rouge_miaoji2" }
+RougeUtil:addBuffTalent { 2, "rouge_leihuoshi1" }
+RougeUtil:addBuffTalent { 4, "rouge_leihuoshi2" }
+RougeUtil:addBuffTalent { 1, "rouge_kuangbao1" }
+RougeUtil:addBuffTalent { 3, "rouge_kuangbao2" }
+RougeUtil:addBuffTalent { 2, "rouge_jiyi1" }
+RougeUtil:addBuffTalent { 4, "rouge_jiyi2" }
+RougeUtil:addBuffTalent { 2, "rouge_guangongren" }
+RougeUtil:addBuffTalent { 1, "rouge_geshandaniu" }
+RougeUtil:addBuffTalent { 3, "rouge_dangtouyibang1" }
+RougeUtil:addBuffTalent { 4, "rouge_dangyouyibang2" }
+Fk:loadTranslationTable{
+  ["rouge_zhongjiji"] = "重击技",
+  [":rouge_zhongjiji"] = "对敌方造成伤害一次大于等于3点时，摸1张牌",
+  ["rouge_yuanjiji"] = "远击技",
+  [":rouge_yuanjiji"] = "造成伤害时，若你与其距离大于1，此伤害+1",
+  ["rouge_yuzhanyuyong1"] = "愈战愈勇Ⅰ",
+  [":rouge_yuzhanyuyong1"] = "从第3轮开始，你的【杀】造成的伤害+1",
+  ["rouge_yuzhanyuyong2"] = "愈战愈勇Ⅱ",
+  [":rouge_yuzhanyuyong2"] = "从第5轮开始，你的【杀】造成的伤害+1",
+  ["rouge_yuzhanyuyong3"] = "愈战愈勇Ⅲ",
+  [":rouge_yuzhanyuyong3"] = "从第7轮开始，你的【杀】造成的伤害+1",
+  ["rouge_wendingshiqi"] = "稳定士气",
+  [":rouge_wendingshiqi"] = "您的所有伤害值固定为2",
+  ["rouge_tijiashu"] = "剔甲术",
+  [":rouge_tijiashu"] = "对护甲造成双倍伤害",
+  ["rouge_sanbanfu1"] = "三板斧Ⅰ",
+  [":rouge_sanbanfu1"] = "你的每第3张【杀】伤害+1",
+  ["rouge_sanbanfu2"] = "三板斧Ⅱ",
+  [":rouge_sanbanfu2"] = "你的每第3张【杀】伤害+2",
+  ["rouge_ruoxi"] = "弱袭",
+  [":rouge_ruoxi"] = "你的手牌小于当前体力时，你造成的伤害+1",
+  ["rouge_miaoji1"] = "妙技Ⅰ",
+  [":rouge_miaoji1"] = "每回合首张锦囊造成的伤害+1",
+  ["rouge_miaoji2"] = "妙技Ⅱ",
+  [":rouge_miaoji2"] = "每回合前2张锦囊造成的伤害+1",
+  ["rouge_leihuoshi1"] = "雷火势Ⅰ",
+  [":rouge_leihuoshi1"] = "每回合限1次，你使用的第1张属性【杀】伤害+1",
+  ["rouge_leihuoshi2"] = "雷火势Ⅱ",
+  [":rouge_leihuoshi2"] = "每回合限1次，你使用的第1张属性【杀】伤害+2",
+  ["rouge_kuangbao1"] = "狂暴Ⅰ",
+  [":rouge_kuangbao1"] = "当你的体力值不大于2时，你造成的伤害+1",
+  ["rouge_kuangbao2"] = "狂暴Ⅱ",
+  [":rouge_kuangbao2"] = "当你的体力值不大于3时，你造成的伤害+1",
+  ["rouge_jiyi1"] = "技艺Ⅰ",
+  [":rouge_jiyi1"] = "当你的技能直接造成伤害时，此伤害+1",
+  ["rouge_jiyi2"] = "技艺Ⅱ",
+  [":rouge_jiyi2"] = "当你的技能直接造成伤害时，此伤害+2",
+  ["rouge_guangongren"] = "关公刃",
+  [":rouge_guangongren"] = "红桃【杀】伤害+1",
+  ["rouge_geshandaniu"] = "隔山打牛",
+  [":rouge_geshandaniu"] = "你对其他人造成伤害时，无视其护甲",
+  ["rouge_dangtouyibang1"] = "当头一棒Ⅰ",
+  [":rouge_dangtouyibang1"] = "每轮，你的首张【杀】伤害+1",
+  ["rouge_dangtouyibang2"] = "当头一棒Ⅱ",
+  [":rouge_dangtouyibang2"] = "每轮，你的首张【杀】伤害+2",
 }
 
 -- Misc: 系统耦合类
