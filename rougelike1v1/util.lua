@@ -37,7 +37,7 @@ local cost1skills = {
   "qice", "zhiyu", "quanji", "lijian", "shibei", "tianming", "zhuhai",
   "ex__fanjian", "juece", "fencheng", "zhuandui", "qianjie", "ex__biyue",
   "hunzi", "zhuijix", "ol_ex__shizhan", "xiangshu", "ciwei", "guanxing",
-  "mengjin", "guzheng", "yongsi", "luoying", "jigong", "jj__lianhuan",
+  "mengjin", "guzheng", "yongsi", "luoying", "jigong", "jj__lianhuan&",
   "ex__wusheng", "duanfa", "ol_ex__changbiao", "tairan", "qizhou", "wangxi",
 }
 local cost2skills = {
