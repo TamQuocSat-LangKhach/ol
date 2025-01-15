@@ -84,14 +84,28 @@ RougeUtil:addBuffTalent { 2, "rouge_banyun" }
 RougeUtil:addBuffTalent { 3, "rouge_bowen" }
 RougeUtil:addBuffTalent { 4, "rouge_bowen2" }
 RougeUtil:addBuffTalent { 4, "rouge_bowen3" }
+RougeUtil:addBuffTalent { 2, "rouge_fuyiqu__slash" }
+RougeUtil:addBuffTalent { 2, "rouge_fuyiqu__fire_attack" }
+RougeUtil:addBuffTalent { 2, "rouge_fuyiqu__jink" }
+RougeUtil:addBuffTalent { 3, "rouge_fuyiqu__peach" }
+RougeUtil:addBuffTalent { 3, "rouge_fuyiqu__dismantlement" }
+RougeUtil:addBuffTalent { 3, "rouge_fuyiqu__duel" }
+RougeUtil:addBuffTalent { 3, "rouge_fuyiqu__iron_chain" }
+RougeUtil:addBuffTalent { 4, "rouge_fuyiqu__snatch" }
+RougeUtil:addBuffTalent { 1, "rouge_fenjin" }
+RougeUtil:addBuffTalent { 1, "rouge_yuanmou" }
+RougeUtil:addBuffTalent { 2, "rouge_yuanmou2" }
+RougeUtil:addBuffTalent { 1, "rouge_yuanmou3" }
 rule:addRelatedSkill(fk.CreateTriggerSkill{
   name = "#rougelike1v1_rule_turnstart",
   events = {fk.TurnStart},
   priority = 0.002,
   mute = true,
   can_trigger = function(self, event, target, player, data)
-    return target == player and RougeUtil.hasOneOfTalents(player,
-      { "rouge_banyun", "rouge_bowen", "rouge_bowen2", "rouge_bowen3" })
+    return target == player and (RougeUtil.hasOneOfTalents(player,
+      { "rouge_banyun", "rouge_bowen", "rouge_bowen2", "rouge_bowen3", "rouge_fenjin",
+        "rouge_yuanmou", "rouge_yuanmou2", "rouge_yuanmou3" }) or
+      #RougeUtil.hasTalentStart(player, "rouge_fuyiqu__") ~= 0)
   end,
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
@@ -101,9 +115,12 @@ rule:addRelatedSkill(fk.CreateTriggerSkill{
       local enemys = table.filter(room.alive_players, function(p)
         return p.role ~= player.role and not p:isKongcheng()
       end)
-      local card = room:askForCardChosen(player, table.random(enemys), "h", "rouge_banyun")
-      room:obtainCard(player, card, false, fk.ReasonPrey, player.id, "rouge_banyun")
+      if #enemys ~= 0 then
+        local card = table.random(table.random(enemys):getCardIds("h"))
+        room:obtainCard(player, card, false, fk.ReasonPrey, player.id, "rouge_banyun")
+      end
     end
+
     if RougeUtil.hasTalent(player, "rouge_bowen") then
       RougeUtil.sendTalentLog(player, "rouge_bowen")
       local tricks = room:getCardsFromPileByRule('.|.|.|.|.|trick', 1, "drawPile")
@@ -119,17 +136,94 @@ rule:addRelatedSkill(fk.CreateTriggerSkill{
       local tricks = room:getCardsFromPileByRule('.|.|.|.|.|trick', 3, "drawPile")
       room:obtainCard(player, tricks, true, fk.ReasonPrey, player.id, "rouge_bowen3")
     end
+
+    if RougeUtil.hasTalent(player, "rouge_fenjin") then
+      if player.hp > 2 then
+        RougeUtil.sendTalentLog(player, "rouge_fenjin")
+        room:loseHp(player, 1, "rouge_fenjin")
+        player:drawCards(2, "rouge_fenjin")
+      end
+    end
+
+    if RougeUtil.hasTalent(player, "rouge_yuanmou") then
+      if room:getTag("RoundCount") == 3 then
+        RougeUtil.sendTalentLog(player, "rouge_yuanmou")
+        room:recover{
+          who = player,
+          num = 2,
+          skillName = "rouge_yuanmou"
+        }
+      end
+    end
+    if RougeUtil.hasTalent(player, "rouge_yuanmou2") then
+      if room:getTag("RoundCount") == 3 then
+        RougeUtil.sendTalentLog(player, "rouge_yuanmou2")
+        room:recover{
+          who = player,
+          num = 3,
+          skillName = "rouge_yuanmou"
+        }
+      end
+    end
+    if RougeUtil.hasTalent(player, "rouge_yuanmou3") then
+      if room:getTag("RoundCount") == 2 then
+        RougeUtil.sendTalentLog(player, "rouge_yuanmou3")
+        room:recover{
+          who = player,
+          num = 2,
+          skillName = "rouge_yuanmou"
+        }
+      end
+    end
+
+    for _, talent in ipairs(RougeUtil.hasTalentStart(player, "rouge_fuyiqu__")) do
+      RougeUtil.sendTalentLog(player, talent)
+      local name_splited = talent:split("rouge_fuyiqu__")
+      local card_name = name_splited[#name_splited]
+      if card_name then
+        local card = room:getCardsFromPileByRule(card_name)
+        room:obtainCard(player, card, true, fk.ReasonPrey, player.id, talent)
+      end
+    end
   end
 })
 Fk:loadTranslationTable{
   ["rouge_banyun"] = "搬运",
   [":rouge_banyun"] = "你的回合开始时，从随机敌方手牌区获得1张牌",
+
   ["rouge_bowen"] = "博闻Ⅰ",
   [":rouge_bowen"] = "你的回合开始时，从牌堆中获得1张随机锦囊牌",
   ["rouge_bowen2"] = "博闻Ⅱ",
   [":rouge_bowen2"] = "你的回合开始时，从牌堆中获得2张随机锦囊牌",
   ["rouge_bowen3"] = "博闻Ⅲ",
   [":rouge_bowen3"] = "你的回合开始时，从牌堆中获得3张随机锦囊牌",
+
+  ["rouge_fuyiqu__slash"] = "拂衣去杀",
+  [":rouge_fuyiqu__slash"] = "你的回合开始时，你获得1张【杀】",
+  ["rouge_fuyiqu__fire_attack"] = "拂衣去火",
+  [":rouge_fuyiqu__fire_attack"] = "你的回合开始时，你获得1张【火攻】",
+  ["rouge_fuyiqu__jink"] = "拂衣去闪",
+  [":rouge_fuyiqu__jink"] = "你的回合开始时，你获得1张【闪】",
+  ["rouge_fuyiqu__peach"] = "拂衣去桃",
+  [":rouge_fuyiqu__peach"] = "你的回合开始时，你获得1张【桃】",
+  ["rouge_fuyiqu__dismantlement"] = "拂衣去拆",
+  [":rouge_fuyiqu__dismantlement"] = "你的回合开始时，你获得1张【过河拆桥】",
+  ["rouge_fuyiqu__duel"] = "拂衣去决",
+  [":rouge_fuyiqu__duel"] = "你的回合开始时，你获得1张【决斗】",
+  ["rouge_fuyiqu__iron_chain"] = "拂衣去锁",
+  [":rouge_fuyiqu__iron_chain"] = "你的回合开始时，你获得1张【铁索连环】",
+  ["rouge_fuyiqu__snatch"] = "拂衣去顺",
+  [":rouge_fuyiqu__snatch"] = "你的回合开始时，你获得1张【顺手牵羊】",
+
+  ["rouge_fenjin"] = "奋进",
+  [":rougerouge_fenjin"] = "当体力大于2点，回合开始时失去1点体力并摸2张牌",
+
+  ["rouge_yuanmou"] = "远谋Ⅰ",
+  [":rouge_yuanmou"] = "第3轮你的回合开始时，你回复2点体力",
+  ["rouge_yuanmou2"] = "远谋Ⅱ",
+  [":rouge_yuanmou2"] = "第3轮你的回合开始时，你回复3点体力",
+  ["rouge_yuanmou3"] = "远谋Ⅲ",
+  [":rouge_yuanmou3"] = "第2轮你的回合开始时，你回复2点体力",
 }
 
 -- 回合结束相关：援助、...

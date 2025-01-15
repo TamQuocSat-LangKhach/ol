@@ -186,7 +186,16 @@ function RougeUtil.hasTalent(player, talent)
   return table.contains(player:getTableMark("@[rouge1v1]mark"), talent)
 end
 
----@param player Player
+---@param player ServerPlayer
+---@param prefix string
+---@return string[]
+function RougeUtil.hasTalentStart(player, prefix)
+  return table.filter(player:getTableMark("@[rouge1v1]mark"), function(talent)
+    return talent:startsWith(prefix)
+  end)
+end
+
+---@param player ServerPlayer
 ---@param talents string[]
 function RougeUtil.hasOneOfTalents(player, talents)
   for _, talent in ipairs(talents) do
