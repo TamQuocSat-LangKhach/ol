@@ -156,6 +156,29 @@ Fk:loadTranslationTable{
   [":rouge_tianjiang__any"] = "获取3张牌",
 }
 
+-- 铁布衫
+
+RougeUtil:addTalent { 1, "rouge_tiebushan", function(self, player)
+  RougeUtil.sendTalentLog(player, self)
+  player.room:changeShield(player, 1)
+end}
+RougeUtil:addTalent { 2, "rouge_tiebushan2", function(self, player)
+  RougeUtil.sendTalentLog(player, self)
+  player.room:changeShield(player, 2)
+end}
+RougeUtil:addTalent { 4, "rouge_tiebushan3", function(self, player)
+  RougeUtil.sendTalentLog(player, self)
+  player.room:changeShield(player, 4)
+end}
+Fk:loadTranslationTable{
+  ["rouge_tiebushan"] = "铁布衫Ⅰ",
+  [":rouge_tiebushan"] = "获得1点护甲",
+  ["rouge_tiebushan2"] = "铁布衫Ⅱ",
+  [":rouge_tiebushan2"] = "获得2点护甲",
+  ["rouge_tiebushan3"] = "铁布衫Ⅲ",
+  [":rouge_tiebushan3"] = "获得4点护甲",
+}
+
 -- 士气剥夺
 
 RougeUtil:addTalent { 3, "rouge_shiqiboduo", function(self, player)
@@ -331,6 +354,7 @@ RougeUtil:addBuffTalent { 1, "rouge_kuangbao3" }
 RougeUtil:addBuffTalent { 2, "rouge_kuangbao4" }
 RougeUtil:addBuffTalent { 2, "rouge_mopai" }
 RougeUtil:addBuffTalent { 4, "rouge_mopai2" }
+RougeUtil:addBuffTalent { 4, "rouge_wendinghouqin" }
 rule:addRelatedSkill(fk.CreateTriggerSkill{
   name = "#rougelike1v1_rule_draw_n_cards",
   events = {fk.DrawNCards},
@@ -339,7 +363,8 @@ rule:addRelatedSkill(fk.CreateTriggerSkill{
   can_trigger = function(self, event, target, player, data)
     return (target == player and RougeUtil.hasOneOfTalents(player,
       { "rouge_buzhen", "rouge_buzhen2", "rouge_buzhen3", "rouge_chijiuzhan3",
-      "rouge_kuangbao3", "rouge_kuangbao4", "rouge_mopai", "rouge_mopai2" })) or (
+      "rouge_kuangbao3", "rouge_kuangbao4", "rouge_mopai", "rouge_mopai2",
+      "rouge_wendinghouqin" })) or (
         RougeUtil.isEnemy(player, target) and RougeUtil.hasOneOfTalents(player,
         { "rouge_duanliangcao2" })
       )
@@ -347,6 +372,14 @@ rule:addRelatedSkill(fk.CreateTriggerSkill{
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     local room = player.room
+
+    if RougeUtil.hasTalent(player, "rouge_wendinghouqin") then
+      RougeUtil.sendTalentLog(player, "rouge_wendinghouqin")
+      data.n = 5
+      data.locked = true
+      return -- TODO: 强制截停
+    end
+
     if RougeUtil.hasTalent(player, "rouge_buzhen") then
       if room:getTag("RoundCount") >= 3 then
         RougeUtil.sendTalentLog(player, "rouge_buzhen")
@@ -424,6 +457,9 @@ Fk:loadTranslationTable{
   [":rouge_mopai"] = "摸牌阶段，你的摸牌数+1",
   ["rouge_mopai2"] = "摸牌Ⅱ",
   [":rouge_mopai2"] = "摸牌阶段，你的摸牌数+2",
+
+  ["rouge_wendinghouqin"] = "稳定后勤",
+  [":rouge_wendinghouqin"] = "摸牌阶段摸牌数固定为5",
 }
 
 -- 回合结束相关：援助、...
