@@ -508,6 +508,7 @@ rule:addRelatedSkill(fk.CreateTriggerSkill{
       RougeUtil.sendTalentLog(player, "rouge_yuanzhu3")
       player:drawCards(3, "rouge_yuanzhu3")
     end
+
     if RougeUtil.hasTalent(player, "rouge_houfaxianzhi") then
       RougeUtil.sendTalentLog(player, "rouge_houfaxianzhi")
       player:drawCards(3, "rouge_houfaxianzhi")
