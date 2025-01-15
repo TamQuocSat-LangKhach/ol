@@ -84,6 +84,7 @@ for _, s in ipairs(cost2skills) do RougeUtil:addSkill { 2, s } end
 for _, s in ipairs(cost3skills) do RougeUtil:addSkill { 3, s } end
 for _, s in ipairs(cost4skills) do RougeUtil:addSkill { 4, s } end
 
+--- 价格/牌名/点数/可能花色
 ---@param card [integer, string, integer, integer[]]
 function RougeUtil:addCard(card)
   table.insert(self.cards, card)
@@ -232,11 +233,13 @@ function RougeUtil:askForShopping(players)
   for _, p in ipairs(players) do
     local result = req:getResult(p)
     if result ~= "" then
+      local money = p:getMark("rouge_money")
       for _, dat in ipairs(result) do
+        money = money - dat[2]
         if dat[1] == "talent" then
         elseif dat[1] == "skill" then
         elseif dat[1] == "card" then
-          local card = room:printCard(dat[3], dat[4], dat[5])
+          local card = room:printCard(dat[3], dat[5], dat[4])
           room:setCardMark(card, MarkEnum.DestructIntoDiscard, 1)
           room:sendLog {
             type = "#rouge_shop_buy_card",
@@ -247,6 +250,7 @@ function RougeUtil:askForShopping(players)
           room:obtainCard(p, card, true, fk.ReasonJustMove, nil, "rouge1v1")
         end
       end
+      room:setPlayerMark(p, "rouge_money", money)
     end
   end
 end
@@ -269,10 +273,10 @@ Fk:loadTranslationTable{
   ["rouge_shop"] = "虎符商店",
   ["#rouge_shop"] = "虎符商店：请选择要购买的能力",
   ["rouge_shop_ok"] = "完成购买",
-  ["#rouge_shop_buy_skill"] = "%src 从虎符商店购买了技能 %arg",
-  ["#rouge_shop_buy_card"] = "%src 从虎符商店购买了卡牌 %card",
-  ["#rouge_shop_buy_talent"] = "%src 从虎符商店购买了战法 %arg",
-  ["#rouge_talent_effect"] = "%src 的战法 %arg 生效：%arg2",
+  ["#rouge_shop_buy_skill"] = "%from 从虎符商店购买了技能 %arg",
+  ["#rouge_shop_buy_card"] = "%from 从虎符商店购买了卡牌 %card",
+  ["#rouge_shop_buy_talent"] = "%from 从虎符商店购买了战法 %arg",
+  ["#rouge_talent_effect"] = "%from 的战法 %arg 生效：%arg2",
 }
 
 return RougeUtil
