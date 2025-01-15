@@ -180,13 +180,13 @@ function RougeUtil.attachTalentToPlayer(player, talent)
   room:setPlayerMark(player, "@[rouge1v1]mark", mark)
 end
 
----@param player ServerPlayer
+---@param player Player
 ---@param talent string
 function RougeUtil.hasTalent(player, talent)
   return table.contains(player:getTableMark("@[rouge1v1]mark"), talent)
 end
 
----@param player ServerPlayer
+---@param player Player
 ---@param talents string[]
 function RougeUtil.hasOneOfTalents(player, talents)
   for _, talent in ipairs(talents) do
