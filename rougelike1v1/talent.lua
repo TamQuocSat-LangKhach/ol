@@ -377,7 +377,7 @@ rule:addRelatedSkill(fk.CreateTriggerSkill{
       RougeUtil.sendTalentLog(player, "rouge_wendinghouqin")
       data.n = 5
       data.locked = true
-      return -- TODO: 强制截停
+      return true -- TODO: 强制截停
     end
 
     if RougeUtil.hasTalent(player, "rouge_buzhen") then
