@@ -157,8 +157,7 @@ GraphicsBox {
             console.log(result[0].every(o => JSON.stringify(o) != JSON.stringify(obj)));*/
             return result[0].every(o => JSON.stringify(o) != JSON.stringify(obj))
           }
-          ));
-        console.log(JSON.stringify(result));
+        ));
         ClientInstance.replyToServer("",
           JSON.stringify(result));
       }

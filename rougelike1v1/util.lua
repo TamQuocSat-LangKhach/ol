@@ -17,10 +17,12 @@ end
 
 ---@param talent RougeItemEntry
 function RougeUtil:addBuffTalent(talent)
-  talent[3] = function(self, player)
-    RougeUtil.attachTalentToPlayer(player, self)
+  local dup = table.simpleClone(talent)
+  dup[3] = function(fun_self, player)
+    RougeUtil.attachTalentToPlayer(player, fun_self)
+    talent[3](fun_self, player)
   end
-  self:addTalent(talent)
+  self:addTalent(dup)
 end
 
 ---@param skill RougeItemEntry
@@ -158,7 +160,6 @@ end
 
 ---@param player ServerPlayer
 function RougeUtil:generateShop(player)
-  p(player:getTableMark("rougelike1v1_shop_items"))
   local data = player:getTableMark("rougelike1v1_shop_items")
   local n = player:getMark("rougelike1v1_shop_num") - #data
   if n > 0 then
