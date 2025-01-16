@@ -66,7 +66,7 @@ Fk:loadTranslationTable {
 
 -- 增寿
 
-RougeUtil:addTalent { 2, "rouge_zengshou", function(self, player)
+RougeUtil:addTalent { 2, "rouge_zengshou1", function(self, player)
   RougeUtil.sendTalentLog(player, self)
   player.room:changeMaxHp(player, 1)
 end }
@@ -75,44 +75,50 @@ RougeUtil:addTalent { 4, "rouge_zengshou2", function(self, player)
   player.room:changeMaxHp(player, 2)
 end }
 Fk:loadTranslationTable {
-  ["rouge_zengshou"] = "增寿Ⅰ",
-  [":rouge_zengshou"] = "体力上限+1（不改变当前体力）",
+  ["rouge_zengshou1"] = "增寿Ⅰ",
+  [":rouge_zengshou1"] = "体力上限+1",
   ["rouge_zengshou2"] = "增寿Ⅱ",
-  [":rouge_zengshou2"] = "体力上限+2（不改变当前体力）",
+  [":rouge_zengshou2"] = "体力上限+2",
 }
 
 -- 体魄
 
-RougeUtil:addTalent { 3, "rouge_tipo", function(self, player)
+RougeUtil:addTalent { 3, "rouge_tipo1", function(self, player)
   RougeUtil.sendTalentLog(player, self)
   player.room:changeMaxHp(player, 1)
-  player.room:recover {
-    who = player,
-    num = 1,
-    skillName = self
-  }
+  if player:isWounded() then
+    player.room:recover {
+      who = player,
+      num = 1,
+      skillName = self,
+    }
+  end
 end }
 RougeUtil:addTalent { 4, "rouge_tipo2", function(self, player)
   RougeUtil.sendTalentLog(player, self)
   player.room:changeMaxHp(player, 2)
-  player.room:recover {
-    who = player,
-    num = 2,
-    skillName = self
-  }
+  if player:isWounded() then
+    player.room:recover {
+      who = player,
+      num = 2,
+      skillName = self,
+    }
+  end
 end }
 RougeUtil:addTalent { 4, "rouge_tipo3", function(self, player)
   RougeUtil.sendTalentLog(player, self)
   player.room:changeMaxHp(player, 3)
-  player.room:recover {
-    who = player,
-    num = 3,
-    skillName = self
-  }
+  if player:isWounded() then
+    player.room:recover {
+      who = player,
+      num = 3,
+      skillName = self,
+    }
+  end
 end }
 Fk:loadTranslationTable {
-  ["rouge_tipo"] = "体魄Ⅰ",
-  [":rouge_tipo"] = "增加1点体力上限并回复等量体力",
+  ["rouge_tipo1"] = "体魄Ⅰ",
+  [":rouge_tipo1"] = "增加1点体力上限并回复等量体力",
   ["rouge_tipo2"] = "体魄Ⅱ",
   [":rouge_tipo2"] = "增加2点体力上限并回复等量体力",
   ["rouge_tipo3"] = "体魄Ⅲ",
@@ -125,25 +131,25 @@ RougeUtil:addTalent { 2, "rouge_tianjiang__trick", function(self, player)
   RougeUtil.sendTalentLog(player, self)
   local room = player.room
   local cards = room:getCardsFromPileByRule('.|.|.|.|.|trick', 3, "allPiles")
-  room:obtainCard(player, cards, true, fk.ReasonPrey, player.id, self)
+  if #cards > 0 then room:obtainCard(player, cards, true, fk.ReasonPrey, player.id, self) end
 end }
 RougeUtil:addTalent { 2, "rouge_tianjiang__basic", function(self, player)
   RougeUtil.sendTalentLog(player, self)
   local room = player.room
   local cards = room:getCardsFromPileByRule('.|.|.|.|.|basic', 4, "allPiles")
-  room:obtainCard(player, cards, true, fk.ReasonPrey, player.id, self)
+  if #cards > 0 then room:obtainCard(player, cards, true, fk.ReasonPrey, player.id, self) end
 end }
 RougeUtil:addTalent { 2, "rouge_tianjiang__equip", function(self, player)
   RougeUtil.sendTalentLog(player, self)
   local room = player.room
   local cards = room:getCardsFromPileByRule('.|.|.|.|.|equip', 4, "allPiles")
-  room:obtainCard(player, cards, true, fk.ReasonPrey, player.id, self)
+  if #cards > 0 then room:obtainCard(player, cards, true, fk.ReasonPrey, player.id, self) end
 end }
 RougeUtil:addTalent { 2, "rouge_tianjiang__any", function(self, player)
   RougeUtil.sendTalentLog(player, self)
   local room = player.room
   local cards = room:getCardsFromPileByRule('.', 3, "allPiles")
-  room:obtainCard(player, cards, true, fk.ReasonPrey, player.id, self)
+  if #cards > 0 then room:obtainCard(player, cards, true, fk.ReasonPrey, player.id, self) end
 end }
 Fk:loadTranslationTable {
   ["rouge_tianjiang__trick"] = "天降锦囊",
@@ -158,7 +164,7 @@ Fk:loadTranslationTable {
 
 -- 铁布衫
 
-RougeUtil:addTalent { 1, "rouge_tiebushan", function(self, player)
+RougeUtil:addTalent { 1, "rouge_tiebushan1", function(self, player)
   RougeUtil.sendTalentLog(player, self)
   player.room:changeShield(player, 1)
 end }
@@ -171,8 +177,8 @@ RougeUtil:addTalent { 4, "rouge_tiebushan3", function(self, player)
   player.room:changeShield(player, 4)
 end }
 Fk:loadTranslationTable {
-  ["rouge_tiebushan"] = "铁布衫Ⅰ",
-  [":rouge_tiebushan"] = "获得1点护甲",
+  ["rouge_tiebushan1"] = "铁布衫Ⅰ",
+  [":rouge_tiebushan1"] = "获得1点护甲",
   ["rouge_tiebushan2"] = "铁布衫Ⅱ",
   [":rouge_tiebushan2"] = "获得2点护甲",
   ["rouge_tiebushan3"] = "铁布衫Ⅲ",
@@ -198,7 +204,7 @@ Fk:loadTranslationTable {
 -- 回合/轮数开始相关：搬运、博闻、...
 
 RougeUtil:addBuffTalent { 2, "rouge_banyun" }
-RougeUtil:addBuffTalent { 3, "rouge_bowen" }
+RougeUtil:addBuffTalent { 3, "rouge_bowen1" }
 RougeUtil:addBuffTalent { 4, "rouge_bowen2" }
 RougeUtil:addBuffTalent { 4, "rouge_bowen3" }
 RougeUtil:addBuffTalent { 2, "rouge_fuyiqu__slash" }
@@ -210,7 +216,7 @@ RougeUtil:addBuffTalent { 3, "rouge_fuyiqu__duel" }
 RougeUtil:addBuffTalent { 3, "rouge_fuyiqu__iron_chain" }
 RougeUtil:addBuffTalent { 4, "rouge_fuyiqu__snatch" }
 RougeUtil:addBuffTalent { 1, "rouge_fenjin" }
-RougeUtil:addBuffTalent { 1, "rouge_yuanmou" }
+RougeUtil:addBuffTalent { 1, "rouge_yuanmou1" }
 RougeUtil:addBuffTalent { 2, "rouge_yuanmou2" }
 RougeUtil:addBuffTalent { 1, "rouge_yuanmou3" }
 
@@ -222,77 +228,71 @@ rule:addRelatedSkill(fk.CreateTriggerSkill {
   mute = true,
   can_trigger = function(self, event, target, player, data)
     return target == player and (RougeUtil.hasOneOfTalents(player,
-        { "rouge_banyun", "rouge_bowen", "rouge_bowen2", "rouge_bowen3", "rouge_fenjin",
-          "rouge_yuanmou", "rouge_yuanmou2", "rouge_yuanmou3" }) or
+        { "rouge_banyun", "rouge_bowen1", "rouge_bowen2", "rouge_bowen3", "rouge_fenjin",
+          "rouge_yuanmou1", "rouge_yuanmou2", "rouge_yuanmou3" }) or
       #RougeUtil.hasTalentStart(player, "rouge_fuyiqu__") ~= 0)
   end,
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    if RougeUtil.hasTalent(player, "rouge_banyun") then
-      RougeUtil.sendTalentLog(player, "rouge_banyun")
-      local enemys = table.filter(room.alive_players, function(p)
+    local talent = RougeUtil.hasTalent(player, "rouge_banyun")
+    if talent then
+      RougeUtil.sendTalentLog(player, talent)
+      local enemies = table.filter(room.alive_players, function(p)
         return RougeUtil.isEnemy(player, p) and not p:isKongcheng()
       end)
-      if #enemys ~= 0 then
-        local card = table.random(table.random(enemys):getCardIds("h"))
-        room:obtainCard(player, card, false, fk.ReasonPrey, player.id, "rouge_banyun")
+      if #enemies ~= 0 then
+        local card = table.random(table.random(enemies):getCardIds("h"))
+        room:obtainCard(player, card, false, fk.ReasonPrey, player.id, talent)
       end
     end
 
-    if RougeUtil.hasTalent(player, "rouge_bowen") then
-      RougeUtil.sendTalentLog(player, "rouge_bowen")
-      local tricks = room:getCardsFromPileByRule('.|.|.|.|.|trick', 1, "drawPile")
-      room:obtainCard(player, tricks, true, fk.ReasonPrey, player.id, "rouge_bowen")
-    end
-    if RougeUtil.hasTalent(player, "rouge_bowen2") then
-      RougeUtil.sendTalentLog(player, "rouge_bowen2")
-      local tricks = room:getCardsFromPileByRule('.|.|.|.|.|trick', 2, "drawPile")
-      room:obtainCard(player, tricks, true, fk.ReasonPrey, player.id, "rouge_bowen3")
-    end
-    if RougeUtil.hasTalent(player, "rouge_bowen3") then
-      RougeUtil.sendTalentLog(player, "rouge_bowen3")
-      local tricks = room:getCardsFromPileByRule('.|.|.|.|.|trick', 3, "drawPile")
-      room:obtainCard(player, tricks, true, fk.ReasonPrey, player.id, "rouge_bowen3")
+    for i = 1, 3 do
+      local t = "rouge_bowen" .. i
+      if RougeUtil.hasTalent(player, t) then
+        RougeUtil.sendTalentLog(player, t)
+        local tricks = room:getCardsFromPileByRule('.|.|.|.|.|trick', i, "drawPile")
+        if #tricks > 0 then room:obtainCard(player, tricks, true, fk.ReasonPrey, player.id, t) end
+      end
     end
 
-    if RougeUtil.hasTalent(player, "rouge_fenjin") then
+    talent = RougeUtil.hasTalent(player, "rouge_fenjin")
+    if talent then
       if player.hp > 2 then
-        RougeUtil.sendTalentLog(player, "rouge_fenjin")
-        room:loseHp(player, 1, "rouge_fenjin")
-        player:drawCards(2, "rouge_fenjin")
+        RougeUtil.sendTalentLog(player, talent)
+        room:loseHp(player, 1, talent)
+        if player:isAlive() then player:drawCards(2, talent) end
       end
     end
 
-    if RougeUtil.hasTalent(player, "rouge_yuanmou") then
-      if room:getTag("RoundCount") == 3 then
-        RougeUtil.sendTalentLog(player, "rouge_yuanmou")
-        room:recover {
-          who = player,
-          num = 2,
-          skillName = "rouge_yuanmou"
-        }
-      end
+    talent = RougeUtil.hasTalent(player, "rouge_yuanmou1")
+    if talent and room:getTag("RoundCount") == 3 and player:isWounded() then
+      RougeUtil.sendTalentLog(player, talent)
+      room:recover {
+        who = player,
+        num = 2,
+        skillName = talent
+      }
     end
-    if RougeUtil.hasTalent(player, "rouge_yuanmou2") then
-      if room:getTag("RoundCount") == 3 then
-        RougeUtil.sendTalentLog(player, "rouge_yuanmou2")
-        room:recover {
-          who = player,
-          num = 3,
-          skillName = "rouge_yuanmou"
-        }
-      end
+
+    talent = RougeUtil.hasTalent(player, "rouge_yuanmou2")
+    if talent and room:getTag("RoundCount") == 3 and player:isWounded() then
+      RougeUtil.sendTalentLog(player, talent)
+      room:recover {
+        who = player,
+        num = 3,
+        skillName = talent
+      }
     end
-    if RougeUtil.hasTalent(player, "rouge_yuanmou3") then
-      if room:getTag("RoundCount") == 2 then
-        RougeUtil.sendTalentLog(player, "rouge_yuanmou3")
-        room:recover {
-          who = player,
-          num = 2,
-          skillName = "rouge_yuanmou"
-        }
-      end
+
+    talent = RougeUtil.hasTalent(player, "rouge_yuanmou3")
+    if talent and room:getTag("RoundCount") == 2 and player:isWounded() then
+      RougeUtil.sendTalentLog(player, talent)
+      room:recover {
+        who = player,
+        num = 2,
+        skillName = talent
+      }
     end
 
     for _, talent in ipairs(RougeUtil.hasTalentStart(player, "rouge_fuyiqu__")) do
@@ -343,38 +343,17 @@ rule:addRelatedSkill(fk.CreateTriggerSkill {
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local skillName = ""
-    if RougeUtil.hasTalent(player, "rouge_xuezhan1") and player:isWounded() then
-      skillName = "rouge_xuezhan1"
-      RougeUtil.sendTalentLog(player, "rouge_xuezhan1")
-      room:recover({
-        who = player,
-        num = 1,
-        recoverBy = player,
-        skillName = skillName
-      })
-    end
-
-    if RougeUtil.hasTalent(player, "rouge_xuezhan2") and player:isWounded() then
-      skillName = "rouge_xuezhan2"
-      RougeUtil.sendTalentLog(player, "rouge_xuezhan2")
-      room:recover({
-        who = player,
-        num = 2,
-        recoverBy = player,
-        skillName = skillName
-      })
-    end
-
-    if RougeUtil.hasTalent(player, "rouge_xuezhan3") and player:isWounded() then
-      skillName = "rouge_xuezhan3"
-      RougeUtil.sendTalentLog(player, "rouge_xuezhan3")
-      room:recover({
-        who = player,
-        num = 3,
-        recoverBy = player,
-        skillName = skillName
-      })
+    for i = 1, 3 do
+      local skillName = RougeUtil.hasTalent(player, "rouge_xuezhan" .. i)
+      if skillName and player:isWounded() then
+        RougeUtil.sendTalentLog(player, skillName)
+        room:recover{
+          who = player,
+          num = i,
+          recoverBy = player,
+          skillName = skillName
+        }
+      end
     end
   end
 })
@@ -383,8 +362,8 @@ rule:addRelatedSkill(fk.CreateTriggerSkill {
 Fk:loadTranslationTable {
   ["rouge_banyun"] = "搬运",
   [":rouge_banyun"] = "你的回合开始时，从随机敌方手牌区获得1张牌",
-  ["rouge_bowen"] = "博闻Ⅰ",
-  [":rouge_bowen"] = "你的回合开始时，从牌堆中获得1张随机锦囊牌",
+  ["rouge_bowen1"] = "博闻Ⅰ",
+  [":rouge_bowen1"] = "你的回合开始时，从牌堆中获得1张随机锦囊牌",
   ["rouge_bowen2"] = "博闻Ⅱ",
   [":rouge_bowen2"] = "你的回合开始时，从牌堆中获得2张随机锦囊牌",
   ["rouge_bowen3"] = "博闻Ⅲ",
@@ -410,8 +389,8 @@ Fk:loadTranslationTable {
   ["rouge_fenjin"] = "奋进",
   [":rouge_fenjin"] = "当体力大于2点，回合开始时失去1点体力并摸2张牌",
 
-  ["rouge_yuanmou"] = "远谋Ⅰ",
-  [":rouge_yuanmou"] = "第3轮你的回合开始时，你回复2点体力",
+  ["rouge_yuanmou1"] = "远谋Ⅰ",
+  [":rouge_yuanmou1"] = "第3轮你的回合开始时，你回复2点体力",
   ["rouge_yuanmou2"] = "远谋Ⅱ",
   [":rouge_yuanmou2"] = "第3轮你的回合开始时，你回复3点体力",
   ["rouge_yuanmou3"] = "远谋Ⅲ",
@@ -428,14 +407,14 @@ Fk:loadTranslationTable {
 
 -- 额定摸牌数相关：布阵、...
 
-RougeUtil:addBuffTalent { 2, "rouge_buzhen" }
+RougeUtil:addBuffTalent { 2, "rouge_buzhen1" }
 RougeUtil:addBuffTalent { 1, "rouge_buzhen2" }
 RougeUtil:addBuffTalent { 1, "rouge_buzhen3" }
 RougeUtil:addBuffTalent { 3, "rouge_duanliangcao2" }
 RougeUtil:addBuffTalent { 2, "rouge_chijiuzhan3" }
 RougeUtil:addBuffTalent { 1, "rouge_kuangbao3" }
 RougeUtil:addBuffTalent { 2, "rouge_kuangbao4" }
-RougeUtil:addBuffTalent { 2, "rouge_mopai" }
+RougeUtil:addBuffTalent { 2, "rouge_mopai1" }
 RougeUtil:addBuffTalent { 4, "rouge_mopai2" }
 RougeUtil:addBuffTalent { 2, "rouge_houfaxianzhi" }
 RougeUtil:addBuffTalent { 3, "rouge_muniuliuma" }
@@ -447,8 +426,8 @@ rule:addRelatedSkill(fk.CreateTriggerSkill {
   mute = true,
   can_trigger = function(self, event, target, player, data)
     return (target == player and RougeUtil.hasOneOfTalents(player,
-      { "rouge_buzhen", "rouge_buzhen2", "rouge_buzhen3", "rouge_chijiuzhan3",
-        "rouge_kuangbao3", "rouge_kuangbao4", "rouge_mopai", "rouge_mopai2",
+      { "rouge_buzhen1", "rouge_buzhen2", "rouge_buzhen3", "rouge_chijiuzhan3",
+        "rouge_kuangbao3", "rouge_kuangbao4", "rouge_mopai1", "rouge_mopai2",
         "rouge_houfaxianzhi", "rouge_muniuliuma", "rouge_wendinghouqin" })) or (
       RougeUtil.isEnemy(player, target) and RougeUtil.hasOneOfTalents(player,
         { "rouge_duanliangcao2" })
@@ -457,29 +436,18 @@ rule:addRelatedSkill(fk.CreateTriggerSkill {
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     local room = player.room
-
-    if RougeUtil.hasTalent(player, "rouge_wendinghouqin") then
-      RougeUtil.sendTalentLog(player, "rouge_wendinghouqin")
+    local talent = RougeUtil.hasTalent(player, "rouge_wendinghouqin")
+    if talent then
+      RougeUtil.sendTalentLog(player, talent)
       data.n = 5
       data.locked = true
       return true -- TODO: 强制截停
     end
 
-    if RougeUtil.hasTalent(player, "rouge_buzhen") then
-      if room:getTag("RoundCount") >= 3 then
-        RougeUtil.sendTalentLog(player, "rouge_buzhen")
-        data.n = data.n + 1
-      end
-    end
-    if RougeUtil.hasTalent(player, "rouge_buzhen2") then
-      if room:getTag("RoundCount") >= 5 then
-        RougeUtil.sendTalentLog(player, "rouge_buzhen2")
-        data.n = data.n + 1
-      end
-    end
-    if RougeUtil.hasTalent(player, "rouge_buzhen3") then
-      if room:getTag("RoundCount") >= 7 then
-        RougeUtil.sendTalentLog(player, "rouge_buzhen3")
+    for i = 1, 3 do
+      talent = RougeUtil.hasTalent(player, "rouge_buzhen" .. i)
+      if talent and room:getTag("RoundCount") >= i * 2 + 1 then
+        RougeUtil.sendTalentLog(player, talent)
         data.n = data.n + 1
       end
     end
@@ -509,8 +477,8 @@ rule:addRelatedSkill(fk.CreateTriggerSkill {
       end
     end
 
-    if RougeUtil.hasTalent(player, "rouge_mopai") then
-      RougeUtil.sendTalentLog(player, "rouge_mopai")
+    if RougeUtil.hasTalent(player, "rouge_mopai1") then
+      RougeUtil.sendTalentLog(player, "rouge_mopai1")
       data.n = data.n + 1
     end
     if RougeUtil.hasTalent(player, "rouge_mopai2") then
@@ -530,8 +498,8 @@ rule:addRelatedSkill(fk.CreateTriggerSkill {
   end
 })
 Fk:loadTranslationTable {
-  ["rouge_buzhen"] = "布阵Ⅰ",
-  [":rouge_buzhen"] = "从第3轮开始，你的摸牌数+1",
+  ["rouge_buzhen1"] = "布阵Ⅰ",
+  [":rouge_buzhen1"] = "从第3轮开始，你的摸牌数+1",
   ["rouge_buzhen2"] = "布阵Ⅱ",
   [":rouge_buzhen2"] = "从第5轮开始，你的摸牌数+1",
   ["rouge_buzhen3"] = "布阵Ⅲ",
@@ -548,8 +516,8 @@ Fk:loadTranslationTable {
   ["rouge_kuangbao4"] = "狂暴Ⅳ",
   [":rouge_kuangbao4"] = "当你的体力值不大于5时，你摸牌数+1",
 
-  ["rouge_mopai"] = "摸牌Ⅰ",
-  [":rouge_mopai"] = "摸牌阶段，你的摸牌数+1",
+  ["rouge_mopai1"] = "摸牌Ⅰ",
+  [":rouge_mopai1"] = "摸牌阶段，你的摸牌数+1",
   ["rouge_mopai2"] = "摸牌Ⅱ",
   [":rouge_mopai2"] = "摸牌阶段，你的摸牌数+2",
 
@@ -565,7 +533,7 @@ Fk:loadTranslationTable {
 
 -- 回合结束相关：援助、...
 
-RougeUtil:addBuffTalent { 2, "rouge_yuanzhu" }
+RougeUtil:addBuffTalent { 2, "rouge_yuanzhu1" }
 RougeUtil:addBuffTalent { 3, "rouge_yuanzhu2" }
 RougeUtil:addBuffTalent { 4, "rouge_yuanzhu3" }
 RougeUtil:addBuffTalent { 2, "rouge_xvshi" }
@@ -577,14 +545,14 @@ rule:addRelatedSkill(fk.CreateTriggerSkill {
   mute = true,
   can_trigger = function(self, event, target, player, data)
     return target == player and RougeUtil.hasOneOfTalents(player,
-      { "rouge_yuanzhu", "rouge_yuanzhu2", "rouge_yuanzhu3", "rouge_houfaxianzhi", "rouge_xvshi", "rouge_woxinchangdan" })
+      { "rouge_yuanzhu1", "rouge_yuanzhu2", "rouge_yuanzhu3", "rouge_houfaxianzhi", "rouge_xvshi", "rouge_woxinchangdan" })
   end,
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    if RougeUtil.hasTalent(player, "rouge_yuanzhu") then
-      RougeUtil.sendTalentLog(player, "rouge_yuanzhu")
-      player:drawCards(1, "rouge_yuanzhu")
+    if RougeUtil.hasTalent(player, "rouge_yuanzhu1") then
+      RougeUtil.sendTalentLog(player, "rouge_yuanzhu1")
+      player:drawCards(1, "rouge_yuanzhu1")
     end
     if RougeUtil.hasTalent(player, "rouge_yuanzhu2") then
       RougeUtil.sendTalentLog(player, "rouge_yuanzhu2")
@@ -638,8 +606,8 @@ rule:addRelatedSkill(fk.CreateTriggerSkill {
   end
 })
 Fk:loadTranslationTable {
-  ["rouge_yuanzhu"] = "援助Ⅰ",
-  [":rouge_yuanzhu"] = "回合结束时，你摸1张牌",
+  ["rouge_yuanzhu1"] = "援助Ⅰ",
+  [":rouge_yuanzhu1"] = "回合结束时，你摸1张牌",
   ["rouge_yuanzhu2"] = "援助Ⅱ",
   [":rouge_yuanzhu2"] = "回合结束时，你摸2张牌",
   ["rouge_yuanzhu3"] = "援助Ⅲ",
@@ -654,7 +622,7 @@ Fk:loadTranslationTable {
 -- Tmd: 出杀次数类
 ----------------------
 
-RougeUtil:addBuffTalent { 2, "rouge_zhandouxuexi" }
+RougeUtil:addBuffTalent { 2, "rouge_zhandouxuexi1" }
 RougeUtil:addBuffTalent { 1, "rouge_zhandouxuexi2" }
 RougeUtil:addBuffTalent { 1, "rouge_zhandouxuexi3" }
 RougeUtil:addBuffTalent { 2, "rouge_chijiuzhan4" }
@@ -672,14 +640,10 @@ rule:addRelatedSkill(fk.CreateTargetModSkill {
     local room = Fk:currentRoom()
 
     local round = room:getBanner("rouge_round")
-    if hasTalent(player, "rouge_zhandouxuexi") and round >= 3 then
-      ret = ret + 1
-    end
-    if hasTalent(player, "rouge_zhandouxuexi2") and round >= 4 then
-      ret = ret + 1
-    end
-    if hasTalent(player, "rouge_zhandouxuexi3") and round >= 7 then
-      ret = ret + 1
+    for i = 1, 3 do
+      if hasTalent(player, "rouge_chijiuzhan" .. i) and round >= (i - 2) * i + 4 then -- 1,3 2,4 3,7 troll!
+        ret = ret + 1
+      end
     end
 
     if hasTalent(player, "rouge_erlianji") then
@@ -713,8 +677,8 @@ rule:addRelatedSkill(fk.CreateTargetModSkill {
 })
 
 Fk:loadTranslationTable {
-  ["rouge_zhandouxuexi"] = "战斗学习Ⅰ",
-  [":rouge_zhandouxuexi"] = "从第3轮开始，你的出杀+1",
+  ["rouge_zhandouxuexi1"] = "战斗学习Ⅰ",
+  [":rouge_zhandouxuexi1"] = "从第3轮开始，你的出杀+1",
   ["rouge_zhandouxuexi2"] = "战斗学习Ⅱ",
   [":rouge_zhandouxuexi2"] = "从第4轮开始，你的出杀+1",
   ["rouge_zhandouxuexi3"] = "战斗学习Ⅲ",
@@ -861,13 +825,23 @@ rule:addRelatedSkill(fk.CreateTriggerSkill {
   mute = true,
   can_trigger = function(self, event, target, player, data)
     if player ~= target then return end
-    return hasTalent(player, "rouge_zhongjiji") and data.damage >= 3 and
-        data.to.role ~= data.from.role
+    return (hasTalent(player, "rouge_zhongjiji") and data.damage >= 3 and
+        data.to.role ~= data.from.role) or (hasTalent(player, "rouge_kuangbao1") and player.hp <= 2)
+        or (hasTalent(player, "rouge_kuangbao2") and player.hp <= 3)
   end,
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
-    sendTalentLog(player, "rouge_zhongjiji")
-    player:drawCards(1, "rouge_zhongjiji")
+    local talent = hasTalent(player, "rouge_zhongjiji")
+    if talent then
+      sendTalentLog(player, talent)
+      player:drawCards(1, talent)
+    end
+    if hasTalent(player, "rouge_kuangbao1") and player.hp <= 2 then
+      data.damage = data.damage + 1
+    end
+    if hasTalent(player, "rouge_kuangbao2") and player.hp <= 3 then
+      data.damage = data.damage + 1
+    end
   end
 })
 RougeUtil:addBuffTalent { 1, "rouge_yuanjiji" }
@@ -1134,10 +1108,12 @@ rule:addRelatedSkill(fk.CreateTriggerSkill {
     if hasTalent(player, "rouge_yingjifangan") then
       skilName = "rouge_yingjifangan"
       room:throwCard(target_card, skilName, targetPlayer, player)
-    elseif hasTalent(player, "rouge_yingjizhanshu") then
+    end
+    if hasTalent(player, "rouge_yingjizhanshu") then
       skilName = "rouge_yingjizhanshu"
       room:throwCard(target_card, skilName, targetPlayer, player)
-    elseif hasTalent(player, "rouge_yingjizhanlv") then
+    end
+    if hasTalent(player, "rouge_yingjizhanlv") then
       skilName = "rouge_yingjizhanlv"
       room:throwCard(target_card, skilName, targetPlayer, player)
     end
@@ -1389,7 +1365,7 @@ local rouge_yanxian_trigger = fk.CreateTriggerSkill {
   can_trigger = function(self, event, target, player, data)
     if player ~= target then return end
     if hasTalent(player, "rouge_yanxian") then
-      return data.card and data.card.trueName == "dismantlement" 
+      return data.card and data.card.trueName == "dismantlement"
     elseif hasTalent(player, "rouge_qiangquhaoduo") then
       return data.card and data.card.trueName == "snatch"
     end
@@ -1410,7 +1386,6 @@ local rouge_yanxian_trigger = fk.CreateTriggerSkill {
         room:setCardMark(card_true, "@rouge_yanxian", 1)
       end
     end
-    
   end
 }
 
@@ -1419,10 +1394,10 @@ local rouge_yanxian_effectfinished= fk.CreateTriggerSkill {
   events = { fk.CardEffectFinished },
   priority = 0.002,
   mute = true,
-  global=true,
+  global = true,
   can_trigger = function(self, event, target, player, data)
     return data.card and (data.card.trueName=="dismantlement" or data.card.trueName=="snatch") and not player:isKongcheng()
-       and table.find(player:getCardIds("h"),function (cid)
+        and table.find(player:getCardIds("h"),function (cid)
       return Fk:getCardById(cid):getMark("@rouge_yanxian")>0
     end)
   end,
@@ -1430,10 +1405,9 @@ local rouge_yanxian_effectfinished= fk.CreateTriggerSkill {
   on_use = function(self, event, target, player, data)
     local room = player.room
     for _, cid in ipairs(player:getCardIds("h")) do
-      local card_true=Fk:getCardById(cid)
-      room:removeCardMark(card_true,"@rouge_yanxian",card_true:getMark("@rouge_yanxian"))
+      local card_true = Fk:getCardById(cid)
+      room:removeCardMark(card_true, "@rouge_yanxian", card_true:getMark("@rouge_yanxian"))
     end
-    
   end
 }
 

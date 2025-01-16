@@ -226,8 +226,13 @@ end
 
 ---@param player Player
 ---@param talent string
+---@return string?
 function RougeUtil.hasTalent(player, talent)
-  return table.contains(player:getTableMark("@[rouge1v1]mark"), talent)
+  if table.contains(player:getTableMark("@[rouge1v1]mark"), talent) then
+    return talent
+  else
+    return nil
+  end
 end
 
 ---@param player ServerPlayer
@@ -354,7 +359,7 @@ Fk:loadTranslationTable{
   ["#rouge_shop_buy_card"] = "%from 从虎符商店购买了 <font color='orange'>卡牌</font> %card",
   ["#rouge_shop_buy_talent"] = "%from 从虎符商店购买了 <font color='purple'>战法</font> %arg",
   ["#rouge_talent_effect"] = "%from 的 <font color='purple'>战法</font> %arg 生效：%arg2",
-  ["@rougelike1v1_skill_num"]="技能槽数量",
+  ["@rougelike1v1_skill_num"] = "技能槽数量",
   ["#rouge-lose"] = "单骑无双：技能槽已满，请选择要失去的技能",
 }
 
