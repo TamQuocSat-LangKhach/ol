@@ -307,6 +307,8 @@ rule:addRelatedSkill(fk.CreateTriggerSkill {
   end
 })
 
+RougeUtil:addBuffTalent { 3, "rouge_hujia" }
+RougeUtil:addBuffTalent { 4, "rouge_hujia2" }
 
 RougeUtil:addBuffTalent { 1, "rouge_xuezhan1", function(self, player)
   local num = math.max(-1, 1 - player.maxHp)
@@ -338,11 +340,21 @@ rule:addRelatedSkill(fk.CreateTriggerSkill {
   mute = true,
   can_trigger = function(self, event, target, player, data)
     return RougeUtil.hasOneOfTalents(player,
-      { "rouge_xuezhan1", "rouge_xuezhan2", "rouge_xuezhan3" })
+      { "rouge_hujia", "rouge_hujia2",
+        "rouge_xuezhan1", "rouge_xuezhan2", "rouge_xuezhan3" })
   end,
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     local room = player.room
+    if RougeUtil.hasTalent(player, "rouge_hujia") then
+      RougeUtil.sendTalentLog(player, "rouge_hujia")
+      room:changeShield(player, 1)
+    end
+    if RougeUtil.hasTalent(player, "rouge_hujia2") then
+      RougeUtil.sendTalentLog(player, "rouge_hujia2")
+      room:changeShield(player, 2)
+    end
+
     for i = 1, 3 do
       local skillName = RougeUtil.hasTalent(player, "rouge_xuezhan" .. i)
       if skillName and player:isWounded() then
@@ -395,6 +407,11 @@ Fk:loadTranslationTable {
   [":rouge_yuanmou2"] = "第3轮你的回合开始时，你回复3点体力",
   ["rouge_yuanmou3"] = "远谋Ⅲ",
   [":rouge_yuanmou3"] = "第2轮你的回合开始时，你回复2点体力",
+
+  ["rouge_hujia"] = "护甲Ⅰ",
+  [":rouge_hujia"] = "每轮开始时，你获得1点护甲",
+  ["rouge_hujia2"] = "护甲Ⅱ",
+  [":rouge_hujia2"] = "每轮开始时，你获得2点护甲",
 
   ["rouge_xuezhan1"] = "血战Ⅰ",
   [":rouge_xuezhan1"] = "体力上限-1（最低为1），每轮开始时回复1点体力",
@@ -630,7 +647,10 @@ RougeUtil:addBuffTalent { 3, "rouge_danliangboduo" }
 RougeUtil:addBuffTalent { 2, "rouge_erlianji" }
 RougeUtil:addBuffTalent { 4, "rouge_sanlianji" }
 RougeUtil:addBuffTalent { 3, "rouge_qianlong" }
+
 -- TODO RougeUtil:addBuffTalent { 4, "rouge_wendingjingong" }
+
+RougeUtil:addBuffTalent { 2, "rouge_touxi" }
 rule:addRelatedSkill(fk.CreateTargetModSkill {
   name = "#rougelike1v1_rule_slashcount",
   residue_func = function(self, player, skill, scope, card, to)
@@ -673,6 +693,11 @@ rule:addRelatedSkill(fk.CreateTargetModSkill {
     end)
 
     return ret
+  end,
+  bypass_times = function(self, player, skill, scope, card, to)
+    if hasTalent(player, "rouge_touxi") then
+      return card and card.trueName == "slash" and card.suit == Card.Spade
+    end
   end
 })
 
@@ -693,6 +718,9 @@ Fk:loadTranslationTable {
   [":rouge_sanlianji"] = "你的出牌阶段，你的出杀次数+2",
   ["rouge_qianlong"] = "潜龙",
   [":rouge_qianlong"] = "每有一个已解锁的空技能槽，则出杀次数+2",
+
+  ["rouge_touxi"] = "偷袭",
+  [":rouge_touxi"] = "黑桃【杀】无次数限制",
 }
 
 -- 加手牌上限、不计入上限类
@@ -742,16 +770,6 @@ rule:addRelatedSkill(fk.CreateMaxCardsSkill {
   end
 })
 
-RougeUtil:addBuffTalent { 2, "rouge_touxi" }
-rule:addRelatedSkill(fk.CreateTargetModSkill {
-  name = "#rougelike1v1_rule_touxi",
-  bypass_times = function(self, player, skill, scope, card, to)
-    if hasTalent(player, "rouge_touxi") then
-      return card and card.trueName == "slash" and card.suit == Card.Spade
-    end
-  end
-})
-
 Fk:loadTranslationTable {
   ["rouge_cangtaohu"] = "藏桃户",
   [":rouge_cangtaohu"] = "【桃】不计入手牌上限",
@@ -767,8 +785,6 @@ Fk:loadTranslationTable {
   [":rouge_wendingchengzai"] = "手牌上限基础值为8",
   ["rouge_xinshounianlai"] = "信手拈来",
   [":rouge_xinshounianlai"] = "你的手牌上限不因体力值改变而改变",
-  ["rouge_touxi"] = "偷袭",
-  [":rouge_touxi"] = "黑桃【杀】无次数限制",
 }
 
 -- 体力或体力上限变化相关
