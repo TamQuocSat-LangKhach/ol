@@ -1021,7 +1021,7 @@ yuanji:addSkill(jinghua)
 yuanji:addSkill(shuiyue)
 Fk:loadTranslationTable{
   ["ol__yuanji"] = "袁姬",
-  --["#ol__yuanji"] = "",
+  ["#ol__yuanji"] = "日星隐耀",
 
   ["jieyan"] = "节言",
   [":jieyan"] = "一名角色一次失去恰好两张牌后，你可以与其从牌堆两端各摸一张牌并展示，若花色不同，此技能本回合失效。",
@@ -1034,6 +1034,14 @@ Fk:loadTranslationTable{
   ["#jinghua_delay"] = "镜花",
   ["@@shuiyue-inhand"] = "水月",
   ["#shuiyue_delay"] = "水月",
+
+  ["$jieyan1"] = "父高居殿陛，德当配其位。",
+  ["$jieyan2"] = "君子善行，阿爷固君子，应有所不为。",
+  ["$jinghua1"] = "白驹失蹄，踏断谁家黄花？",
+  ["$jinghua2"] = "镜中花败，万般皆是虚影。",
+  ["$shuiyue1"] = "灵犀失乌角，奔于野，触山壁。",
+  ["$shuiyue2"] = "水中捧明月，月碎万点星光。",
+  ["~ol__yuanji"] = "空捧冰心抱玉壶……",
 }
 
 local kongshu = General(extension, "kongshu", "qun", 3, 3, General.Female)

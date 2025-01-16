@@ -3650,6 +3650,14 @@ Fk:loadTranslationTable{
   ["#anran-choose"] = "岸然：只选择自己摸%arg张牌，或选择至多%arg名角色各摸一张牌",
   ["@@anran-inhand-turn"] = "岸然",
   ["#gaobian-use"] = "告变：使用其中一张【杀】，或点“取消”失去1点体力",
+
+  ["$anran1"] = "此身伟岸，何惧悠悠之口？",
+  ["$anran2"] = "天时在彼，何故抱残守缺？",
+  ["$gaobian1"] = "帝髦诏甲士待兵，欲图不轨!",
+  ["$gaobian2"] = "晋公何在？君上欲谋反作乱！",
+  ["$zhongliu_olz__wangshen1"] = "活水趋沧海，天下大势不可违！",
+  ["$zhongliu_olz__wangshen2"] = "志随中流之水，可济沧海之云帆！",
+  ["~olz__wangshen"] = "我有从龙之志，何惧万世骂名！",
 }
 
 

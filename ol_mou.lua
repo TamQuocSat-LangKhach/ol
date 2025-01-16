@@ -3007,18 +3007,6 @@ local choulie_delay = fk.CreateTriggerSkill{
       room:useCard(use)
     end
   end,
-
-  refresh_events = {fk.TargetSpecified},
-  can_refresh = function (self, event, target, player, data)
-    return target == player and (data.extra_data or {}).choulieUser == player.id
-  end,
-  on_refresh = function (self, event, target, player, data)
-    local room = player.room
-    local to = room:getPlayerById(data.to)
-    if not to.dead then
-      to:addQinggangTag(data)
-    end
-  end,
 }
 local choulie_trigger = fk.CreateTriggerSkill{
   name = "#choulie_trigger",
@@ -3042,7 +3030,7 @@ local choulie_trigger = fk.CreateTriggerSkill{
   end,
 }
 choulie:addRelatedSkill(choulie_delay)
---choulie:addRelatedSkill(choulie_trigger)
+choulie:addRelatedSkill(choulie_trigger)
 zhuijiao:addRelatedSkill(zhuijiao_delay)
 zhangxiu:addSkill(choulie)
 zhangxiu:addSkill(zhuijiao)
@@ -3061,6 +3049,12 @@ Fk:loadTranslationTable{
   ["#choulie-slash"] = "仇猎：是否弃置一张牌，视为对 %dest 使用一张【杀】？",
   ["#choulie_trigger"] = "仇猎",
   ["#choulie-discard"] = "仇猎：是否弃置一张基本牌或武器牌，令此【杀】对你无效？",
+
+  ["$choulie1"] = "匹夫欺我太甚！此仇不死不休！",
+  ["$choulie2"] = "唯有那曹操项上人头，方能解我心头之恨！",
+  ["$zhuijiao1"] = "曹阿瞒，这次看你往哪里逃！",
+  ["$zhuijiao2"] = "我倒要看看，你曹孟德有几个儿子！",
+  ["~olmou__zhangxiu"] = "文和，可有良计……救我……",
 }
 
 return extension
