@@ -648,51 +648,71 @@ RougeUtil:addBuffTalent { 2, "rouge_erlianji" }
 RougeUtil:addBuffTalent { 4, "rouge_sanlianji" }
 RougeUtil:addBuffTalent { 3, "rouge_qianlong" }
 
+RougeUtil:addBuffTalent { 1, "rouge_hugujiu" }
+RougeUtil:addBuffTalent { 4, "rouge_hugujiu2" }
+
 -- TODO RougeUtil:addBuffTalent { 4, "rouge_wendingjingong" }
 
 RougeUtil:addBuffTalent { 2, "rouge_touxi" }
 rule:addRelatedSkill(fk.CreateTargetModSkill {
-  name = "#rougelike1v1_rule_slashcount",
+  name = "#rougelike1v1_rule_count",
   residue_func = function(self, player, skill, scope, card, to)
-    if skill.trueName ~= "slash_skill" then return 0 end
-    if scope ~= Player.HistoryPhase then return 0 end
-    local ret = 0
+    if not card then return end
     local room = Fk:currentRoom()
+    if card.trueName == "slash" and scope == Player.HistoryPhase then
+      local ret = 0
 
-    local round = room:getBanner("rouge_round")
-    for i = 1, 3 do
-      if hasTalent(player, "rouge_chijiuzhan" .. i) and round >= (i - 2) * i + 4 then -- 1,3 2,4 3,7 troll!
+      local round = room:getBanner("rouge_round")
+      for i = 1, 3 do
+        if hasTalent(player, "rouge_chijiuzhan" .. i) and round >= (i - 2) * i + 4 then -- 1,3 2,4 3,7 troll!
+          ret = ret + 1
+        end
+      end
+
+      if hasTalent(player, "rouge_erlianji") then
         ret = ret + 1
       end
-    end
-
-    if hasTalent(player, "rouge_erlianji") then
-      ret = ret + 1
-    end
-    if hasTalent(player, "rouge_sanlianji") then
-      ret = ret + 2
-    end
-
-    if hasTalent(player, "rouge_chijiuzhan4") and player:getMark("rouge_money") >= 3 then
-      ret = ret + 1
-    end
-
-    if hasTalent(player, "rouge_qianlong") then
-      if player:getMark("rougelike1v1_skill_num") > #player:getTableMark("@[rouge_skills]") then
-        ret = ret + (player:getMark("rougelike1v1_skill_num") - #player:getTableMark("@[rouge_skills]")) * 2
+      if hasTalent(player, "rouge_sanlianji") then
+        ret = ret + 2
       end
-    end
 
-    if hasTalent(player, "rouge_woxinchangdan") then
-      if player:getMark("@rouge_woxinchangdan") > 0 then
-        ret = ret + player:getMark("@rouge_woxinchangdan")
+      if hasTalent(player, "rouge_chijiuzhan4") and player:getMark("rouge_money") >= 3 then
+        ret = ret + 1
       end
-    end
-    ret = ret - #table.filter(room.alive_players, function(p)
-      return RougeUtil.isEnemy(player, p) and hasTalent(p, "rouge_danliangboduo")
-    end)
 
-    return ret
+      if hasTalent(player, "rouge_qianlong") then
+        if player:getMark("rougelike1v1_skill_num") > #player:getTableMark("@[rouge_skills]") then
+          ret = ret + (player:getMark("rougelike1v1_skill_num") - #player:getTableMark("@[rouge_skills]")) * 2
+        end
+      end
+
+      if hasTalent(player, "rouge_woxinchangdan") then
+        if player:getMark("@rouge_woxinchangdan") > 0 then
+          ret = ret + player:getMark("@rouge_woxinchangdan")
+        end
+      end
+      ret = ret - #table.filter(room.alive_players, function(p)
+        return RougeUtil.isEnemy(player, p) and hasTalent(p, "rouge_danliangboduo")
+      end)
+
+      return ret
+    end
+
+    if card.trueName == "analeptic" and scope == Player.HistoryTurn then
+      local ret = 0
+
+      local round = room:getBanner("rouge_round")
+
+      if hasTalent(player, "rouge_hugujiu") then
+        ret = ret + 1
+      end
+      if hasTalent(player, "rouge_hugujiu2") then
+        ret = ret + 2
+      end
+
+      return ret
+    end
+    return 0
   end,
   bypass_times = function(self, player, skill, scope, card, to)
     if hasTalent(player, "rouge_touxi") then
@@ -718,6 +738,11 @@ Fk:loadTranslationTable {
   [":rouge_sanlianji"] = "你的出牌阶段，你的出杀次数+2",
   ["rouge_qianlong"] = "潜龙",
   [":rouge_qianlong"] = "每有一个已解锁的空技能槽，则出杀次数+2",
+
+  ["rouge_hugujiu"] = "虎骨酒Ⅰ",
+  [":rouge_hugujiu"] = "每回合，你可以额外使用1次【酒】",
+  ["rouge_hugujiu2"] = "虎骨酒Ⅱ",
+  [":rouge_hugujiu2"] = "每回合，你可以额外使用2次【酒】",
 
   ["rouge_touxi"] = "偷袭",
   [":rouge_touxi"] = "黑桃【杀】无次数限制",
