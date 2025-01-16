@@ -260,16 +260,16 @@ end
 function RougeUtil.attachSkillToPlayer(player, skill_name)
   local room = player.room
   room:handleAddLoseSkills(player, skill_name, nil, false)
-  local mark = player:getTableMark("rouge_skills")
+  local mark = player:getTableMark("@[rouge_skills]")
   -- TODO: 忘记初始技能的地方
-  local n = player:getMark("@rougelike1v1_skill_num")
+  local n = player:getMark("rougelike1v1_skill_num")
   if #mark >= n then
     local tolose = room:askForChoice(player, mark, "rougelike1v1", "#rouge-lose", true)
     room:handleAddLoseSkills(player, "-" .. tolose, nil, true)
     table.removeOne(mark, tolose)
   end
   table.insert(mark, skill_name)
-  room:setPlayerMark(player, "rouge_skills", mark)
+  room:setPlayerMark(player, "@[rouge_skills]", mark)
 end
 
 ---@param players ServerPlayer[]
@@ -337,18 +337,37 @@ end
 Fk:addQmlMark{
   name = "rouge1v1",
   how_to_show = function(name, value, player)
-    return Fk:translate("@[rouge1v1]"):format(#value, player:getMark("rouge_money"))
+    local talents = #value
+    return Fk:translate("@[rouge1v1]"):format(talents, player:getMark("rouge_money"))
   end,
   qml_path = function (name, value, player)
     return "packages/utility/qml/DetailBox"
   end,
 }
 
+Fk:addQmlMark{
+  name = "rouge_skills",
+  qml_path = function (name, value, player)
+    return ""
+  end,
+  how_to_show = function(name, value, player)
+    local skills = table.map(value, function(s)
+      return '<font color="#abeeabee">' .. Fk:translate(s) .. '</font>'
+    end)
+    local slots = player:getMark("rougelike1v1_skill_num")
+    for _ = 1, slots - #skills do
+      table.insert(skills, '<font color="#8a8a8a">空位</font>')
+    end
+    return table.concat(skills, ' ')
+  end,
+}
+
 Fk:loadTranslationTable{
   ["rouge_money"] = "虎符",
   ["rouge_talent"] = "战法",
-  ["@[rouge1v1]"] = "战法%d 虎符%d",
+  ["@[rouge1v1]"] = "战法 %d 虎符 %d",
   ["@[rouge1v1]mark"] = "",
+  ["@[rouge_skills]"] = "",
   ["rouge_shop"] = "虎符商店",
   ["#rouge_shop"] = "虎符商店：请选择要购买的能力",
   ["#rouge_current"] = "当前持有：%arg",
@@ -358,9 +377,11 @@ Fk:loadTranslationTable{
   ["#rouge_shop_buy_skill"] = "%from 从虎符商店购买了 <font color='blue'>技能</font> %arg",
   ["#rouge_shop_buy_card"] = "%from 从虎符商店购买了 <font color='orange'>卡牌</font> %card",
   ["#rouge_shop_buy_talent"] = "%from 从虎符商店购买了 <font color='purple'>战法</font> %arg",
+  ["#rouge_init_talent"] = "%from 选择了 <font color='purple'>初始战法</font> %arg",
   ["#rouge_talent_effect"] = "%from 的 <font color='purple'>战法</font> %arg 生效：%arg2",
-  ["@rougelike1v1_skill_num"] = "技能槽数量",
+  -- ["rougelike1v1_skill_num"] = "技能槽数量",
   ["#rouge-lose"] = "单骑无双：技能槽已满，请选择要失去的技能",
+  ["#rouge-init-talent"] = "单骑无双：请选择初始战法",
 }
 
 return RougeUtil

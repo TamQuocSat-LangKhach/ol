@@ -658,8 +658,8 @@ rule:addRelatedSkill(fk.CreateTargetModSkill {
     end
 
     if hasTalent(player, "rouge_qianlong") then
-      if player:getMark("@rougelike1v1_skill_num") > #player:getTableMark("rouge_skills") then
-        ret = ret + (player:getMark("@rougelike1v1_skill_num") - #player:getTableMark("rouge_skills")) * 2
+      if player:getMark("rougelike1v1_skill_num") > #player:getTableMark("@[rouge_skills]") then
+        ret = ret + (player:getMark("rougelike1v1_skill_num") - #player:getTableMark("@[rouge_skills]")) * 2
       end
     end
 
@@ -744,7 +744,7 @@ rule:addRelatedSkill(fk.CreateMaxCardsSkill {
 
 RougeUtil:addBuffTalent { 2, "rouge_touxi" }
 rule:addRelatedSkill(fk.CreateTargetModSkill {
-  name = "#rougelike1v1_rule_maxcard",
+  name = "#rougelike1v1_rule_touxi",
   bypass_times = function(self, player, skill, scope, card, to)
     if hasTalent(player, "rouge_touxi") then
       return card and card.trueName == "slash" and card.suit == Card.Spade
@@ -1199,18 +1199,19 @@ rule:addRelatedSkill(fk.CreateTriggerSkill {
       local target_card = table.random(targetPlayer:getCardIds("he"))
       if hasTalent(player, "rouge_yingjifangan") then
         skilName = "rouge_yingjifangan"
+        sendTalentLog(player, skilName)
         room:throwCard(target_card, skilName, targetPlayer, player)
       end
       if hasTalent(player, "rouge_yingjizhanshu") then
         skilName = "rouge_yingjizhanshu"
+        sendTalentLog(player, skilName)
         room:throwCard(target_card, skilName, targetPlayer, player)
       end
       if hasTalent(player, "rouge_yingjizhanlv") then
         skilName = "rouge_yingjizhanlv"
+        sendTalentLog(player, skilName)
         room:throwCard(target_card, skilName, targetPlayer, player)
       end
-
-      sendTalentLog(player, skilName)
     end
   end
 })
@@ -1579,7 +1580,7 @@ end }
 
 RougeUtil:addBuffTalent { 3, "rouge_yunchouweiwo", function(self, player)
   RougeUtil.sendTalentLog(player, self)
-  player.room:addPlayerMark(player, "@rougelike1v1_skill_num", 1)
+  player.room:addPlayerMark(player, "rougelike1v1_skill_num", 1)
 end }
 
 Fk:loadTranslationTable {
