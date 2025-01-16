@@ -191,11 +191,15 @@ function RougeUtil.attachTalentToPlayer(player, talent)
       player.room:changeMaxHp(player,-1)
     end
   elseif talent=="rouge_xuezhan2" then
-    if player.maxHp>2 then
+    if player.maxHp-2<=0 then
+      player.room:changeMaxHp(player,1-player.maxHp)
+    else
       player.room:changeMaxHp(player,-2)
     end
   elseif talent=="rouge_xuezhan3" then
-    if player.maxHp>3 then
+    if player.maxHp-3<=0 then
+      player.room:changeMaxHp(player,1-player.maxHp)
+    else
       player.room:changeMaxHp(player,-3)
     end
   end
