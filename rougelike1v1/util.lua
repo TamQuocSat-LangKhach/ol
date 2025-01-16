@@ -181,28 +181,7 @@ end
 ---@param talent string
 function RougeUtil.attachTalentToPlayer(player, talent)
   local room = player.room
-  local mark = player:getTableMark("@[rouge1v1]mark")
-  table.insert(mark, talent)
-  room:setPlayerMark(player, "@[rouge1v1]mark", mark)
-  if talent=="rouge_yunchouweiwo" then
-    player.room:addPlayerMark(player, "@rougelike1v1_skill_num")
-  elseif talent=="rouge_xuezhan1" then
-    if player.maxHp>1 then
-      player.room:changeMaxHp(player,-1)
-    end
-  elseif talent=="rouge_xuezhan2" then
-    if player.maxHp-2<=0 then
-      player.room:changeMaxHp(player,1-player.maxHp)
-    else
-      player.room:changeMaxHp(player,-2)
-    end
-  elseif talent=="rouge_xuezhan3" then
-    if player.maxHp-3<=0 then
-      player.room:changeMaxHp(player,1-player.maxHp)
-    else
-      player.room:changeMaxHp(player,-3)
-    end
-  end
+  room:addTableMark(player, "@[rouge1v1]mark", talent)
 end
 
 ---@param player Player

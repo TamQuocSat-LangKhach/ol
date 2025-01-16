@@ -308,9 +308,28 @@ rule:addRelatedSkill(fk.CreateTriggerSkill {
 })
 
 
-RougeUtil:addBuffTalent { 1, "rouge_xuezhan1" }
-RougeUtil:addBuffTalent { 2, "rouge_xuezhan2" }
-RougeUtil:addBuffTalent { 4, "rouge_xuezhan3" }
+RougeUtil:addTalent { 1, "rouge_xuezhan1", function(self, player)
+  local num = math.max(-1, 1 - player.maxHp)
+  if num < 0 then
+    RougeUtil.sendTalentLog(player, self)
+    player.room:changeMaxHp(player, num)
+  end
+end }
+RougeUtil:addTalent { 2, "rouge_xuezhan2", function(self, player)
+  local num = math.max(-2, 1 - player.maxHp)
+  if num < 0 then
+    RougeUtil.sendTalentLog(player, self)
+    player.room:changeMaxHp(player, num)
+  end
+end }
+RougeUtil:addTalent { 4, "rouge_xuezhan3", function(self, player)
+  local num = math.max(-3, 1 - player.maxHp)
+  p(num)
+  if num < 0 then
+    RougeUtil.sendTalentLog(player, self)
+    player.room:changeMaxHp(player, num)
+  end
+end }
 
 
 rule:addRelatedSkill(fk.CreateTriggerSkill {
@@ -1435,7 +1454,10 @@ Fk:loadTranslationTable {
 -- Misc: 系统耦合类
 ------------------------
 
-RougeUtil:addBuffTalent { 3, "rouge_yunchouweiwo" }
+RougeUtil:addTalent { 3, "rouge_yunchouweiwo", function(self, player)
+  RougeUtil.sendTalentLog(player, self)
+  player.room:addPlayerMark(player, "@rougelike1v1_skill_num", 1)
+end }
 
 
 
