@@ -347,7 +347,7 @@ rule:addRelatedSkill(fk.CreateTriggerSkill {
       local skillName = RougeUtil.hasTalent(player, "rouge_xuezhan" .. i)
       if skillName and player:isWounded() then
         RougeUtil.sendTalentLog(player, skillName)
-        room:recover{
+        room:recover {
           who = player,
           num = i,
           recoverBy = player,
@@ -570,14 +570,14 @@ rule:addRelatedSkill(fk.CreateTriggerSkill {
 
     if RougeUtil.hasTalent(player, "rouge_xvshi") then
       local play_ids = {}
-      player.room.logic:getEventsOfScope(GameEvent.Phase, 1, function (e)
+      player.room.logic:getEventsOfScope(GameEvent.Phase, 1, function(e)
         if e.data[2] == Player.Play and e.end_id then
-          table.insert(play_ids, {e.id, e.end_id})
+          table.insert(play_ids, { e.id, e.end_id })
         end
         return false
       end, Player.HistoryTurn)
       if #play_ids == 0 then return true end
-      local function PlayCheck (e)
+      local function PlayCheck(e)
         local in_play = false
         for _, ids in ipairs(play_ids) do
           if e.id > ids[1] and e.id < ids[2] then
@@ -588,7 +588,7 @@ rule:addRelatedSkill(fk.CreateTriggerSkill {
         return in_play and e.data[1].from == player.id and e.data[1].card.trueName == "slash"
       end
       if #player.room.logic:getEventsOfScope(GameEvent.UseCard, 1, PlayCheck, Player.HistoryTurn) == 0
-      and #player.room.logic:getEventsOfScope(GameEvent.RespondCard, 1, PlayCheck, Player.HistoryTurn) == 0 then
+          and #player.room.logic:getEventsOfScope(GameEvent.RespondCard, 1, PlayCheck, Player.HistoryTurn) == 0 then
         RougeUtil.sendTalentLog(player, "rouge_xvshi")
         player.room:setPlayerMark(player, "@@rouge_xvshi", 1)
       else
@@ -741,6 +741,17 @@ rule:addRelatedSkill(fk.CreateMaxCardsSkill {
     end
   end
 })
+
+RougeUtil:addBuffTalent { 2, "rouge_touxi" }
+rule:addRelatedSkill(fk.CreateTargetModSkill {
+  name = "#rougelike1v1_rule_maxcard",
+  bypass_times = function(self, player, skill, scope, card, to)
+    if hasTalent(player, "rouge_touxi") then
+      return card and card.trueName == "slash" and card.suit == Card.Spade
+    end
+  end
+})
+
 Fk:loadTranslationTable {
   ["rouge_cangtaohu"] = "藏桃户",
   [":rouge_cangtaohu"] = "【桃】不计入手牌上限",
@@ -756,9 +767,11 @@ Fk:loadTranslationTable {
   [":rouge_wendingchengzai"] = "手牌上限基础值为8",
   ["rouge_xinshounianlai"] = "信手拈来",
   [":rouge_xinshounianlai"] = "你的手牌上限不因体力值改变而改变",
+  ["rouge_touxi"] = "偷袭",
+  [":rouge_touxi"] = "黑桃【杀】无次数限制",
 }
 
--- 回复体力时相关
+-- 体力或体力上限变化相关
 ------------------------
 
 RougeUtil:addBuffTalent { 2, "rouge_jiemeng" }
@@ -803,6 +816,36 @@ rule:addRelatedSkill(fk.CreateTriggerSkill {
     end
   end
 })
+
+RougeUtil:addBuffTalent { 1, "rouge_wendingtizhi", function(self, player)
+  RougeUtil.sendTalentLog(player, self)
+  player.room:changeMaxHp(player, 7 - player.maxHp)
+end }
+
+rule:addRelatedSkill(fk.CreateTriggerSkill {
+  name = "#rougelike1v1_rule_beforemaxhpchanged",
+  events = { fk.BeforeMaxHpChanged },
+  priority = 0.002,
+  mute = true,
+  can_trigger = function(self, event, target, player, data)
+    if RougeUtil.hasOneOfTalents(player, { "rouge_wendingtizhi", }) then
+      if RougeUtil.hasTalent(player, "rouge_wendingtizhi") then
+        return target == player
+      end
+    end
+  end,
+  on_cost = Util.TrueFunc,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    if RougeUtil.hasTalent(player, "rouge_wendingtizhi") then
+      RougeUtil.sendTalentLog(player, "rouge_wendingtizhi")
+      if data.num ~= 7 - player.maxHp then
+        return true
+      end
+    end
+  end
+})
+
 Fk:loadTranslationTable {
   ["rouge_jiemeng"] = "结盟",
   [":rouge_jiemeng"] = "你使用的【桃园结义】友方角色回复双倍体力",
@@ -812,6 +855,8 @@ Fk:loadTranslationTable {
   [":rouge_yaoli1"] = "回复体力时，额外回复1点",
   ["rouge_yaoli2"] = "药理Ⅱ",
   [":rouge_yaoli2"] = "回复体力时，额外回复2点",
+  ["rouge_wendingtizhi"] = "稳定体质",
+  [":rouge_wendingtizhi"] = "你的体力上限固定为7，无法通过任何途径改变体力值上限",
 }
 
 -- 造成伤害时相关
@@ -826,7 +871,7 @@ rule:addRelatedSkill(fk.CreateTriggerSkill {
   can_trigger = function(self, event, target, player, data)
     if player ~= target then return end
     return (hasTalent(player, "rouge_zhongjiji") and data.damage >= 3 and
-        data.to.role ~= data.from.role) or (hasTalent(player, "rouge_kuangbao1") and player.hp <= 2)
+          data.to.role ~= data.from.role) or (hasTalent(player, "rouge_kuangbao1") and player.hp <= 2)
         or (hasTalent(player, "rouge_kuangbao2") and player.hp <= 3)
   end,
   on_cost = Util.TrueFunc,
@@ -948,8 +993,8 @@ Fk:loadTranslationTable {
 -- 卡牌使用/指定目标时相关
 ---------------------------
 RougeUtil:addBuffTalent { 3, "rouge_zuiquan" }
-
-
+RougeUtil:addBuffTalent { 2, "rouge_shuangren1" }
+RougeUtil:addBuffTalent { 3, "rouge_shuangren2" }
 rule:addRelatedSkill(fk.CreateTriggerSkill {
   name = "#rougelike1v1_AfterCardTargetDeclared",
   events = { fk.AfterCardTargetDeclared },
@@ -957,15 +1002,60 @@ rule:addRelatedSkill(fk.CreateTriggerSkill {
   mute = true,
   can_trigger = function(self, event, target, player, data)
     if player ~= target then return end
-    if hasTalent(player, "rouge_zuiquan") and data.card and data.card.trueName == "slash" then
-      return ((data.extra_data or {}).drankBuff or 0)>0
-    end
+    return RougeUtil.hasOneOfTalents(player, { "rouge_zuiquan", "rouge_shuangren1", "rouge_shuangren2" }) and data.card
   end,
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
-    local room=player.room
-    sendTalentLog(player,"rouge_zuiquan")
-    data.unoffsetableList = table.map(room.alive_players, Util.IdMapper)
+    local room = player.room
+
+    if hasTalent(player, "rouge_zuiquan") then
+      if data.card and data.card.trueName == "slash" and ((data.extra_data or {}).drankBuff or 0) > 0 then
+        sendTalentLog(player, "rouge_zuiquan")
+        data.unoffsetableList = table.map(room.alive_players, Util.IdMapper)
+      end
+    end
+    if hasTalent(player, "rouge_shuangren1") then
+      if data.card.trueName == "slash" and #player.room.logic:getEventsOfScope(GameEvent.UseCard, 2, function(e)
+            return e.data[1].card and e.data[1].card.trueName == "slash" and data.from == player.id
+          end, Player.HistoryRound) == 1 then
+        local targets = {}
+        for _, p in ipairs(room:getOtherPlayers(player)) do
+          if not table.contains(TargetGroup:getRealTargets(data.tos), p.id) and not player:isProhibited(p, data.card)
+              and player:inMyAttackRange(p) then
+            table.insertIfNeed(targets, p.id)
+          end
+        end
+        if #targets > 0 then
+          local tos = room:askForChoosePlayers(player, targets, 1, 1, "#rouge_shuangren-choose", self
+            .name, true)
+          if #tos > 0 then
+            table.insert(data.tos, { tos[1] })
+          end
+        end
+      end
+    end
+
+    if hasTalent(player, "rouge_shuangren2") then
+      if data.card.trueName == "slash" and #player.room.logic:getEventsOfScope(GameEvent.UseCard, 2, function(e)
+            return e.data[1].card and e.data[1].card.trueName == "slash" and data.from == player.id
+          end, Player.HistoryRound) == 1 then
+        local targets = {}
+        for _, p in ipairs(room:getOtherPlayers(player)) do
+          if not table.contains(TargetGroup:getRealTargets(data.tos), p.id) and not player:isProhibited(p, data.card)
+              and player:inMyAttackRange(p) then
+            table.insertIfNeed(targets, p.id)
+          end
+        end
+        if #targets > 0 then
+          local tos = room:askForChoosePlayers(player, targets, 1, 2, "#rouge_shuangren-choose", self
+            .name, true)
+          if #tos > 0 then
+            table.insert(data.tos, { tos[1] })
+            table.insert(data.tos, { tos[2] })
+          end
+        end
+      end
+    end
   end
 })
 
@@ -978,7 +1068,7 @@ rule:addRelatedSkill(fk.CreateTriggerSkill {
   mute = true,
   can_trigger = function(self, event, target, player, data)
     if player ~= target then return end
-    if RougeUtil.hasOneOfTalents(player, {"rouge_yinyangshufa" }) and data.card then
+    if RougeUtil.hasOneOfTalents(player, { "rouge_yinyangshufa" }) and data.card then
       if hasTalent(player, "rouge_yinyangshufa") and data.card.type == Card.TypeTrick and data.card.is_damage_card == true then
         return true
       end
@@ -986,13 +1076,13 @@ rule:addRelatedSkill(fk.CreateTriggerSkill {
   end,
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
-    local room=player.room
+    local room = player.room
     if hasTalent(player, "rouge_yinyangshufa") then
       sendTalentLog(player, "rouge_yinyangshufa")
       for _, to in ipairs(data.tos) do
-        if RougeUtil.isEnemy(player,room:getPlayerById(to[1])) then
+        if RougeUtil.isEnemy(player, room:getPlayerById(to[1])) then
           data.disresponsiveList = data.disresponsiveList or {}
-          table.insertIfNeed(data.disresponsiveList,to[1])
+          table.insertIfNeed(data.disresponsiveList, to[1])
         end
       end
     end
@@ -1003,10 +1093,10 @@ rule:addRelatedSkill(fk.CreateTriggerSkill {
 RougeUtil:addBuffTalent { 1, "rouge_xvlijian" }
 
 
-local rouge_xvlijian__archery_attack_skill = fk.CreateActiveSkill{
+local rouge_xvlijian__archery_attack_skill = fk.CreateActiveSkill {
   name = "rouge_xvlijian__archery_attack_skill",
   prompt = "#rouge_xvlijian__archery_attack_skill",
-  mute=true,
+  mute = true,
   can_use = Util.AoeCanUse,
   on_use = Util.AoeOnUse,
   mod_target_filter = function(self, to_select, selected, user, card, distance_limited)
@@ -1066,7 +1156,7 @@ local rouge_xvlijian_trigger = fk.CreateTriggerSkill {
     for k, v in pairs(c) do
       card[k] = v
     end
-    sendTalentLog(player,"rouge_xvlijian")
+    sendTalentLog(player, "rouge_xvlijian")
     card.skill = rouge_xvlijian__archery_attack_skill
     data.card = card
   end,
@@ -1102,28 +1192,36 @@ rule:addRelatedSkill(fk.CreateTriggerSkill {
   end,
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
-    local room, skilName = player.room, ""
-    local targetPlayer = room:getPlayerById(data.from)
-    local target_card = table.random(targetPlayer:getCardIds("he"))
-    if hasTalent(player, "rouge_yingjifangan") then
-      skilName = "rouge_yingjifangan"
-      room:throwCard(target_card, skilName, targetPlayer, player)
+    local room = player.room
+    if RougeUtil.hasOneOfTalents(player, { "rouge_yingjifangan", "rouge_yingjizhanshu", "rouge_yingjizhanlv" }) then
+      local skilName = ""
+      local targetPlayer = room:getPlayerById(data.from)
+      local target_card = table.random(targetPlayer:getCardIds("he"))
+      if hasTalent(player, "rouge_yingjifangan") then
+        skilName = "rouge_yingjifangan"
+        room:throwCard(target_card, skilName, targetPlayer, player)
+      end
+      if hasTalent(player, "rouge_yingjizhanshu") then
+        skilName = "rouge_yingjizhanshu"
+        room:throwCard(target_card, skilName, targetPlayer, player)
+      end
+      if hasTalent(player, "rouge_yingjizhanlv") then
+        skilName = "rouge_yingjizhanlv"
+        room:throwCard(target_card, skilName, targetPlayer, player)
+      end
+
+      sendTalentLog(player, skilName)
     end
-    if hasTalent(player, "rouge_yingjizhanshu") then
-      skilName = "rouge_yingjizhanshu"
-      room:throwCard(target_card, skilName, targetPlayer, player)
-    end
-    if hasTalent(player, "rouge_yingjizhanlv") then
-      skilName = "rouge_yingjizhanlv"
-      room:throwCard(target_card, skilName, targetPlayer, player)
-    end
-    sendTalentLog(player, skilName)
   end
 })
 
 
+
 RougeUtil:addBuffTalent { 2, "rouge_zhudao1" }
 RougeUtil:addBuffTalent { 3, "rouge_zhudao2" }
+RougeUtil:addBuffTalent { 1, "rouge_shoudaoqinlai1" }
+RougeUtil:addBuffTalent { 1, "rouge_shoudaoqinlai2" }
+RougeUtil:addBuffTalent { 1, "rouge_shoudaoqinlai3" }
 rule:addRelatedSkill(fk.CreateTriggerSkill {
   name = "#rougelike1v1_CardUseFinished",
   events = { fk.CardUseFinished },
@@ -1131,21 +1229,56 @@ rule:addRelatedSkill(fk.CreateTriggerSkill {
   mute = true,
   can_trigger = function(self, event, target, player, data)
     if player ~= target then return end
-    return RougeUtil.hasOneOfTalents(player, { "rouge_zhudao1", "rouge_zhudao2" }) and data.card
-        and data.card.trueName == "slash" and not player:isNude()
+    return RougeUtil.hasOneOfTalents(player, { "rouge_zhudao1", "rouge_zhudao2", "rouge_shoudaoqinlai1",
+      "rouge_shoudaoqinlai2", "rouge_shoudaoqinlai3", }) and data.card
   end,
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local num = 1
-    local skillName = "rouge_zhudao1"
-    if hasTalent(player, "rouge_zhudao2") then
-      num = 2
-      skillName = "rouge_zhudao2"
+
+    if hasTalent(player, "rouge_zhudao1") then
+      if data.card.trueName == "slash" and not player:isNude() then
+        sendTalentLog(player, "rouge_zhudao1")
+        local choice_cards = room:askForCard(player, 1, 1, true, "rouge_zhudao1", true, ".", "#rouge_zhudao:::" .. 1)
+        room:recastCard(choice_cards, player, "rouge_zhudao1")
+      end
     end
-    sendTalentLog(player, skillName)
-    local choice_cards = room:askForCard(player, 1, num, true, skillName, true, ".", "#rouge_zhudao:::" .. num)
-    room:recastCard(choice_cards, player, skillName)
+
+    if hasTalent(player, "rouge_zhudao2") then
+      if data.card.trueName == "slash" and not player:isNude() then
+        sendTalentLog(player, "rouge_zhudao2")
+        local choice_cards = room:askForCard(player, 1, 2, true, "rouge_zhudao2", true, ".", "#rouge_zhudao:::" .. 2)
+        room:recastCard(choice_cards, player, "rouge_zhudao2")
+      end
+    end
+
+    if hasTalent(player, "rouge_shoudaoqinlai1") then
+      if #room.logic:getEventsOfScope(GameEvent.UseCard, 7, function(e)
+            return e.data[1].card and e.data[1].from == player.id
+          end, Player.HistoryTurn) == 7 and player:getMark("rouge_shoudaoqinlai1-turn") == 0 then
+        sendTalentLog(player, "rouge_shoudaoqinlai1")
+        player:drawCards(1, "rouge_shoudaoqinlai1")
+        room:addPlayerMark(player, "rouge_shoudaoqinlai1-turn")
+      end
+    end
+    if hasTalent(player, "rouge_shoudaoqinlai2") then
+      if #room.logic:getEventsOfScope(GameEvent.UseCard, 5, function(e)
+            return e.data[1].card and e.data[1].from == player.id
+          end, Player.HistoryTurn) == 5 and player:getMark("rouge_shoudaoqinlai2-turn") == 0 then
+        sendTalentLog(player, "rouge_shoudaoqinlai2")
+        player:drawCards(1, "rouge_shoudaoqinlai2")
+        room:addPlayerMark(player, "rouge_shoudaoqinlai2-turn")
+      end
+    end
+    if hasTalent(player, "rouge_shoudaoqinlai2") then
+      if #room.logic:getEventsOfScope(GameEvent.UseCard, 6, function(e)
+            return e.data[1].card and e.data[1].from == player.id
+          end, Player.HistoryTurn) == 6 and player:getMark("rouge_shoudaoqinlai3-turn") == 0 then
+        sendTalentLog(player, "rouge_shoudaoqinlai3")
+        player:drawCards(2, "rouge_shoudaoqinlai3")
+        room:addPlayerMark(player, "rouge_shoudaoqinlai3-turn")
+      end
+    end
   end
 })
 
@@ -1157,7 +1290,7 @@ local rouge_xvyan__fireAttackSkill = fk.CreateActiveSkill {
   name = "rouge_xvyan__fire_attack_skill",
   prompt = "#rouge_xvyan__fire_attack_skill",
   target_num = 1,
-  mute=true,
+  mute = true,
   mod_target_filter = function(_, to_select, _, _, _, _)
     return not Fk:currentRoom():getPlayerById(to_select):isKongcheng()
   end,
@@ -1228,13 +1361,13 @@ Fk:loadTranslationTable {
   ["rouge_zuiquan"] = "醉拳",
   [":rouge_zuiquan"] = "【酒】【杀】不能被抵消",
   ["rouge_yinyangshufa"] = "阴阳术法",
-  ["#rougelike1v1_PreCardEffect_yinyangshufa"]= "阴阳术法",
+  ["#rougelike1v1_PreCardEffect_yinyangshufa"] = "阴阳术法",
   [":rouge_yinyangshufa"] = "敌方无法响应你的伤害型锦囊牌",
   ["rouge_xvlijian"] = "蓄力箭",
   [":rouge_xvlijian"] = "你使用的【万箭齐发】其他角色需要使用2张【闪】来响应",
-  ["rouge_xvlijian__archery_attack_skill"]= "蓄力箭",
-  ["#rouge_xvlijian__archery_attack_skill"]= "蓄力箭:你使用的【万箭齐发】其他角色需要使用2张【闪】来响应",
-  ["#rougelike1v1_PreCardEffect_rouge_xvlijian"]= "蓄力箭",
+  ["rouge_xvlijian__archery_attack_skill"] = "蓄力箭",
+  ["#rouge_xvlijian__archery_attack_skill"] = "蓄力箭:你使用的【万箭齐发】其他角色需要使用2张【闪】来响应",
+  ["#rougelike1v1_PreCardEffect_rouge_xvlijian"] = "蓄力箭",
   ["rouge_zhudao1"] = "铸刀Ⅰ",
   [":rouge_zhudao1"] = "你使用【杀】后可以至多重铸1张牌",
   ["rouge_zhudao2"] = "铸刀Ⅱ",
@@ -1251,7 +1384,18 @@ Fk:loadTranslationTable {
   ["rouge_xvyan__fire_attack_skill"] = "虚焰",
   ["#rouge_xvyan__fire_attack_skill"] = "虚焰:你使用【火攻】的弃置牌改为展示牌",
   ["#rouge_xvyan__fire_attack_skill-show1"] = "虚焰：你需要对【%src】展示一张火攻牌。",
-  ["#rouge_xvyan__fire_attack_skill-show2"] = "虚焰：你可以展示一张与展示牌相同花色的牌，然后对其造成1点火焰伤害。"
+  ["#rouge_xvyan__fire_attack_skill-show2"] = "虚焰：你可以展示一张与展示牌相同花色的牌，然后对其造成1点火焰伤害。",
+  ["rouge_shuangren1"] = "双刃Ⅰ",
+  [":rouge_shuangren1"] = "每轮，你的首张【杀】至多能额外选择1个目标",
+  ["rouge_shuangren2"] = "双刃Ⅱ",
+  [":rouge_shuangren2"] = "每轮，你的首张【杀】至多能额外选择2个目标",
+  ["#rouge_shuangren-choose"]="双刃：你可额外选择此【杀】目标",
+  ["rouge_shoudaoqinlai1"] = "手到擒来Ⅰ",
+  [":rouge_shoudaoqinlai1"] = "每回合你使用第7张牌后,你摸1张牌",
+  ["rouge_shoudaoqinlai2"] = "手到擒来Ⅱ",
+  [":rouge_shoudaoqinlai2"] = "每回合你使用第5张牌后,你摸1张牌",
+  ["rouge_shoudaoqinlai3"] = "手到擒来Ⅲ",
+  [":rouge_shoudaoqinlai3"] = "每回合你使用第6张牌后,你摸2张牌",
 
 }
 
@@ -1351,7 +1495,7 @@ local rouge_yanxian = fk.CreateVisibilitySkill {
   global = true,
   frequency = Skill.Compulsory,
   card_visible = function(self, player, card)
-    if (hasTalent(player, "rouge_yanxian")or hasTalent(player, "rouge_qiangquhaoduo") ) and card:getMark("@rouge_yanxian") > 0 then
+    if (hasTalent(player, "rouge_yanxian") or hasTalent(player, "rouge_qiangquhaoduo")) and card:getMark("@rouge_yanxian") > 0 then
       return true
     end
   end
@@ -1389,17 +1533,18 @@ local rouge_yanxian_trigger = fk.CreateTriggerSkill {
   end
 }
 
-local rouge_yanxian_effectfinished= fk.CreateTriggerSkill {
+local rouge_yanxian_effectfinished = fk.CreateTriggerSkill {
   name = "#rouge_yanxian_effectfinished",
   events = { fk.CardEffectFinished },
   priority = 0.002,
   mute = true,
   global = true,
   can_trigger = function(self, event, target, player, data)
-    return data.card and (data.card.trueName=="dismantlement" or data.card.trueName=="snatch") and not player:isKongcheng()
-        and table.find(player:getCardIds("h"),function (cid)
-      return Fk:getCardById(cid):getMark("@rouge_yanxian")>0
-    end)
+    return data.card and (data.card.trueName == "dismantlement" or data.card.trueName == "snatch") and
+        not player:isKongcheng()
+        and table.find(player:getCardIds("h"), function(cid)
+          return Fk:getCardById(cid):getMark("@rouge_yanxian") > 0
+        end)
   end,
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
@@ -1421,7 +1566,7 @@ Fk:loadTranslationTable {
   [":rouge_yanxian"] = "【过河拆桥】时目标手牌可见",
   ["rouge_qiangquhaoduo"] = "强取豪夺",
   [":rouge_qiangquhaoduo"] = "【顺手牵羊】时目标手牌可见",
-  ["#rougelike1v1_PreEffect_Visibility"]="战法：眼线/强夺豪取"
+  ["#rougelike1v1_PreEffect_Visibility"] = "战法：眼线/强夺豪取"
 }
 
 -- Misc: 系统耦合类
