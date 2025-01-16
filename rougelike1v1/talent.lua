@@ -1454,15 +1454,20 @@ Fk:loadTranslationTable {
 -- Misc: 系统耦合类
 ------------------------
 
+RougeUtil:addTalent { 4, "rouge_shangdao", function(self, player)
+  RougeUtil.sendTalentLog(player, self)
+  player.room:addPlayerMark(player, "rougelike1v1_shop_num", 1)
+end }
+
 RougeUtil:addTalent { 3, "rouge_yunchouweiwo", function(self, player)
   RougeUtil.sendTalentLog(player, self)
   player.room:addPlayerMark(player, "@rougelike1v1_skill_num", 1)
 end }
 
-
-
-
 Fk:loadTranslationTable {
+  ["rouge_shangdao"] = "商道",
+  [":rouge_shangdao"] = "商店中商品展示数量+1",
+
   ["rouge_yunchouweiwo"] = "运筹帷幄",
   [":rouge_yunchouweiwo"] = "技能槽上限+1",
 }

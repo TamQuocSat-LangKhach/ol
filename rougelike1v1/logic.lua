@@ -13,7 +13,8 @@ function Rouge1v1Logic:prepareForStart()
   local room = self.room
   for _, p in ipairs(room.alive_players) do
     room:setPlayerMark(p, "@[rouge1v1]mark", {})
-    room:addPlayerMark(p,"@rougelike1v1_skill_num",2)
+    room:setPlayerMark(p, "@rougelike1v1_skill_num", 2)
+    room:setPlayerMark(p, "rougelike1v1_shop_num", 4)
   end
 end
 

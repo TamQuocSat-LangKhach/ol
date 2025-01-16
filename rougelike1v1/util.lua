@@ -156,6 +156,44 @@ function RougeUtil.changeMoney(player, n)
   player.room:setPlayerMark(player, "rouge_money", money)
 end
 
+---@param player ServerPlayer
+function RougeUtil:generateShop(player)
+  p(player:getTableMark("rougelike1v1_shop_items"))
+  local data = player:getTableMark("rougelike1v1_shop_items")
+  local n = player:getMark("rougelike1v1_shop_num") - #data
+  if n > 0 then
+    local a = math.random(0, math.min(2, n))
+    local b = math.random(0, math.max(math.min(2, n - a), 0))
+
+    local p_talents = player:getTableMark("@[rouge1v1]mark")
+    local p_skills = table.map(player.player_skills, Util.NameMapper)
+
+    local await = {
+      talents = table.filter(self.talents, function(t)
+        return not table.contains(p_talents, t[2])
+      end),
+      skills = table.filter(self.skills, function(s)
+        return not table.contains(p_skills, s[2])
+      end)
+    }
+
+    local talents = table.random(await.talents, n - a - b)
+    local cards = table.random(self.cards, b)
+    local skills = table.random(await.skills, a)
+
+    for _, t in ipairs(talents) do
+      table.insert(data, { "talent", t[1], t[2] })
+    end
+    for _, card in ipairs(cards) do
+      table.insert(data, { "card", card[1], card[2], card[3], table.random(card[4]) })
+    end
+    for _, s in ipairs(skills) do
+      table.insert(data, { "skill", table.unpack(s) })
+    end
+  end
+  return data
+end
+
 -- 其余乱七八糟相关
 -------------------------
 
@@ -235,36 +273,9 @@ function RougeUtil:askForShopping(players)
   req.focus_text = "rouge_shop"
 
   for _, p in ipairs(players) do
-    local n = 4
-    local a = math.random(0, 2)
-    local b = math.random(0, 2)
+    local data = self:generateShop(p)
+    room:setPlayerMark(p, "rougelike1v1_shop_items", 0)
 
-    local p_talents = p:getTableMark("@[rouge1v1]mark")
-    local p_skills = table.map(p.player_skills, Util.NameMapper)
-
-    local await = {
-      talents = table.filter(self.talents, function(t)
-        return not table.contains(p_talents, t[2])
-      end),
-      skills = table.filter(self.skills, function(s)
-        return not table.contains(p_skills, s[2])
-      end)
-    }
-
-    local talents = table.random(await.talents, n - a - b)
-    local cards = table.random(self.cards, b)
-    local skills = table.random(await.skills, a)
-
-    local data = {}
-    for _, t in ipairs(talents) do
-      table.insert(data, { "talent", t[1], t[2] })
-    end
-    for _, card in ipairs(cards) do
-      table.insert(data, { "card", card[1], card[2], card[3], table.random(card[4]) })
-    end
-    for _, s in ipairs(skills) do
-      table.insert(data, { "skill", table.unpack(s) })
-    end
     req:setData(p, {
       path = "packages/ol/rougelike1v1/RougeShop.qml",
       data = data,
@@ -276,7 +287,11 @@ function RougeUtil:askForShopping(players)
   for _, p in ipairs(players) do
     local result = req:getResult(p)
     if result ~= "" then
-      for _, dat in ipairs(result) do
+      local locked, ret = result[2], result[1]
+      if locked then
+        room:setPlayerMark(p, "rougelike1v1_shop_items", locked)
+      end
+      for _, dat in ipairs(ret) do
         RougeUtil.changeMoney(p, -dat[2])
         if dat[1] == "talent" then
           for _, t in ipairs(RougeUtil.talents) do
@@ -328,7 +343,10 @@ Fk:loadTranslationTable{
   ["@[rouge1v1]mark"] = "",
   ["rouge_shop"] = "虎符商店",
   ["#rouge_shop"] = "虎符商店：请选择要购买的能力",
+  ["#rouge_current"] = "当前持有：%arg",
+  ["rouge_shop_refresh"] = "刷新商店",
   ["rouge_shop_ok"] = "完成购买",
+  ["rouge_shop_lock"] = "锁定商店",
   ["#rouge_shop_buy_skill"] = "%from 从虎符商店购买了 <font color='blue'>技能</font> %arg",
   ["#rouge_shop_buy_card"] = "%from 从虎符商店购买了 <font color='orange'>卡牌</font> %card",
   ["#rouge_shop_buy_talent"] = "%from 从虎符商店购买了 <font color='purple'>战法</font> %arg",

@@ -3,16 +3,18 @@
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
+import Fk
 import Fk.Pages
 import Fk.RoomElement
 
 GraphicsBox {
   id: root
 
+  property bool can_refresh: true
   property var result: []
   property int money: 0
 
-  title.text: luatr("#rouge_shop")
+  title.text: luatr("#rouge_shop") + "\n" + Util.processPrompt("#rouge_current:::" + luatr("rouge_money") + "x" + money)
   width: Math.max(140, body.width + 20)
   height: buttons.height + body.height + title.height + 20
 
@@ -121,7 +123,24 @@ GraphicsBox {
     spacing: 32
 
     MetroButton {
-      width: 100
+      width: 200
+      Layout.fillWidth: true
+      text: luatr("rouge_shop_refresh") + "（" + luatr("rouge_money") + "x" + 1 + "）"
+      enabled: root.money >= 1
+      visible: can_refresh
+      id: buttonRefresh
+
+      onClicked: {
+        root.money -= 1;
+        root.result = [];
+        body.model = leval('(function()\
+        local RougeUtil = require "packages.ol.rougelike1v1.util";\
+        return RougeUtil:generateShop(Self) end)()');
+      }
+    }
+
+    MetroButton {
+      width: 200
       Layout.fillWidth: true
       text: luatr("rouge_shop_ok")
       id: buttonConfirm
@@ -129,9 +148,27 @@ GraphicsBox {
       onClicked: {
         close();
         roomScene.state = "notactive";
+        const result = [ root.result.map(idx => body.model[idx]) ];
+        if (buttonLock.triggered) result.push(
+          body.model.filter(obj => {
+            /*console.log(JSON.stringify(obj));
+            console.log(JSON.stringify(result[0]));
+            console.log(result[0].includes(obj));
+            console.log(result[0].every(o => JSON.stringify(o) != JSON.stringify(obj)));*/
+            return result[0].every(o => JSON.stringify(o) != JSON.stringify(obj))
+          }
+          ));
+        console.log(JSON.stringify(result));
         ClientInstance.replyToServer("",
-          JSON.stringify(root.result.map(idx => body.model[idx])));
+          JSON.stringify(result));
       }
+    }
+
+    MetroToggleButton {
+      width: 200
+      Layout.fillWidth: true
+      text: luatr("rouge_shop_lock")
+      id: buttonLock
     }
   }
 
