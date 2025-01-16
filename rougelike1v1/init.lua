@@ -25,7 +25,7 @@ local rougelike1v1 = fk.CreateGameMode{
 }
 
 Fk:loadTranslationTable{
-  ["rougelike1v1"] = "单骑无双",
+  ["rougelike1v1"] = "单骑无双（施工中）",
   [":rougelike1v1"] = desc,
 }
 

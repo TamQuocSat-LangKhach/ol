@@ -1124,6 +1124,8 @@ Fk:loadTranslationTable {
   [":rouge_yinyangshufa"] = "敌方无法响应你的伤害型锦囊牌",
   ["rouge_zhudao1"] = "铸刀Ⅰ",
   [":rouge_zhudao1"] = "你使用【杀】后可以至多重铸1张牌",
+  ["rouge_xvlijian"] = "蓄力箭",
+  [":rouge_xvlijian"] = "你使用的【万箭齐发】其他角色需要使用2张【闪】来响应",
   ["rouge_zhudao2"] = "铸刀Ⅱ",
   [":rouge_zhudao2"] = "你使用【杀】后可以至多重铸2张牌",
   ["#rouge_zhudao"] = "铸刀:你可以至多重铸%arg张牌",
@@ -1236,7 +1238,9 @@ local rouge_yanxian = fk.CreateVisibilitySkill {
   name = "#rougelike1v1_Visibility",
   mute = true,
   card_visible = function(self, player, card)
-    return hasTalent(player, "rouge_yanxian") and card:getMark("rouge_yanxian") > 0
+    if hasTalent(player, "rouge_yanxian") and card:getMark("rouge_yanxian") > 0 then
+      return true
+    end
   end
 }
 
