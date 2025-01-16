@@ -184,6 +184,21 @@ function RougeUtil.attachTalentToPlayer(player, talent)
   local mark = player:getTableMark("@[rouge1v1]mark")
   table.insert(mark, talent)
   room:setPlayerMark(player, "@[rouge1v1]mark", mark)
+  if talent=="rouge_yunchouweiwo" then
+    player.room:addPlayerMark(player, "@rougelike1v1_skill_num")
+  elseif talent=="rouge_xuezhan1" then
+    if player.maxHp>1 then
+      player.room:changeMaxHp(player,-1)
+    end
+  elseif talent=="rouge_xuezhan2" then
+    if player.maxHp>2 then
+      player.room:changeMaxHp(player,-2)
+    end
+  elseif talent=="rouge_xuezhan3" then
+    if player.maxHp>3 then
+      player.room:changeMaxHp(player,-3)
+    end
+  end
 end
 
 ---@param player Player
@@ -219,7 +234,7 @@ function RougeUtil.attachSkillToPlayer(player, skill_name)
   room:handleAddLoseSkills(player, skill_name, nil, false)
   local mark = player:getTableMark("rouge_skills")
   -- TODO: 忘记初始技能的地方
-  local n = 2
+  local n = player:getMark("@rougelike1v1_skill_num")
   if #mark >= n then
     local tolose = room:askForChoice(player, mark, "rougelike1v1", "#rouge-lose", true)
     room:handleAddLoseSkills(player, "-" .. tolose, nil, true)
@@ -335,7 +350,7 @@ Fk:loadTranslationTable{
   ["#rouge_shop_buy_card"] = "%from 从虎符商店购买了 <font color='orange'>卡牌</font> %card",
   ["#rouge_shop_buy_talent"] = "%from 从虎符商店购买了 <font color='purple'>战法</font> %arg",
   ["#rouge_talent_effect"] = "%from 的 <font color='purple'>战法</font> %arg 生效：%arg2",
-
+  ["@rougelike1v1_skill_num"]="技能槽数量",
   ["#rouge-lose"] = "单骑无双：技能槽已满，请选择要失去的技能",
 }
 
