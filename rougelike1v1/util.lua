@@ -18,6 +18,7 @@ end
 ---@param talent RougeItemEntry
 function RougeUtil:addBuffTalent(talent)
   local dup = table.simpleClone(talent)
+  talent[3] = talent[3] or Util.DummyFunc
   dup[3] = function(fun_self, player)
     RougeUtil.attachTalentToPlayer(player, fun_self)
     talent[3](fun_self, player)
@@ -288,10 +289,11 @@ function RougeUtil:askForShopping(players)
   for _, p in ipairs(players) do
     local result = req:getResult(p)
     if result ~= "" then
-      local locked, ret = result[2], result[1]
+      local locked, ret, refresh_count = result[3], result[2], result[1]
       if locked then
         room:setPlayerMark(p, "rougelike1v1_shop_items", locked)
       end
+      RougeUtil.changeMoney(p, -refresh_count)
       for _, dat in ipairs(ret) do
         RougeUtil.changeMoney(p, -dat[2])
         if dat[1] == "talent" then

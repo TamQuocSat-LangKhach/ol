@@ -13,6 +13,7 @@ GraphicsBox {
   property bool can_refresh: true
   property var result: []
   property int money: 0
+  property int refresh_count: 0
 
   title.text: luatr("#rouge_shop") + "\n" + Util.processPrompt("#rouge_current:::" + luatr("rouge_money") + "x" + money)
   width: Math.max(140, body.width + 20)
@@ -132,6 +133,7 @@ GraphicsBox {
 
       onClicked: {
         root.money -= 1;
+        root.refresh_count += 1;
         root.result = [];
         body.model = leval('(function()\
         local RougeUtil = require "packages.ol.rougelike1v1.util";\
@@ -148,7 +150,7 @@ GraphicsBox {
       onClicked: {
         close();
         roomScene.state = "notactive";
-        const result = [ root.result.map(idx => body.model[idx]) ];
+        const result = [ root.refresh_count, root.result.map(idx => body.model[idx]) ];
         if (buttonLock.triggered) result.push(
           body.model.filter(obj => {
             /*console.log(JSON.stringify(obj));
