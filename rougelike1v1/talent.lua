@@ -863,7 +863,7 @@ rule:addRelatedSkill(fk.CreateTriggerSkill {
   end
 })
 
-
+--[[ TODO: 这一大堆都没做
 RougeUtil:addBuffTalent { 3, "rouge_yuzhanyuyong1" }
 RougeUtil:addBuffTalent { 2, "rouge_yuzhanyuyong2" }
 RougeUtil:addBuffTalent { 1, "rouge_yuzhanyuyong3" }
@@ -884,7 +884,7 @@ RougeUtil:addBuffTalent { 2, "rouge_guangongren" }
 RougeUtil:addBuffTalent { 1, "rouge_geshandaniu" }
 RougeUtil:addBuffTalent { 3, "rouge_dangtouyibang1" }
 RougeUtil:addBuffTalent { 4, "rouge_dangyouyibang2" }
-
+--]]
 
 Fk:loadTranslationTable {
   ["rouge_zhongjiji"] = "重击技",
