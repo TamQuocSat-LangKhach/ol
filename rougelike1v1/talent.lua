@@ -548,6 +548,44 @@ Fk:loadTranslationTable {
   [":rouge_wendinghouqin"] = "摸牌阶段摸牌数固定为5",
 }
 
+-- 即时摸牌相关：多多益善、...
+
+-- RougeUtil:addBuffTalent { 2, "rouge_duoduoyishan1" }
+-- RougeUtil:addBuffTalent { 3, "rouge_duoduoyishan2" }
+-- RougeUtil:addBuffTalent { 4, "rouge_duoduoyishan3" }
+
+RougeUtil:addBuffTalent { 1, "rouge_ershengsan" }
+rule:addRelatedSkill(fk.CreateTriggerSkill{
+  name = "#rougelike1v1_rule_drawcard",
+  events = { fk.BeforeDrawCard, fk.AfterDrawNCards },
+  priority = 0.002,
+  mute = true,
+  can_trigger = function(self, event, target, player, data)
+    return target == player and RougeUtil.hasOneOfTalents(player,
+      { "rouge_duoduoyishan1", "rouge_duoduoyishan2", "rouge_duoduoyishan3", "rouge_ershengsan" })
+  end,
+  on_cost = Util.TrueFunc,
+  on_use = function(self, event, target, player, data)
+    if RougeUtil.hasTalent(player, "rouge_ershengsan") then
+      if data.skillName == "ex_nihilo" then
+        RougeUtil.sendTalentLog(player, "rouge_ershengsan")
+        data.num = (data.num or 0) + 1
+      end
+    end
+  end,
+})
+Fk:loadTranslationTable {
+  ["rouge_duoduoyishan1"] = "多多益善Ⅰ",
+  [":rouge_duoduoyishan1"] = "每回合你第5次摸牌后,你摸1张牌",
+  ["rouge_duoduoyishan2"] = "多多益善Ⅱ",
+  [":rouge_duoduoyishan2"] = "每回合你第3次摸牌后,你摸1张牌",
+  ["rouge_duoduoyishan3"] = "多多益善Ⅲ",
+  [":rouge_duoduoyishan3"] = "每回合你第3次摸牌后,你摸2张牌",
+
+  ["rouge_ershengsan"] = "二生三",
+  [":rouge_ershengsan"] = "【无中生有】额外摸1张牌",
+}
+
 -- 回合结束相关：援助、...
 
 RougeUtil:addBuffTalent { 2, "rouge_yuanzhu1" }
