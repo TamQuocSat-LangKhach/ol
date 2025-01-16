@@ -691,9 +691,10 @@ RougeUtil:addBuffTalent { 4, "rouge_hugujiu2" }
 
 -- TODO RougeUtil:addBuffTalent { 4, "rouge_wendingjingong" }
 
+RougeUtil:addBuffTalent { 1, "rouge_guandaozhiji" }
 RougeUtil:addBuffTalent { 2, "rouge_touxi" }
 rule:addRelatedSkill(fk.CreateTargetModSkill {
-  name = "#rougelike1v1_rule_count",
+  name = "#rougelike1v1_rule_tmod",
   residue_func = function(self, player, skill, scope, card, to)
     if not card then return end
     local room = Fk:currentRoom()
@@ -752,6 +753,11 @@ rule:addRelatedSkill(fk.CreateTargetModSkill {
     end
     return 0
   end,
+  bypass_distances = function(self, player, skill, card, to)
+    if hasTalent(player, "rouge_guandaozhiji") then
+      return card and card.trueName == "slash" and card.suit == Card.Diamond
+    end
+  end,
   bypass_times = function(self, player, skill, scope, card, to)
     if hasTalent(player, "rouge_touxi") then
       return card and card.trueName == "slash" and card.suit == Card.Spade
@@ -782,6 +788,8 @@ Fk:loadTranslationTable {
   ["rouge_hugujiu2"] = "虎骨酒Ⅱ",
   [":rouge_hugujiu2"] = "每回合，你可以额外使用2次【酒】",
 
+  ["rouge_guandaozhiji"] = "关刀之脊",
+  [":rouge_guandaozhiji"] = "方片【杀】无距离限制",
   ["rouge_touxi"] = "偷袭",
   [":rouge_touxi"] = "黑桃【杀】无次数限制",
 }
