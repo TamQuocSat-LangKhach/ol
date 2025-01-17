@@ -207,7 +207,7 @@ Fk:loadTranslationTable {
 RougeUtil:addTalent { 3, "rouge_shiqiboduo", function(self, player)
   RougeUtil.sendTalentLog(player, self)
   local room = player.room
-  for _, p in ipairs(room.alive_players) do
+  for _, p in ipairs(room:getOtherPlayers(player)) do
     if RougeUtil.isEnemy(player, p) and p.maxHp > 1 then
       player.room:changeMaxHp(p, -1)
     end
@@ -1712,6 +1712,10 @@ rule:addRelatedSkill(fk.CreateTriggerSkill {
   end
 })
 
+RougeUtil:addBuffTalent { 4, "rouge_fanci" }
+RougeUtil:addBuffTalent { 4, "rouge_jingjijia" }
+RougeUtil:addBuffTalent { 4, "rouge_pianzhuanjia" }
+RougeUtil:addBuffTalent { 1, "rouge_pofuchenzhou" }
 RougeUtil:addBuffTalent { 1, "rouge_xialuxiangfeng" }
 RougeUtil:addBuffTalent { 3, "rouge_woxinchangdan" }
 
@@ -1722,39 +1726,138 @@ rule:addRelatedSkill(fk.CreateTriggerSkill {
   mute = true,
   can_trigger = function(self, event, target, player, data)
     if player ~= target then return end
-    return RougeUtil.hasOneOfTalents(player, { "rouge_xialuxiangfeng", "rouge_woxinchangdan" })
+    return RougeUtil.hasOneOfTalents(player, {
+      "rouge_fanci", "rouge_jingjijia", "rouge_pianzhuanjia", "rouge_pofuchenzhou",
+      "rouge_xialuxiangfeng", "rouge_woxinchangdan" })
   end,
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    if hasTalent(player, "rouge_xialuxiangfeng") and data.card and data.card.trueName == "duel" then
-      sendTalentLog(player, "rouge_xialuxiangfeng")
-      room:recover({
-        who = player,
-        num = 1,
-        recoverBy = player,
-        skillName = "rouge_xialuxiangfeng"
-      })
+    if hasTalent(player, "rouge_fanci") then
+      local turn_event = player.room.logic:getCurrentEvent():findParent(GameEvent.Turn)
+      if turn_event == nil then return end
+      local events = player.room.logic:getActualDamageEvents(1, function(e)
+        return e.data[1].to == player
+      end, Player.HistoryTurn)
+      if #events == 1 and events[1] == player.room.logic:getCurrentEvent() then
+        sendTalentLog(player, "rouge_fanci")
+        for _, p in ipairs(room:getOtherPlayers(player)) do
+          if RougeUtil.isEnemy(player, p) and p:isAlive() then
+            room:damage{
+              from = player,
+              to = p,
+              damage = 1,
+              skillName = "rouge_fanci"
+            }
+          end
+        end
+      end
     end
-    if hasTalent(player, "rouge_woxinchangdan") and player.phase == Player.NotActive then
-      sendTalentLog(player, "rouge_woxinchangdan")
-      room:addPlayerMark(player, "@rouge_woxinchangdan", 1)
+    if hasTalent(player, "rouge_jingjijia") then
+      if data.from and data.from:isAlive() then
+        sendTalentLog(player, "rouge_jingjijia")
+        room:damage{
+          from = player,
+          to = data.from,
+          damage = 1,
+          skillName = "rouge_jingjijia"
+        }
+      end
+    end
+    if hasTalent(player, "rouge_pianzhuanjia") then
+      local enemies = table.filter(room.alive_players, function(p) return RougeUtil.isEnemy(player, p) end)
+      if #enemies ~= 0 then
+        sendTalentLog(player, "rouge_pianzhuanjia")
+        room:damage{
+          from = player,
+          to = table.random(enemies),
+          damage = 1,
+          skillName = "rouge_pianzhuanjia"
+        }
+      end
+    end
+    if hasTalent(player, "rouge_pofuchenzhou") then
+      if room.current ~= player and data.from and data.from:isAlive() and
+        data.damage >= 3 then
+        sendTalentLog(player, "rouge_pofuchenzhou")
+        room:damage{
+          from = player,
+          to = data.from,
+          damage = data.damage,
+          damageType = data.damageType,
+          skillName = "rouge_pofuchenzhou"
+        }
+      end
+    end
+    if hasTalent(player, "rouge_xialuxiangfeng") then
+      if data.card and data.card.trueName == "duel" then
+        sendTalentLog(player, "rouge_xialuxiangfeng")
+        room:recover({
+          who = player,
+          num = 1,
+          recoverBy = player,
+          skillName = "rouge_xialuxiangfeng"
+        })
+      end
+    end
+    if hasTalent(player, "rouge_woxinchangdan") then
+      if room.current ~= player then
+        sendTalentLog(player, "rouge_woxinchangdan")
+        room:addPlayerMark(player, "@rouge_woxinchangdan", 1)
+      end
     end
   end
 })
 
+RougeUtil:addBuffTalent { 3, "rouge_ruofankui" }
+rule:addRelatedSkill(fk.CreateTriggerSkill {
+  name = "#rougelike1v1_Damaged_perpoint",
+  events = { fk.Damaged },
+  priority = 0.002,
+  mute = true,
+  can_trigger = function(self, event, target, player, data)
+    if player ~= target then return end
+    return RougeUtil.hasOneOfTalents(player, {
+      "rouge_fanci" })
+  end,
+  on_trigger = function(self, event, target, player, data)
+    for _ = 1, data.damage do
+      if player.dead then break end
+      self:doCost(event, target, player, data)
+    end
+  end,
+  on_cost = Util.TrueFunc,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    if hasTalent(player, "rouge_ruofankui") then
+      sendTalentLog(player, "rouge_ruofankui")
+      player:drawCards(1, "rouge_ruofankui")
+    end
+  end
+})
 
 Fk:loadTranslationTable {
   ["rouge_yongzhan1"] = "勇战Ⅰ",
   [":rouge_yongzhan1"] = "你离开濒死时，对所有敌方造成1点伤害",
   ["rouge_yongzhan2"] = "勇战Ⅱ",
   [":rouge_yongzhan2"] = "你离开濒死时，对所有敌方造成2点伤害",
+
+  ["rouge_fanci"] = "反刺",
+  [":rouge_fanci"] = "每回合首次受到伤害后对所有敌方造成1点伤害",
+  ["rouge_jingjijia"] = "荆棘甲",
+  [":rouge_jingjijia"] = "每次受到伤害后对伤害来源造成1点伤害",
+  ["rouge_pianzhuanjia"] = "偏转甲",
+  [":rouge_pianzhuanjia"] = "每次受到伤害后对随机敌方造成1点伤害",
+  ["rouge_pofuchenzhou"] = "破釜沉舟",
+  [":rouge_pofuchenzhou"] = "回合外受到伤害一次大于等于3点时，对伤害来源造成等量同属性伤害",
   ["rouge_xialuxiangfeng"] = "狭路相逢",
   [":rouge_xialuxiangfeng"] = "受到【决斗】伤害后回复1点体力",
   ["rouge_woxinchangdan"] = "卧薪尝胆",
   [":rouge_woxinchangdan"] = "回合外每受到1次伤害，下回合出杀次数+1",
   ["@rouge_woxinchangdan"] = "卧薪尝胆",
 
+  ["rouge_ruofankui"] = "弱反馈",
+  [":rouge_ruofankui"] = "受到1点伤害后，摸一张牌",
 }
 
 
