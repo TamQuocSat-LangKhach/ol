@@ -1242,7 +1242,7 @@ local qin__fachu = fk.CreateTriggerSkill{
   events = {fk.EnterDying},
   can_trigger = function(self, event, target, player, data)
     return player:hasSkill(self) and target ~= player and data.damage and data.damage.from and data.damage.from == player
-     and data.damage.to and data.damage.to.kingdom ~= "qin" and #target:getAvailableEquipSlots() > 0
+      and data.damage.to and data.damage.to.kingdom ~= "qin" and #target:getAvailableEquipSlots() > 0
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
