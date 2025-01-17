@@ -1266,6 +1266,30 @@ Fk:loadTranslationTable {
 
 -- 卡牌使用/指定目标时相关
 ---------------------------
+
+RougeUtil:addBuffTalent { 1, "rouge_jueduiwuxie" }
+rule:addRelatedSkill(fk.CreateTriggerSkill {
+  name = "#rougelike1v1_PreCardUse",
+  events = { fk.PreCardUse },
+  priority = 0.002,
+  mute = true,
+  can_trigger = function(self, event, target, player, data)
+    if player ~= target or not data.card then return end
+    return RougeUtil.hasOneOfTalents(player, { "rouge_jueduiwuxie" })
+  end,
+  on_cost = Util.TrueFunc,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    if hasTalent(player, "rouge_jueduiwuxie") then
+      if data.card.trueName == "nullification" then
+        sendTalentLog(player, "rouge_jueduiwuxie")
+        data.disresponsiveList = table.connect(data.disresponsiveList or {},
+          table.map(room:getOtherPlayers(player, false), Util.IdMapper))
+      end
+    end
+  end
+})
+
 RougeUtil:addBuffTalent { 3, "rouge_zuiquan" }
 RougeUtil:addBuffTalent { 2, "rouge_shuangren1" }
 RougeUtil:addBuffTalent { 3, "rouge_shuangren2" }
@@ -1633,6 +1657,9 @@ rule:addRelatedSkill(rouge_xvyan_trigger)
 
 
 Fk:loadTranslationTable {
+  ["rouge_jueduiwuxie"] = "绝对无懈",
+  [":rouge_jueduiwuxie"] = "其他角色无法响应你的【无懈可击】",
+
   ["rouge_zuiquan"] = "醉拳",
   [":rouge_zuiquan"] = "【酒】【杀】不能被抵消",
   ["rouge_yinyangshufa"] = "阴阳术法",
