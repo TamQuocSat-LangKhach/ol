@@ -808,7 +808,7 @@ rule:addRelatedSkill(fk.CreateTriggerSkill{
   end,
 })
 rule:addRelatedSkill(fk.CreateProhibitSkill{
-  name = "#rougelike1v1_rouge_wendingjingong",
+  name = "#rouge_wendingjingong_prohibit",
   prohibit_use = function(self, player, card)
     if not card then return end
     if hasTalent(player, "rouge_wendingjingong") then
@@ -842,7 +842,7 @@ Fk:loadTranslationTable {
 
   ["rouge_wendingjingong"] = "稳定进攻",
   [":rouge_wendingjingong"] = "回合内出杀次数固定为5",
-  ["rougelike1v1_rouge_wendingjingong"] = "稳定进攻",
+  ["#rouge_wendingjingong"] = "稳定进攻",
 
   ["rouge_guandaozhiji"] = "关刀之脊",
   [":rouge_guandaozhiji"] = "方片【杀】无距离限制",
