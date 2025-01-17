@@ -753,22 +753,49 @@ rule:addRelatedSkill(fk.CreateTargetModSkill {
     end
     return 0
   end,
-  fix_times_func = function(self, player, skill, scope, card, to)
-    if not card then return end
-    if card.trueName == "slash" and scope == Player.HistoryPhase then
-      if hasTalent(player, "rouge_wendingjingong") then
-        return 5
-      end
-    end
-  end,
+  -- fix_times_func = function(self, player, skill, scope, card, to)
+  --   if not card then return end
+  --   if card.trueName == "slash" and scope == Player.HistoryPhase then
+  --     if hasTalent(player, "rouge_wendingjingong") then
+  --       return 5
+  --     end
+  --   end
+  -- end,
   bypass_distances = function(self, player, skill, card, to)
     if hasTalent(player, "rouge_guandaozhiji") then
       return card and card.trueName == "slash" and card.suit == Card.Diamond
     end
   end,
   bypass_times = function(self, player, skill, scope, card, to)
+    if not card then return end
+    if hasTalent(player, "rouge_wendingjingong") then
+      return card.trueName == "slash"
+    end
     if hasTalent(player, "rouge_touxi") then
-      return card and card.trueName == "slash" and card.suit == Card.Spade
+      return card.trueName == "slash" and card.suit == Card.Spade
+    end
+  end
+})
+rule:addRelatedSkill(fk.CreateTriggerSkill{
+  name = "#rougelike1v1_rule_wendingjingong_counter",
+  priority = 0.002,
+  mute = true,
+  events = { fk.PreCardUse },
+  can_trigger = function(self, event, target, player, data)
+    return target == player and data.card.trueName == "slash"
+  end,
+  on_cost = Util.TrueFunc,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    room:addPlayerMark(player, "rouge_wendingjingong_slash-turn")
+  end,
+})
+rule:addRelatedSkill(fk.CreateProhibitSkill{
+  name = "#rougelike1v1_rule_prohibit",
+  prohibit_use = function(self, player, card)
+    if not card then return end
+    if hasTalent(player, "rouge_wendingjingong") then
+      return card.trueName == "slash" and player:getMark("rouge_wendingjingong_slash-turn") >= 5
     end
   end
 })
