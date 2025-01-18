@@ -2777,38 +2777,28 @@ local function gangshuTimesCheck(player, card)
   end
   return false
 end
-local function updateGangshu(player, reset)
-  local room = player.room
-  local hasGangshu = player:hasSkill("gangshu", true)
-  if reset or not hasGangshu then
-    room:setPlayerMark(player, "gangshu1_fix", 0)
-    room:setPlayerMark(player, "gangshu2_fix", 0)
-    room:setPlayerMark(player, "gangshu3_fix", 0)
-  end
-  if hasGangshu then
+Fk:addQmlMark{
+  name = "gangshu",
+  qml_path = "",
+  how_to_show = function(name, value, p)
     local card = Fk:cloneCard("slash")
-    local x1 = player:getAttackRange()
-    if x1 > 499 then
+    local x1 = ""
+    if p:getAttackRange() > 499 then
       --FIXME:暂无无限攻击范围机制
       x1 = "∞"
     else
-      x1 = tostring(x1)
+      x1 = tostring(p:getAttackRange())
     end
-    local x2 = tostring(player:getMark("gangshu2_fix")+2)
+    local x2 = tostring(p:getMark("gangshu2_fix")+2)
     local x3 = ""
-    if gangshuTimesCheck(player, card) then
+    if gangshuTimesCheck(p, card) then
       x3 = "∞"
     else
-      x3 = tostring(card.skill:getMaxUseTime(player, Player.HistoryPhase, card, nil) or "∞")
+      x3 = tostring(card.skill:getMaxUseTime(p, Player.HistoryPhase, card, nil) or "∞")
     end
-    local mark = player:getTableMark("@gangshu")
-    if #mark ~= 3 or mark[1] ~= x1 or mark[2] ~= x2 or mark[3] ~= x3 then
-      room:setPlayerMark(player, "@gangshu", { x1, x2, x3 })
-    end
-  else
-    room:setPlayerMark(player, "@gangshu", 0)
-  end
-end
+    return x1 .. " " .. x2 .. " " .. x3
+  end,
+}
 local gangshu = fk.CreateTriggerSkill{
   name = "gangshu",
   events = {fk.CardUseFinished, fk.CardEffecting, fk.DrawNCards},
@@ -2858,22 +2848,27 @@ local gangshu = fk.CreateTriggerSkill{
     if event == fk.CardUseFinished then
       room:notifySkillInvoked(player, self.name)
       room:addPlayerMark(player, self.cost_data .. "_fix", 1)
-      updateGangshu(player)
     elseif event == fk.CardEffecting then
       room:notifySkillInvoked(player, self.name, "negative")
-      updateGangshu(player, true)
+      room:setPlayerMark(player, "gangshu1_fix", 0)
+      room:setPlayerMark(player, "gangshu2_fix", 0)
+      room:setPlayerMark(player, "gangshu3_fix", 0)
     elseif event == fk.DrawNCards then
       room:notifySkillInvoked(player, self.name, "drawcard")
       data.n = data.n + player:getMark("gangshu2_fix")
       room:setPlayerMark(player, "gangshu2_fix", 0)
-      updateGangshu(player)
     end
   end,
 
-  refresh_events = {fk.EventAcquireSkill, fk.EventLoseSkill, fk.AfterCardsMove, fk.AfterSkillEffect},
-  can_refresh = Util.TrueFunc,
-  on_refresh = function (self, event, target, player, data)
-    updateGangshu(player)
+  on_acquire = function (self, player)
+    player.room:setPlayerMark(player, "@[gangshu]", 1)
+  end,
+  on_lose = function (self, player)
+    local room = player.room
+    room:setPlayerMark(player, "@[gangshu]", 0)
+    room:setPlayerMark(player, "gangshu1_fix", 0)
+    room:setPlayerMark(player, "gangshu2_fix", 0)
+    room:setPlayerMark(player, "gangshu3_fix", 0)
   end,
 }
 local gangshu_attackrange = fk.CreateAttackRangeSkill{
@@ -2933,7 +2928,7 @@ Fk:loadTranslationTable{
   ["gangshu2"] = "下个摸牌阶段摸牌数",
   ["gangshu3"] = "出牌阶段使用【杀】次数",
   ["#gangshu-choice"] = "刚述：选择你要增加的一项",
-  ["@gangshu"] = "刚述",
+  ["@[gangshu]"] = "刚述",
   ["#jianxuan-choose"] = "谏旋：你可以令一名角色摸一张牌",
 
   ["$gangshu1"] = "羲而立之年，当为立身之事。",
