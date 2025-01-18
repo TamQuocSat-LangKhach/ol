@@ -1036,7 +1036,7 @@ Fk:loadTranslationTable{
   ["#shuiyue_delay"] = "水月",
 
   ["$jieyan1"] = "父高居殿陛，德当配其位。",
-  ["$jieyan2"] = "君子善行，阿爷固君子，应有所不为。",
+  ["$jieyan2"] = "君子善行，阿耶固君子，应有所不为。",
   ["$jinghua1"] = "白驹失蹄，踏断谁家黄花？",
   ["$jinghua2"] = "镜中花败，万般皆是虚影。",
   ["$shuiyue1"] = "灵犀失乌角，奔于野，触山壁。",
@@ -1910,7 +1910,7 @@ local xixiang_record = fk.CreateTriggerSkill{
 local aige = fk.CreateTriggerSkill{
   name = "aige",
   anim_type = "special",
-  events = {fk.EnterDying},
+  events = {fk.AfterDying},
   frequency = Skill.Wake,
   can_trigger = function(self, event, target, player, data)
     return player:hasSkill(self) and player:usedSkillTimes(self.name, Player.HistoryGame) == 0

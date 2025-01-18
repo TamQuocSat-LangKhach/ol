@@ -3594,7 +3594,7 @@ local gaobian = fk.CreateTriggerSkill{
   frequency = Skill.Compulsory,
   events = {fk.TurnEnd},
   can_trigger = function (self, event, target, player, data)
-    if player:hasSkill(self) then
+    if player:hasSkill(self) and player ~= target then
       local to, yes = nil, true
       player.room.logic:getActualDamageEvents(1, function (e)
         if to == nil then
@@ -3653,9 +3653,9 @@ Fk:loadTranslationTable{
 
   ["$anran1"] = "此身伟岸，何惧悠悠之口？",
   ["$anran2"] = "天时在彼，何故抱残守缺？",
-  ["$gaobian1"] = "帝髦诏甲士待兵，欲图不轨!",
+  ["$gaobian1"] = "帝髦诏甲士带兵，欲图不轨!",
   ["$gaobian2"] = "晋公何在？君上欲谋反作乱！",
-  ["$zhongliu_olz__wangshen1"] = "活水趋沧海，天下大势不可违！",
+  ["$zhongliu_olz__wangshen1"] = "活水驱沧海，天下大势不可违！",
   ["$zhongliu_olz__wangshen2"] = "志随中流之水，可济沧海之云帆！",
   ["~olz__wangshen"] = "我有从龙之志，何惧万世骂名！",
 }
