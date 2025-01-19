@@ -1333,9 +1333,9 @@ local ol_ex__huoji__fireAttackSkill = fk.CreateActiveSkill{
   mod_target_filter = function(_, to_select, _, _, _, _)
     return not Fk:currentRoom():getPlayerById(to_select):isKongcheng()
   end,
-  target_filter = function(self, to_select, selected, _, card)
+  target_filter = function(self, to_select, selected, _, card, _, player)
     if #selected < self:getMaxTargetNum(Self, card) then
-      return self:modTargetFilter(to_select, selected, Self.id, card)
+      return self:modTargetFilter(to_select, selected, player, card)
     end
   end,
   on_effect = function(self, room, cardEffectEvent)
@@ -3162,8 +3162,8 @@ local indulgenceSkill = fk.CreateActiveSkill{
   mod_target_filter = function(self, to_select, selected, user, card)
     return user ~= to_select
   end,
-  target_filter = function(self, to_select, selected, _, card)
-    return #selected == 0 and self:modTargetFilter(to_select, selected, Self.id, card)
+  target_filter = function(self, to_select, selected, _, card, _, player)
+    return #selected == 0 and self:modTargetFilter(to_select, selected, player, card)
   end,
   target_num = 1,
   on_effect = function(self, room, effect)

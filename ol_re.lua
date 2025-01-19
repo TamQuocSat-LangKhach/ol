@@ -649,29 +649,14 @@ local ol__shichou = fk.CreateTriggerSkill{
   anim_type = "offensive",
   events = {fk.AfterCardTargetDeclared},
   can_trigger = function(self, event, target, player, data)
-    if target == player and player:hasSkill(self) and data.card.trueName == "slash" then
-      local current_targets = TargetGroup:getRealTargets(data.tos)
-      for _, p in ipairs(player.room.alive_players) do
-        if not table.contains(current_targets, p.id) and not player:isProhibited(p, data.card) and
-            data.card.skill:modTargetFilter(p.id, current_targets, data.from, data.card, true) then
-          return true
-        end
-      end
-    end
+    return target == player and player:hasSkill(self) and data.card.trueName == "slash" and
+      #player.room:getUseExtraTargets(data) > 0
   end,
   on_cost = function(self, event, target, player, data)
     local room = player.room
-    local current_targets = TargetGroup:getRealTargets(data.tos)
-    local targets = {}
-    for _, p in ipairs(room.alive_players) do
-      if not table.contains(current_targets, p.id) and not player:isProhibited(p, data.card) and
-          data.card.skill:modTargetFilter(p.id, current_targets, data.from, data.card, true) then
-        table.insert(targets, p.id)
-      end
-    end
     local n = player:getLostHp() + 1
-    local tos = room:askForChoosePlayers(player, targets, 1, n,
-    "#ol__shichou-choose:::"..data.card:toLogString()..":"..tostring(n), self.name, true)
+    local tos = room:askForChoosePlayers(player, room:getUseExtraTargets(data), 1, n,
+      "#ol__shichou-choose:::"..data.card:toLogString()..":"..tostring(n), self.name, true)
     if #tos > 0 then
       self.cost_data = tos
       return true
@@ -2260,31 +2245,27 @@ local ol__jingce = fk.CreateTriggerSkill{
     player:drawCards(self.cost_data, self.name)
   end,
 
-  refresh_events = {fk.CardUsing, fk.EventAcquireSkill},
+  refresh_events = {fk.CardUsing},
   can_refresh = function (self, event, target, player, data)
     if player ~= player.room.current then return false end
-    if event == fk.CardUsing then
-      return player:hasSkill(self, true) and data.card.suit ~= Card.NoSuit
-      and not table.contains(player:getTableMark("@ol__jingce-turn"), data.card:getSuitString(true))
-    else
-      return data == self and target == player and player.room:getTag("RoundCount")
-    end
+    return player:hasSkill(self, true) and data.card.suit ~= Card.NoSuit
+    and not table.contains(player:getTableMark("@ol__jingce-turn"), data.card:getSuitString(true))
   end,
   on_refresh = function (self, event, target, player, data)
+    player.room:addTableMark(player, "@ol__jingce-turn", data.card:getSuitString(true))
+  end,
+
+  on_acquire = function (self, player, is_start)
     local room = player.room
-    if event == fk.CardUsing then
-      room:addTableMark(player, "@ol__jingce-turn", data.card:getSuitString(true))
-    else
-      local mark = {}
-      player.room.logic:getEventsOfScope(GameEvent.UseCard, 999, function(e)
-        local use = e.data[1]
-        if use.from == player.id and use.card.suit ~= Card.NoSuit then
-          table.insertIfNeed(mark, use.card:getSuitString(true))
-        end
-      end, Player.HistoryTurn)
-      room:setPlayerMark(player, "@ol__jingce-turn", #mark > 0 and mark or 0)
-    end
-    room:broadcastProperty(player, "MaxCards")
+    if player ~= player.room.current then return end
+    local mark = {}
+    room.logic:getEventsOfScope(GameEvent.UseCard, 999, function(e)
+      local use = e.data[1]
+      if use.from == player.id and use.card.suit ~= Card.NoSuit then
+        table.insertIfNeed(mark, use.card:getSuitString(true))
+      end
+    end, Player.HistoryTurn)
+    room:setPlayerMark(player, "@ol__jingce-turn", #mark > 0 and mark or 0)
   end,
 }
 local ol__jingce_maxcards = fk.CreateMaxCardsSkill{

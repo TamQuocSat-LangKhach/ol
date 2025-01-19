@@ -1891,17 +1891,17 @@ local juanxia_active = fk.CreateActiveSkill{
     return Self:getTableMark("juanxia_names")
   end,
   card_num = 1,
-  card_filter = function(self, to_select, selected)
+  card_filter = function(self, to_select, selected, player)
     if #selected > 0 then return false end
-    local mark = Self:getTableMark("juanxia_names")
+    local mark = player:getTableMark("juanxia_names")
     if table.contains(mark, to_select) then
       local name = Fk:getCardById(to_select).name
       local card = Fk:cloneCard(name)
       card.skillName = "juanxia"
-      if Self:canUse(card) and not Self:prohibitUse(card) then
-        local target = Self:getMark("juanxia_target")
+      if player:canUse(card) and not player:prohibitUse(card) then
+        local target = player:getMark("juanxia_target")
         return target == 0 or (card.skill:targetFilter(target, {}, {}, card) and
-        not Self:isProhibited(Fk:currentRoom():getPlayerById(target), card))
+        not player:isProhibited(Fk:currentRoom():getPlayerById(target), card))
       end
     end
   end,
@@ -5594,7 +5594,7 @@ local bixin_trigger = fk.CreateTriggerSkill{
     if event == fk.AfterCardUseDeclared then
       return target == player and player:hasSkill(bixin, true)
     else
-      return target == player and data == bixin and player.room:getTag("RoundCount")
+      return target == player and data == bixin and player.room:getBanner("RoundCount")
     end
   end,
   on_refresh = function(self, event, target, player, data)
@@ -5840,7 +5840,7 @@ local dili = fk.CreateTriggerSkill{
     return player:hasSkill(self) and player == target and
     player:usedSkillTimes(self.name, Player.HistoryGame) == 0 and
     (event == fk.EventAcquireSkill or data.num < 0) and
-    player.room:getTag("RoundCount")
+    player.room:getBanner("RoundCount")
   end,
   can_wake = function(self, event, target, player, data)
     local n = 0

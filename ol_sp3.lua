@@ -2396,11 +2396,11 @@ local guangao = fk.CreateTriggerSkill{
         if target == player then
           return table.find(player.room:getOtherPlayers(player, false), function(p)
           return not table.contains(orig_tos, p.id) and not player:isProhibited(p, data.card)
-          and data.card.skill:modTargetFilter(p.id, orig_tos, data.from, data.card, true)
+          and data.card.skill:modTargetFilter(p.id, orig_tos, target, data.card, true)
           end)
         else
           return not table.contains(orig_tos, player.id) and not target:isProhibited(player, data.card)
-          and data.card.skill:modTargetFilter(player.id, orig_tos, data.from, data.card, true)
+          and data.card.skill:modTargetFilter(player.id, orig_tos, target, data.card, true)
         end
       else
         return data.extra_data and data.extra_data.guangao and table.contains(data.extra_data.guangao, player.id) and
@@ -2415,7 +2415,7 @@ local guangao = fk.CreateTriggerSkill{
       local orig_tos = TargetGroup:getRealTargets(data.tos)
       local targets = table.filter(room:getOtherPlayers(player, false), function(p)
         return not table.contains(TargetGroup:getRealTargets(data.tos), p.id) and not player:isProhibited(p, data.card)
-        and data.card.skill:modTargetFilter(p.id, orig_tos, data.from, data.card, true)
+        and data.card.skill:modTargetFilter(p.id, orig_tos, target, data.card, true)
       end)
       local tos = room:askForChoosePlayers(player, table.map(targets, Util.IdMapper), 1, 1, "#guangao-choose:::"..data.card:toLogString(), self.name, true)
       if #tos > 0 then
@@ -6152,7 +6152,7 @@ local xufa = fk.CreateActiveSkill{
           trick.skill:canUse(player, trick) and
           not player:prohibitUse(trick) and
           table.find(room.alive_players, function (p)
-            return not player:isProhibited(p, trick) and card.skill:modTargetFilter(p.id, {}, player.id, trick)
+            return not player:isProhibited(p, trick) and card.skill:modTargetFilter(p.id, {}, player, trick)
           end)
         then
           table.insert(tricks, card.name)

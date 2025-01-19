@@ -3315,7 +3315,7 @@ local cihuang = fk.CreateTriggerSkill{
       local card = Fk:getCardById(id)
       if not table.contains(mark, card.name) and card.skill:getMinTargetNum() < 2 then
         if not (card.skill:getMinTargetNum() == 0 and data.from ~= player.id and not card.multiple_targets) then
-          if not card.is_derived and card.skill:modTargetFilter(data.from, {}, player.id, card, true) then
+          if not card.is_derived and card.skill:modTargetFilter(data.from, {}, player, card, true) then
             if (card.trueName == "slash" and card.name ~= "slash") or (card:isCommonTrick() and not card.multiple_targets) then
               table.insertIfNeed(names, card.name)
             end
@@ -3352,7 +3352,7 @@ local cihuang = fk.CreateTriggerSkill{
     if event == fk.AfterCardUseDeclared then
       return target == player and (data.card.trueName == "slash" or data.card.type == Card.TypeTrick)
     else
-      return target == player and data == self and player.room:getTag("RoundCount")
+      return target == player and data == self and player.room:getBanner("RoundCount")
     end
   end,
   on_refresh = function(self, event, target, player, data)

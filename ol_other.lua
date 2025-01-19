@@ -1298,7 +1298,7 @@ local qin__yitong = fk.CreateTriggerSkill{
     local tos = {}
     for _, p in ipairs(room:getAlivePlayers()) do
       if p.kingdom ~= "qin" and
-      not player:isProhibited(p, data.card) and data.card.skill:modTargetFilter(p.id, {}, data.from, data.card, false) then
+      not player:isProhibited(p, data.card) and data.card.skill:modTargetFilter(p.id, {}, room:getPlayerById(data.from), data.card, false) then
         table.insert(tos, p.id)
       end
     end
@@ -1318,7 +1318,7 @@ local qin__shihuang = fk.CreateTriggerSkill{
   frequency = Skill.Compulsory,
   events = {fk.TurnEnd},
   can_trigger = function(self, event, target, player, data)
-    return player:hasSkill(self) and target ~= player and math.random() < (6 * player.room:getTag("RoundCount") / 100)
+    return player:hasSkill(self) and target ~= player and math.random() < (6 * player.room:getBanner("RoundCount") / 100)
   end,
   on_use = function(self, event, target, player, data)
     player:gainAnExtraTurn(true, self.name)

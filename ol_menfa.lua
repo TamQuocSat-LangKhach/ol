@@ -1036,7 +1036,7 @@ local fangzhen = fk.CreateTriggerSkill{
   on_use = function(self, event, target, player, data)
     local room = player.room
     local to = room:getPlayerById(self.cost_data.tos[1])
-    if to.seat > room:getTag("RoundCount") and player:getMark("@fangzhen") < to.seat then
+    if to.seat > room:getBanner("RoundCount") and player:getMark("@fangzhen") < to.seat then
       room:setPlayerMark(player, "@fangzhen", to.seat)
     end
     to:setChainState(true)
@@ -1079,7 +1079,7 @@ local fangzhen_delay = fk.CreateTriggerSkill{
   events = {fk.RoundStart},
   mute = true,
   can_trigger = function(self, event, target, player, data)
-    return player:hasSkill(fangzhen, true) and player:getMark("@fangzhen") == player.room:getTag("RoundCount")
+    return player:hasSkill(fangzhen, true) and player:getMark("@fangzhen") == player.room:getBanner("RoundCount")
   end,
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
@@ -2192,7 +2192,7 @@ local yuzhi = fk.CreateTriggerSkill{
       end
       local x = player:getMark("@yuzhi-round")
       if x == 0 then return false end
-      if room:getTag("RoundCount") == 1 or player:getMark("_yuzhi-round") >= x then
+      if room:getBanner("RoundCount") == 1 or player:getMark("_yuzhi-round") >= x then
         local round_event = room.logic:getCurrentEvent():findParent(GameEvent.Round, true)
         if round_event == nil then return false end
         local use_events = room.logic:getEventsByRule(GameEvent.UseCard, x, function(e)
@@ -2631,7 +2631,7 @@ local qiuxin_viewas = fk.CreateActiveSkill{
       local trick = Fk:cloneCard(card_name)
       trick.skillName = qiuxin.name
       return not (Self:prohibitUse(trick) or Self:isProhibited(to, trick)) and
-      trick.skill:modTargetFilter(mark, {}, Self.id, trick, true)
+      trick.skill:modTargetFilter(mark, {}, Self, trick, true)
     end)
     if #names == 0 then return end
     return UI.ComboBox {choices = names, all_choices = all_names}

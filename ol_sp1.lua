@@ -707,7 +707,7 @@ local hanyong = fk.CreateTriggerSkill{
   events = {fk.CardUsing},
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(self) and
-      (data.card.name == "savage_assault" or data.card.name == "archery_attack") and player.hp < player.room:getTag("RoundCount")
+      (data.card.name == "savage_assault" or data.card.name == "archery_attack") and player.hp < player.room:getBanner("RoundCount")
   end,
   on_use = function(self, event, target, player, data)
     data.additionalDamage = (data.additionalDamage or 0) + 1

@@ -1152,7 +1152,7 @@ local leiluan_trigger = fk.CreateTriggerSkill{
     if event == fk.AfterCardUseDeclared then
       return target == player and player:hasSkill("leiluan", true)
     elseif event == fk.EventAcquireSkill then
-      return target == player and data == leiluan and player.room:getTag("RoundCount")
+      return target == player and data == leiluan and player.room:getBanner("RoundCount")
     elseif event == fk.RoundEnd then
       return player:usedSkillTimes("leiluan", Player.HistoryRound) > 0
     end
@@ -3229,17 +3229,17 @@ local siqi_active = fk.CreateActiveSkill{
   card_filter = function(self, to_select, selected)
     return #selected == 0 and table.contains(self.cards, to_select)
   end,
-  target_filter = function(self, to_select, selected, selected_cards)
+  target_filter = function(self, to_select, selected, selected_cards, _, player)
     if #selected_cards == 0 or #selected > 0 then return false end
     local card = Fk:getCardById(selected_cards[1], true)
     local target = Fk:currentRoom():getPlayerById(to_select)
-    return not Self:isProhibited(target, card) and card.skill:modTargetFilter(to_select, {}, Self.id, card, false)
+    return not Self:isProhibited(target, card) and card.skill:modTargetFilter(to_select, {}, player, card, false)
   end,
-  feasible = function(self, selected, selected_cards)
+  feasible = function(self, selected, selected_cards, player)
     if #selected_cards == 0 then return false end
     if #selected == 0 then
       local card = Fk:getCardById(selected_cards[1], true)
-      return not Self:isProhibited(Self, card) and card.skill:modTargetFilter(Self.id, {}, Self.id, card, false)
+      return not Self:isProhibited(player, card) and card.skill:modTargetFilter(player.id, {}, player, card, false)
     end
     return true
   end
@@ -3359,7 +3359,7 @@ local siqi = fk.CreateTriggerSkill{
           if room:getCardArea(cid) ~= Card.Processing then return false end
           card = Fk:getCardById(cid, true)
           return not (player:prohibitUse(card) or table.every(room.alive_players, function(p)
-            return player:isProhibited(p, card) or not card.skill:modTargetFilter(p.id, {}, player.id, card, false)
+            return player:isProhibited(p, card) or not card.skill:modTargetFilter(p.id, {}, player, card, false)
           end))
         end)
         if #to_use == 0 then break end
@@ -3810,7 +3810,7 @@ local zonghu = fk.CreateViewAsSkill{
   name = "zonghu",
   pattern = "slash,jink",
   prompt = function (self)
-    return "#zonghu:::"..math.min(Fk:currentRoom():getBanner("zonghu"), 3)
+    return "#zonghu:::"..math.min(Fk:currentRoom():getBanner("RoundCount"), 3)
   end,
   interaction = function(self)
     local all_names = {"slash", "jink"}
@@ -3828,7 +3828,7 @@ local zonghu = fk.CreateViewAsSkill{
   end,
   before_use = function (self, player, use)
     local room = player.room
-    local n = math.min(room:getTag("RoundCount"), 3)
+    local n = math.min(room:getBanner("RoundCount"), 3)
     local targets = table.map(room:getOtherPlayers(player, false), Util.IdMapper)
     local to, cards = room:askForChooseCardsAndPlayers(player, n, n, targets, 1, 1, nil,
       "#zonghu-give:::"..n, self.name, false, false)
@@ -3836,38 +3836,16 @@ local zonghu = fk.CreateViewAsSkill{
   end,
   enabled_at_play = function(self, player)
     return player:usedSkillTimes(self.name, Player.HistoryTurn) == 0 and
-      #player:getCardIds("he") >= math.min(Fk:currentRoom():getBanner("zonghu"), 3)
+      #player:getCardIds("he") >= math.min(Fk:currentRoom():getBanner("RoundCount"), 3)
   end,
   enabled_at_response = function(self, player, response)
     return not response and player:usedSkillTimes(self.name, Player.HistoryTurn) == 0 and
-      #player:getCardIds("he") >= math.min(Fk:currentRoom():getBanner("zonghu"), 3) and
+      #player:getCardIds("he") >= math.min(Fk:currentRoom():getBanner("RoundCount"), 3) and
       #Fk:currentRoom().alive_players > 1 and
       #U.getViewAsCardNames(player, self.name, {"slash", "jink"}) > 0
   end,
-
-  on_acquire = function (self, player, is_start)
-    if not is_start then
-      local room = player.room
-      room:setBanner("zonghu", room:getTag("RoundCount"))
-    end
-  end,
-}
-local zonghu_record = fk.CreateTriggerSkill{  --FIXME: 该死的RoundCount什么时候杀？
-  name = "#zonghu_record",
-
-  refresh_events = {fk.RoundStart},
-  can_refresh = function (self, event, target, player, data)
-    return player.seat == 1
-  end,
-  on_refresh = function (self, event, target, player, data)
-    local room = player.room
-    local n = room:getBanner("zonghu") or 0
-    n = n + 1
-    room:setBanner("zonghu", n)
-  end,
 }
 fengwei:addRelatedSkill(fengwei_delay)
-zonghu:addRelatedSkill(zonghu_record)
 liuzhang:addSkill(fengwei)
 liuzhang:addSkill(zonghu)
 Fk:loadTranslationTable{

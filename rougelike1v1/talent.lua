@@ -19,7 +19,7 @@ local rule = fk.CreateTriggerSkill {
   on_use = function(self, event, target, player, data)
     -- 回合结束时，增加虎符，进行消费
     local room = player.room
-    local round = room:getTag("RoundCount")
+    local round = room:getBanner("RoundCount")
     if round > 3 then
       for _, p in ipairs(room.alive_players) do
         local n = 2
@@ -56,7 +56,7 @@ local rule = fk.CreateTriggerSkill {
     return player.seat == 1
   end,
   on_refresh = function(self, event, target, player, data)
-    player.room:setBanner("rouge_round", player.room:getTag("RoundCount"))
+    player.room:setBanner("rouge_round", player.room:getBanner("RoundCount"))
   end
 }
 
@@ -331,7 +331,7 @@ rule:addRelatedSkill(fk.CreateTriggerSkill {
     end
 
     talent = RougeUtil.hasTalent(player, "rouge_yuanmou1")
-    if talent and room:getTag("RoundCount") == 3 and player:isWounded() then
+    if talent and room:getBanner("RoundCount") == 3 and player:isWounded() then
       RougeUtil.sendTalentLog(player, talent)
       room:recover {
         who = player,
@@ -341,7 +341,7 @@ rule:addRelatedSkill(fk.CreateTriggerSkill {
     end
 
     talent = RougeUtil.hasTalent(player, "rouge_yuanmou2")
-    if talent and room:getTag("RoundCount") == 3 and player:isWounded() then
+    if talent and room:getBanner("RoundCount") == 3 and player:isWounded() then
       RougeUtil.sendTalentLog(player, talent)
       room:recover {
         who = player,
@@ -351,7 +351,7 @@ rule:addRelatedSkill(fk.CreateTriggerSkill {
     end
 
     talent = RougeUtil.hasTalent(player, "rouge_yuanmou3")
-    if talent and room:getTag("RoundCount") == 2 and player:isWounded() then
+    if talent and room:getBanner("RoundCount") == 2 and player:isWounded() then
       RougeUtil.sendTalentLog(player, talent)
       room:recover {
         who = player,
@@ -530,7 +530,7 @@ rule:addRelatedSkill(fk.CreateTriggerSkill {
 
     for i = 1, 3 do
       talent = RougeUtil.hasTalent(player, "rouge_buzhen" .. i)
-      if talent and room:getTag("RoundCount") >= i * 2 + 1 then
+      if talent and room:getBanner("RoundCount") >= i * 2 + 1 then
         RougeUtil.sendTalentLog(player, talent)
         data.n = data.n + 1
       end
@@ -1722,9 +1722,9 @@ local rouge_xvyan__fireAttackSkill = fk.CreateActiveSkill {
   mod_target_filter = function(_, to_select, _, _, _, _)
     return not Fk:currentRoom():getPlayerById(to_select):isKongcheng()
   end,
-  target_filter = function(self, to_select, selected, _, card)
-    if #selected < self:getMaxTargetNum(Self, card) then
-      return self:modTargetFilter(to_select, selected, Self.id, card)
+  target_filter = function(self, to_select, selected, _, card, _, player)
+    if #selected < self:getMaxTargetNum(player, card) then
+      return self:modTargetFilter(to_select, selected, player, card)
     end
   end,
   on_effect = function(self, room, cardEffectEvent)
