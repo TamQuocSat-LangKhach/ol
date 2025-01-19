@@ -1136,6 +1136,7 @@ rule:addRelatedSkill(fk.CreateTriggerSkill {
   events = { fk.DamageCaused },
   priority = 0.002,
   mute = true,
+  ---@param data DamageStruct
   can_trigger = function(self, event, target, player, data)
     if player ~= target then return end
     if hasTalent(player, "rouge_yuanjiji") then
@@ -2088,7 +2089,7 @@ rule:addRelatedSkill(fk.CreateTriggerSkill {
   priority = 0.002,
   mute = true,
   can_trigger = function(self, event, target, player, data)
-    if RougeUtil.hasOneOfTalents(player, { "rouge_shenlongbaiwei1", "rouge_shenlongbaiwei2" }) then
+    if RougeUtil.hasTalentStart(player, "rouge_shenlongbaiwei") then
       for _, move in ipairs(data) do
         if move.to == player.id and move.toArea == Card.PlayerHand and move.moveReason == fk.ReasonDraw then
           return true
@@ -2099,53 +2100,29 @@ rule:addRelatedSkill(fk.CreateTriggerSkill {
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    if RougeUtil.hasTalent(player, "rouge_shenlongbaiwei1") then
-      for _, move in ipairs(data) do
-        if move.to == player.id and move.toArea == Card.PlayerHand and move.moveReason == fk.ReasonDraw then
-          room:addPlayerMark(player, "@rouge_shenlongbaiwei1", #move.moveInfo)
-          if player:getMark("@rouge_shenlongbaiwei1") / 9 >= 1 then
-            sendTalentLog(player, "rouge_shenlongbaiwei1")
-            local num = player:getMark("@rouge_shenlongbaiwei1") / 9
-            room:removePlayerMark(player, "@rouge_shenlongbaiwei1", num * 9)
-            for i = 1, num do
-              local enemys = table.filter(room:getOtherPlayers(player), function(p)
-                return RougeUtil.isEnemy(player, p)
-              end)
-              if #enemys > 0 then
-                local targetPlayer = table.random(enemys)
-                room:damage({
-                  from = player,
-                  to = targetPlayer,
-                  damage = 1,
-                  skillName = "rouge_shenlongbaiwei1"
-                })
-              end
-            end
-          end
-        end
-      end
-    end
-
-    if RougeUtil.hasTalent(player, "rouge_shenlongbaiwei2") then
-      for _, move in ipairs(data) do
-        if move.to == player.id and move.toArea == Card.PlayerHand and move.moveReason == fk.ReasonDraw then
-          room:addPlayerMark(player, "@rouge_shenlongbaiwei2", #move.moveInfo)
-          if player:getMark("@rouge_shenlongbaiwei2") / 6 >= 1 then
-            sendTalentLog(player, "rouge_shenlongbaiwei2")
-            local num = player:getMark("@rouge_shenlongbaiwei2") / 6
-            room:removePlayerMark(player, "@rouge_shenlongbaiwei2", num * 6)
-            for i = 1, num do
-              local enemys = table.filter(room:getOtherPlayers(player), function(p)
-                return RougeUtil.isEnemy(player, p)
-              end)
-              if #enemys > 0 then
-                local targetPlayer = table.random(enemys)
-                room:damage({
-                  from = player,
-                  to = targetPlayer,
-                  damage = 1,
-                  skillName = "rouge_shenlongbaiwei2"
-                })
+    for _, move in ipairs(data) do
+      if move.to == player.id and move.toArea == Card.PlayerHand and move.moveReason == fk.ReasonDraw then
+        for i = 1, 2 do
+          if RougeUtil.hasTalent(player, "rouge_shenlongbaiwei" .. i) then
+            room:addPlayerMark(player, "@rouge_shenlongbaiwei" .. i, #move.moveInfo)
+            local n = 12 - 3 * i
+            if player:getMark("@rouge_shenlongbaiwei" .. i) >= n then
+              sendTalentLog(player, "rouge_shenlongbaiwei" .. i)
+              local num = player:getMark("@rouge_shenlongbaiwei" .. i) // n
+              room:removePlayerMark(player, "@rouge_shenlongbaiwei" .. i, num * n)
+              for _ = 1, num do
+                local enemys = table.filter(room:getOtherPlayers(player, false), function(p)
+                  return RougeUtil.isEnemy(player, p)
+                end)
+                if #enemys > 0 then
+                  local targetPlayer = table.random(enemys)
+                  room:damage({
+                    from = player,
+                    to = targetPlayer,
+                    damage = 1,
+                    skillName = "rouge_shenlongbaiwei" .. i,
+                  })
+                end
               end
             end
           end
@@ -2162,9 +2139,9 @@ Fk:loadTranslationTable {
   ["rouge_laoguzhuangbei"] = "牢固装备",
   [":rouge_laoguzhuangbei"] = "你的装备不能被弃置",
   ["rouge_shenlongbaiwei1"] = "神龙摆尾Ⅰ",
-  [":rouge_shenlongbaiwei1"] = "你每摸9张卡牌，你对随机敌方造成1点伤害",
+  [":rouge_shenlongbaiwei1"] = "你每摸9张牌，你对随机敌方造成1点伤害",
   ["rouge_shenlongbaiwei2"] = "神龙摆尾Ⅱ",
-  [":rouge_shenlongbaiwei2"] = "你每摸6张卡牌，你对随机敌方造成1点伤害",
+  [":rouge_shenlongbaiwei2"] = "你每摸6张牌，你对随机敌方造成1点伤害",
   ["@rouge_shenlongbaiwei1"] = "神龙摆尾Ⅰ",
   ["@rouge_shenlongbaiwei2"] = "神龙摆尾Ⅱ",
 
