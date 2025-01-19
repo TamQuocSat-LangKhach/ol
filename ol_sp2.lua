@@ -5465,6 +5465,20 @@ local bixin_viewas = fk.CreateViewAsSkill{
 }
 local bixin = fk.CreateViewAsSkill{
   name = "bixin",
+  dynamic_desc = function(self, player)
+    local pieces = {}
+    local x = player:usedSkillTimes("ximo", Player.HistoryGame)
+    local text = "bixin_inner:"
+    for i = 1, 3, 1 do
+      text = text .. (i <= x and "" or "bixin_piece" .. tostring(i)) .. ":"
+    end
+    if x == 3 then
+      text = text .. "1:3"
+    else
+      text = text .. "3:1"
+    end
+    return text
+  end,
   pattern = ".|.|.|.|.|basic",
   expand_pile = function(self)
     return Self:getTableMark("bixin_cards")
@@ -5671,13 +5685,11 @@ Fk:loadTranslationTable{
   ["designer:zhangzhi"] = "玄蝶既白",
   ["illustrator:zhangzhi"] = "君桓文化",
   ["bixin"] = "笔心",
-  [":bixin"] = "『每名角色的』『准备阶段和』『结束阶段，』你可以声明一种牌的类型并摸3张牌（每种类型限1次），将所有此类型手牌当你本轮未使用过的基本牌使用。",
+  [":bixin"] = "每名角色的准备阶段和结束阶段，你可以声明一种牌的类型并摸3张牌（每种类型限1次），将所有此类型手牌当你本轮未使用过的基本牌使用。",
   ["ximo"] = "洗墨",
   [":ximo"] = "锁定技，当你发动〖笔心〗后，移除其描述的前五个字符，若为第三次发动，交换其描述中的两个数字，你失去本技能并获得〖飞白〗。",
   ["feibai"] = "飞白",
   [":feibai"] = "转换技，锁定技，阳：当你的非黑色牌造成伤害时，此伤害值+1；阴：当你的非红色牌回复体力时，此回复值+1。",
-  ["bixinEx"] = "笔心",
-  [":bixinEx"] = "你可以声明一种牌的类型并摸1张牌（每种类型限3次），将所有此类型手牌当你本轮未使用过的基本牌使用。",
   ["#bixin-invoke"] = "笔心：你可以声明一种牌的类型并摸3张牌，将所有此类型手牌当一种基本牌使用",
   ["#bixin-viewas"] = "笔心：你可以声明一种牌的类型并摸1张牌，将所有此类型手牌当一种基本牌使用",
   ["bixin_viewas"] = "笔心",
@@ -5688,6 +5700,17 @@ Fk:loadTranslationTable{
   ["bixin_times0"] = "[0/3]",
   ["bixin_times1"] = "[1/3]",
   ["bixin_times2"] = "[2/3]",
+
+  [":bixin_inner"] = "{1}{2}{3}你可以声明一种牌的类型并摸{4}张牌（每种类型限{5}次），将所有此类型手牌当你本轮未使用过的基本牌使用。",
+  ["bixin_piece1"] = "每名角色的",
+  ["bixin_piece2"] = "准备阶段和",
+  ["bixin_piece3"] = "结束阶段，",
+  [":feibai_yang"] = "转换技，锁定技，"..
+  "<font color=\"#E0DB2F\">阳：当你的非黑色牌造成伤害时，此伤害值+1；</font>"..
+  "<font color=\"gray\">阴：当你的非红色牌回复体力时，此回复值+1。</font>",
+  [":feibai_yin"] = "转换技，锁定技，"..
+  "<font color=\"gray\">阳：当你的非黑色牌造成伤害时，此伤害值+1；</font>"..
+  "<font color=\"#E0DB2F\">阴：当你的非红色牌回复体力时，此回复值+1。</font>",
 
   ["$bixin1"] = "携笔落云藻，文书剖纤毫。",
   ["$bixin2"] = "执纸抒胸臆，挥笔涕汍澜。",
