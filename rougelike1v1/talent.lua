@@ -38,27 +38,22 @@ local rule = fk.CreateTriggerSkill {
     end
 
     if hasTalent(player, "rouge_bingquanzaiwo1") then
+      sendTalentLog(player, "rouge_bingquanzaiwo1")
       RougeUtil.changeMoney(player, 1)
     end
     for _, p in ipairs(room.alive_players) do
       if hasTalent(p, "rouge_bingquanzaiwo2") then
+        sendTalentLog(player, "rouge_bingquanzaiwo2")
         RougeUtil.changeMoney(p, 1)
       end
       if hasTalent(p, "rouge_chijiuzhan2") and p:getMark("rouge_money") >= 5 then
+        sendTalentLog(player, "rouge_chijiuzhan2")
         RougeUtil.changeMoney(p, 1)
       end
     end
 
     RougeUtil:askForShopping(room.alive_players)
   end,
-
-  refresh_events = { fk.RoundStart },
-  can_refresh = function(self, event, target, player, data)
-    return player.seat == 1
-  end,
-  on_refresh = function(self, event, target, player, data)
-    player.room:setBanner("rouge_round", player.room:getBanner("RoundCount"))
-  end
 }
 
 -- 商店：领取初始战法后，刷新商店；回合结束时，购买并刷新商店
@@ -216,7 +211,7 @@ RougeUtil:addTalent { 3, "rouge_shiqiboduo", function(self, player)
 end }
 Fk:loadTranslationTable {
   ["rouge_shiqiboduo"] = "士气剥夺",
-  [":rouge_shiqiboduo"] = "所有敌方的体力上限-1，最低为1",
+  [":rouge_shiqiboduo"] = "所有敌方的体力上限-1（最低减至1）",
 }
 
 -- 阶段/回合/轮数开始相关：搬运、博闻、...
@@ -610,7 +605,7 @@ Fk:loadTranslationTable {
   [":rouge_houfaxianzhi"] = "摸牌阶段，你的摸牌数-1；你的回合结束时，你摸3张牌",
 
   ["rouge_muniuliuma"] = "木牛流马",
-  [":rouge_muniuliuma"] = "你的摸牌阶段，你额外摸两张牌,手牌上限-1",
+  [":rouge_muniuliuma"] = "摸牌阶段，你额外摸两张牌。你的手牌上限-1",
 
   ["rouge_wendinghouqin"] = "稳定后勤",
   [":rouge_wendinghouqin"] = "摸牌阶段摸牌数固定为5",
@@ -768,7 +763,7 @@ rule:addRelatedSkill(fk.CreateTargetModSkill {
     if card.trueName == "slash" and scope == Player.HistoryPhase then
       local ret = 0
 
-      local round = room:getBanner("rouge_round")
+      local round = room:getBanner("RoundCount")
       for i = 1, 3 do
         if hasTalent(player, "rouge_chijiuzhan" .. i) and round >= (i - 2) * i + 4 then -- 1,3 2,4 3,7 troll!
           ret = ret + 1
@@ -807,7 +802,7 @@ rule:addRelatedSkill(fk.CreateTargetModSkill {
     if card.trueName == "analeptic" and scope == Player.HistoryTurn then
       local ret = 0
 
-      local round = room:getBanner("rouge_round")
+      local round = room:getBanner("RoundCount")
 
       if hasTalent(player, "rouge_hugujiu") then
         ret = ret + 1
@@ -1793,11 +1788,11 @@ Fk:loadTranslationTable {
   [":rouge_shuangren2"] = "当你使用每轮第一张【杀】选择目标后，你可额外选择至多两个目标",
   ["#rouge_shuangren-choose"] = "双刃：你此【杀】可",
   ["rouge_shoudaoqinlai1"] = "手到擒来Ⅰ",
-  [":rouge_shoudaoqinlai1"] = "每回合你使用第7张牌后,你摸一张牌",
+  [":rouge_shoudaoqinlai1"] = "每回合你使用第7张牌后，你摸一张牌",
   ["rouge_shoudaoqinlai2"] = "手到擒来Ⅱ",
-  [":rouge_shoudaoqinlai2"] = "每回合你使用第5张牌后,你摸一张牌",
+  [":rouge_shoudaoqinlai2"] = "每回合你使用第5张牌后，你摸一张牌",
   ["rouge_shoudaoqinlai3"] = "手到擒来Ⅲ",
-  [":rouge_shoudaoqinlai3"] = "每回合你使用第6张牌后,你摸两张牌",
+  [":rouge_shoudaoqinlai3"] = "每回合你使用第6张牌后，你摸两张牌",
 
 }
 
@@ -1959,26 +1954,26 @@ rule:addRelatedSkill(fk.CreateTriggerSkill {
 
 Fk:loadTranslationTable {
   ["rouge_yongzhan1"] = "勇战Ⅰ",
-  [":rouge_yongzhan1"] = "你离开濒死时，对所有敌方造成1点伤害",
+  [":rouge_yongzhan1"] = "当你离开濒死后，你对所有敌方造成1点伤害",
   ["rouge_yongzhan2"] = "勇战Ⅱ",
-  [":rouge_yongzhan2"] = "你离开濒死时，对所有敌方造成2点伤害",
+  [":rouge_yongzhan2"] = "当你离开濒死后，你对所有敌方造成2点伤害",
 
   ["rouge_fanci"] = "反刺",
-  [":rouge_fanci"] = "每回合首次受到伤害后对所有敌方造成1点伤害",
+  [":rouge_fanci"] = "当你于一个回合内首次受到伤害后，你对所有敌方造成1点伤害",
   ["rouge_jingjijia"] = "荆棘甲",
-  [":rouge_jingjijia"] = "每次受到伤害后对伤害来源造成1点伤害",
+  [":rouge_jingjijia"] = "当你受到伤害后，你对伤害来源造成1点伤害",
   ["rouge_pianzhuanjia"] = "偏转甲",
-  [":rouge_pianzhuanjia"] = "每次受到伤害后对随机敌方造成1点伤害",
+  [":rouge_pianzhuanjia"] = "当你受到伤害后，你对随机敌方造成1点伤害",
   ["rouge_pofuchenzhou"] = "破釜沉舟",
-  [":rouge_pofuchenzhou"] = "回合外受到伤害一次大于等于3点时，对伤害来源造成等量同属性伤害",
+  [":rouge_pofuchenzhou"] = "当你于回合外受到大于等于3点伤害后，你对伤害来源造成等量同属性伤害",
   ["rouge_xialuxiangfeng"] = "狭路相逢",
-  [":rouge_xialuxiangfeng"] = "受到【决斗】伤害后回复1点体力",
+  [":rouge_xialuxiangfeng"] = "当你受到【决斗】伤害后，你回复1点体力",
   ["rouge_woxinchangdan"] = "卧薪尝胆",
-  [":rouge_woxinchangdan"] = "回合外每受到1次伤害，下回合出杀次数+1",
+  [":rouge_woxinchangdan"] = "当你于回合外受到伤害后，下回合【杀】的使用次数+1",
   ["@rouge_woxinchangdan"] = "卧薪尝胆",
 
   ["rouge_ruofankui"] = "弱反馈",
-  [":rouge_ruofankui"] = "受到1点伤害后，摸一张牌",
+  [":rouge_ruofankui"] = "当你受到1点伤害后，你摸一张牌",
 }
 
 
