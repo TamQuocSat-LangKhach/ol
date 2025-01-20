@@ -438,7 +438,7 @@ rule:addRelatedSkill(fk.CreateTriggerSkill {
 
 Fk:loadTranslationTable {
   ["rouge_banyun"] = "搬运",
-  [":rouge_banyun"] = "你的回合开始时，从随机敌方手牌区获得1张牌",
+  [":rouge_banyun"] = "你的回合开始时，从随机敌方手牌区获得一张牌",
   ["rouge_bowen1"] = "博闻Ⅰ",
   [":rouge_bowen1"] = "你的回合开始时，从牌堆中获得1张随机锦囊牌",
   ["rouge_bowen2"] = "博闻Ⅱ",
@@ -464,7 +464,7 @@ Fk:loadTranslationTable {
   [":rouge_fuyiqu__snatch"] = "你的回合开始时，你获得1张【顺手牵羊】",
 
   ["rouge_fenjin"] = "奋进",
-  [":rouge_fenjin"] = "当体力大于2点，回合开始时失去1点体力并摸2张牌",
+  [":rouge_fenjin"] = "当体力大于2点，回合开始时失去1点体力并摸两张牌",
 
   ["rouge_yuanmou1"] = "远谋Ⅰ",
   [":rouge_yuanmou1"] = "第3轮你的回合开始时，你回复2点体力",
@@ -609,7 +609,7 @@ Fk:loadTranslationTable {
   [":rouge_houfaxianzhi"] = "摸牌阶段，你的摸牌数-1；你的回合结束时，你摸3张牌",
 
   ["rouge_muniuliuma"] = "木牛流马",
-  [":rouge_muniuliuma"] = "你的摸牌阶段，你额外摸2张牌,手牌上限-1",
+  [":rouge_muniuliuma"] = "你的摸牌阶段，你额外摸两张牌,手牌上限-1",
 
   ["rouge_wendinghouqin"] = "稳定后勤",
   [":rouge_wendinghouqin"] = "摸牌阶段摸牌数固定为5",
@@ -643,14 +643,14 @@ rule:addRelatedSkill(fk.CreateTriggerSkill {
 })
 Fk:loadTranslationTable {
   ["rouge_duoduoyishan1"] = "多多益善Ⅰ",
-  [":rouge_duoduoyishan1"] = "每回合你第5次摸牌后,你摸1张牌",
+  [":rouge_duoduoyishan1"] = "每回合你第5次摸牌后,你摸一张牌",
   ["rouge_duoduoyishan2"] = "多多益善Ⅱ",
-  [":rouge_duoduoyishan2"] = "每回合你第3次摸牌后,你摸1张牌",
+  [":rouge_duoduoyishan2"] = "每回合你第3次摸牌后,你摸一张牌",
   ["rouge_duoduoyishan3"] = "多多益善Ⅲ",
-  [":rouge_duoduoyishan3"] = "每回合你第3次摸牌后,你摸2张牌",
+  [":rouge_duoduoyishan3"] = "每回合你第3次摸牌后,你摸两张牌",
 
   ["rouge_ershengsan"] = "二生三",
-  [":rouge_ershengsan"] = "【无中生有】额外摸1张牌",
+  [":rouge_ershengsan"] = "【无中生有】额外摸一张牌",
 }
 
 -- 回合结束相关：援助、...
@@ -729,9 +729,9 @@ rule:addRelatedSkill(fk.CreateTriggerSkill {
 })
 Fk:loadTranslationTable {
   ["rouge_yuanzhu1"] = "援助Ⅰ",
-  [":rouge_yuanzhu1"] = "回合结束时，你摸1张牌",
+  [":rouge_yuanzhu1"] = "回合结束时，你摸一张牌",
   ["rouge_yuanzhu2"] = "援助Ⅱ",
-  [":rouge_yuanzhu2"] = "回合结束时，你摸2张牌",
+  [":rouge_yuanzhu2"] = "回合结束时，你摸两张牌",
   ["rouge_yuanzhu3"] = "援助Ⅲ",
   [":rouge_yuanzhu3"] = "回合结束时，你摸3张牌",
 
@@ -1048,7 +1048,7 @@ Fk:loadTranslationTable {
   ["rouge_jiemeng"] = "结盟",
   [":rouge_jiemeng"] = "你使用的【桃园结义】友方角色回复双倍体力",
   ["rouge_shixue"] = "噬血Ⅰ",
-  [":rouge_shixue"] = "回复体力时，摸1张牌",
+  [":rouge_shixue"] = "回复体力时，摸一张牌",
   ["rouge_yaoli1"] = "药理Ⅰ",
   [":rouge_yaoli1"] = "回复体力时，额外回复1点",
   ["rouge_yaoli2"] = "药理Ⅱ",
@@ -1145,11 +1145,11 @@ rule:addRelatedSkill(fk.CreateTriggerSkill {
       return data.card and data.card.trueName == "slash"
           and player:getMark("@@rouge_xvshi") > 0 and player.room.current == player
     elseif hasTalent(player, "rouge_yuzhanyuyong1") then
-      return player.room:getTag("round_count") >= 3
+      return player.room:getBanner("RoundCount") >= 3
     elseif hasTalent(player, "rouge_yuzhanyuyong2") then
-      return player.room:getTag("round_count") >= 5
+      return player.room:getBanner("RoundCount") >= 5
     elseif hasTalent(player, "rouge_yuzhanyuyong3") then
-      return player.room:getTag("round_count") >= 7
+      return player.room:getBanner("RoundCount") >= 7
     elseif hasTalent(player, "rouge_tijiashu") then
       return data.to.shield > 0
     elseif RougeUtil.hasTalentStart(player, "rouge_sanbanfu") then
@@ -1268,7 +1268,7 @@ rule:addRelatedSkill(fk.CreateTriggerSkill {
     end
     for i = 1, 3 do
       local t = hasTalent(player, "rouge_yuzhanyuyong" .. i)
-      if t and room:getTag("round_count") >= i * 2 + 1 then
+      if t and room:getBanner("RoundCount") >= i * 2 + 1 then
         addDamage(t)
       end
     end
@@ -1339,7 +1339,7 @@ RougeUtil:addBuffTalent { 3, "rouge_cuixue2" }
 
 Fk:loadTranslationTable {
   ["rouge_zhongjiji"] = "重击技",
-  [":rouge_zhongjiji"] = "对敌方造成伤害一次大于等于3点时，摸1张牌",
+  [":rouge_zhongjiji"] = "对敌方造成伤害一次大于等于3点时，摸一张牌",
   ["rouge_yuanjiji"] = "远击技",
   [":rouge_yuanjiji"] = "造成伤害时，若你与其距离大于1，此伤害+1",
   ["rouge_yuzhanyuyong1"] = "愈战愈勇Ⅰ",
@@ -1383,9 +1383,9 @@ Fk:loadTranslationTable {
   ["rouge_dangtouyibang2"] = "当头一棒Ⅱ",
   [":rouge_dangtouyibang2"] = "每轮，你的首张【杀】伤害+2",
   ["rouge_cuixue1"] = "淬血Ⅰ",
-  [":rouge_cuixue1"] = "你每轮【杀】首次造成伤害后摸1张牌",
+  [":rouge_cuixue1"] = "你每轮【杀】首次造成伤害后摸一张牌",
   ["rouge_cuixue2"] = "淬血Ⅱ",
-  [":rouge_cuixue2"] = "你每轮【杀】首次造成伤害后摸2张牌",
+  [":rouge_cuixue2"] = "你每轮【杀】首次造成伤害后摸两张牌",
   ["rouge_qiaoquhaoduo"] = "巧取豪夺",
   [":rouge_qiaoquhaoduo"] = "因你的【借刀杀人】使用的【杀】造成伤害时，伤害+1",
 
@@ -1442,44 +1442,19 @@ rule:addRelatedSkill(fk.CreateTriggerSkill {
         data.unoffsetableList = table.map(room.alive_players, Util.IdMapper)
       end
     end
-    if hasTalent(player, "rouge_shuangren1") then
-      if data.card.trueName == "slash" and #player.room.logic:getEventsOfScope(GameEvent.UseCard, 2, function(e)
-            return e.data[1].card and e.data[1].card.trueName == "slash" and data.from == player.id
-          end, Player.HistoryRound) == 1 then
-        local targets = {}
-        for _, p in ipairs(room:getOtherPlayers(player)) do
-          if not table.contains(TargetGroup:getRealTargets(data.tos), p.id) and not player:isProhibited(p, data.card)
-              and player:inMyAttackRange(p) then
-            table.insertIfNeed(targets, p.id)
-          end
-        end
-        if #targets > 0 then
-          local tos = room:askForChoosePlayers(player, targets, 1, 1, "#rouge_shuangren-choose", self
-            .name, true)
-          if #tos > 0 then
-            table.insert(data.tos, { tos[1] })
-          end
-        end
-      end
-    end
-
-    if hasTalent(player, "rouge_shuangren2") then
-      if data.card.trueName == "slash" and #player.room.logic:getEventsOfScope(GameEvent.UseCard, 2, function(e)
-            return e.data[1].card and e.data[1].card.trueName == "slash" and data.from == player.id
-          end, Player.HistoryRound) == 1 then
-        local targets = {}
-        for _, p in ipairs(room:getOtherPlayers(player)) do
-          if not table.contains(TargetGroup:getRealTargets(data.tos), p.id) and not player:isProhibited(p, data.card)
-              and player:inMyAttackRange(p) then
-            table.insertIfNeed(targets, p.id)
-          end
-        end
-        if #targets > 0 then
-          local tos = room:askForChoosePlayers(player, targets, 1, 2, "#rouge_shuangren-choose", self
-            .name, true)
-          if #tos > 0 then
-            table.insert(data.tos, { tos[1] })
-            table.insert(data.tos, { tos[2] })
+    if RougeUtil.hasTalentStart(player, "rouge_shuangren") and
+      data.card.trueName == "slash" and #player.room.logic:getEventsOfScope(GameEvent.UseCard, 2, function(e)
+        return e.data[1].card and e.data[1].card.trueName == "slash" and data.from == player.id
+      end, Player.HistoryRound) == 1 then
+      local targets = table.filter(room:getUseExtraTargets(data),
+        function(id) return player:inMyAttackRange(room:getPlayerById(id)) end)
+      if #targets > 0 then
+        local n = hasTalent(player, "rouge_shuangren2") and 2 or 0
+        n = n + (hasTalent(player, "rouge_shuangren1") and 1 or 0)
+        local tos = room:askForChoosePlayers(player, targets, n, n, "#rouge_shuangren-choose:::" .. n, self.name, true)
+        if #tos > 0 then
+          for _, pid in ipairs(tos) do
+            TargetGroup:pushTargets(data.tos, pid)
           end
         end
       end
@@ -1804,16 +1779,16 @@ Fk:loadTranslationTable {
   ["#rouge_xvlijian__archery_attack_skill"] = "蓄力箭:你使用的【万箭齐发】其他角色需要使用2张【闪】来响应",
   ["#rougelike1v1_PreCardEffect_rouge_xvlijian"] = "蓄力箭",
   ["rouge_zhudao1"] = "铸刀Ⅰ",
-  [":rouge_zhudao1"] = "你使用【杀】后可以至多重铸1张牌",
+  [":rouge_zhudao1"] = "你使用【杀】后可以至多重铸一张牌",
   ["rouge_zhudao2"] = "铸刀Ⅱ",
-  [":rouge_zhudao2"] = "你使用【杀】后可以至多重铸2张牌",
+  [":rouge_zhudao2"] = "你使用【杀】后可以至多重铸两张牌",
   ["#rouge_zhudao"] = "铸刀:你可以至多重铸%arg张牌",
   ["rouge_yingjifangan"] = "应急方案",
-  [":rouge_yingjifangan"] = "回合外成为敌方角色基本牌唯一目标，随机弃置来源1张牌",
+  [":rouge_yingjifangan"] = "回合外成为敌方角色基本牌唯一目标，随机弃置来源一张牌",
   ["rouge_yingjizhanshu"] = "应急战术",
-  [":rouge_yingjizhanshu"] = "回合外成为敌方角色锦囊牌唯一目标，随机弃置来源1张牌",
+  [":rouge_yingjizhanshu"] = "回合外成为敌方角色锦囊牌唯一目标，随机弃置来源一张牌",
   ["rouge_yingjizhanlv"] = "应急战略",
-  [":rouge_yingjizhanlv"] = "回合外成为敌方角色使用牌唯一目标，随机弃置来源1张牌",
+  [":rouge_yingjizhanlv"] = "回合外成为敌方角色使用牌唯一目标，随机弃置来源一张牌",
   ["rouge_xvyan"] = "虚焰",
   [":rouge_xvyan"] = "【火攻】弃置改为展示",
   ["rouge_xvyan__fire_attack_skill"] = "虚焰",
@@ -1821,16 +1796,16 @@ Fk:loadTranslationTable {
   ["#rouge_xvyan__fire_attack_skill-show1"] = "虚焰：你需要对【%src】展示一张火攻牌。",
   ["#rouge_xvyan__fire_attack_skill-show2"] = "虚焰：你可以展示一张与展示牌相同花色的牌，然后对其造成1点火焰伤害。",
   ["rouge_shuangren1"] = "双刃Ⅰ",
-  [":rouge_shuangren1"] = "每轮，你的首张【杀】至多能额外选择1个目标",
+  [":rouge_shuangren1"] = "当你使用每轮第一张【杀】选择目标后，你可额外选择至多一个目标",
   ["rouge_shuangren2"] = "双刃Ⅱ",
-  [":rouge_shuangren2"] = "每轮，你的首张【杀】至多能额外选择2个目标",
-  ["#rouge_shuangren-choose"] = "双刃：你可额外选择此【杀】目标",
+  [":rouge_shuangren2"] = "当你使用每轮第一张【杀】选择目标后，你可额外选择至多两个目标",
+  ["#rouge_shuangren-choose"] = "双刃：你此【杀】可",
   ["rouge_shoudaoqinlai1"] = "手到擒来Ⅰ",
-  [":rouge_shoudaoqinlai1"] = "每回合你使用第7张牌后,你摸1张牌",
+  [":rouge_shoudaoqinlai1"] = "每回合你使用第7张牌后,你摸一张牌",
   ["rouge_shoudaoqinlai2"] = "手到擒来Ⅱ",
-  [":rouge_shoudaoqinlai2"] = "每回合你使用第5张牌后,你摸1张牌",
+  [":rouge_shoudaoqinlai2"] = "每回合你使用第5张牌后,你摸一张牌",
   ["rouge_shoudaoqinlai3"] = "手到擒来Ⅲ",
-  [":rouge_shoudaoqinlai3"] = "每回合你使用第6张牌后,你摸2张牌",
+  [":rouge_shoudaoqinlai3"] = "每回合你使用第6张牌后,你摸两张牌",
 
 }
 
