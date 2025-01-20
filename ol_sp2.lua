@@ -1887,8 +1887,8 @@ Fk:loadTranslationTable{
 local yangyi = General(extension, "ol__yangyi", "shu", 3)
 local juanxia_active = fk.CreateActiveSkill{
   name = "juanxia_active",
-  expand_pile = function(self)
-    return Self:getTableMark("juanxia_names")
+  expand_pile = function(self, player)
+    return player:getTableMark("juanxia_names")
   end,
   card_num = 1,
   card_filter = function(self, to_select, selected, player)
@@ -1900,38 +1900,38 @@ local juanxia_active = fk.CreateActiveSkill{
       card.skillName = "juanxia"
       if player:canUse(card) and not player:prohibitUse(card) then
         local target = player:getMark("juanxia_target")
-        return target == 0 or (card.skill:targetFilter(target, {}, {}, card) and
+        return target == 0 or (card.skill:targetFilter(target, {}, {}, card, nil, player) and
         not player:isProhibited(Fk:currentRoom():getPlayerById(target), card))
       end
     end
   end,
-  target_filter = function(self, to_select, selected, selected_cards)
+  target_filter = function (self, to_select, selected, selected_cards, _, extra_data, player)
     if #selected_cards == 0 then return false end
     local card = Fk:cloneCard(Fk:getCardById(selected_cards[1]).name)
     card.skillName = "juanxia"
     local selected_copy = table.clone(selected)
-    local target = Self:getMark("juanxia_target")
+    local target = player:getMark("juanxia_target")
     if target ~= 0 then
       table.insert(selected_copy, 1, target)
     end
     if #selected_copy == 0 then
-      return to_select ~= Self.id and card.skill:targetFilter(to_select, {}, {}, card) and
-      not Self:isProhibited(Fk:currentRoom():getPlayerById(to_select), card)
+      return to_select ~= player.id and card.skill:targetFilter(to_select, {}, {}, card, nil, player) and
+      not player:isProhibited(Fk:currentRoom():getPlayerById(to_select), card)
     else
       if card.skill:getMinTargetNum() == 1 then return false end
-      return card.skill:targetFilter(to_select, selected_copy, {}, card)
+      return card.skill:targetFilter(to_select, selected_copy, {}, card, nil, player)
     end
   end,
-  feasible = function(self, selected, selected_cards)
+  feasible = function(self, selected, selected_cards, player)
     if #selected_cards == 0 then return false end
     local to_use = Fk:cloneCard(Fk:getCardById(selected_cards[1]).name)
     to_use.skillName = "juanxia"
     local selected_copy = table.clone(selected)
-    local target = Self:getMark("juanxia_target")
+    local target = player:getMark("juanxia_target")
     if target ~= 0 then
       table.insert(selected_copy, 1, target)
     end
-    return to_use.skill:feasible(selected_copy, {}, Self, to_use)
+    return to_use.skill:feasible(selected_copy, {}, player, to_use)
   end,
 }
 local juanxia = fk.CreateTriggerSkill{
