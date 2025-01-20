@@ -1,4 +1,5 @@
 local RougeUtil = require "packages.ol.rougelike1v1.util"
+local U = require "packages/utility/utility"
 local hasTalent = RougeUtil.hasTalent
 local sendTalentLog = RougeUtil.sendTalentLog
 
@@ -1429,13 +1430,11 @@ rule:addRelatedSkill(fk.CreateTriggerSkill {
   priority = 0.002,
   mute = true,
   can_trigger = function(self, event, target, player, data)
-    if player ~= target then return end
-    return RougeUtil.hasOneOfTalents(player, { "rouge_zuiquan", "rouge_shuangren1", "rouge_shuangren2" }) and data.card
+    return player == target and (hasTalent(player, "rouge_zuiquan") or RougeUtil.hasTalentStart(player, { "rouge_shuangren1", "rouge_shuangren2" }))
   end,
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     local room = player.room
-
     if hasTalent(player, "rouge_zuiquan") then
       if data.card and data.card.trueName == "slash" and ((data.extra_data or {}).drankBuff or 0) > 0 then
         sendTalentLog(player, "rouge_zuiquan")
@@ -1449,9 +1448,16 @@ rule:addRelatedSkill(fk.CreateTriggerSkill {
       local targets = table.filter(room:getUseExtraTargets(data),
         function(id) return player:inMyAttackRange(room:getPlayerById(id)) end)
       if #targets > 0 then
-        local n = hasTalent(player, "rouge_shuangren2") and 2 or 0
-        n = n + (hasTalent(player, "rouge_shuangren1") and 1 or 0)
-        local tos = room:askForChoosePlayers(player, targets, n, n, "#rouge_shuangren-choose:::" .. n, self.name, true)
+        local n = 0
+        if hasTalent(player, "rouge_shuangren1") then
+          sendTalentLog(player, "rouge_shuangren1")
+          n = 1
+        end
+        if hasTalent(player, "rouge_shuangren2") then
+          sendTalentLog(player, "rouge_shuangren2")
+          n = n + 2
+        end
+        local tos = room:askForChoosePlayers(player, targets, 1, n, "#rouge_shuangren-choose:::" .. n, self.name, true)
         if #tos > 0 then
           for _, pid in ipairs(tos) do
             TargetGroup:pushTargets(data.tos, pid)
@@ -1581,39 +1587,28 @@ rule:addRelatedSkill(fk.CreateTriggerSkill {
   mute = true,
   can_trigger = function(self, event, target, player, data)
     if player ~= target then return end
-    if RougeUtil.hasOneOfTalents(player, { "rouge_yingjifangan", "rouge_yingjizhanshu", "rouge_yingjizhanlv" })
-        and data.card and data.from and not player.room:getPlayerById(data.from):isNude() and #data.tos[1] == 1 and
+    if RougeUtil.hasTalentStart(player, "rouge_yingji")
+        and data.from and not player.room:getPlayerById(data.from):isNude() and U.isOnlyTarget(player, data, event) and
         player.phase == Player.NotActive and RougeUtil.isEnemy(player, player.room:getPlayerById(data.from)) then
-      if hasTalent(player, "rouge_yingjifangan") then
+      if hasTalent(player, "rouge_yingjizhanlv") then
+        return true
+      elseif hasTalent(player, "rouge_yingjifangan") then
         return data.card.type == Card.TypeBasic
       elseif hasTalent(player, "rouge_yingjizhanshu") then
         return data.card.type == Card.TypeTrick
-      elseif hasTalent(player, "rouge_yingjizhanlv") then
-        return true
       end
     end
   end,
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    if RougeUtil.hasOneOfTalents(player, { "rouge_yingjifangan", "rouge_yingjizhanshu", "rouge_yingjizhanlv" }) then
-      local skilName = ""
-      local targetPlayer = room:getPlayerById(data.from)
-      local target_card = table.random(targetPlayer:getCardIds("he"))
-      if hasTalent(player, "rouge_yingjifangan") then
-        skilName = "rouge_yingjifangan"
-        sendTalentLog(player, skilName)
-        room:throwCard(target_card, skilName, targetPlayer, player)
-      end
-      if hasTalent(player, "rouge_yingjizhanshu") then
-        skilName = "rouge_yingjizhanshu"
-        sendTalentLog(player, skilName)
-        room:throwCard(target_card, skilName, targetPlayer, player)
-      end
-      if hasTalent(player, "rouge_yingjizhanlv") then
-        skilName = "rouge_yingjizhanlv"
-        sendTalentLog(player, skilName)
-        room:throwCard(target_card, skilName, targetPlayer, player)
+    target = room:getPlayerById(data.from)
+    local cards
+    for i, t in ipairs{ "rouge_yingjizhanlv", "rouge_yingjifangan", "rouge_yingjizhanshu" } do
+      cards = target:getCardIds("he")
+      if #cards > 0 and hasTalent(player, t) and (i == 1 or data.card.type == i - 1) then
+        sendTalentLog(player, t)
+        room:throwCard(table.random(cards), self.name, target, player)
       end
     end
   end
@@ -1632,55 +1627,53 @@ rule:addRelatedSkill(fk.CreateTriggerSkill {
   priority = 0.002,
   mute = true,
   can_trigger = function(self, event, target, player, data)
-    if player ~= target then return end
-    return RougeUtil.hasOneOfTalents(player, { "rouge_zhudao1", "rouge_zhudao2", "rouge_shoudaoqinlai1",
-      "rouge_shoudaoqinlai2", "rouge_shoudaoqinlai3", }) and data.card
+    return player == target and (RougeUtil.hasTalentStart(player, "rouge_zhudao") or RougeUtil.hasTalentStart(player, "rouge_shoudaoqinlai"))
   end,
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     local room = player.room
-
-    if hasTalent(player, "rouge_zhudao1") then
-      if data.card.trueName == "slash" and not player:isNude() then
+    if data.card.trueName == "slash" and not player:isNude() then
+      local n = 0
+      if hasTalent(player, "rouge_zhudao1") then
         sendTalentLog(player, "rouge_zhudao1")
-        local choice_cards = room:askForCard(player, 1, 1, true, "rouge_zhudao1", true, ".", "#rouge_zhudao:::" .. 1)
+        n = 1
+      end
+      if hasTalent(player, "rouge_zhudao2") then
+        sendTalentLog(player, "rouge_zhudao2")
+        n = n + 2
+      end
+      if n > 0 then
+        local choice_cards = room:askForCard(player, 1, n, true, "rouge_zhudao1", true, ".", "#rouge_zhudao:::" .. n)
         room:recastCard(choice_cards, player, "rouge_zhudao1")
       end
     end
 
-    if hasTalent(player, "rouge_zhudao2") then
-      if data.card.trueName == "slash" and not player:isNude() then
-        sendTalentLog(player, "rouge_zhudao2")
-        local choice_cards = room:askForCard(player, 1, 2, true, "rouge_zhudao2", true, ".", "#rouge_zhudao:::" .. 2)
-        room:recastCard(choice_cards, player, "rouge_zhudao2")
+    if not RougeUtil.hasTalentStart(player, "rouge_shoudaoqinlai") then return end
+    local num = #room.logic:getEventsOfScope(GameEvent.UseCard, 7, function(e)
+      return e.data[1].card and e.data[1].from == player.id
+    end, Player.HistoryTurn)
+    if num < 5 then return end
+    local function shoudaoDraw(talent, n)
+      sendTalentLog(player, talent)
+      player:drawCards(n, talent)
+      room:addPlayerMark(player, talent .. "-turn")
+    end
+    local talent = hasTalent(player, "rouge_shoudaoqinlai1")
+    if talent then
+      if num >= 7 and player:getMark(talent .. "-turn") == 0 then
+        shoudaoDraw(talent, 1)
       end
     end
-
-    if hasTalent(player, "rouge_shoudaoqinlai1") then
-      if #room.logic:getEventsOfScope(GameEvent.UseCard, 7, function(e)
-            return e.data[1].card and e.data[1].from == player.id
-          end, Player.HistoryTurn) == 7 and player:getMark("rouge_shoudaoqinlai1-turn") == 0 then
-        sendTalentLog(player, "rouge_shoudaoqinlai1")
-        player:drawCards(1, "rouge_shoudaoqinlai1")
-        room:addPlayerMark(player, "rouge_shoudaoqinlai1-turn")
+    talent = hasTalent(player, "rouge_shoudaoqinlai2")
+    if talent then
+      if num >= 5 and player:getMark(talent .. "-turn") == 0 then
+        shoudaoDraw(talent, 1)
       end
     end
-    if hasTalent(player, "rouge_shoudaoqinlai2") then
-      if #room.logic:getEventsOfScope(GameEvent.UseCard, 5, function(e)
-            return e.data[1].card and e.data[1].from == player.id
-          end, Player.HistoryTurn) == 5 and player:getMark("rouge_shoudaoqinlai2-turn") == 0 then
-        sendTalentLog(player, "rouge_shoudaoqinlai2")
-        player:drawCards(1, "rouge_shoudaoqinlai2")
-        room:addPlayerMark(player, "rouge_shoudaoqinlai2-turn")
-      end
-    end
-    if hasTalent(player, "rouge_shoudaoqinlai2") then
-      if #room.logic:getEventsOfScope(GameEvent.UseCard, 6, function(e)
-            return e.data[1].card and e.data[1].from == player.id
-          end, Player.HistoryTurn) == 6 and player:getMark("rouge_shoudaoqinlai3-turn") == 0 then
-        sendTalentLog(player, "rouge_shoudaoqinlai3")
-        player:drawCards(2, "rouge_shoudaoqinlai3")
-        room:addPlayerMark(player, "rouge_shoudaoqinlai3-turn")
+    talent = hasTalent(player, "rouge_shoudaoqinlai3")
+    if talent then
+      if num >= 6 and player:getMark(talent .. "-turn") == 0 then
+        shoudaoDraw(talent, 2)
       end
     end
   end
@@ -1742,8 +1735,7 @@ local rouge_xvyan_trigger = fk.CreateTriggerSkill {
   mute = true,
   priority = 0.002,
   can_trigger = function(self, event, target, player, data)
-    if player ~= target then return end
-    return hasTalent(player, "rouge_xvyan") and data.from == player.id and data.card.trueName == "fire_attack"
+    return player == target and hasTalent(player, "rouge_xvyan") and data.card.trueName == "fire_attack"
   end,
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
@@ -1821,8 +1813,7 @@ rule:addRelatedSkill(fk.CreateTriggerSkill {
   priority = 0.002,
   mute = true,
   can_trigger = function(self, event, target, player, data)
-    if player ~= target then return end
-    return RougeUtil.hasOneOfTalents(player, { "rouge_yongzhan1", "rouge_yongzhan2" })
+    return player == target and RougeUtil.hasTalentStart(player, "rouge_yongzhan")
   end,
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
@@ -1951,23 +1942,18 @@ rule:addRelatedSkill(fk.CreateTriggerSkill {
   priority = 0.002,
   mute = true,
   can_trigger = function(self, event, target, player, data)
-    if player ~= target then return end
-    return RougeUtil.hasOneOfTalents(player, {
-      "rouge_fanci" })
+    return player == target and hasTalent(player, "rouge_ruofankui")
   end,
   on_trigger = function(self, event, target, player, data)
     for _ = 1, data.damage do
-      if player.dead then break end
+      if player.dead then break end -- 不考虑失去的情况
       self:doCost(event, target, player, data)
     end
   end,
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
-    local room = player.room
-    if hasTalent(player, "rouge_ruofankui") then
-      sendTalentLog(player, "rouge_ruofankui")
-      player:drawCards(1, "rouge_ruofankui")
-    end
+    sendTalentLog(player, "rouge_ruofankui")
+    player:drawCards(1, "rouge_ruofankui")
   end
 })
 
