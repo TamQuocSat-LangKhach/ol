@@ -1528,7 +1528,7 @@ local rouge_xvlijian__archery_attack_skill = fk.CreateActiveSkill {
   can_use = Util.AoeCanUse,
   on_use = Util.AoeOnUse,
   mod_target_filter = function(self, to_select, selected, user, card, distance_limited)
-    return user ~= to_select
+    return user.id ~= to_select
   end,
   on_effect = function(self, room, effect)
     local cardResponded = room:askForResponse(room:getPlayerById(effect.to), 'jink', nil, nil, true, nil, effect)

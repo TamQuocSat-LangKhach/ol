@@ -3157,14 +3157,11 @@ local ol_ex__ruoyu = fk.CreateTriggerSkill{
     room:handleAddLoseSkills(player, "ol_ex__jijiang|ol_ex__sishu", nil, true, false)
   end,
 }
+local orig_indulgence_skill = Fk.all_card_types["indulgence"].skill
 local indulgenceSkill = fk.CreateActiveSkill{
   name = "trans__indulgence_skill",
-  mod_target_filter = function(self, to_select, selected, user, card)
-    return user ~= to_select
-  end,
-  target_filter = function(self, to_select, selected, _, card, _, player)
-    return #selected == 0 and self:modTargetFilter(to_select, selected, player, card)
-  end,
+  mod_target_filter = orig_indulgence_skill.modTargetFilter,
+  target_filter = orig_indulgence_skill.targetFilter,
   target_num = 1,
   on_effect = function(self, room, effect)
     local to = room:getPlayerById(effect.to)
@@ -3203,7 +3200,7 @@ local ol_ex__sishu_buff = fk.CreateTriggerSkill{
     for k, v in pairs(c) do
       card[k] = v
     end
-    local ogri_skill = Fk.skills["indulgence_skill"]
+    local ogri_skill = orig_indulgence_skill
     card.skill = (card.skill == ogri_skill) and indulgenceSkill or ogri_skill
     data.card = card
   end,
