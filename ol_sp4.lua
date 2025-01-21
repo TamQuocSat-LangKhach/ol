@@ -1849,18 +1849,19 @@ local xixiang = fk.CreateActiveSkill{
   can_use = function(self, player)
     return player:getMark("xixiang_slash-phase") == 0 or player:getMark("xixiang_duel-phase") == 0
   end,
-  card_filter = function(self, to_select, selected)
+  card_filter = function(self, to_select, selected, player)
     local card = Fk:cloneCard(self.interaction.data)
     card.skillName = self.name
     card:addSubcards(selected)
-    return not Self:prohibitUse(card)
+    return not player:prohibitUse(card)
   end,
-  target_filter = function(self, to_select, selected, selected_cards)
-    if #selected_cards <= Self:getMark("xixiang-phase") or #selected > 0 or to_select == Self.id then return end
+  target_filter = function(self, to_select, selected, selected_cards, _, _, player)
+    if #selected_cards <= player:getMark("xixiang-phase") or #selected > 0 or to_select == player.id
+    or self.interaction.data == nil then return end
     local card = Fk:cloneCard(self.interaction.data)
     card.skillName = self.name
     card:addSubcards(selected_cards)
-    return card.skill:targetFilter(to_select, {}, {}, card, {bypass_distances = true, bypass_times = true})
+    return card.skill:targetFilter(to_select, {}, {}, card, {bypass_distances = true, bypass_times = true}, player)
   end,
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
@@ -3131,14 +3132,14 @@ local liyongw = fk.CreateActiveSkill{
       end
     end
   end,
-  target_filter = function(self, to_select, selected, selected_cards)
-    if Self:getSwitchSkillState(self.name, false) == fk.SwitchYang and #selected_cards == 1 then
+  target_filter = function(self, to_select, selected, selected_cards, _, _, player)
+    if player:getSwitchSkillState(self.name, false) == fk.SwitchYang and #selected_cards == 1 then
       local card = Fk:cloneCard("duel")
       card.skillName = self.name
       card:addSubcards(selected_cards)
-      return card.skill:targetFilter(to_select, selected, {}, card)
-    elseif Self:getSwitchSkillState(self.name, false) == fk.SwitchYin then
-      return #selected == 0 and Fk:currentRoom():getPlayerById(to_select):canUseTo(Fk:cloneCard("duel"), Self)
+      return card.skill:targetFilter(to_select, selected, {}, card, nil, player)
+    elseif player:getSwitchSkillState(self.name, false) == fk.SwitchYin then
+      return #selected == 0 and Fk:currentRoom():getPlayerById(to_select):canUseTo(Fk:cloneCard("duel"), player)
     end
   end,
   feasible = function (self, selected, selected_cards)

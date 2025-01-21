@@ -2637,14 +2637,14 @@ local qiuxin_viewas = fk.CreateActiveSkill{
     return UI.ComboBox {choices = names, all_choices = all_names}
   end,
   card_filter = Util.FalseFunc,
-  target_filter = function(self, to_select, selected, selected_cards)
+  target_filter = function(self, to_select, selected, selected_cards, _, _, player)
     if not self.interaction.data then return false end
     local card = Fk:cloneCard(self.interaction.data)
     card.skillName = qiuxin.name
     if card.skill:getMinTargetNum() < 2 then return false end
     local _selected = {Self:getMark("qiuxin-tmp")}
     table.insertTable(_selected, selected)
-    return card.skill:targetFilter(to_select, _selected, {}, card)
+    return card.skill:targetFilter(to_select, _selected, {}, card, nil, player)
   end,
   feasible = function(self, selected, selected_cards)
     if not self.interaction.data then return false end

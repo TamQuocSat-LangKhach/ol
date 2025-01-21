@@ -1510,16 +1510,16 @@ local ol_ex__lianhuan = fk.CreateActiveSkill{
   min_target_num = 0,
   prompt = "#ol_ex__lianhuan-active",
   can_use = Util.TrueFunc,
-  card_filter = function(self, to_select, selected, selected_targets)
+  card_filter = function(self, to_select, selected)
     return #selected == 0 and Fk:getCardById(to_select).suit == Card.Club
   end,
-  target_filter = function(self, to_select, selected, selected_cards)
+  target_filter = function(self, to_select, selected, selected_cards, _, _, player)
     if #selected_cards == 1 then
       local card = Fk:cloneCard("iron_chain")
       card:addSubcard(selected_cards[1])
       card.skillName = self.name
-      return card.skill:canUse(Self, card) and card.skill:targetFilter(to_select, selected, selected_cards, card) and
-      not Self:prohibitUse(card) and not Self:isProhibited(Fk:currentRoom():getPlayerById(to_select), card)
+      return player:canUse(card) and card.skill:targetFilter(to_select, selected, selected_cards, card, nil, player) and
+      not player:prohibitUse(card) and not player:isProhibited(Fk:currentRoom():getPlayerById(to_select), card)
     end
   end,
   on_use = function(self, room, effect)

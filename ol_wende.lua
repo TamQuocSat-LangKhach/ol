@@ -944,9 +944,8 @@ local chuming = fk.CreateTriggerSkill{
               if i == 1 then
                 table.insert(names, name)
               else
-                Self = from -- for targetFilter check
                 for _, p in ipairs(room.alive_players) do
-                  if p ~= player and card.skill:targetFilter(p.id, {player.id}, {}, card) then
+                  if p ~= player and card.skill:targetFilter(p.id, {player.id}, {}, card, nil, from) then
                     table.insert(other_targets, p.id)
                   end
                 end
