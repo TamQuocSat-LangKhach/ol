@@ -2056,7 +2056,7 @@ local guangu = fk.CreateActiveSkill{
     end
     room:setPlayerMark(player, "@guangu-phase", #ids)
 
-    U.askForUseRealCard(room, player, ids, ".", self.name, "#guangu-use", (target ~= player) and {expand_pile = ids} or {})
+    room:askForUseRealCard(player, ids, self.name, "#guangu-use", (target ~= player) and {expand_pile = ids} or {}, true)
   end,
 }
 local xiaoyong = fk.CreateTriggerSkill{
