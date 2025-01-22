@@ -1533,10 +1533,6 @@ local bojue = fk.CreateActiveSkill{
     req.focus_text = self.name
     req:setData(player, { "discard_skill", "#bojue-ask:"..target.id, true, extra_data })
     req:setData(target, { "discard_skill", "#bojue-ask:"..player.id, true, extra_data })
-    -- player.request_data = json.encode({ "discard_skill", "#bojue-ask:"..target.id, true, extra_data })
-    -- target.request_data = json.encode({ "discard_skill", "#bojue-ask:"..player.id, true, extra_data })
-    -- room:notifyMoveFocus({player, target}, self.name)
-    -- room:doBroadcastRequest("AskForUseActiveSkill", {player, target})
 
     local moves, n = {}, 0
     for _, p in ipairs(req.players) do
@@ -1574,10 +1570,10 @@ local bojue = fk.CreateActiveSkill{
         room:throwCard(card, self.name, player, target)
       end
     elseif n == 2 then
-      if not target.dead then
+      if not player.dead and not target.dead then
         room:useVirtualCard("slash", nil, player, target, self.name, true)
       end
-      if not player.dead then
+      if not player.dead and not target.dead then
         room:useVirtualCard("slash", nil, target, player, self.name, true)
       end
     end
