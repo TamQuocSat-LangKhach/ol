@@ -1668,7 +1668,7 @@ huaxiong:addSkill(yangwei)
 Fk:loadTranslationTable{
   ["olmou__huaxiong"] = "谋华雄",
   ["#olmou__huaxiong"] = "汜水关死神",
-  ["illustrator:olmou__huaxiong"] = "",
+  --["illustrator:olmou__huaxiong"] = "",
   ["~olmou__huaxiong"] = "我已连战三场，匹夫胜之不武！",
 
   ["bojue"] = "搏决",
@@ -3032,6 +3032,7 @@ zhangxiu:addSkill(choulie)
 zhangxiu:addSkill(zhuijiao)
 Fk:loadTranslationTable{
   ["olmou__zhangxiu"] = "谋张绣",
+  ["#olmou__zhangxiu"] = "枪啸风吟",
 
   ["choulie"] = "仇猎",
   [":choulie"] = "限定技，回合开始时，你可以选择一名其他角色，本回合你的每个阶段开始时，你可以弃置一张牌视为对其使用一张【杀】，"..
