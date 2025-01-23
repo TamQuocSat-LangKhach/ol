@@ -624,21 +624,17 @@ Fk:loadTranslationTable {
   [":rouge_wendinghouqin"] = "摸牌阶段摸牌数固定为5",
 }
 
--- 即时摸牌相关：多多益善、...
-
--- RougeUtil:addBuffTalent { 2, "rouge_duoduoyishan1" }
--- RougeUtil:addBuffTalent { 3, "rouge_duoduoyishan2" }
--- RougeUtil:addBuffTalent { 4, "rouge_duoduoyishan3" }
+-- 即时摸牌相关：二生三、...
 
 RougeUtil:addBuffTalent { 1, "rouge_ershengsan" }
 rule:addRelatedSkill(fk.CreateTriggerSkill {
   name = "#rougelike1v1_rule_drawcard",
-  events = { fk.BeforeDrawCard, fk.AfterDrawNCards },
+  events = { fk.BeforeDrawCard },
   priority = 0.002,
   mute = true,
   can_trigger = function(self, event, target, player, data)
     return target == player and RougeUtil.hasOneOfTalents(player,
-      { "rouge_duoduoyishan1", "rouge_duoduoyishan2", "rouge_duoduoyishan3", "rouge_ershengsan" })
+      { "rouge_ershengsan" })
   end,
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
