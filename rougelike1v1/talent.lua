@@ -52,6 +52,9 @@ local rule = fk.CreateTriggerSkill {
       RougeUtil.changeMoney(player, 1)
     end
     for _, p in ipairs(room.alive_players) do
+      if p.id>0 and not hasTalent(p,"rouge_jishiyu") then
+        RougeUtil.attachTalentToPlayer(p,"rouge_jishiyu")
+      end
       if hasTalent(p, "rouge_bingquanzaiwo2") then
         sendTalentLog(player, "rouge_bingquanzaiwo2")
         RougeUtil.changeMoney(p, 1)
@@ -2376,7 +2379,9 @@ RougeUtil:addBuffTalent { 4, "rouge_shenlongbaiwei2" }
 RougeUtil:addBuffTalent { 1, "rouge_duoduoyishan1" }
 RougeUtil:addBuffTalent { 2, "rouge_duoduoyishan2" }
 RougeUtil:addBuffTalent { 4, "rouge_duoduoyishan3" }
-RougeUtil:addBuffTalent { 1, "rouge_jishiyu" }
+
+-- 及时雨因未知Bug导致无限摸牌，暂时封禁，待大手子出马！
+-- RougeUtil:addBuffTalent { 1, "rouge_jishiyu" }
 
 rule:addRelatedSkill(fk.CreateTriggerSkill {
   name = "#rougelike1v1_AfterCardsMove",
@@ -2458,7 +2463,7 @@ rule:addRelatedSkill(fk.CreateTriggerSkill {
       end
     end
 
-    if RougeUtil.hasTalent(player, "rouge_jishiyu") then
+    if RougeUtil.hasTalent(player, "rouge_jishiyu") and not player.dead then
       sendTalentLog(player, "rouge_jishiyu")
       player:drawCards(2, "rouge_jishiyu")
     end
