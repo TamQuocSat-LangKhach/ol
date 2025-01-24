@@ -52,9 +52,6 @@ local rule = fk.CreateTriggerSkill {
       RougeUtil.changeMoney(player, 1)
     end
     for _, p in ipairs(room.alive_players) do
-      if p.id>0 and not hasTalent(p,"rouge_jishiyu") then
-        RougeUtil.attachTalentToPlayer(p,"rouge_jishiyu")
-      end
       if hasTalent(p, "rouge_bingquanzaiwo2") then
         sendTalentLog(player, "rouge_bingquanzaiwo2")
         RougeUtil.changeMoney(p, 1)
