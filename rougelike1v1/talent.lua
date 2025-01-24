@@ -2377,8 +2377,7 @@ RougeUtil:addBuffTalent { 1, "rouge_duoduoyishan1" }
 RougeUtil:addBuffTalent { 2, "rouge_duoduoyishan2" }
 RougeUtil:addBuffTalent { 4, "rouge_duoduoyishan3" }
 
--- 及时雨因未知Bug导致无限摸牌，暂时封禁，待大手子出马！
--- RougeUtil:addBuffTalent { 1, "rouge_jishiyu" }
+RougeUtil:addBuffTalent { 1, "rouge_jishiyu" }
 
 rule:addRelatedSkill(fk.CreateTriggerSkill {
   name = "#rougelike1v1_AfterCardsMove",
@@ -2461,8 +2460,18 @@ rule:addRelatedSkill(fk.CreateTriggerSkill {
     end
 
     if RougeUtil.hasTalent(player, "rouge_jishiyu") and not player.dead then
-      sendTalentLog(player, "rouge_jishiyu")
-      player:drawCards(2, "rouge_jishiyu")
+      if not player:isKongcheng() or player.phase ~= Player.NotActive then return end
+      for _, move in ipairs(data) do
+        if move.from == player.id then
+          for _, info in ipairs(move.moveInfo) do
+            if info.fromArea == Card.PlayerHand then
+              sendTalentLog(player, "rouge_jishiyu")
+              player:drawCards(2, "rouge_jishiyu")
+            end
+          end
+        end
+      end
+ 
     end
   end
 })
