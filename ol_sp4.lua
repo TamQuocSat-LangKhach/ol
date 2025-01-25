@@ -3368,7 +3368,7 @@ Fk:loadTranslationTable{
 Fk:loadTranslationTable{
   ["jiaoyu"] = "椒遇",
   [":jiaoyu"] = "锁定技，每轮开始时，你判定X次（X为你空置装备栏数），然后声明一种颜色并获得弃牌堆里此颜色的判定牌。"..
-  "你的下回合结束时，你获得一个额外出牌阶段，此阶段内其他角色不能使用与你装备区内牌颜色相同的牌直到其受到伤害后。",
+  "你的下个回合的结束阶段结束时，你获得一个额外出牌阶段，此阶段内其他角色不能使用与你装备区内牌颜色相同的牌直到其受到伤害后。",
   ["@jiaoyu-round"] = "椒遇",
   ["#jiaoyu-choice"] = "椒遇：选择获得一种颜色的判定牌",
 }
@@ -3614,7 +3614,7 @@ liuzhang:addSkill(fengwei)
 liuzhang:addSkill(zonghu)
 Fk:loadTranslationTable{
   ["ol__liuzhang"] = "刘璋",
-  ["#ol__liuzhang"] = "",
+  --["#ol__liuzhang"] = "",
 }
 Fk:loadTranslationTable{
   ["fengwei"] = "丰蔚",
@@ -3776,7 +3776,7 @@ liubei:addSkill(zhujiu)
 liubei:addSkill(jinglei)
 Fk:loadTranslationTable{
   ["ol_sp__liubei"] = "刘备",
-  ["#ol_sp__liubei"] = "",
+  --["#ol_sp__liubei"] = "",
 }
 Fk:loadTranslationTable{
   ["xudai"] = "虚待",
@@ -3873,7 +3873,7 @@ yuanhuan:addSkill(deru)
 yuanhuan:addSkill(linjie)
 Fk:loadTranslationTable{
   ["ol__yuanhuan"] = "袁涣",
-  ["#ol__yuanhuan"] = "",
+  --["#ol__yuanhuan"] = "",
 
   ["deru"] = "德辱",
   [":deru"] = "出牌阶段限一次，你可以猜测一名其他角色手牌中的基本牌牌名，若你：有猜对，你回复1点体力；有猜错，随机获得其一张基本牌；全猜对，"..
@@ -3956,7 +3956,7 @@ Fk:addSkill(jiawei_viewas)
 yangfeng:addSkill(jiawei)
 Fk:loadTranslationTable{
   ["ol__yangfeng"] = "杨奉",
-  ["#ol__yangfeng"] = "",
+  --["#ol__yangfeng"] = "",
 
   ["jiawei"] = "假威",
   [":jiawei"] = "【杀】被抵消的回合结束时，你可以将任意张手牌当【决斗】对本回合抵消过【杀】的一名角色使用。每轮限一次，若此【决斗】造成伤害，"..
@@ -3964,6 +3964,145 @@ Fk:loadTranslationTable{
   ["jiawei_viewas"] = "假威",
   ["#jiawei-use"] = "假威：你可以将任意张手牌当【决斗】对其中一名角色使用",
   ["#jiawei-choose"] = "假威：你可以令一名角色将手牌摸至手牌上限",
+}
+
+local hanshiwuhu = General(extension, "hanshiwuhu", "wei", 5)
+
+Fk:loadTranslationTable{
+  ["hanshiwuhu"] = "韩氏五虎",
+  --["#hanshiwuhu"] = "",
+  ["~hanshiwuhu"] = "",
+}
+
+local juejue = fk.CreateTriggerSkill{
+  name = "juejueh",
+  anim_type = "offensive",
+  frequency = Skill.Compulsory,
+  events = {fk.CardUsing, fk.CardUseFinished},
+  can_trigger = function(self, event, target, player, data)
+    if not player:hasSkill(self) then return false end
+    if event == fk.CardUsing then
+      return player == target and table.contains({"slash", "jink", "peach", "analeptic"}, data.card.trueName) and
+        not table.contains(player:getTableMark("juejueh_used"), data.card.trueName)
+    else
+      return data.extra_data and data.extra_data.juejueh and table.contains(data.extra_data.juejueh, player.id) and
+        U.hasFullRealCard(player.room, data.card)
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    if event == fk.CardUsing then
+      player.room:addTableMark(player, "juejueh_used", data.card.trueName)
+      data.additionalRecover = (data.additionalRecover or 0) + 1
+      data.additionalDamage = (data.additionalDamage or 0) + 1
+      if not data.extraUse then
+        player:addCardUseHistory(data.card.trueName, -1)
+        data.extraUse = true
+      end
+      data.extra_data = data.extra_data or {}
+      data.extra_data.juejueh = data.extra_data.juejueh or {}
+      table.insert(data.extra_data.juejueh, player.id)
+    else
+      player.room:obtainCard(player, data.card, true, fk.ReasonJustMove, player.id, self.name)
+    end
+  end,
+
+  on_lose = function (self, player)
+    player.room:setPlayerMark(player, "juejueh_used", 0)
+  end,
+}
+
+hanshiwuhu:addSkill(juejue)
+
+Fk:loadTranslationTable{
+  ["juejueh"] = "玨玨",
+  [":juejueh"] = "锁定技，当你使用【杀】、【闪】、【桃】或【酒】时（每种牌名限一次），你令此牌的伤害值基数及回复值基数+1且不计次数，"..
+    "此牌结算结束后，你获得之。",
+}
+
+local pimi = fk.CreateTriggerSkill{
+  name = "pimi",
+  anim_type = "offensive",
+  events = {fk.TargetSpecified, fk.TargetConfirmed, fk.CardUseFinished},
+  can_trigger = function(self, event, target, player, data)
+    if not player:hasSkill(self) then return false end
+    if event == fk.CardUseFinished then
+      if data.extra_data and data.extra_data.pimi and table.contains(data.extra_data.pimi, player.id) then
+        local room = player.room
+        local from = room:getPlayerById(data.from)
+        if from.dead then return false end
+        local isbig, issmall = true, true
+        local x, y = from:getHandcardNum()
+        for _, p in ipairs(room.alive_players) do
+          y = p:getHandcardNum()
+          if y > x then
+            isbig = false
+          elseif y < x then
+            issmall = false
+          end
+        end
+        return isbig or issmall
+      end
+    else
+      if player ~= target then return false end
+      local room = player.room
+      if not U.isOnlyTarget(room:getPlayerById(data.to), data, event) then return false end
+      if event == fk.TargetSpecified then
+        return player.id ~= data.to and not player:isNude()
+      elseif player.id ~= data.from then
+        local from = room:getPlayerById(data.from)
+        return not (from.dead or from:isNude())
+      end
+    end
+  end,
+  on_cost = function(self, event, target, player, data)
+    if event == fk.TargetSpecified then
+      local cards = player.room:askForDiscard(player, 1, 1, true, self.name, true, ".",
+      "#pimi-invoke::" .. data.from .. ":" .. data.card:toLogString(), true)
+      if #cards > 0 then
+        self.cost_data = { tos = { data.to }, cards = cards }
+        return true
+      end
+    elseif event == fk.TargetConfirmed then
+      if player.room:askForSkillInvoke(player, self.name, nil,
+      "#pimi-invoke::" .. data.from .. ":" .. data.card:toLogString()) then
+        self.cost_data = { tos = { data.from } }
+        return true
+      end
+    else
+      self.cost_data = {}
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    if event == fk.CardUseFinished then
+      room:drawCards(player, 1, self.name)
+      if player.dead then return false end
+      room:invalidateSkill(player, self.name, "-turn")
+    else
+      if event == fk.TargetSpecified then
+        room:throwCard(self.cost_data.cards, self.name, player, player)
+      else
+        local to = room:getPlayerById(data.from)
+        room:throwCard(room:askForCardChosen(player, to, "he", self.name), self.name, to, player)
+      end
+      data.additionalRecover = (data.additionalRecover or 0) + 1
+      data.additionalDamage = (data.additionalDamage or 0) + 1
+      data.extra_data = data.extra_data or {}
+      data.extra_data.pimi = data.extra_data.pimi or {}
+      table.insert(data.extra_data.pimi, player.id)
+    end
+  end,
+}
+
+hanshiwuhu:addSkill(pimi)
+
+Fk:loadTranslationTable{
+  ["pimi"] = "披靡",
+  [":pimi"] = "当你使用的牌指定其他角色为唯一目标后，或当你成为其他角色使用的牌的唯一目标后，你可以弃置使用者的一张牌，"..
+    "令此牌的伤害值基数及回复值基数+1，此牌结算结束后，若使用者为手牌数最大或最小的角色，你摸一张牌，此技能于当前回合内无效。",
+
+  ["#pimi-invoke"] = "是否发动 披靡，弃置 %dest 的一张牌，令%arg的伤害、回复+1",
 }
 
 return extension
