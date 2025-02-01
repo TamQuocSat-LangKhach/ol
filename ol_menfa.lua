@@ -3272,10 +3272,10 @@ local chengqi = fk.CreateViewAsSkill{
   name = "chengqi",
   prompt = "#chengqi-viewas",
   pattern = ".",
-  interaction = function()
-    local mark = Self:getTableMark("chengqi-turn")
+  interaction = function(self, player)
+    local mark = player:getTableMark("chengqi-turn")
     local all_names = U.getAllCardNames("bt")
-    local names = table.filter(U.getViewAsCardNames(Self, "chengqi", all_names), function (name)
+    local names = table.filter(U.getViewAsCardNames(player, "chengqi", all_names), function (name)
       local card = Fk:cloneCard(name)
       return not table.contains(mark, card.trueName)
     end)
@@ -3313,7 +3313,7 @@ local chengqi = fk.CreateViewAsSkill{
     return true
   end,
   enabled_at_response = function(self, player, response)
-    if response or player:getHandcardNum() < 2 then return false end
+    if response or #player:getHandlyIds() < 2 then return false end
     local mark = player:getTableMark("chengqi-turn")
     return #table.filter(U.getViewAsCardNames(player, self.name, U.getAllCardNames("bt")), function (name)
       return not table.contains(mark, Fk:cloneCard(name).trueName)
