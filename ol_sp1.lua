@@ -1082,11 +1082,7 @@ local jici = fk.CreateTriggerSkill{
     end
   end,
   on_use = function(self, event, target, player, data)
-    if player == data.from then
-      data.fromCard.number = math.min(13, data.fromCard.number + player:getMark("@raoshe"))
-    elseif data.results[player.id] then
-      data.results[player.id].toCard.number = math.min(13, data.results[player.id].toCard.number + player:getMark("@raoshe"))
-    end
+    player.room:changePindianNumber(data, player, player:getMark("@raoshe"), self.name)
     if player.phase == Player.Play then
       player:setSkillUseHistory("gushe", 0, Player.HistoryPhase)
     end

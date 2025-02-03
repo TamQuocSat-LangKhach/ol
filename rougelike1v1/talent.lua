@@ -2599,53 +2599,10 @@ rule:addRelatedSkill(fk.CreateTriggerSkill {
   on_use = function(self, event, target, player, data)
     local room = player.room
     if hasTalent(player, "rouge_dushu1") then
-      if player == data.from then
-        data.fromCard.number = math.min(data.fromCard.number + 3,13) 
-        local card2 = room:printCard(data.fromCard.name, data.fromCard.suit, data.fromCard.number)
-        sendTalentLog(player, "rouge_dushu1")
-        room:sendLog {
-          type = "#ShowPindianCardNum",
-          from = player.id,
-          card = { card2.id },
-          arg = card2.number,
-        }
-      elseif data.results[player.id] then
-        data.results[player.id].toCard.number = math.min(data.results[player.id].toCard.number + 3,13)
-        local card2 = room:printCard(data.results[player.id].toCard.name, data.results[player.id].toCard.suit,
-          data.results[player.id].toCard.number)
-        sendTalentLog(player, "rouge_dushu1")
-        room:sendLog {
-          type = "#ShowPindianCardNum",
-          from = player.id,
-          card = { card2.id },
-          arg = card2.number,
-        }
-      end
+      room:changePindianNumber(data, player, 3, "rouge_dushu1")
     end
-
     if hasTalent(player, "rouge_dushu2") then
-      if player == data.from then
-        data.fromCard.number = math.min(data.fromCard.number + 6,13) 
-        local card2 = room:printCard(data.fromCard.name, data.fromCard.suit, data.fromCard.number)
-        sendTalentLog(player, "rouge_dushu2")
-        room:sendLog {
-          type = "#ShowPindianCardNum",
-          from = player.id,
-          card = { card2.id },
-          arg = card2.number,
-        }
-      elseif data.results[player.id] then
-        data.results[player.id].toCard.number = math.min(data.results[player.id].toCard.number + 6,13)
-        local card2 = room:printCard(data.results[player.id].toCard.name, data.results[player.id].toCard.suit,
-          data.results[player.id].toCard.number)
-        sendTalentLog(player, "rouge_dushu2")
-        room:sendLog {
-          type = "#ShowPindianCardNum",
-          from = player.id,
-          card = { card2.id },
-          arg = card2.number,
-        }
-      end
+      room:changePindianNumber(data, player, 6, "rouge_dushu2")
     end
   end
 })
@@ -2658,7 +2615,6 @@ Fk:loadTranslationTable {
   ["rouge_qiangquhaoduo"] = "强取豪夺",
   [":rouge_qiangquhaoduo"] = "【顺手牵羊】时目标手牌可见",
   ["#rougelike1v1_PreEffect_Visibility"] = "战法：眼线/强夺豪取",
-  ["#ShowPindianCardNum"] = "%from展示了%card，点数为%arg",
   ["rouge_dushu1"] = "赌术Ⅰ",
   [":rouge_dushu1"] = "你的拼点牌点数+3（最大为K）",
   ["rouge_dushu2"] = "赌术Ⅱ",

@@ -22,6 +22,9 @@ local rougelike1v1 = fk.CreateGameMode{
     end
     return allCardIds, void
   end,
+  surrender_func = function (self, playedTime)
+    return { { text = "time limitation: 2 min", passed = playedTime >= 120 } }
+  end,
 }
 
 Fk:loadTranslationTable{
