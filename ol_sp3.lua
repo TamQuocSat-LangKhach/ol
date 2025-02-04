@@ -6087,7 +6087,7 @@ jiangwan:addSkill(ziruo)
 local xufaViewAs = fk.CreateViewAsSkill{
   name = "xufa_viewAs",
   interaction = function()
-    return UI.ComboBox { choices = Self:getTableMark("xufa_tricks") }
+    return U.CardNameBox { choices = Self:getTableMark("xufa_tricks") }
   end,
   handly_pile = true,
   card_filter = function(self, to_select, selected)
@@ -6106,6 +6106,15 @@ local xufa = fk.CreateActiveSkill{
   anim_type = "offensive",
   target_num = 0,
   expand_pile = "ol__jiangwan_xufa",
+  prompt = function (self, selected_cards, selected_targets)
+    local choice = self.interaction.data
+    if choice == "xufa_put" then
+      return "#xufa_put:::" .. self:getMinCardNum()
+    elseif choice == "xufa_remove" then
+      return "#xufa_remove:::" .. self:getMinCardNum()
+    end
+    return " "
+  end,
   min_card_num = function(self)
     if self.interaction.data == "xufa_put" then
       return math.max(math.ceil(#Self:getCardIds("h") / 2), 1)
@@ -6165,8 +6174,10 @@ local xufa = fk.CreateActiveSkill{
       local success, data = room:askForUseActiveSkill(player, "xufa_viewAs", "#xufa-use", true)
       room:setPlayerMark(player, "xufa_tricks", 0)
 
-      if success then
-        local card = Fk.skills["xufa_viewAs"]:viewAs(data.cards)
+      if success and data then
+        local card = Fk:cloneCard(data.interaction)
+        card:addSubcard(data.cards[1])
+        card.skillName = self.name
         room:useCard{
           from = player.id,
           tos = table.map(data.targets, function(id) return { id } end),
@@ -6186,6 +6197,8 @@ Fk:loadTranslationTable{
   ["xufa_remove"] = "移去蓄发",
   ["xufa_viewAs"] = "蓄发",
   ["#xufa-use"] = "蓄发：你可以将一张牌当其中一张普通锦囊牌使用",
+  ["#xufa_put"] = "将至少%arg张手牌置入“蓄发”，然后可将一张牌当“蓄发”中普通锦囊牌使用",
+  ["#xufa_remove"] = "移去至少%arg张“蓄发”，然后可将一张牌当移去牌中普通锦囊牌使用",
 
   ["$xufa1"] = "常言道，积善之家必有余庆。",
   ["$xufa2"] = "蓄势待发，一鸣惊天下。",
