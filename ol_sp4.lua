@@ -3777,22 +3777,29 @@ liubei:addSkill(jinglei)
 Fk:loadTranslationTable{
   ["ol_sp__liubei"] = "刘备",
   --["#ol_sp__liubei"] = "",
+  ["~ol_sp__liubei"] = "一介凡夫俗子，不识龙为何物。",
 }
 Fk:loadTranslationTable{
   ["xudai"] = "虚待",
   [":xudai"] = "限定技，当你使用或打出牌响应一张牌后或受到伤害后，你可以令一名其他角色获得〖煮酒〗。",
   ["#xudai-choose"] = "虚待：你可以令一名角色获得“煮酒”",
+  ["$xudai1"] = "曹公之邀，备莫敢辞。",
+  ["$xudai2"] = "孟德兄以礼相待，备岂有不应之理。",
 }
 Fk:loadTranslationTable{
   ["zhujiu"] = "煮酒",
   [":zhujiu"] = "你可以将至少X+1张牌当【酒】使用（X为你本回合使用【酒】次数），若不均为♣，此技能本回合失效。",
   ["#zhujiu"] = "煮酒：你可以将至少%arg张牌当【酒】使用，若不均为♣则本回合失效",
+  ["$zhujiu1"] = "当下青梅正好，可为佐酒之资。",
+  ["$zhujiu2"] = "枝头梅子青青，值煮酒正熟，不可不赏。",
 }
 Fk:loadTranslationTable{
   ["jinglei"] = "惊雷",
   [":jinglei"] = "每回合限一次，一名角色使用【酒】结算后，若没有处于濒死状态的角色，你可以受到1点无来源的雷电伤害，令一名拥有〖煮酒〗的角色"..
   "将手牌调整至体力上限（至多摸至五张），若不为你，其将以此法弃置的牌交给你。",
   ["#jinglei-choose"] = "惊雷：你可以受到1点雷电伤害，令一名有“煮酒”的角色将手牌调整至体力上限（至多摸至五）",
+  ["$jinglei1"] = "备得仕于朝，天下英雄实有未知。",
+  ["$jinglei2"] = "闻惊雷而颤，备肉眼安识英雄？",
 }
 
 local yuanhuan = General(extension, "ol__yuanhuan", "qun", 3)
@@ -4045,7 +4052,7 @@ local pimi = fk.CreateTriggerSkill{
     else
       if player ~= target then return false end
       local room = player.room
-      if not U.isOnlyTarget(room:getPlayerById(data.to), data, event) then return false end
+      if not U.isOnlyTarget(data.to, data, event) then return false end
       if event == fk.TargetSpecified then
         return player.id ~= data.to and not player:isNude()
       elseif player.id ~= data.from then
