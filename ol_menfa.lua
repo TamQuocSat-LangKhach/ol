@@ -203,7 +203,7 @@ local daojie = fk.CreateTriggerSkill{
       if #targets > 1 then
         targets = room:askForChoosePlayers(player, targets, 1, 1, "#daojie-choose:::"..data.card:toLogString(), self.name, false)
       end
-      room:obtainCard(targets[1], data.card, true, fk.ReasonPrey)
+      room:obtainCard(targets[1], data.card, true, fk.ReasonPrey, player.id, self.name)
     end
   end,
 }
@@ -1976,13 +1976,13 @@ local bolong = fk.CreateActiveSkill{
     if #target:getCardIds{Player.Hand, Player.Equip} >= n and n > 0 then
       local cards = room:askForCard(target, n, n, true, self.name, true, ".", "#bolong-card:"..player.id.."::"..n)
       if #cards == n then
-        room:obtainCard(player.id, cards, false, fk.ReasonGive)
+        room:obtainCard(player.id, cards, false, fk.ReasonGive, target.id, self.name)
         room:useVirtualCard("analeptic", nil, target, player, self.name)
         return
       end
     end
     local card = room:askForCard(player, 1, 1, true, self.name, false, ".", "#bolong-slash::"..target.id)
-    room:obtainCard(target.id, card[1], false, fk.ReasonGive)
+    room:obtainCard(target.id, card[1], false, fk.ReasonGive, player.id, self.name)
     room:useVirtualCard("thunder__slash", nil, player, target, self.name, true)
   end,
 }
@@ -3500,8 +3500,7 @@ local kaiji = fk.CreateActiveSkill{
       room:throwCard(card, self.name, player, target)
     end
     if not player.dead and card and table.contains(room.discard_pile, card) then
-      local use = U.askForUseRealCard(room, player, {card}, nil, self.name,
-        "#ol__kaiji-use", {bypass_times = true, extraUse = true, expand_pile = {card}}, false, true)
+      local use = room:askForUseRealCard(player, {card}, self.name, "#ol__kaiji-use", {bypass_times = true, extraUse = true, expand_pile = {card}})
       if use and not player.dead then
         player:drawCards(1, self.name)
       end
