@@ -81,11 +81,11 @@ local xiongzhi = fk.CreateActiveSkill{
     while not player.dead do
       local cards = room:getNCards(1)
       room:moveCardTo(cards, Card.Processing, nil, fk.ReasonJustMove, self.name, nil, true, player.id)
-      if not U.askForUseRealCard(room, player, cards, nil, self.name,
+      if not room:askForUseRealCard(player, cards, self.name,
         "#xiongzhi-use:::"..Fk:getCardById(cards[1]):toLogString(), {
           expand_pile = cards,
           bypass_times = false,
-          extraUse = false
+          extraUse = false,
         }) then
         room:moveCards({
           ids = cards,

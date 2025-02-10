@@ -65,7 +65,7 @@ local huiyun_trigger = fk.CreateTriggerSkill{
             end
           elseif choice == "huiyun1-round" then
             if table.contains(to:getCardIds("h"), cardId) then
-              local use = U.askForUseRealCard(room, to, {cardId}, ".", "huiyun", "#huiyun1-card:::"..name)
+              local use = room:askForUseRealCard(to, {cardId}, "huiyun", "#huiyun1-card:::"..name)
               if use then
                 room:delay(300)
                 if not to.dead and not to:isKongcheng() then
@@ -74,7 +74,7 @@ local huiyun_trigger = fk.CreateTriggerSkill{
               end
             end
           elseif choice == "huiyun2-round" then
-            local use = U.askForUseRealCard(room, to, to:getCardIds("h"), ".", "huiyun", "#huiyun2-card:::"..name)
+            local use = room:askForUseRealCard(to, to:getCardIds("h"), "huiyun", "#huiyun2-card:::"..name)
             if use then
               room:delay(300)
               if not to.dead and table.contains(to:getCardIds("h"), cardId) then
@@ -177,8 +177,12 @@ local xiaosi = fk.CreateActiveSkill{
         end
       end
       if #ids == 0 then return false end
-      local use = U.askForUseRealCard(room, player, ids, ".", self.name, "#xiaosi-use",
-      {expand_pile = ids, bypass_distances = true}, true)
+      local use = room:askForUseRealCard(player, ids, self.name, "#xiaosi-use", {
+        expand_pile = ids,
+        bypass_distances = true,
+        bypass_times = true,
+        extraUse = true,
+      }, true, true)
       if use then
         table.removeOne(cards, use.card:getEffectiveId())
         room:useCard(use)
@@ -2598,7 +2602,11 @@ local function DoSaogu(player, cards)
       end
     end
     if #ids == 0 then return end
-    local use = U.askForUseRealCard(room, player, ids, ".", "saogu", "#saogu-use", {expand_pile = ids}, true)
+    local use = room:askForUseRealCard(player, ids, "saogu", "#saogu-use", {
+      expand_pile = ids,
+      bypass_times = true,
+      extraUse = true,
+    }, true, true)
     if use then
       table.removeOne(cards, use.card:getEffectiveId())
       room:useCard(use)
@@ -5611,9 +5619,9 @@ local qingya = fk.CreateTriggerSkill{
     end
   end,
   on_use = function(self, event, target, player, data)
+    local room = player.room
     if event == fk.TargetSpecified then
       local tos = {}
-      local room = player.room
       if self.cost_data == "left" then
         local temp = room:getPlayerById(data.to).next
         while temp ~= player do
@@ -5648,8 +5656,11 @@ local qingya = fk.CreateTriggerSkill{
       end
       room:setPlayerMark(player, "qingya-turn", ids)
     else
-      U.askForUseRealCard(player.room, player, self.cost_data, ".", self.name, "#qingya-use",
-      {expand_pile = self.cost_data, bypass_times = true}, false, true)
+      room:askForUseRealCard(player, self.cost_data, self.name, "#qingya-use", {
+        expand_pile = self.cost_data,
+        bypass_times = true,
+        extraUse = true,
+      })
     end
   end,
 

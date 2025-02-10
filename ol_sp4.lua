@@ -876,8 +876,11 @@ local leiluan_trigger = fk.CreateTriggerSkill{
     local cards = table.filter(player:getMark("leiluan_cards"), function (id)
       return table.contains(names, Fk:getCardById(id).name)
     end)
-    local use = U.askForUseRealCard(room, player, cards, nil, "leiluan", "#leiluan-use",
-      {expand_pile = cards, bypass_times = true, extraUse = true}, true, true)
+    local use = room:askForUseRealCard(player, cards, "leiluan", "#leiluan-use", {
+      expand_pile = cards,
+      bypass_times = true,
+      extraUse = true,
+    }, true, true)
     if use then
       use = {
         card = Fk:cloneCard(use.card.name),
@@ -2808,8 +2811,7 @@ local xianying_delay = fk.CreateTriggerSkill{
     end
     room:setBanner("xianying", banner)
     while #cards > 0 and not player.dead do
-      local use = U.askForUseRealCard(room, player, cards, nil, "xianying", "#xianying-use",
-        {
+      local use = room:askForUseRealCard(player, cards, "xianying", "#xianying-use", {
           expand_pile = cards,
           bypass_times = true,
         }, true, true)

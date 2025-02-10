@@ -59,7 +59,11 @@ local zhuri = fk.CreateTriggerSkill{
           return not player:prohibitUse(card) and player:canUse(card, extra_data)
         end)
         if #ids == 0 then return false end
-        U.askForUseRealCard(room, player, ids, ".", self.name, "#zhuri-use", {expand_pile = ids})
+        room:askForUseRealCard(player, ids, self.name, "#zhuri-use", {
+          bypass_times = true,
+          extraUse = true,
+          expand_pile = ids,
+        })
       else
         local choice = room:askForChoice(player, {"loseHp", "lose_zhuri"}, self.name)
         if choice == "loseHp" then
@@ -768,8 +772,11 @@ local hongtu = fk.CreateTriggerSkill{
     player:showCards(ids)
     --不判位置了，展示牌后发动的技能还是去死好了
     local to = room:getPlayerById(tos[1])
-    local use = U.askForUseRealCard(room, to, ids, ".", self.name, "#hongtu-use",
-    {expand_pile = ids, bypass_times = true}, true, true)
+    local use = room:askForUseRealCard(to, ids, self.name, "#hongtu-use", {
+      bypass_times = true,
+      extraUse = true,
+      expand_pile = ids,
+    }, true, true)
     if use then
       table.sort(ids, function (a, b)
         return Fk:getCardById(a).number > Fk:getCardById(b).number
@@ -976,11 +983,12 @@ local liwen = fk.CreateTriggerSkill{
         if not p.dead then
           local use = nil
           if not p:isKongcheng() then
-            use = U.askForUseRealCard(room, p, p:getCardIds("h"), nil, self.name,
-              "#liwen-use:"..player.id, {bypass_times = true}, true, true)
+            use = room:askForUseRealCard(p, p:getCardIds("h"), self.name, "#liwen-use:"..player.id, {
+              bypass_times = true,
+              extraUse = true,
+            }, true, true)
           end
           if use then
-            use.extraUse = true
             room:useCard(use)
           else
             local n = p:getMark("@kongrong_virtuous")
