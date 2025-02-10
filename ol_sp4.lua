@@ -1579,10 +1579,10 @@ local xixiang = fk.CreateActiveSkill{
     return Self:getMark("xixiang-phase") + 1
   end,
   target_num = 1,
-  interaction = function(self)
+  interaction = function(self, player)
     local choices = {}
     for _, name in ipairs({"slash", "duel"}) do
-      if Self:getMark("xixiang_"..name.."-phase") == 0 then
+      if player:getMark("xixiang_"..name.."-phase") == 0 then
         table.insert(choices, name)
       end
     end
@@ -1801,7 +1801,7 @@ Fk:loadTranslationTable{
   ["#ol_sp__caocao"] = "踌躇的孤雁",
 
   ["xixiang"] = "西向",
-  [":xixiang"] = "出牌阶段各限一次，你可以将至少X张牌当【杀】或【决斗】对一名角色使用（无距离限制，X为所有角色本回合使用基本牌数+1）。"..
+  [":xixiang"] = "出牌阶段各限一次，你可以将至少X张牌当【杀】或【决斗】对一名角色使用（无距离次数限制，X为所有角色本回合使用基本牌数+1）。"..
   "此牌结算后，若其体力值：大于你的手牌数，你摸一张牌；大于你的体力值，你回复1点体力，然后获得其一张牌。",
   ["aige"] = "哀歌",
   [":aige"] = "觉醒技，一回合内第二次有角色进入濒死状态后，你失去〖西向〗，获得〖逐北〗，然后将手牌摸至X张，体力值回复至X点。（X为该角色体力上限）",
@@ -3558,15 +3558,14 @@ local fengwei = fk.CreateTriggerSkill{
 }
 local fengwei_delay = fk.CreateTriggerSkill{
   name = "#fengwei_delay",
-  anim_type = "negative",
-  frequency = Skill.Compulsory,
-  events = {fk.DamageInflicted},
-  can_trigger = function (self, event, target, player, data)
-    return target == player and table.find(player:getCardIds("h"), function (id)
+
+  refresh_events = {fk.DamageInflicted},
+  can_refresh = function (self, event, target, player, data)
+    return target == player and data.card and table.find(player:getCardIds("h"), function (id)
       return Fk:getCardById(id):getMark("@@fengwei-inhand-round") > 0
     end)
   end,
-  on_use = function (self, event, target, player, data)
+  on_refresh = function (self, event, target, player, data)
     data.damage = data.damage + 1
   end,
 }
@@ -3621,7 +3620,6 @@ Fk:loadTranslationTable{
   [":fengwei"] = "锁定技，每轮开始时，你摸至多四张牌；当你手牌中有本轮以此法获得的牌时，你受到牌造成的伤害+1。",
   ["#fengwei-choice"] = "丰蔚：摸至多四张牌，本轮手牌中有这些牌时受到伤害+1",
   ["@@fengwei-inhand-round"] = "丰蔚",
-  ["#fengwei_delay"] = "丰蔚",
 }
 Fk:loadTranslationTable{
   ["zonghu"] = "宗护",
