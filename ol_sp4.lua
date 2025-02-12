@@ -3105,7 +3105,7 @@ local siqi = fk.CreateTriggerSkill{
       local card
       local to_show = {}
       local cards = {}
-      for i = 1, math.min(4, x), 1 do
+      for i = 1, math.min(3, x), 1 do
         id = dp_cards[x+1-i]
         card = Fk:getCardById(id, true)
         if card.color == Card.Red then
@@ -3155,7 +3155,7 @@ local siqi = fk.CreateTriggerSkill{
 Fk:loadTranslationTable{
   ["siqi"] = "思泣",
   [":siqi"] = "当你的牌移至弃牌堆后，你将其中的红色牌置于牌堆底。"..
-    "当你受到伤害后，你可以亮出牌堆底的X张牌（X为从牌堆底开始连续的红色牌数且至多为4），"..
+    "当你受到伤害后，你可以亮出牌堆底的X张牌（X为从牌堆底开始连续的红色牌数且至多为3），"..
     "依次可以使用其中的所有【桃】、【无中生有】和装备牌（可以对其他角色使用），然后摸等同于其他牌数的牌。",
 
   ["siqi_active"] = "思泣",

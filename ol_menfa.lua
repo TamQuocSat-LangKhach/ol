@@ -3651,7 +3651,7 @@ local gaobian = fk.CreateTriggerSkill{
       bypass_times = true,
       extraUse = true,
       expand_pile = cards,
-    }, true, true) then
+    }) then
       room:loseHp(to, 1, self.name)
     end
   end,
