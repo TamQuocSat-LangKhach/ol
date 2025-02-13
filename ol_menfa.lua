@@ -3343,6 +3343,20 @@ local chengqi = fk.CreateViewAsSkill{
       return not table.contains(mark, Fk:cloneCard(name).trueName)
     end) > 0
   end,
+  on_acquire = function (self, player, is_start)
+    local mark = {}
+    local turn_event = player.room.logic:getCurrentEvent():findParent(GameEvent.Turn)
+    if turn_event == nil then return end
+    local use
+    player.room.logic:getEventsByRule(GameEvent.UseCard, 1, function (e)
+      use = e.data[1]
+      if use.from == player.id then
+        table.insertIfNeed(mark, use.card.trueName)
+      end
+      return false
+    end, turn_event.id)
+    player.room:setPlayerMark(player, "chengqi-turn", mark)
+  end,
 }
 local chengqi_trigger = fk.CreateTriggerSkill{
   name = "#chengqi_trigger",
@@ -3361,32 +3375,12 @@ local chengqi_trigger = fk.CreateTriggerSkill{
     end
   end,
 
-  refresh_events = {fk.AfterCardUseDeclared, fk.EventAcquireSkill},
+  refresh_events = {fk.AfterCardUseDeclared},
   can_refresh = function(self, event, target, player, data)
-    if event == fk.AfterCardUseDeclared then
-      return target == player and player:hasSkill(chengqi, true)
-    else
-      return target == player and data == chengqi
-    end
+    return target == player and player:hasSkill(chengqi, true)
   end,
   on_refresh = function(self, event, target, player, data)
-    local room = player.room
-    if event == fk.AfterCardUseDeclared then
-      room:addTableMarkIfNeed(player, "chengqi-turn", data.card.trueName)
-    else
-      local mark = {}
-      local turn_event = room.logic:getCurrentEvent():findParent(GameEvent.Turn)
-      if turn_event == nil then return false end
-      local use
-      room.logic:getEventsByRule(GameEvent.UseCard, 1, function (e)
-        use = e.data[1]
-        if use.from == player.id then
-          table.insertIfNeed(mark, use.card.trueName)
-        end
-        return false
-      end, turn_event.id)
-      room:setPlayerMark(player, "chengqi-turn", mark)
-    end
+    player.room:addTableMarkIfNeed(player, "chengqi-turn", data.card.trueName)
   end,
 }
 local jieli = fk.CreateTriggerSkill{
