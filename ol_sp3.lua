@@ -4421,8 +4421,13 @@ local gongjie = fk.CreateTriggerSkill{
     local x = math.min(#player:getCardIds("he"), #targets)
     local tos = room:askForChoosePlayers(player, targets, 1, x, "#gongjie-choose:::" .. tostring(x), self.name, true)
     if #tos > 0 then
-      room:sortPlayersByAction(tos)
-      self.cost_data = {tos = tos}
+      local new_tos = {}
+      for _, p in ipairs(room:getOtherPlayers(player, false)) do
+        if table.contains(tos, p.id) then
+          table.insert(new_tos, p.id)
+        end
+      end
+      self.cost_data = {tos = new_tos}
       return true
     end
   end,

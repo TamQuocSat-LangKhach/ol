@@ -1512,7 +1512,7 @@ local bojue = fk.CreateActiveSkill{
         local card = room:askForCardChosen(target, player, "he", self.name, "#bojue-discard::"..player.id)
         room:throwCard(card, self.name, player, target)
       end
-    elseif n == 2 then
+    elseif math.abs(n) == 2 then
       if not player.dead and not target.dead then
         room:useVirtualCard("slash", nil, player, target, self.name, true)
       end
@@ -2989,6 +2989,7 @@ Fk:loadTranslationTable{
   ["#choulie-slash"] = "仇猎：是否弃置一张牌，视为对 %dest 使用一张【杀】？",
   ["#choulie_trigger"] = "仇猎",
   ["#choulie-discard"] = "仇猎：是否弃置一张基本牌或武器牌，令此【杀】对你无效？",
+  ["#zhuijiao_delay"] = "追剿",
 
   ["$choulie1"] = "匹夫欺我太甚！此仇不死不休！",
   ["$choulie2"] = "唯有那曹操项上人头，方能解我心头之恨！",

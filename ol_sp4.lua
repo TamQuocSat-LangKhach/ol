@@ -139,20 +139,30 @@ local kouchao = fk.CreateViewAsSkill{
   name = "kouchao",
   prompt = "#kouchao-viewas",
   pattern = ".",
-  interaction = function()
-    local all_names = Self:getTableMark("@$kouchao")
+  dynamic_desc = function (self, player)
+    if player:getMark("kouchao") == 0 then
+      return "kouchao"
+    else
+      local name1 = player:getTableMark("kouchao")[1] or "slash"
+      local name2 = player:getTableMark("kouchao")[2] or "fire_attack"
+      local name3 = player:getTableMark("kouchao")[3] or "dismantlement"
+      return "kouchao_inner:"..name1..":"..name2..":"..name3
+    end
+  end,
+  interaction = function(self, player)
+    local all_names = player:getTableMark("kouchao") or {"slash", "fire_attack", "dismantlement"}
     local names = {}
     for i = 1, 3, 1 do
       local card_name = all_names[i]
       all_names[i] = "kouchao_index:::"..i..":"..card_name
-      if Self:getMark("kouchao"..i.."-round") == 0 then
+      if player:getMark("kouchao"..i.."-round") == 0 then
         if Fk.currentResponsePattern == nil or Exppattern:Parse(Fk.currentResponsePattern):match(Fk:cloneCard(card_name)) then
           table.insert(names, all_names[i])
         end
       end
     end
     if #names > 0 then
-      return U.CardNameBox { choices = names, all_choices = all_names }
+      return UI.ComboBox { choices = names, all_choices = all_names }
     end
   end,
   handly_pile = true,
@@ -186,19 +196,19 @@ local kouchao = fk.CreateViewAsSkill{
       end
     end, 0)
     if name ~= "" then
-      local mark = player:getTableMark("@$kouchao")
+      local mark = player:getTableMark("kouchao")
       mark[tonumber(string.split(self.interaction.data, ":")[4])] = name
       if table.every(mark, function(str)
         return Fk:cloneCard(str).type == Card.TypeBasic
       end) then
         mark = {"snatch", "snatch", "snatch"}
       end
-      room:setPlayerMark(player, "@$kouchao", mark)
+      room:setPlayerMark(player, "kouchao", mark)
     end
   end,
   enabled_at_response = function(self, player, resp)
     if not resp and not player:isNude() and Fk.currentResponsePattern then
-      local mark = Self:getTableMark("@$kouchao")
+      local mark = Self:getTableMark("kouchao")
       for i = 1, 3, 1 do
         if player:getMark("kouchao"..i.."-round") == 0 then
           if Exppattern:Parse(Fk.currentResponsePattern):match(Fk:cloneCard(mark[i])) then
@@ -214,14 +224,14 @@ local kouchao = fk.CreateViewAsSkill{
     room:setPlayerMark(player, "kouchao1", "slash")
     room:setPlayerMark(player, "kouchao2", "fire_attack")
     room:setPlayerMark(player, "kouchao3", "dismantlement")
-    room:setPlayerMark(player, "@$kouchao", {"slash", "fire_attack", "dismantlement"})
+    room:setPlayerMark(player, "kouchao", {"slash", "fire_attack", "dismantlement"})
   end,
   on_lose = function (self, player, is_death)
     local room = player.room
     room:setPlayerMark(player, "kouchao1", 0)
     room:setPlayerMark(player, "kouchao2", 0)
     room:setPlayerMark(player, "kouchao3", 0)
-    room:setPlayerMark(player, "@$kouchao", 0)
+    room:setPlayerMark(player, "kouchao", 0)
   end,
 }
 budugen:addSkill(kouchao)
@@ -232,8 +242,9 @@ Fk:loadTranslationTable{
   ["kouchao"] = "寇钞",
   [":kouchao"] = "每轮每项限一次，你可以将一张牌当【杀】/【火攻】/【过河拆桥】使用，然后将此项改为最后不因使用而置入弃牌堆的基本牌或普通锦囊牌，" ..
   "然后若所有项均为基本牌，将所有项改为【顺手牵羊】。",
+  [":kouchao_inner"] = "每轮每项限一次，你可以将一张牌当【{1}】/【{2}】/【{3}】使用，然后将此项改为最后不因使用而置入弃牌堆的基本牌或普通锦囊牌，" ..
+  "然后若所有项均为基本牌，将所有项改为【顺手牵羊】。",
   ["#kouchao-viewas"] = "寇钞：将一张牌当一种“寇钞”牌使用，每轮每项限一次",
-  ["@$kouchao"] = "寇钞",
   ["kouchao_index"] = "[%arg] "..Fk:translate("%arg2"),
 
   ["~budugen"] = "",
@@ -1457,6 +1468,17 @@ local bianyu = fk.CreateTriggerSkill{
     player:filterHandcards()
   end,
 }
+local bianyu_trigger = fk.CreateTriggerSkill{
+  name = "#bianyu_trigger",
+
+  refresh_events = {fk.PreCardUse},
+  can_refresh = function (self, event, target, player, data)
+    return target == player and data.card:getMark("@@bianyu-inhand") > 0
+  end,
+  on_refresh = function (self, event, target, player, data)
+    data.extraUse = true
+  end,
+}
 local bianyu_filter = fk.CreateFilterSkill{
   name = "#bianyu_filter",
   card_filter = function(self, card, player)
@@ -1539,6 +1561,7 @@ local fengyao = fk.CreateTriggerSkill{
 }
 jiaoweid:addRelatedSkill(jiaoweid_maxcards)
 jiaoweid:addRelatedSkill(jiaoweid_targetmod)
+bianyu:addRelatedSkill(bianyu_trigger)
 bianyu:addRelatedSkill(bianyu_filter)
 bianyu:addRelatedSkill(bianyu_targetmod)
 dongxie:addSkill(jiaoweid)
@@ -1547,7 +1570,6 @@ dongxie:addSkill(fengyao)
 Fk:loadTranslationTable{
   ["ol__dongxie"] = "董翓",
   ["#ol__dongxie"] = "魔女",
-  --["designer:ol__dongxie"] = "",
 
   ["jiaoweid"] = "狡威",
   [":jiaoweid"] = "锁定技，你的黑色牌不计入手牌上限。若你的手牌数大于体力值，你对体力值不大于你的角色使用黑色牌无距离限制且不能被这些角色响应。",
@@ -1700,43 +1722,51 @@ local zhubei = fk.CreateActiveSkill{
   on_use = function(self, room, effect)
     local player = room:getPlayerById(effect.from)
     local target = room:getPlayerById(effect.tos[1])
-    local choices = {}
-    for _, name in ipairs({"slash", "duel"}) do
-      if player:getMark("zhubei_"..name.."-phase") == 0 then
-        table.insert(choices, name)
+    local yes = false
+    if #target:getHandlyIds() + #target:getCardIds("e") >=  player:getMark("zhubei-phase") then
+      local choices = {}
+      for _, name in ipairs({"slash", "duel"}) do
+        if player:getMark("zhubei_"..name.."-phase") == 0 then
+          table.insert(choices, name)
+        end
       end
+      room:setPlayerMark(target, "zhubei-tmp", {player:getMark("zhubei-phase"), choices})
+      local success, dat = room:askForUseActiveSkill(target, "zhubei_active", "#zhubei-use:"..player.id, false)
+      room:setPlayerMark(target, "zhubei-tmp", 0)
+      if success and dat then
+        room:setPlayerMark(player, "zhubei_"..dat.interaction.."-phase", 1)
+        local card = Fk:cloneCard(dat.interaction)
+        card:addSubcards(dat.cards)
+        card.skillName = self.name
+        local use = {
+          from = target.id,
+          tos = {{player.id}},
+          card = card,
+          extraUse = true,
+          extra_data = {
+            zhubei = player.id
+          },
+        }
+        room:useCard(use)
+        if not (use.damageDealt and use.damageDealt[player.id]) then
+          yes = true
+        end
+      end
+    else
+      yes = true
     end
-    room:setPlayerMark(target, "zhubei-tmp", {player:getMark("zhubei-phase"), choices})
-    local success, dat = room:askForUseActiveSkill(target, "zhubei_active", "#zhubei-use:"..player.id, false)
-    room:setPlayerMark(target, "zhubei-tmp", 0)
-    if success and dat then
-      room:setPlayerMark(player, "zhubei_"..dat.interaction.."-phase", 1)
-      local card = Fk:cloneCard(dat.interaction)
-      card:addSubcards(dat.cards)
-      card.skillName = self.name
-      local use = {
-        from = target.id,
-        tos = {{player.id}},
-        card = card,
-        extraUse = true,
-        extra_data = {
-          zhubei = player.id
-        },
-      }
-      room:useCard(use)
-      if not (use.damageDealt and use.damageDealt[player.id]) then
-        if player:isWounded() and not player.dead then
-          room:recover{
-            who = player,
-            num = 1,
-            recoverBy = player,
-            skillName = self.name,
-          }
-        end
-        if not player.dead and not target.dead and not (player:isKongcheng() and target:isKongcheng()) and
-          room:askForSkillInvoke(player, self.name, nil, "#zhubei-swap::"..target.id) then
-          U.swapHandCards(room, player, player, target, self.name)
-        end
+    if yes then
+      if player:isWounded() and not player.dead then
+        room:recover{
+          who = player,
+          num = 1,
+          recoverBy = player,
+          skillName = self.name,
+        }
+      end
+      if not player.dead and not target.dead and not (player:isKongcheng() and target:isKongcheng()) and
+        room:askForSkillInvoke(player, self.name, nil, "#zhubei-swap::"..target.id) then
+        U.swapHandCards(room, player, player, target, self.name)
       end
     end
   end,
@@ -3679,7 +3709,7 @@ local zhujiu = fk.CreateViewAsSkill{
     return #selected < Self:getMark("zhujiu-turn") + 1
   end,
   view_as = function(self, cards)
-    if #cards ~= Self:getMark("zhujiu-turn") + 1 then return end
+    if #cards < Self:getMark("zhujiu-turn") + 1 then return end
     local card = Fk:cloneCard("analeptic")
     card:addSubcards(cards)
     card.skillName = self.name
@@ -3776,7 +3806,7 @@ liubei:addSkill(zhujiu)
 liubei:addSkill(jinglei)
 Fk:loadTranslationTable{
   ["ol_sp__liubei"] = "刘备",
-  --["#ol_sp__liubei"] = "",
+  ["#ol_sp__liubei"] = "潜龙勿用",
   ["~ol_sp__liubei"] = "一介凡夫俗子，不识龙为何物。",
 }
 Fk:loadTranslationTable{
