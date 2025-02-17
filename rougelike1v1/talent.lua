@@ -1563,9 +1563,9 @@ rule:addRelatedSkill(fk.CreateTriggerSkill {
 })
 
 RougeUtil:addBuffTalent { 3, "rouge_zuiquan" }
-RougeUtil:addBuffTalent { 2, "rouge_shuangren1" }
-RougeUtil:addBuffTalent { 3, "rouge_shuangren2" }
-RougeUtil:addBuffTalent { 3, "rouge_hengjiangsuo" }
+-- RougeUtil:addBuffTalent { 2, "rouge_shuangren1" }
+-- RougeUtil:addBuffTalent { 3, "rouge_shuangren2" }
+-- RougeUtil:addBuffTalent { 3, "rouge_hengjiangsuo" }
 rule:addRelatedSkill(fk.CreateTriggerSkill {
   name = "#rougelike1v1_AfterCardTargetDeclared",
   events = { fk.AfterCardTargetDeclared },
