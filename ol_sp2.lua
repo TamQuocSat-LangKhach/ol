@@ -1835,8 +1835,11 @@ local chuiti = fk.CreateTriggerSkill{
   on_cost = function(self, event, target, player, data)
     local room = player.room
     local ids = table.simpleClone(self.cost_data)
-    local use = U.askForUseRealCard(room, player, ids, ".", self.name, "#chuiti-invoke",
-    { expand_pile = ids, bypass_times = false, extraUse = false }, true)
+    local use = room:askForUseRealCard(player, ids, self.name, "#chuiti-invoke", {
+      expand_pile = ids,
+      bypass_times = false,
+      extraUse = false,
+    }, true, true)
     if use then
       self.cost_data = use
       return true

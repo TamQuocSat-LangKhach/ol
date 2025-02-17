@@ -203,7 +203,7 @@ local daojie = fk.CreateTriggerSkill{
       if #targets > 1 then
         targets = room:askForChoosePlayers(player, targets, 1, 1, "#daojie-choose:::"..data.card:toLogString(), self.name, false)
       end
-      room:obtainCard(targets[1], data.card, true, fk.ReasonPrey)
+      room:obtainCard(targets[1], data.card, true, fk.ReasonPrey, player.id, self.name)
     end
   end,
 }
@@ -1130,7 +1130,7 @@ local liuju = fk.CreateTriggerSkill{
           not loser:prohibitUse(card) and loser:canUse(card, extra_data)
       end)
       if #to_use == 0 then break end
-      local use = U.askForUseRealCard(room, loser, to_use, ".", self.name, "#liuju-use", {expand_pile = to_use}, true)
+      local use = room:askForUseRealCard(loser, to_use, self.name, "#liuju-use", {expand_pile = to_use}, true, true)
       if use == nil then break end
       table.removeOne(ids, use.card:getEffectiveId())
       room:useCard(use)
@@ -1347,7 +1347,11 @@ local huanjia = fk.CreateTriggerSkill{
         not winner:prohibitUse(card) and winner:canUse(card, { bypass_times = true })
     end)
     if #to_use == 0 then return false end
-    local use = U.askForUseRealCard(room, winner, to_use, ".", self.name, "#huanjia-use:" .. player.id, {expand_pile = to_use}, true)
+    local use = room:askForUseRealCard(winner, to_use, self.name, "#huanjia-use:" .. player.id, {
+      bypass_times = true,
+      extraUse = true,
+      expand_pile = to_use,
+    }, true, true)
     if use then
       table.removeOne(ids, use.card:getEffectiveId())
       use.extra_data = { huanjia_source = player.id, huanjia_ids = ids }
@@ -1792,7 +1796,11 @@ local mingjiew_delay = fk.CreateTriggerSkill{
           return room:getCardArea(id) == Card.DiscardPile and player:canUse(card) and not player:prohibitUse(card)
         end)
         if #to_use == 0 then break end
-        local use = U.askForUseRealCard(room, player, to_use, ".", self.name, "#mingjiew-use", {expand_pile = to_use}, true)
+        local use = room:askForUseRealCard(player, to_use, self.name, "#mingjiew-use", {
+          bypass_times = true,
+          extraUse = true,
+          expand_pile = to_use,
+        }, true, true)
         if use then
           table.removeOne(ids, use.card:getEffectiveId())
           room:useCard(use)
@@ -1976,13 +1984,13 @@ local bolong = fk.CreateActiveSkill{
     if #target:getCardIds{Player.Hand, Player.Equip} >= n and n > 0 then
       local cards = room:askForCard(target, n, n, true, self.name, true, ".", "#bolong-card:"..player.id.."::"..n)
       if #cards == n then
-        room:obtainCard(player.id, cards, false, fk.ReasonGive)
+        room:obtainCard(player.id, cards, false, fk.ReasonGive, target.id, self.name)
         room:useVirtualCard("analeptic", nil, target, player, self.name)
         return
       end
     end
     local card = room:askForCard(player, 1, 1, true, self.name, false, ".", "#bolong-slash::"..target.id)
-    room:obtainCard(target.id, card[1], false, fk.ReasonGive)
+    room:obtainCard(target.id, card[1], false, fk.ReasonGive, player.id, self.name)
     room:useVirtualCard("thunder__slash", nil, player, target, self.name, true)
   end,
 }
@@ -2281,10 +2289,22 @@ Fk:loadTranslationTable{
 
   ["$yuzhi1"] = "我欲行夏禹旧事，为天下人。",
   ["$yuzhi2"] = "汉鹿已失，魏牛犹在，吾欲执其耳。",
+  ["$yuzhi3"] = "风水轮流转，轮到我钟某问鼎重几何了。",
+  ["$yuzhi4"] = "空将宝地赠他人，某怎会心甘情愿？",
+  ["$yuzhi5"] = "入宝山而空手回，其与匹夫何异？",
+  ["$yuzhi6"] = "天降大任于斯，不受必遭其殃。",
   ["$xieshu1"] = "今长缨在手，欲问鼎九州。",
   ["$xieshu2"] = "我有佐国之术，可缚苍龙。",
+  ["$xieshu3"] = "大丈夫胸怀四海，有提携玉龙之术。",
+  ["$xieshu4"] = "王霸之志在胸，我岂池中之物？",
+  ["$xieshu5"] = "历经风浪至此，会不可止步于龙门。",
+  ["$xieshu6"] = "我若束手无策，诸位又有何施为？",
   ["$baozu_olz__zhonghui1"] = "不为刀下脍，且做俎上刀。",
   ["$baozu_olz__zhonghui2"] = "吾族恒大，谁敢欺之？",
+  ["$baozu_olz__zhonghui3"] = "动我钟家的人，哼，你长了几个脑袋？",
+  ["$baozu_olz__zhonghui4"] = "有我在一日，谁也动不得吾族分毫。",
+  ["$baozu_olz__zhonghui5"] = "钟门欲屹万年，当先居万人之上。",
+  ["$baozu_olz__zhonghui6"] = "诸位同门，随我钟会赌一遭如何？",
   ["~olz__zhonghui"] = "谋事在人，成事在天……",
 }
 
@@ -2933,7 +2953,11 @@ local lilun = fk.CreateActiveSkill{
       end
     end)
     if #cards == 0 then return end
-    U.askForUseRealCard(room, player, cards, ".", self.name, nil, { expand_pile = cards, bypass_times = true })
+    room:askForUseRealCard(player, cards, self.name, nil, {
+      bypass_times = true,
+      extraUse = true,
+      expand_pile = cards,
+    })
   end
 }
 local jianjiw = fk.CreateTriggerSkill{
@@ -3272,10 +3296,10 @@ local chengqi = fk.CreateViewAsSkill{
   name = "chengqi",
   prompt = "#chengqi-viewas",
   pattern = ".",
-  interaction = function()
-    local mark = Self:getTableMark("chengqi-turn")
+  interaction = function(self, player)
+    local mark = player:getTableMark("chengqi-turn")
     local all_names = U.getAllCardNames("bt")
-    local names = table.filter(U.getViewAsCardNames(Self, "chengqi", all_names), function (name)
+    local names = table.filter(U.getViewAsCardNames(player, "chengqi", all_names), function (name)
       local card = Fk:cloneCard(name)
       return not table.contains(mark, card.trueName)
     end)
@@ -3313,11 +3337,25 @@ local chengqi = fk.CreateViewAsSkill{
     return true
   end,
   enabled_at_response = function(self, player, response)
-    if response or player:getHandcardNum() < 2 then return false end
+    if response or #player:getHandlyIds() < 2 then return false end
     local mark = player:getTableMark("chengqi-turn")
     return #table.filter(U.getViewAsCardNames(player, self.name, U.getAllCardNames("bt")), function (name)
       return not table.contains(mark, Fk:cloneCard(name).trueName)
     end) > 0
+  end,
+  on_acquire = function (self, player, is_start)
+    local mark = {}
+    local turn_event = player.room.logic:getCurrentEvent():findParent(GameEvent.Turn)
+    if turn_event == nil then return end
+    local use
+    player.room.logic:getEventsByRule(GameEvent.UseCard, 1, function (e)
+      use = e.data[1]
+      if use.from == player.id then
+        table.insertIfNeed(mark, use.card.trueName)
+      end
+      return false
+    end, turn_event.id)
+    player.room:setPlayerMark(player, "chengqi-turn", mark)
   end,
 }
 local chengqi_trigger = fk.CreateTriggerSkill{
@@ -3337,32 +3375,12 @@ local chengqi_trigger = fk.CreateTriggerSkill{
     end
   end,
 
-  refresh_events = {fk.AfterCardUseDeclared, fk.EventAcquireSkill},
+  refresh_events = {fk.AfterCardUseDeclared},
   can_refresh = function(self, event, target, player, data)
-    if event == fk.AfterCardUseDeclared then
-      return target == player and player:hasSkill(chengqi, true)
-    else
-      return target == player and data == chengqi
-    end
+    return target == player and player:hasSkill(chengqi, true)
   end,
   on_refresh = function(self, event, target, player, data)
-    local room = player.room
-    if event == fk.AfterCardUseDeclared then
-      room:addTableMarkIfNeed(player, "chengqi-turn", data.card.trueName)
-    else
-      local mark = {}
-      local turn_event = room.logic:getCurrentEvent():findParent(GameEvent.Turn)
-      if turn_event == nil then return false end
-      local use
-      room.logic:getEventsByRule(GameEvent.UseCard, 1, function (e)
-        use = e.data[1]
-        if use.from == player.id then
-          table.insertIfNeed(mark, use.card.trueName)
-        end
-        return false
-      end, turn_event.id)
-      room:setPlayerMark(player, "chengqi-turn", mark)
-    end
+    player.room:addTableMarkIfNeed(player, "chengqi-turn", data.card.trueName)
   end,
 }
 local jieli = fk.CreateTriggerSkill{
@@ -3500,8 +3518,7 @@ local kaiji = fk.CreateActiveSkill{
       room:throwCard(card, self.name, player, target)
     end
     if not player.dead and card and table.contains(room.discard_pile, card) then
-      local use = U.askForUseRealCard(room, player, {card}, nil, self.name,
-        "#ol__kaiji-use", {bypass_times = true, extraUse = true, expand_pile = {card}}, false, true)
+      local use = room:askForUseRealCard(player, {card}, self.name, "#ol__kaiji-use", {bypass_times = true, extraUse = true, expand_pile = {card}})
       if use and not player.dead then
         player:drawCards(1, self.name)
       end
@@ -3624,11 +3641,11 @@ local gaobian = fk.CreateTriggerSkill{
       end
     end, Player.HistoryTurn)
     local to = room:getPlayerById(self.cost_data.tos[1])
-    if #cards == 0 or not U.askForUseRealCard(room, to, cards, nil, self.name, "#gaobian-use", {
+    if #cards == 0 or not room:askForUseRealCard(to, cards, self.name, "#gaobian-use", {
       bypass_times = true,
       extraUse = true,
       expand_pile = cards,
-    }, false, true) then
+    }) then
       room:loseHp(to, 1, self.name)
     end
   end,
