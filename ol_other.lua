@@ -824,11 +824,8 @@ local yuanlue = fk.CreateActiveSkill{
     room:moveCardTo(effect.cards, Card.PlayerHand, target, fk.ReasonGive, self.name, nil, false, player.id)
     if not target.dead and table.contains(target:getCardIds("h"), id) then
       local card = Fk:getCardById(id)
-      local use = room:askForUseRealCard(target, {id}, self.name,
-        "#yuanlue-invoke:"..player.id.."::"..card:toLogString(), {
-          bypass_times = true,
-          extraUse = true,
-        }, true)
+      local use = U.askForUseRealCard(room, target, {id}, nil, self.name,
+        "#yuanlue-invoke:"..player.id.."::"..card:toLogString(), {extraUse = true}, false, true)
       if use and not player.dead then
         player:drawCards(1, self.name)
       end
@@ -2448,13 +2445,14 @@ local dingxi = fk.CreateTriggerSkill{
   end,
   on_cost = function (self, event, target, player, data)
     if event == fk.AfterCardsMove then
-      local use = player.room:askForUseRealCard(player, self.cost_data, self.name,
-        "#dingxi-use::"..player:getLastAlive().id, {
+      local use = U.askForUseRealCard(player.room, player, self.cost_data, nil, self.name, "#dingxi-use::"..player:getLastAlive().id,
+        {
           expand_pile = self.cost_data,
           must_targets = {player:getLastAlive().id},
           bypass_times = true,
           extraUse = true,
-        }, true, true)
+        },
+        true, true)
       if use then
         self.cost_data = use
         return true

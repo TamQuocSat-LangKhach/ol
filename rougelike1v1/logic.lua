@@ -55,32 +55,32 @@ function Rouge1v1Logic:prepareForStart()
   end
 
   -- 选初始战法
-  -- local req = Request:new(players, "AskForChoice")
-  -- req.focus_text = "rougelike1v1"
-  -- req.receive_decode = false
-  -- local _talents = table.random(RougeUtil.talents, 3 * #players)
-  -- local talents = table.map(_talents, function(t) return t[2] end)
-  -- for i, p in ipairs(players) do
-  --   local choices = table.slice(talents, 3 * (i - 1) + 1, 3 * (i - 1) + 4)
-  --   req:setData(p, {
-  --     choices, choices, "rougelike1v1", "#rouge-init-talent", true
-  --   })
-  --   req:setDefaultReply(p, choices[1])
-  -- end
-  -- for _, p in ipairs(players) do
-  --   local result = req:getResult(p)
-  --   for _, t in ipairs(_talents) do
-  --     if t[2] == result then
-  --       room:sendLog {
-  --         type = "#rouge_init_talent",
-  --         from = p.id,
-  --         arg = t[2],
-  --       }
-  --       t[3](t[2], p)
-  --       break
-  --     end
-  --   end
-  -- end
+  local req = Request:new(players, "AskForChoice")
+  req.focus_text = "rougelike1v1"
+  req.receive_decode = false
+  local _talents = table.random(RougeUtil.talents, 3 * #players)
+  local talents = table.map(_talents, function(t) return t[2] end)
+  for i, p in ipairs(players) do
+    local choices = table.slice(talents, 3 * (i - 1) + 1, 3 * (i - 1) + 4)
+    req:setData(p, {
+      choices, choices, "rougelike1v1", "#rouge-init-talent", true
+    })
+    req:setDefaultReply(p, choices[1])
+  end
+  for _, p in ipairs(players) do
+    local result = req:getResult(p)
+    for _, t in ipairs(_talents) do
+      if t[2] == result then
+        room:sendLog {
+          type = "#rouge_init_talent",
+          from = p.id,
+          arg = t[2],
+        }
+        t[3](t[2], p)
+        break
+      end
+    end
+  end
 end
 
 return Rouge1v1Logic

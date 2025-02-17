@@ -65,7 +65,7 @@ local huiyun_trigger = fk.CreateTriggerSkill{
             end
           elseif choice == "huiyun1-round" then
             if table.contains(to:getCardIds("h"), cardId) then
-              local use = room:askForUseRealCard(to, {cardId}, "huiyun", "#huiyun1-card:::"..name)
+              local use = U.askForUseRealCard(room, to, {cardId}, ".", "huiyun", "#huiyun1-card:::"..name)
               if use then
                 room:delay(300)
                 if not to.dead and not to:isKongcheng() then
@@ -74,7 +74,7 @@ local huiyun_trigger = fk.CreateTriggerSkill{
               end
             end
           elseif choice == "huiyun2-round" then
-            local use = room:askForUseRealCard(to, to:getCardIds("h"), "huiyun", "#huiyun2-card:::"..name)
+            local use = U.askForUseRealCard(room, to, to:getCardIds("h"), ".", "huiyun", "#huiyun2-card:::"..name)
             if use then
               room:delay(300)
               if not to.dead and table.contains(to:getCardIds("h"), cardId) then
@@ -177,12 +177,8 @@ local xiaosi = fk.CreateActiveSkill{
         end
       end
       if #ids == 0 then return false end
-      local use = room:askForUseRealCard(player, ids, self.name, "#xiaosi-use", {
-        expand_pile = ids,
-        bypass_distances = true,
-        bypass_times = true,
-        extraUse = true,
-      }, true, true)
+      local use = U.askForUseRealCard(room, player, ids, ".", self.name, "#xiaosi-use",
+      {expand_pile = ids, bypass_distances = true}, true)
       if use then
         table.removeOne(cards, use.card:getEffectiveId())
         room:useCard(use)
@@ -2602,11 +2598,7 @@ local function DoSaogu(player, cards)
       end
     end
     if #ids == 0 then return end
-    local use = room:askForUseRealCard(player, ids, "saogu", "#saogu-use", {
-      expand_pile = ids,
-      bypass_times = true,
-      extraUse = true,
-    }, true, true)
+    local use = U.askForUseRealCard(room, player, ids, ".", "saogu", "#saogu-use", {expand_pile = ids}, true)
     if use then
       table.removeOne(cards, use.card:getEffectiveId())
       room:useCard(use)
@@ -4421,13 +4413,8 @@ local gongjie = fk.CreateTriggerSkill{
     local x = math.min(#player:getCardIds("he"), #targets)
     local tos = room:askForChoosePlayers(player, targets, 1, x, "#gongjie-choose:::" .. tostring(x), self.name, true)
     if #tos > 0 then
-      local new_tos = {}
-      for _, p in ipairs(room:getOtherPlayers(player, false)) do
-        if table.contains(tos, p.id) then
-          table.insert(new_tos, p.id)
-        end
-      end
-      self.cost_data = {tos = new_tos}
+      room:sortPlayersByAction(tos)
+      self.cost_data = {tos = tos}
       return true
     end
   end,
@@ -5624,9 +5611,9 @@ local qingya = fk.CreateTriggerSkill{
     end
   end,
   on_use = function(self, event, target, player, data)
-    local room = player.room
     if event == fk.TargetSpecified then
       local tos = {}
+      local room = player.room
       if self.cost_data == "left" then
         local temp = room:getPlayerById(data.to).next
         while temp ~= player do
@@ -5661,11 +5648,8 @@ local qingya = fk.CreateTriggerSkill{
       end
       room:setPlayerMark(player, "qingya-turn", ids)
     else
-      room:askForUseRealCard(player, self.cost_data, self.name, "#qingya-use", {
-        expand_pile = self.cost_data,
-        bypass_times = true,
-        extraUse = true,
-      })
+      U.askForUseRealCard(player.room, player, self.cost_data, ".", self.name, "#qingya-use",
+      {expand_pile = self.cost_data, bypass_times = true}, false, true)
     end
   end,
 
@@ -6103,7 +6087,7 @@ jiangwan:addSkill(ziruo)
 local xufaViewAs = fk.CreateViewAsSkill{
   name = "xufa_viewAs",
   interaction = function()
-    return U.CardNameBox { choices = Self:getTableMark("xufa_tricks") }
+    return UI.ComboBox { choices = Self:getTableMark("xufa_tricks") }
   end,
   handly_pile = true,
   card_filter = function(self, to_select, selected)
@@ -6122,15 +6106,6 @@ local xufa = fk.CreateActiveSkill{
   anim_type = "offensive",
   target_num = 0,
   expand_pile = "ol__jiangwan_xufa",
-  prompt = function (self, selected_cards, selected_targets)
-    local choice = self.interaction.data
-    if choice == "xufa_put" then
-      return "#xufa_put:::" .. self:getMinCardNum()
-    elseif choice == "xufa_remove" then
-      return "#xufa_remove:::" .. self:getMinCardNum()
-    end
-    return " "
-  end,
   min_card_num = function(self)
     if self.interaction.data == "xufa_put" then
       return math.max(math.ceil(#Self:getCardIds("h") / 2), 1)
@@ -6190,10 +6165,8 @@ local xufa = fk.CreateActiveSkill{
       local success, data = room:askForUseActiveSkill(player, "xufa_viewAs", "#xufa-use", true)
       room:setPlayerMark(player, "xufa_tricks", 0)
 
-      if success and data then
-        local card = Fk:cloneCard(data.interaction)
-        card:addSubcard(data.cards[1])
-        card.skillName = self.name
+      if success then
+        local card = Fk.skills["xufa_viewAs"]:viewAs(data.cards)
         room:useCard{
           from = player.id,
           tos = table.map(data.targets, function(id) return { id } end),
@@ -6213,8 +6186,6 @@ Fk:loadTranslationTable{
   ["xufa_remove"] = "移去蓄发",
   ["xufa_viewAs"] = "蓄发",
   ["#xufa-use"] = "蓄发：你可以将一张牌当其中一张普通锦囊牌使用",
-  ["#xufa_put"] = "将至少%arg张手牌置入“蓄发”，然后可将一张牌当“蓄发”中普通锦囊牌使用",
-  ["#xufa_remove"] = "移去至少%arg张“蓄发”，然后可将一张牌当移去牌中普通锦囊牌使用",
 
   ["$xufa1"] = "常言道，积善之家必有余庆。",
   ["$xufa2"] = "蓄势待发，一鸣惊天下。",
