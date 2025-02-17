@@ -1082,11 +1082,7 @@ local jici = fk.CreateTriggerSkill{
     end
   end,
   on_use = function(self, event, target, player, data)
-    if player == data.from then
-      data.fromCard.number = math.min(13, data.fromCard.number + player:getMark("@raoshe"))
-    elseif data.results[player.id] then
-      data.results[player.id].toCard.number = math.min(13, data.results[player.id].toCard.number + player:getMark("@raoshe"))
-    end
+    player.room:changePindianNumber(data, player, player:getMark("@raoshe"), self.name)
     if player.phase == Player.Play then
       player:setSkillUseHistory("gushe", 0, Player.HistoryPhase)
     end
@@ -3085,7 +3081,7 @@ local jianji = fk.CreateActiveSkill{
   anim_type = "support",
   card_num = 0,
   target_num = 1,
-  prompt = "#jianji-prompt",
+  prompt = "#jianji",
   can_use = function(self, player)
     return player:usedSkillTimes(self.name, Player.HistoryPhase) == 0
   end,
@@ -3096,8 +3092,8 @@ local jianji = fk.CreateActiveSkill{
   on_use = function(self, room, effect)
     local target = room:getPlayerById(effect.tos[1])
     local id = target:drawCards(1, self.name)[1]
-    if not target.dead and table.contains(target.player_cards[Player.Hand], id) then
-      U.askForUseRealCard(room, target, {id}, ".", self.name)
+    if not target.dead and table.contains(target:getCardIds("h"), id) then
+      room:askForUseRealCard(target, {id}, self.name, "#jianji-use")
     end
   end,
 }
@@ -3116,8 +3112,8 @@ Fk:loadTranslationTable{
   ["#dianhu_delay"] = "点虎",
   ["@@dianhu"] = "点虎",
   ["#dianhu-choose"] = "点虎：指定一名角色，本局当你对其造成伤害或其回复体力后，你摸一张牌",
-  ["#jianji-invoke"] = "谏计：你可以使用这张牌",
-  ["#jianji-prompt"] = "谏计：你可令一名其他角色摸一张牌，且其可以使用之",
+  ["#jianji"] = "谏计：令一名其他角色摸一张牌，其可以使用之",
+  ["#jianji-use"] = "谏计：你可以使用这张牌",
 
   ["$dianhu1"] = "预则立，不预则废！",
   ["$dianhu2"] = "就用你，给我军祭旗！",

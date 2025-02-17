@@ -224,7 +224,7 @@ local ol_ex__xuanhuo = fk.CreateTriggerSkill{
   events = {fk.EventPhaseEnd},
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(self) and player.phase == Player.Draw and #player:getCardIds("he") > 1 and
-      #player.room.alive_players > 1
+      #player.room:getOtherPlayers(player) > 0
   end,
   on_cost = function(self, event, target, player, data)
     local _, dat = player.room:askForUseActiveSkill(player, "ol_ex__xuanhuo_choose", "#ol_ex__xuanhuo-invoke", true)
