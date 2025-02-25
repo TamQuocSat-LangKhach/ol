@@ -1,0 +1,39 @@
+local this = fk.CreateSkill {
+  name = "ol_ex__huangtian",
+  mute = true,
+  attached_skill_name = "ol_ex__huangtian_other&",
+  on_acquire = function(self, player)
+    local room = player.room
+    for _, p in ipairs(room.alive_players) do
+      if p ~= player and p.kingdom == "qun" then
+        room:handleAddLoseSkills(p, self.attached_skill_name, nil, false, true)
+      end
+    end
+  end,
+}
+
+this:addEffect(fk.AfterPropertyChange, {
+  can_refresh = function(self, event, target, player, data)
+    return target == player
+  end,
+  on_refresh = function(self, event, target, player, data)
+    local room = player.room
+    if player.kingdom == "qun" and table.find(room.alive_players, function (p)
+      return p ~= player and p:hasSkill(self, true)
+    end) then
+      room:handleAddLoseSkills(player, self.attached_skill_name, nil, false, true)
+    else
+      room:handleAddLoseSkills(player, "-" .. self.attached_skill_name, nil, false, true)
+    end
+  end,
+})
+
+Fk:loadTranslationTable {
+  ["ol_ex__huangtian"] = "黄天",
+  [":ol_ex__huangtian"] = "主公技，其他群势力角色的出牌阶段限一次，该角色可以将一张【闪】或♠手牌（正面朝上移动）交给你。",
+  
+  ["$ol_ex__huangtian1"] = "黄天法力，万军可灭！",
+  ["$ol_ex__huangtian2"] = "天书庇佑，黄巾可兴！",
+}
+
+return this
