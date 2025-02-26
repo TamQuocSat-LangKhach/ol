@@ -25,7 +25,7 @@ this:addEffect(fk.TargetSpecified, {
   end,
 })
 
-this:addEffect('targetmod', {
+this:addEffect("targetmod", {
   bypass_distances =  function(self, player, skill, card, target)
     if skill.trueName == "slash_skill" and player:hasSkill(this.name) then
       return card and target and player:distanceTo(target) <= card.number

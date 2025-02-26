@@ -1,14 +1,22 @@
-local this = fk.CreateSkill{
+local hanzhan = fk.CreateSkill{
   name = "hanzhan",
-  anim_type = "control",
 }
 
-this:addEffect(fk.StartPindian, {
+Fk:loadTranslationTable {
+  ["hanzhan"] = "酣战",
+  [":hanzhan"] = "当你与其他角色拼点，或其他角色与你拼点时，你可令其改为用随机一张手牌拼点，你拼点后，你可获得其中点数最大的【杀】。",
+
+  ["$hanzhan1"] = "伯符，且与我一战！",
+  ["$hanzhan2"] = "与君酣战，快哉快哉！",
+}
+
+hanzhan:addEffect(fk.StartPindian, {
+  anim_type = "control",
   can_trigger = function(self, event, target, player, data)
-    if not player:hasSkill(this.name) then return false end
+    if not player:hasSkill(hanzhan.name) then return false end
     if player == data.from then
       for _, to in ipairs(data.tos) do
-        if not (data.results[to.id] and data.results[to.id].toCard) then
+        if not (data.results[to] and data.results[to].toCard) then
           return true
         end
       end
@@ -17,23 +25,23 @@ this:addEffect(fk.StartPindian, {
     end
   end,
   on_use = function(self, event, target, player, data)
-    local room = player.room
     if player == data.from then
       for _, to in ipairs(data.tos) do
-        if not (to.dead or to:isKongcheng() or (data.results[to.id] and data.results[to.id].toCard)) then
-          data.results[to.id] = data.results[to.id] or {}
-          data.results[to.id].toCard = Fk:getCardById(table.random(to:getCardIds(Player.Hand)))
+        if not (to.dead or to:isKongcheng() or (data.results[to] and data.results[to].toCard)) then
+          data.results[to] = data.results[to] or {}
+          data.results[to].toCard = Fk:getCardById(table.random(to:getCardIds("h")))
         end
       end
     elseif not (data.from.dead or data.from:isKongcheng()) then
-      data.fromCard = Fk:getCardById(table.random(data.from:getCardIds(Player.Hand)))
+      data.fromCard = Fk:getCardById(table.random(data.from:getCardIds("h")))
     end
   end,
 })
 
-this:addEffect(fk.PindianResultConfirmed, {
+hanzhan:addEffect(fk.PindianResultConfirmed, {
+  anim_type = "drawcard",
   can_trigger = function(self, event, target, player, data)
-    if not player:hasSkill(this.name) then return false end
+    if not player:hasSkill(hanzhan.name) then return false end
     if player == data.from or player == data.to then
       local cardA = Fk:getCardById(data.fromCard:getEffectiveId())
       local cardB = Fk:getCardById(data.toCard:getEffectiveId())
@@ -56,23 +64,15 @@ this:addEffect(fk.PindianResultConfirmed, {
         return player.room:getCardArea(id) == Card.Processing
       end)
       if #cards > 0 then
-        self.cost_data = cards
+        event:setCostData(self, {cards = cards})
         return true
       end
     end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    room:moveCardTo(self.cost_data, Player.Hand, player, fk.ReasonPrey, this.name, nil, true, player.id)
+    room:moveCardTo(event:getCostData(self).cards, Player.Hand, player, fk.ReasonPrey, hanzhan.name, nil, true, player)
   end,
 })
 
-Fk:loadTranslationTable {
-  ["hanzhan"] = "酣战",
-  [":hanzhan"] = "当你与其他角色拼点，或其他角色与你拼点时，你可令其改为用随机一张手牌拼点，你拼点后，你可获得其中点数最大的【杀】。",
-  
-  ["$hanzhan1"] = "伯符，且与我一战！",
-  ["$hanzhan2"] = "与君酣战，快哉快哉！",
-}
-
-return this
+return hanzhan

@@ -2,7 +2,7 @@ local this = fk.CreateSkill{
   name = "ol_ex__qiangxi",
 }
 
-this:addEffect('active', {
+this:addEffect("active", {
   anim_type = "offensive",
   prompt = "#ol_ex__qiangxi",
   max_phase_use_time = 2,

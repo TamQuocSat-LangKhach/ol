@@ -2,7 +2,7 @@ local this = fk.CreateSkill{
   name = "ol_ex__qiaoshui",
 }
 
-this:addEffect('active', {
+this:addEffect("active", {
   anim_type = "control",
   prompt = "#ol_ex__qiaoshui-prompt",
   can_use = function(self, player)

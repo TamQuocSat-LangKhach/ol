@@ -2,7 +2,7 @@ local this = fk.CreateSkill{
   name = "ol_ex__jiushi",
 }
 
-this:addEffect('viewas', {
+this:addEffect("viewas", {
   anim_type = "support",
   pattern = "analeptic",
   prompt = "#ol_ex__jiushi",
@@ -125,7 +125,7 @@ this:addEffect(fk.EventLoseSkill, {
   end
 })
 
-this:addEffect('targetmod', {
+this:addEffect("targetmod", {
   bypass_distances = function(self, player, skill, card, to)
     return player:hasSkill(this.name) and not player.faceup and card:getMark("@@luoying-inhand") > 0
   end,

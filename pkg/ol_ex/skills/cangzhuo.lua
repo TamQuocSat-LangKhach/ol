@@ -1,39 +1,7 @@
-local this = fk.CreateSkill{
+local cangzhuo = fk.CreateSkill{
   name = "cangzhuo",
+  tags = { Skill.Compulsory },
 }
-
-this:addEffect(fk.EventPhaseStart, {
-  anim_type = "defensive",
-  frequency = Skill.Compulsory,
-  can_trigger = function(self, event, target, player, data)
-    if target == player and player:hasSkill(this.name) and player.phase == Player.Discard then
-      local room = player.room
-      local logic = room.logic
-      local e = logic:getCurrentEvent():findParent(GameEvent.Turn, true)
-      if e == nil then return false end
-      local end_id = e.id
-      local events = logic.event_recorder[GameEvent.UseCard] or Util.DummyTable
-      for i = #events, 1, -1 do
-        e = events[i]
-        if e.id <= end_id then break end
-        local use = e.data[1]
-        if use.from == player.id and use.card.type == Card.TypeTrick then
-          return false
-        end
-      end
-      return true
-    end
-  end,
-  on_use = function(self, event, target, player, data)
-    player.room:addPlayerMark(player, "cangzhuo-phase")
-  end,
-})
-
-this:addEffect('maxcards', {
-  exclude_from = function(self, player, card)
-    return player:getMark("cangzhuo-phase") > 0 and card.type == Card.TypeTrick
-  end,
-})
 
 Fk:loadTranslationTable {
   ["cangzhuo"] = "藏拙",
@@ -43,4 +11,27 @@ Fk:loadTranslationTable {
   ["$cangzhuo2"] = "寓清于浊，以屈为伸。",
 }
 
-return this
+cangzhuo:addEffect(fk.EventPhaseStart, {
+  anim_type = "defensive",
+  can_trigger = function(self, event, target, player, data)
+    if target == player and player:hasSkill(cangzhuo.name) and player.phase == Player.Discard then
+      local room = player.room
+      local turn_event = room.logic:getCurrentEvent():findParent(GameEvent.Turn, true)
+      if turn_event == nil then return end
+      return #room.logic:getEventsOfScope(GameEvent.UseCard, 1, function (e)
+        local use = e.data
+        return use.from == player and use.card.type == Card.TypeTrick
+      end, Player.HistoryTurn) == 0
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    player.room:setPlayerMark(player, "cangzhuo-phase", 1)
+  end,
+})
+cangzhuo:addEffect("maxcards", {
+  exclude_from = function(self, player, card)
+    return player:getMark("cangzhuo-phase") > 0 and card.type == Card.TypeTrick
+  end,
+})
+
+return cangzhuo

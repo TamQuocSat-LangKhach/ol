@@ -1,35 +1,6 @@
-local this = fk.CreateSkill {
+local fangquan = fk.CreateSkill {
   name = "ol_ex__fangquan",
 }
-
-this:addEffect(fk.EventPhaseChanging, {
-  anim_type = "support",
-  can_trigger = function(self, event, target, player, data)
-    return player:hasSkill(this.name) and player == target and data.to == Player.Play
-  end,
-  on_use = function(self, event, target, player, data)
-    player:skip(Player.Play)
-    return true
-  end,
-})
-
-this:addEffect(fk.EventPhaseStart, {
-  anim_type = "support",
-  can_trigger = function(self, event, target, player, data)
-    return target == player and player.phase == Player.Discard and player:usedSkillTimes(self.name, Player.HistoryTurn) > 0
-  end,
-  on_cost = Util.TrueFunc,
-  on_use = function(self, event, target, player, data)
-    local room = player.room
-    local tar, card =  room:askToChooseCardAndPlayers(player, { targets = room:getOtherPlayers(player, false), min_num = 1, max_num = 1,
-      flag = ".|.|.|hand", prompt = "#ol_ex__fangquan-choose", skill_name = self.name, cancelable = true
-    })
-    if #tar > 0 and card then
-      room:throwCard(card, self.name, player, player)
-      tar[1]:gainAnExtraTurn()
-    end
-  end,
-})
 
 Fk:loadTranslationTable {
   ["ol_ex__fangquan"] = "放权",
@@ -41,4 +12,52 @@ Fk:loadTranslationTable {
   ["$ol_ex__fangquan2"] = "这些事情，你们安排就好。",
 }
 
-return this
+fangquan:addEffect(fk.EventPhaseChanging, {
+  anim_type = "support",
+  can_trigger = function(self, event, target, player, data)
+    return player:hasSkill(fangquan.name) and player == target and data.phase == Player.Play
+  end,
+  on_use = function(self, event, target, player, data)
+    data.skipped = true
+  end,
+})
+
+fangquan:addEffect(fk.EventPhaseStart, {
+  anim_type = "support",
+  is_delay_effect = true,
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player.phase == Player.Discard and
+      player:usedEffectTimes(fangquan.name, Player.HistoryTurn) > 0 and
+      not player.dead and not player:isKongcheng() and
+      #player.room:getOtherPlayers(player, false) > 0
+  end,
+  on_cost = function (self, event, target, player, data)
+    local room = player.room
+    local tos, cards = room:askToChooseCardsAndPlayers(player, {
+      min_card_num = 1,
+      max_card_num = 1,
+      min_num = 1,
+      max_num = 1,
+      targets = room:getOtherPlayers(player, false),
+      pattern = ".|.|.|hand",
+      skill_name = fangquan.name,
+      prompt = "#ol_ex__fangquan-choose",
+      cancelable = true,
+      will_throw = true,
+    })
+    if #tos > 0 and #cards > 0 then
+      event:setCostData(self, {tos = tos, cards = cards})
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    room:throwCard(event:getCostData(self).cards, fangquan.name, player, player)
+    local to = event:getCostData(self).tos[1]
+    if not to.dead then
+      to:gainAnExtraTurn(true, fangquan.name)
+    end
+  end,
+})
+
+return fangquan

@@ -55,7 +55,7 @@ this:addEffect(fk.EventPhaseEnd, {
   end,
 })
 
-this:addEffect('targetmod', {
+this:addEffect("targetmod", {
   bypass_distances =  function(self, player, skill, card)
     return skill.trueName == "slash_skill" and card and card:getMark("@@ol_ex__dangxian-inhand") > 0
   end,

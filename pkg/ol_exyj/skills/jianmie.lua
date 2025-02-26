@@ -1,25 +1,25 @@
-local U =require("packages.utility.utility")
+local U =require("packages/utility/utility")
 
-local this = fk.CreateSkill{
+local jianmie = fk.CreateSkill{
   name = "jianmie",
 }
 
-this:addEffect('active', {
+jianmie:addEffect("active", {
   anim_type = "offensive",
   prompt = "#jianmie",
   card_num = 0,
   target_num = 1,
   can_use = function(self, player)
-    return player:usedSkillTimes(this.name, Player.HistoryPhase) == 0
+    return player:usedSkillTimes(jianmie.name, Player.HistoryPhase) == 0
   end,
   card_filter = Util.FalseFunc,
-  target_filter = function (self, player, to_select, selected, selected_cards, card, extra_data)
-    return #selected == 0 and to_select ~= player.id
+  target_filter = function (self, player, to_select, selected, selected_cards)
+    return #selected == 0 and to_select ~= player
   end,
   on_use = function(self, room, effect)
     local player = effect.from
     local target = effect.tos[1]
-    local result = U.askForJointChoice({player, target}, {"red", "black"}, this.name, "#jianmie-choice", true)
+    local result = U.askForJointChoice({player, target}, {"red", "black"}, jianmie.name, "#jianmie-choice", true)
     local cards1 = table.filter(player:getCardIds("h"), function (id)
       return Fk:getCardById(id):getColorString() == result[player.id] and
         not player:prohibitDiscard(id)
@@ -32,21 +32,21 @@ this:addEffect('active', {
     if #cards1 > 0 then
       table.insert(moves, {
         ids = cards1,
-        from = player.id,
+        from = player,
         toArea = Card.DiscardPile,
         moveReason = fk.ReasonDiscard,
-        proposer = player.id,
-        skillName = this.name,
+        proposer = player,
+        skillName = jianmie.name,
       })
     end
     if #cards2 > 0 then
       table.insert(moves, {
         ids = cards2,
-        from = target.id,
+        from = target,
         toArea = Card.DiscardPile,
         moveReason = fk.ReasonDiscard,
-        proposer = target.id,
-        skillName = this.name,
+        proposer = target,
+        skillName = jianmie.name,
       })
     end
     room:moveCards(table.unpack(moves))
@@ -57,7 +57,7 @@ this:addEffect('active', {
       src, to = target, player
     end
     if src ~= to and not to.dead then
-      room:useVirtualCard("duel", nil, src, to, this.name)
+      room:useVirtualCard("duel", nil, src, to, jianmie.name)
     end
   end,
 })
@@ -73,4 +73,4 @@ Fk:loadTranslationTable{
   ["$jianmie2"] = "你我不到黄泉，不复相见！",
 }
 
-return this
+return jianmie

@@ -25,7 +25,7 @@ this:addEffect("active", {
   end,
 })
 
-this:addEffect('targetmod', {
+this:addEffect("targetmod", {
   residue_func = function(self, player, skill, scope)
     if skill.trueName == "slash_skill" and scope == Player.HistoryPhase then
       return player:getMark("@qimou-turn")

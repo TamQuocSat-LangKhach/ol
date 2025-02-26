@@ -2,7 +2,7 @@ local this = fk.CreateSkill{
   name = "ol_ex__shuangxiong",
 }
 
-this:addEffect('active', {
+this:addEffect("active", {
   anim_type = "offensive",
   pattern = "duel",
   prompt = "#ol_ex__shuangxiong-viewas",

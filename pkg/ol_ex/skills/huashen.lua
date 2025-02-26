@@ -1,4 +1,26 @@
-local U = require("packages.utility.utility")
+
+local huashen = fk.CreateSkill {
+  name = "ol_ex__huashen",
+}
+
+Fk:loadTranslationTable{
+  ["ol_ex__huashen"] = "化身",
+  [":ol_ex__huashen"] = "游戏开始时，你随机获得三张武将牌作为“化身”牌，然后你选择其中一张“化身”牌的一个技能（主公技/限定技/觉醒技/转换技/势力技除外），"..
+  "你视为拥有此技能，且性别和势力视为与此“化身”牌相同。<br>回合开始或结束时，你可以选择一项：1.重新进行一次“化身”；2.移去至多两张不为亮出的“化身”牌，"..
+  "然后获得等量的新“化身”牌。",
+
+  ["@[private]&ol_ex__huashen"] = "化身",
+  ["@ol_ex__huashen_skill"] = "化身",
+  ["ol_ex__huashen_re"] = "进行一次“化身”",
+  ["ol_ex__huashen_recast"] = "移去至多两张“化身”，获得等量新“化身”",
+  ["#ol_ex__huashen-recast"] = "移去至多两张“化身”，获得等量新“化身”",
+  ["#ol_ex__huashen-skill"] = "化身：选择一个武将，再选择一个要获得的技能",
+
+  ["$ol_ex__huashen1"] = "容貌发肤，不过浮尘。",
+  ["$ol_ex__huashen2"] = "皮囊万千，吾皆可化。",
+}
+
+local U = require("packages/utility/utility")
 
 local huashen_blacklist = {
   -- imba
@@ -31,9 +53,12 @@ local function Dohuashen(player)
   for _, g in ipairs(generals) do
     local general = Fk.generals[g]
     local skills = {}
+    local tags = {Skill.Lord, Skill.Limited, Skill.Wake, Skill.Switch, Skill.AttachedKingdom}
     for _, skillName in ipairs(general:getSkillNameList()) do
       local s = Fk.skills[skillName]
-      if not (s.lordSkill or s.switchSkillName or s.frequency > 3) and #s.attachedKingdom == 0 then
+      if table.every(tags, function (tag)
+        return not s:hasTag(tag)
+      end) then
         table.insert(skills, skillName)
         if #default == 0 then
           default = {g, skillName}
@@ -42,11 +67,11 @@ local function Dohuashen(player)
     end
     table.insert(skillList, skills)
   end
-  local result = room:askForCustomDialog(
-    player, "ol_ex__huashen",
-    "packages/utility/qml/ChooseSkillFromGeneralBox.qml",
-    { generals, skillList, "#ol_ex__huashen-skill" }
-  )
+  local result = room:askToCustomDialog( player, {
+    skill_name = huashen.name,
+    qml_path = "packages/utility/qml/ChooseSkillFromGeneralBox.qml",
+    extra_data = { generals, skillList, "#ol_ex__huashen-skill" },
+  })
   if result == "" then
     if #default == 0 then return end
     result = default
@@ -78,15 +103,19 @@ local function Recasthuashen(player)
   local generals = U.getPrivateMark(player, "&ol_ex__huashen")
   if #generals < 2 then return end
   local current_general = type(player:getMark("ol_ex__huashen_general")) == "string" and player:getMark("ol_ex__huashen_general") or ""
-  local result = player.room:askForCustomDialog(player, "ol_ex__huashen",
-  "packages/utility/qml/ChooseGeneralsAndChoiceBox.qml", {
-    generals,
-    {"OK"},
-    "#ol_ex__huashen-recast",
-    {"Cancel"},
-    1,
-    2,
-    {current_general},
+
+  local result = room:askToCustomDialog( player, {
+    skill_name = huashen.name,
+    qml_path = "packages/utility/qml/ChooseGeneralsAndChoiceBox.qml",
+    extra_data = {
+      generals,
+      {"OK"},
+      "#ol_ex__huashen-recast",
+      {"Cancel"},
+      1,
+      2,
+      {current_general},
+    },
   })
   if result == "" then return end
   local reply = json.decode(result)
@@ -100,13 +129,9 @@ local function Recasthuashen(player)
   room:returnToGeneralPile(removed)
 end
 
-local this = fk.CreateSkill {
-  name = "ol_ex__huashen",
-}
-
-this:addEffect(fk.GameStart, {
+huashen:addEffect(fk.GameStart, {
   can_trigger = function(self, event, target, player, data)
-    return player:hasSkill(this.name)
+    return player:hasSkill(huashen.name)
   end,
   on_cost = function(self, event, target, player, data)
     return true
@@ -118,16 +143,19 @@ this:addEffect(fk.GameStart, {
 })
 
 local huashen_turn = function (player, skill)
-  local choice = player.room:askToChoice(player, { choices = {"ol_ex__huashen_re", "ol_ex__huashen_recast", "Cancel"}, skill_name = skill.name})
+  local choice = player.room:askToChoice(player, {
+    choices = {"ol_ex__huashen_re", "ol_ex__huashen_recast", "Cancel"},
+    skill_name = skill.name,
+  })
   if choice ~= "Cancel" then
     skill.cost_data = choice
     return true
   end
 end
 
-this:addEffect(fk.TurnStart, {
+huashen:addEffect(fk.TurnStart, {
   can_trigger = function(self, event, target, player, data)
-    return player:hasSkill(this.name) and target == player and #U.getPrivateMark(player, "&ol_ex__huashen") > 0
+    return player:hasSkill(huashen.name) and target == player and #U.getPrivateMark(player, "&ol_ex__huashen") > 0
   end,
   on_cost = function(self, event, target, player, data)
     return huashen_turn(player, self)
@@ -141,9 +169,9 @@ this:addEffect(fk.TurnStart, {
   end,
 })
 
-this:addEffect(fk.TurnEnd, {
+huashen:addEffect(fk.TurnEnd, {
   can_trigger = function(self, event, target, player, data)
-    return player:hasSkill(this.name) and target == player and #U.getPrivateMark(player, "&ol_ex__huashen") > 0
+    return player:hasSkill(huashen.name) and target == player and #U.getPrivateMark(player, "&ol_ex__huashen") > 0
   end,
   on_cost = function(self, event, target, player, data)
     return huashen_turn(player, self)
@@ -157,7 +185,7 @@ this:addEffect(fk.TurnEnd, {
   end,
 })
 
-this:addEffect(fk.EventLoseSkill, {
+huashen:addEffect(fk.EventLoseSkill, {
   can_refresh = function(self, event, target, player, data)
     return player == target and data == self
   end,
@@ -175,20 +203,4 @@ this:addEffect(fk.EventLoseSkill, {
   end,
 })
 
-Fk:loadTranslationTable{
-  ["ol_ex__huashen"] = "化身",
-  [":ol_ex__huashen"] = "①游戏开始时，你随机获得三张武将牌作为“化身”牌，然后你选择其中一张“化身”牌的一个技能（主公技/限定技/觉醒技/转换技/势力技除外），你视为拥有此技能，且性别和势力视为与此“化身”牌相同。<br>"..
-  "②回合开始或结束时，你可以选择一项：1.重新进行一次“化身”；2.移去至多两张不为亮出的“化身”牌，然后获得等量的新“化身”牌。",
-
-  ["@[private]&ol_ex__huashen"] = "化身",
-  ["@ol_ex__huashen_skill"] = "化身",
-  ["ol_ex__huashen_re"] = "进行一次“化身”",
-  ["ol_ex__huashen_recast"] = "移去至多两张“化身”，获得等量新“化身”",
-  ["#ol_ex__huashen-recast"] = "移去至多两张“化身”，获得等量新“化身”",
-  ["#ol_ex__huashen-skill"] = "化身：选择一个武将，再选择一个要获得的技能",
-  
-  ["$ol_ex__huashen1"] = "容貌发肤，不过浮尘。",
-  ["$ol_ex__huashen2"] = "皮囊万千，吾皆可化。",
-}
-
-return this
+return huashen

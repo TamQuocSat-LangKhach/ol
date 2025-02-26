@@ -1,4 +1,4 @@
-local U = require("packages.utility.utility")
+local U = require("packages/utility/utility")
 
 local this = fk.CreateSkill{
   name = "ol_ex__chengxiang",

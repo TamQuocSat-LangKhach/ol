@@ -1,28 +1,39 @@
-local this = fk.CreateSkill{
+local huoji = fk.CreateSkill{
   name = "ol_ex__huoji",
 }
 
-this:addEffect('viewas', {
+Fk:loadTranslationTable {
+  ["ol_ex__huoji"] = "火计",
+  [":ol_ex__huoji"] = "你可以将一张红色牌当为【火攻】使用。你使用的【火攻】效果改为：目标角色随机展示一张手牌，然后你可以弃置一张与此牌"..
+  "颜色相同的手牌对其造成1点火焰伤害。",
+
+  ["#ol_ex__huoji"] = "火计：你可以将一张红色牌当【火攻】使用",
+
+  ["$ol_ex__huoji1"] = "赤壁借东风，燃火灭魏军。",
+  ["$ol_ex__huoji2"] = "东风，让这火烧得再猛烈些吧！",
+}
+
+huoji:addEffect("viewas", {
   anim_type = "offensive",
   pattern = "fire_attack",
-  prompt = "#ol_ex__huoji-viewas",
+  prompt = "#ol_ex__huoji",
   handly_pile = true,
   card_filter = function(self, player, to_select, selected)
     return #selected == 0 and Fk:getCardById(to_select).color == Card.Red
   end,
-  view_as = function(self, cards)
+  view_as = function(self, player, cards)
     if #cards ~= 1 then return end
     local card = Fk:cloneCard("fire_attack")
-    card.skillName = this.name
+    card.skillName = huoji.name
     card:addSubcard(cards[1])
     return card
   end,
 })
 
-this:addEffect(fk.PreCardEffect, {
+huoji:addEffect(fk.PreCardEffect, {
   mute = true,
   can_trigger = function(self, event, target, player, data)
-    return player:hasSkill(this.name) and data.from == player.id and data.card.trueName == "fire_attack"
+    return player:hasSkill(huoji.name) and data.from == player and data.card.trueName == "fire_attack"
   end,
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
@@ -36,16 +47,4 @@ this:addEffect(fk.PreCardEffect, {
   end,
 })
 
-Fk:loadTranslationTable {
-  ["ol_ex__huoji"] = "火计",
-  [":ol_ex__huoji"] = "①你可以将一张红色牌转化为【火攻】使用。"..
-  "②你使用的【火攻】的作用效果改为：目标角色随机展示一张手牌，然后你可以弃置一张与此牌颜色相同的手牌对其造成1点火焰伤害。",
-  
-  ["#ol_ex__huoji-viewas"] = "你是否想要发动“火计”，将一张红色牌当【火攻】使用",
-  ["#ol_ex__huoji_buff"] = "火计",
-  
-  ["$ol_ex__huoji1"] = "赤壁借东风，燃火灭魏军。",
-  ["$ol_ex__huoji2"] = "东风，让这火烧得再猛烈些吧！",
-}
-
-return this
+return huoji

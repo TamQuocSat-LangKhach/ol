@@ -30,7 +30,7 @@ this:addEffect(fk.EventPhaseEnd, {
   end,
 })
 
-this:addEffect('targetmod', {
+this:addEffect("targetmod", {
   residue_func = function(self, player, skill, scope)
     if skill.trueName == "slash_skill" and scope == Player.HistoryPhase then
       local n = 0

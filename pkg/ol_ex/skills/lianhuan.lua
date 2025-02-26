@@ -2,7 +2,7 @@ local this = fk.CreateSkill{
   name = "ol_ex__lianhuan",
 }
 
-this:addEffect('active', {
+this:addEffect("active", {
   mute = true,
   card_num = 1,
   min_target_num = 0,

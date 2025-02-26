@@ -2,7 +2,7 @@ local this = fk.CreateSkill{
   name = "ol_ex__kanpo",
 }
 
-this:addEffect('viewas', {
+this:addEffect("viewas", {
   anim_type = "control",
   pattern = "nullification",
   prompt = "#ol_ex__kanpo-viewas",

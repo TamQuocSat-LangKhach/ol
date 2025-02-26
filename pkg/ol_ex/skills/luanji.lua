@@ -2,7 +2,7 @@ local this = fk.CreateSkill{
   name = "ol_ex__luanji",
 }
 
-this:addEffect('viewas', {
+this:addEffect("viewas", {
   anim_type = "offensive",
   pattern = "archery_attack",
   prompt = "#ol_ex__luanji-viewas",
