@@ -29,6 +29,9 @@ return {
   require(prefix .. "zishou"),
   require(prefix .. "zongshi"),
 
+  require(prefix .. "chengxiang"),
+  require(prefix .. "renxin"),
+
   require(prefix .. "zhiyan"),
   require(prefix .. "zongxuan"),
 

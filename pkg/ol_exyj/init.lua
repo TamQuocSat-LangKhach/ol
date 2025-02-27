@@ -21,7 +21,7 @@ Fk:loadTranslationTable{
   ["designer:ol_ex__zhangchunhua"] = "官方",
   ["illustrator:ol_ex__zhangchunhua"] = "官方",
   ["~ol_ex__zhangchunhua"] = "我不负懿，懿负我。",
-  
+
   ["$jueqing_ol_ex__zhangchunhua1"] = "情丝如雪，难当暖阳。",
   ["$jueqing_ol_ex__zhangchunhua2"] = "有情总被无情负，绝情方无软肋生。",
   ["$shangshi_ol_ex__zhangchunhua1"] = "伤我最深的，竟是你司马懿。",
@@ -134,7 +134,7 @@ Fk:loadTranslationTable{
   ["designer:ol_ex__liru"] = "官方",
   ["illustrator:ol_ex__liru"] = "官方",
   ["~ol_ex__liru"] = "火熄人亡，都结束了……",
-  
+
   ["$ty_ex__fencheng_ol_ex__liru1"] = "愿这火光，照亮董公西行之路！",
   ["$ty_ex__fencheng_ol_ex__liru2"] = "诸公且看，此火可戏天下诸否？",
 }
@@ -146,7 +146,7 @@ Fk:loadTranslationTable{
   ["designer:ol_ex__caifuren"] = "官方",
   ["illustrator:ol_ex__caifuren"] = "官方",
   ["~ol_ex__caifuren"] = "这哪里是荆州，分明是黄泉……",
-  
+
   ["$xianzhou_ol_ex__caifuren1"] = "今献州以降，请丞相善待我孤儿寡母。",
   ["$xianzhou_ol_ex__caifuren2"] = "我儿志短才疏，只求方寸之地安享富贵。",
 }

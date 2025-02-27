@@ -113,7 +113,7 @@ Fk:loadTranslationTable{
   ["~ol_ex__dianwei"] = "为将者，怎可徒手而亡？",
 }
 
-General:new(extension, "ol_ex__xunyu", "wei", 3):addSkills { "ol_ex__jieming", "quhu" }
+General:new(extension, "ol_ex__xunyu", "wei", 3):addSkills { "quhu", "ol_ex__jieming" }
 Fk:loadTranslationTable{
   ["ol_ex__xunyu"] = "界荀彧",
   ["#ol_ex__xunyu"] = "王佐之才",
@@ -124,7 +124,7 @@ Fk:loadTranslationTable{
   ["~ol_ex__xunyu"] = "一招不慎，为虎所噬……",
 }
 
-General:new(extension, "ol_ex__wolong", "shu", 3):addSkills { "ol_ex__huoji", "ol_ex__kanpo", "cangzhuo", "bazhen" }
+General:new(extension, "ol_ex__wolong", "shu", 3):addSkills { "bazhen", "ol_ex__huoji", "ol_ex__kanpo", "cangzhuo" }
 Fk:loadTranslationTable{
   ["ol_ex__wolong"] = "界卧龙诸葛亮",
   ["#ol_ex__wolong"] = "卧龙",
@@ -152,18 +152,18 @@ Fk:loadTranslationTable{
   ["~ol_ex__pangtong"] = "骥飞羽落，坡道归尘……",
 }
 
-General:new(extension, "ol_ex__taishici", "wu", 4):addSkills { "hanzhan", "tianyi" }
+General:new(extension, "ol_ex__taishici", "wu", 4):addSkills { "tianyi", "hanzhan" }
 Fk:loadTranslationTable{
   ["ol_ex__taishici"] = "界太史慈",
   ["#ol_ex__taishici"] = "笃烈之士",
   ["illustrator:ol_ex__taishici"] = "biou09",
-  
+
   ["$tianyi_ol_ex__taishici1"] = "天降大任，速战解围！",
   ["$tianyi_ol_ex__taishici2"] = "义不从之，天必不佑！",
   ["~ol_ex__taishici"] = "无妄之灾，难以避免……",
 }
 
-General:new(extension, "ol_ex__pangde", "qun", 4):addSkills { "ol_ex__jianchu", "mashu" }
+General:new(extension, "ol_ex__pangde", "qun", 4):addSkills { "mashu", "ol_ex__jianchu" }
 Fk:loadTranslationTable{
   ["ol_ex__pangde"] = "界庞德",
   ["#ol_ex__pangde"] = "人马一体",
@@ -199,7 +199,7 @@ Fk:loadTranslationTable{
   ["~ol_ex__xuhuang"] = "亚夫易老，李广难封……",
 }
 
-General:new(extension, "ol_ex__zhurong", "shu", 4, 4, General.Female):addSkills { "ol_ex__changbiao", "juxiang", "lieren" }
+General:new(extension, "ol_ex__zhurong", "shu", 4, 4, General.Female):addSkills { "juxiang", "lieren", "ol_ex__changbiao" }
 Fk:loadTranslationTable{
   ["ol_ex__zhurong"] = "界祝融",
   ["#ol_ex__zhurong"] = "野性的女王",
@@ -212,7 +212,7 @@ Fk:loadTranslationTable{
   ["~ol_ex__zhurong"] = "这汉人，竟……如此厉害……",
 }
 
-General:new(extension, "ol_ex__menghuo", "shu", 4):addSkills { "ol_ex__zaiqi", "huoshou" }
+General:new(extension, "ol_ex__menghuo", "shu", 4):addSkills { "huoshou", "ol_ex__zaiqi" }
 Fk:loadTranslationTable{
   ["ol_ex__menghuo"] = "界孟获",
   ["#ol_ex__menghuo"] = "南蛮王",
