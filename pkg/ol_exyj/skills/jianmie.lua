@@ -1,8 +1,21 @@
-local U =require("packages/utility/utility")
 
 local jianmie = fk.CreateSkill{
   name = "jianmie",
 }
+
+Fk:loadTranslationTable{
+  ["jianmie"] = "翦灭",
+  [":jianmie"] = "出牌阶段限一次，你可以选择一名其他角色，你与其同时选择一种颜色，弃置所有各自选择颜色的手牌，然后弃置牌数较多的角色视为对"..
+  "另一名角色使用【决斗】。",
+
+  ["#jianmie"] = "翦灭：与一名角色同时选择一种颜色的手牌弃置，弃牌数多的角色视为对对方使用【决斗】",
+  ["#jianmie-choice"] = "翦灭：选择一种颜色的手牌弃置，弃牌多的角色视为对对方使用【决斗】！",
+
+  ["$jianmie1"] = "莫说是你，天潢贵胄亦可杀得！",
+  ["$jianmie2"] = "你我不到黄泉，不复相见！",
+}
+
+local U =require("packages/utility/utility")
 
 jianmie:addEffect("active", {
   anim_type = "offensive",
@@ -61,16 +74,5 @@ jianmie:addEffect("active", {
     end
   end,
 })
-
-Fk:loadTranslationTable{
-  ["jianmie"] = "翦灭",
-  [":jianmie"] = "出牌阶段限一次，你可以选择一名其他角色，你与其同时选择一种颜色，弃置所有各自选择颜色的手牌，然后弃置牌数较多的角色视为对"..
-  "另一名角色使用【决斗】。",
-  ["#jianmie"] = "翦灭：与一名角色同时选择一种颜色的手牌弃置，弃牌数多的角色视为对对方使用【决斗】",
-  ["#jianmie-choice"] = "翦灭：选择一种颜色的手牌弃置，弃牌多的角色视为对对方使用【决斗】！",
-
-  ["$jianmie1"] = "莫说是你，天潢贵胄亦可杀得！",
-  ["$jianmie2"] = "你我不到黄泉，不复相见！",
-}
 
 return jianmie

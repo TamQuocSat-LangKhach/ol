@@ -4,9 +4,9 @@ return {
   require(prefix .. "jiushi"),
 
   require(prefix .. "jianmie"),
-  
+
   require(prefix .. "xuanhuo"),
-  require(prefix .. "xuanhuo_choose"),
+  require(prefix .. "xuanhuo_active"),
   require(prefix .. "enyuan"),
 
   require(prefix .. "xuanfeng"),
@@ -15,7 +15,7 @@ return {
   require(prefix .. "buyi"),
 
   require(prefix .. "jiangchi"),
-  require(prefix .. "jiangchi_select"),
+  require(prefix .. "jiangchi_active"),
 
   require(prefix .. "zhenlie"),
   require(prefix .. "miji"),

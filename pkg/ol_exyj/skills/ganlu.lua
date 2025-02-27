@@ -1,14 +1,26 @@
-local U = require("packages/utility/utility")
-
-local this = fk.CreateSkill{
+local ganlu = fk.CreateSkill{
   name = "ol_ex__ganlu",
 }
 
-this:addEffect("active", {
+Fk:loadTranslationTable{
+  ["ol_ex__ganlu"] = "甘露",
+  [":ol_ex__ganlu"] = "出牌阶段限一次，你可以令两名角色交换装备区里的牌。若X大于你已损失体力值，你须先弃置X张手牌。（X为其装备区牌数之差）",
+
+  ["#ol_ex__ganlu0"] = "甘露：令两名角色交换装备区里的牌，若牌数之差大于%arg，须先弃置手牌",
+  ["#ol_ex__ganlu1"] = "甘露：令 %src 和 %dest 交换装备区里的牌",
+  ["#ol_ex__ganlu2"] = "甘露：弃置%arg张手牌，令 %src 和 %dest 交换装备区里的牌",
+
+  ["$ol_ex__ganlu1"] = "今见玄德，真佳婿也。",
+  ["$ol_ex__ganlu2"] = "吾家有女，当择良婿。",
+}
+
+local U = require("packages/utility/utility")
+
+ganlu:addEffect("active", {
   anim_type = "control",
-  target_num = 2,
   max_phase_use_time = 1,
   min_card_num = 0,
+  target_num = 2,
   prompt = function (self, player, selected_cards, selected_targets)
     if #selected_targets < 2 then
       return "#ol_ex__ganlu0:::"..player:getLostHp()
@@ -25,7 +37,7 @@ this:addEffect("active", {
   card_filter = function (self, player, to_select, selected)
     return not player:prohibitDiscard(to_select) and Fk:currentRoom():getCardArea(to_select) == Card.PlayerHand
   end,
-  target_filter = function (self, player, to_select, selected, selected_cards, card, extra_data)
+  target_filter = function (self, player, to_select, selected, selected_cards)
     if #selected == 0 then
       return true
     elseif #selected == 1 then
@@ -48,27 +60,15 @@ this:addEffect("active", {
   on_use = function(self, room, effect)
     local player = effect.from
     if #effect.cards > 0 then
-      room:throwCard(effect.cards, this.name, player, player)
+      room:throwCard(effect.cards, ganlu.name, player, player)
     end
     local target1 = effect.tos[1]
     local target2 = effect.tos[2]
     if target1.dead or target2.dead then return end
     local cards1 = table.clone(target1:getCardIds("e"))
     local cards2 = table.clone(target2:getCardIds("e"))
-    U.swapCards(room, player, target1, target2, cards1, cards2, this.name, Card.PlayerEquip)
+    U.swapCards(room, player, target1, target2, cards1, cards2, ganlu.name, Card.PlayerEquip)
   end,
 })
 
-Fk:loadTranslationTable{
-  ["ol_ex__ganlu"] = "甘露",
-  [":ol_ex__ganlu"] = "出牌阶段限一次，你可以令两名角色交换装备区里的牌。若X大于你已损失体力值，你须先弃置X张手牌。（X为其装备区牌数之差）",
-  
-  ["#ol_ex__ganlu0"] = "甘露：令两名角色交换装备区里的牌，若牌数之差大于%arg，须先弃置手牌",
-  ["#ol_ex__ganlu1"] = "甘露：令 %src 和 %dest 交换装备区里的牌",
-  ["#ol_ex__ganlu2"] = "甘露：弃置%arg张手牌，令 %src 和 %dest 交换装备区里的牌",
-
-  ["$ol_ex__ganlu1"] = "今见玄德，真佳婿也。",
-  ["$ol_ex__ganlu2"] = "吾家有女，当择良婿。",
-}
-
-return this
+return ganlu

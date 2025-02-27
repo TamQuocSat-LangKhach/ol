@@ -1,17 +1,30 @@
-local this = fk.CreateSkill{
+local lihuo = fk.CreateSkill{
   name = "ol_ex__lihuo",
-  anim_type = "offensive",
 }
 
-this:addEffect(fk.AfterCardUseDeclared, {
+Fk:loadTranslationTable{
+  ["ol_ex__lihuo"] = "疬火",
+  [":ol_ex__lihuo"] = "你使用非火【杀】可以改为火【杀】，此牌结算后，若造成了伤害，你弃置一张牌或失去1点体力。你使用火【杀】时可以增加一个目标。",
+
+  ["#ol_ex__lihuo-invoke"] = "疬火：是否将%arg改为火【杀】？",
+  ["#ol_ex__lihuo-choose"] = "疬火：你可以为此%arg增加一个目标",
+  ["#ol_ex__lihuo-discard"] = "疬火：弃置一张牌，否则你失去1点体力",
+
+  ["$ol_ex__lihuo1"] = "此火只为全歼敌寇，无需妇人之仁。",
+  ["$ol_ex__lihuo2"] = "战胜攻取，以火修功。",
+}
+
+lihuo:addEffect(fk.AfterCardUseDeclared, {
+  anim_type = "offensive",
   can_trigger = function(self, event, target, player, data)
-    if target == player and player:hasSkill(this.name) then
-      return data.card.trueName == "slash" and data.card.name ~= "fire__slash"
-    end
+    return target == player and player:hasSkill(lihuo.name) and
+      data.card.trueName == "slash" and data.card.name ~= "fire__slash"
   end,
   on_cost = function(self, event, target, player, data)
-    local room = player.room
-    return room:askToSkillInvoke(player, { skill_name = this.name, prompt = "#ol_ex__lihuo-invoke:::"..data.card:toLogString()})
+    return player.room:askToSkillInvoke(player, {
+      skill_name = lihuo.name,
+      prompt = "#ol_ex__lihuo-invoke:::"..data.card:toLogString(),
+    })
   end,
   on_use = function(self, event, target, player, data)
     local card = Fk:cloneCard("fire__slash", data.card.suit, data.card.number)
@@ -28,59 +41,54 @@ this:addEffect(fk.AfterCardUseDeclared, {
     card.skillNames = data.card.skillNames
     data.card = card
     data.extra_data = data.extra_data or {}
-    data.extra_data.ol_ex__lihuo = data.extra_data.ol_ex__lihuo or {}
-    table.insert(data.extra_data.ol_ex__lihuo, player.id)
+    data.extra_data.ol_ex__lihuo = player
   end,
 })
 
-this:addEffect(fk.AfterCardTargetDeclared, {
+lihuo:addEffect(fk.AfterCardTargetDeclared, {
   can_trigger = function(self, event, target, player, data)
-    if target == player and player:hasSkill(this.name) then
-      return data.card.name == "fire__slash" and #player.room:getUseExtraTargets(data) > 0
-    end
+    return target == player and player:hasSkill(lihuo.name) and
+      data.card.name == "fire__slash" and #data:getExtraTargets() > 0
   end,
   on_cost = function(self, event, target, player, data)
     local room = player.room
-    local tos = room:askToChoosePlayers(player, { targets = room:getUseExtraTargets(data), min_num = 1, max_num = 1,
-      prompt = "#lihuo-choose:::"..data.card:toLogString(), skill_name = this.name, cancelable = true
+    local to = room:askToChoosePlayers(player, {
+      targets = data:getExtraTargets(),
+      min_num = 1, max_num = 1,
+      prompt = "#lihuo-choose:::"..data.card:toLogString(),
+      skill_name = lihuo.name,
+      cancelable = true,
     })
-    if #tos > 0 then
-      self.cost_data = tos
+    if #to > 0 then
+      event:setCostData(self, {tos = to})
       return true
     end
   end,
   on_use = function(self, event, target, player, data)
-    table.insert(data.tos, self.cost_data)
+    data:addTarget(event:getCostData(self).tos[1])
   end,
 })
 
-this:addEffect(fk.CardUseFinished, {
-  mute = true,
+lihuo:addEffect(fk.CardUseFinished, {
+  anim_type = "negative",
+  is_delay_effect = true,
   can_trigger = function(self, event, target, player, data)
-    return not player.dead and data.damageDealt and data.extra_data and data.extra_data.ol_ex__lihuo and
-    table.contains(data.extra_data.ol_ex__lihuo, player.id)
+    return not player.dead and data.damageDealt and data.extra_data and data.extra_data.ol_ex__lihuo == player
   end,
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    if #room:askToDiscard(player, { min_num = 1, max_num = 1, include_equip = true,
-      skill_name = "ol_ex__lihuo", cancelable = true, pattern = ".", prompt = "#ol_ex__lihuo-discard"
+    if #room:askToDiscard(player, {
+      min_num = 1,
+      max_num = 1,
+      include_equip = true,
+      skill_name = lihuo.name,
+      cancelable = true,
+      prompt = "#ol_ex__lihuo-discard",
     }) == 0 then
-      room:loseHp(player, 1, "ol_ex__lihuo")
+      room:loseHp(player, 1, lihuo.name)
     end
   end,
 })
 
-Fk:loadTranslationTable{
-  ["ol_ex__lihuo"] = "疬火",
-  [":ol_ex__lihuo"] = "你使用非火【杀】可以改为火【杀】，此牌结算后，若造成了伤害，你弃置一张牌或失去1点体力。你使用火【杀】时可以增加一个目标。",
-  
-  ["#ol_ex__lihuo-invoke"] = "疬火：是否将%arg改为火【杀】？",
-  ["#ol_ex__lihuo-discard"] = "疬火：弃置一张牌，否则你失去1点体力",
-  ["#ol_ex__lihuo_delay"] = "疬火",
-  
-  ["$ol_ex__lihuo1"] = "此火只为全歼敌寇，无需妇人之仁。",
-  ["$ol_ex__lihuo2"] = "战胜攻取，以火修功。",
-}
-
-return this
+return lihuo

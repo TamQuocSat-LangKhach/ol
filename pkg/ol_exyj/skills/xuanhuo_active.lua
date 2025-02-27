@@ -1,8 +1,11 @@
-local xuanhuo_choose = fk.CreateSkill{
-  name = "ol_ex__xuanhuo_choose",
+local xuanhuo_active = fk.CreateSkill{
+  name = "ol_ex__xuanhuo_active",
 }
 
-xuanhuo_choose:addEffect("active", {
+Fk:loadTranslationTable{
+  ["ol_ex__xuanhuo_choose"] = "眩惑",
+}
+xuanhuo_active:addEffect("active", {
   card_num = 2,
   target_num = 2,
   card_filter = function(self, player, to_select, selected)
@@ -15,4 +18,4 @@ xuanhuo_choose:addEffect("active", {
   end,
 })
 
-return xuanhuo_choose
+return xuanhuo_active
