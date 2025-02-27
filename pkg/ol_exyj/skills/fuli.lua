@@ -1,7 +1,11 @@
 local this = fk.CreateSkill{
   name = "ol_ex__fuli",
-  anim_type = "defensive",
-  frequency = Skill.Limited,
+  tags = { Skill.Limited },
+}
+
+Fk:loadTranslationTable{
+  ["ol_ex__fuli"] = "伏枥",
+  [":ol_ex__fuli"] = "限定技，当你处于濒死状态时，你可以将体力回复至X点且手牌摸至X张（X为全场势力数），若X大于你本局游戏造成的伤害值，你翻面。",
 }
 
 this:addEffect(fk.AskForPeaches, {
@@ -39,10 +43,5 @@ this:addEffect(fk.AskForPeaches, {
     end
   end,
 })
-
-Fk:loadTranslationTable{
-  ["ol_ex__fuli"] = "伏枥",
-  [":ol_ex__fuli"] = "限定技，当你处于濒死状态时，你可以将体力回复至X点且手牌摸至X张（X为全场势力数），若X大于你本局游戏造成的伤害值，你翻面。",
-}
 
 return this

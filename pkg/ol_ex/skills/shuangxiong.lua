@@ -1,14 +1,38 @@
-local this = fk.CreateSkill{
+local shuangxiong = fk.CreateSkill{
   name = "ol_ex__shuangxiong",
 }
 
-this:addEffect("active", {
+Fk:loadTranslationTable {
+  ["ol_ex__shuangxiong"] = "双雄",
+  [":ol_ex__shuangxiong"] = "摸牌阶段结束时，你可以弃置一张牌，本回合你可以将一张与此牌颜色不同的牌当【决斗】使用。"..
+  "结束阶段，你获得弃牌堆中于此回合内对你造成过伤害的牌。",
+
+  ["@ol_ex__shuangxiong-turn"] = "双雄",
+  ["#ol_ex__shuangxiong-discard"] = "双雄：你可以弃置一张牌，本回合可以将不同颜色的牌当【决斗】使用",
+  ["#ol_ex__shuangxiong"] = "双雄：你可以将一张%arg牌当【决斗】使用",
+
+  ["$ol_ex__shuangxiong1"] = "吾执矛，君执槊，此天下可有挡我者？",
+  ["$ol_ex__shuangxiong2"] = "兄弟协力，定可于乱世纵横！",
+}
+
+shuangxiong:addEffect("viewas", {
   anim_type = "offensive",
   pattern = "duel",
-  prompt = "#ol_ex__shuangxiong-viewas",
+  prompt = function(self, player)
+    local mark = player:getTableMark("@ol_ex__shuangxiong-turn")
+    local color = ""
+    if #mark == 1 then
+      if mark[1] == "red" then
+        color = "black"
+      else
+        color = "red"
+      end
+    end
+    return "#ol_ex__shuangxiong:::"..color
+  end,
   handly_pile = true,
   card_filter = function(self, player, to_select, selected)
-    if #selected == 1 or type(Self:getMark("@ol_ex__shuangxiong-turn")) ~= "table" then return false end
+    if #selected == 1 then return false end
     local color = Fk:getCardById(to_select):getColorString()
     if color == "red" then
       color = "black"
@@ -17,92 +41,80 @@ this:addEffect("active", {
     else
       return false
     end
-    return table.contains(Self:getMark("@ol_ex__shuangxiong-turn"), color)
+    return table.contains(player:getMark("@ol_ex__shuangxiong-turn"), color)
   end,
-  view_as = function(self, cards)
-    if #cards ~= 1 then
-      return nil
-    end
+  view_as = function(self, player, cards)
+    if #cards ~= 1 then return end
     local c = Fk:cloneCard("duel")
-    c.skillName = this.name
+    c.skillName = shuangxiong.name
     c:addSubcard(cards[1])
     return c
   end,
   enabled_at_play = function(self, player)
-    return type(player:getMark("@ol_ex__shuangxiong-turn")) == "table"
+    return #player:getTableMark("@ol_ex__shuangxiong-turn") > 0
   end,
-  enabled_at_response = function(self, player, resp)
-    return type(player:getMark("@ol_ex__shuangxiong-turn")) == "table" and not resp
+  enabled_at_response = function(self, player, response)
+    return #player:getTableMark("@ol_ex__shuangxiong-turn") > 0 and not response
   end,
 })
 
-this:addEffect(fk.EventPhaseEnd, {
+shuangxiong:addEffect(fk.EventPhaseEnd, {
   anim_type = "offensive",
   can_trigger = function(self, event, target, player, data)
-    if target ~= player or not player:hasSkill(this.name) then return end
-    return player.phase == Player.Draw and not player:isNude()
+    return target == player and player:hasSkill(shuangxiong.name) and player.phase == Player.Draw and not player:isNude()
   end,
   on_cost = function(self, event, target, player, data)
-    local cards = player.room:askToDiscard(player, { min_num = 1, max_num = 1, include_equip = true,
-      skill_name = "ol_ex__shuangxiong", cancelable = true, pattern = ".", prompt = "#ol_ex__shuangxiong-discard", skip = true
+    local room = player.room
+    local card = room:askToDiscard(player, {
+      min_num = 1,
+      max_num = 1,
+      include_equip = true,
+      skill_name = shuangxiong.name,
+      cancelable = true,
+      prompt = "#ol_ex__shuangxiong-discard",
+      skip = true,
     })
-    if #cards > 0 then
-      self.cost_data = cards
+    if #card > 0 then
+      event:setCostData(self, {cards = card})
       return true
     end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local color = Fk:getCardById(self.cost_data[1]):getColorString()
-    room:throwCard(self.cost_data, this.name, player, player)
+    local id = event:getCostData(self).cards[1]
+    local color = Fk:getCardById(id):getColorString()
     room:addTableMarkIfNeed(player, "@ol_ex__shuangxiong-turn", color)
+    room:throwCard(id, shuangxiong.name, player, player)
   end,
 })
 
-this:addEffect(fk.EventPhaseStart, {
+shuangxiong:addEffect(fk.EventPhaseStart, {
   anim_type = "drawcard",
   can_trigger = function(self, event, target, player, data)
-    if target ~= player or not player:hasSkill(this.name) or player.phase ~= Player.Finish then return end
+    if target ~= player or not player:hasSkill(shuangxiong.name) or player.phase ~= Player.Finish then return end
     local room = player.room
     local turn_event = room.logic:getCurrentEvent():findParent(GameEvent.Turn, true)
     if turn_event == nil then return false end
     local cards = {}
     local damage
     room.logic:getActualDamageEvents(1, function(e)
-      damage = e.data[1]
+      damage = e.data
       if damage.to == player and damage.card then
         table.insertTableIfNeed(cards, Card:getIdList(damage.card))
       end
-      return false
     end, nil, turn_event.id)
     cards = table.filter(cards, function (id)
       return room:getCardArea(id) == Card.DiscardPile
     end)
     if #cards > 0 then
-      self.cost_data = cards
+      event:setCostData(self, {cards = cards})
       return true
     end
   end,
-  on_cost = function(self, event, target, player, data)
-    return true
-  end,
+  on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
-    local room = player.room
-    room:obtainCard(player, self.cost_data, true, fk.ReasonJustMove)
+    player.room:obtainCard(player, event:getCostData(self).cards, true, fk.ReasonJustMove, player, shuangxiong.name)
   end,
 })
 
-Fk:loadTranslationTable {
-  ["ol_ex__shuangxiong"] = "双雄",
-  [":ol_ex__shuangxiong"] = "①摸牌阶段结束时，你可弃置一张牌，你于此回合内可以将一张与此牌颜色不同的牌转化为【决斗】使用。"..
-  "②结束阶段，你获得弃牌堆中于此回合内对你造成过伤害的牌。",
-
-  ["@ol_ex__shuangxiong-turn"] = "双雄",
-  ["#ol_ex__shuangxiong-discard"] = "双雄：你可以弃置一张牌，本回合可以将不同颜色的牌当【决斗】使用",
-  ["#ol_ex__shuangxiong-viewas"] = "你是否想要发动“双雄”，将一张牌当【决斗】使用？",
-
-  ["$ol_ex__shuangxiong1"] = "吾执矛，君执槊，此天下可有挡我者？",
-  ["$ol_ex__shuangxiong2"] = "兄弟协力，定可于乱世纵横！",
-}
-
-return this
+return shuangxiong

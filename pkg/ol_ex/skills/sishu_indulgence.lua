@@ -1,12 +1,18 @@
-local orig_indulgence_skill = Fk.skills["indulgence_skill"]
-
-local this = fk.CreateSkill {
+local skill = fk.CreateSkill {
   name = "trans__indulgence_skill",
 }
 
-this:addEffect("active", {
-  mod_target_filter = orig_indulgence_skill.modTargetFilter,
-  target_filter = orig_indulgence_skill.targetFilter,
+Fk:loadTranslationTable {
+  ["trans__indulgence_skill"] = "乐不思蜀"
+}
+
+skill:addEffect("cardskill", {
+  prompt = "#indulgence_skill",
+  can_use = Util.CanUse,
+  mod_target_filter = function(self, player, to_select, selected, card, distance_limited)
+    return to_select ~= player
+  end,
+  target_filter = Util.CardTargetFilter,
   target_num = 1,
   on_effect = function(self, room, effect)
     local to = effect.to
@@ -16,8 +22,7 @@ this:addEffect("active", {
       pattern = ".|.|heart",
     }
     room:judge(judge)
-    local result = judge.card
-    if result.suit == Card.Heart then
+    if judge:matchPattern() then
       to:skip(Player.Play)
     end
     self:onNullified(room, effect)
@@ -26,13 +31,9 @@ this:addEffect("active", {
     room:moveCards{
       ids = room:getSubcardsByRule(effect.card, { Card.Processing }),
       toArea = Card.DiscardPile,
-      moveReason = fk.ReasonUse
+      moveReason = fk.ReasonUse,
     }
   end,
 })
 
-Fk:loadTranslationTable {
-  ["trans__indulgence_skill"] = "乐不思蜀"
-}
-
-return this
+return skill

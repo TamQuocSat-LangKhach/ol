@@ -24,32 +24,32 @@ return {
 
   require(prefix .. "buqu"),
   require(prefix .. "fenji"),
-  
+
   require(prefix .. "leiji"),
   require(prefix .. "guidao"),
   require(prefix .. "huangtian"),
-  require(prefix .. "huangtian_other"),
-  
+  require(prefix .. "huangtian_active"),
+
   require(prefix .. "guhuo"),
   require(prefix .. "chanyuan"),
-  
+
   require(prefix .. "qiangxi"),
   require(prefix .. "ninge"),
-  
+
   require(prefix .. "jieming"),
-  
-  require(prefix .. "fireAttack"),
+
   require(prefix .. "huoji"),
+  require(prefix .. "huoji_fire_attack"),
   require(prefix .. "kanpo"),
   require(prefix .. "cangzhuo"),
-  
+
   require(prefix .. "lianhuan"),
   require(prefix .. "niepan"),
-  
+
   require(prefix .. "hanzhan"),
 
   require(prefix .. "jianchu"),
-  
+
   require(prefix .. "shuangxiong"),
 
   require(prefix .. "luanji"),
@@ -85,18 +85,18 @@ return {
 
   require(prefix .. "fangquan"),
   require(prefix .. "ruoyu"),
-  require(prefix .. "ruoyu_indulgenceSkill"),
   require(prefix .. "sishu"),
+  require(prefix .. "sishu_indulgence"),
   require(prefix .. "jijiang"),
 
   require(prefix .. "jiang"),
   require(prefix .. "hunzi"),
   require(prefix .. "zhiba"),
-  require(prefix .. "zhiba_other"),
-  
+  require(prefix .. "zhiba_active"),
+
   require(prefix .. "zhijian"),
   require(prefix .. "guzheng"),
-  
+
   require(prefix .. "huashen"),
   require(prefix .. "xinsheng"),
 

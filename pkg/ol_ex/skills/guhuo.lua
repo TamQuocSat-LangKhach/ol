@@ -69,7 +69,7 @@ guhuo:addEffect("viewas", {
       local result = U.askForJointChoice(players, {"noquestion", "question"}, guhuo.name,
         "#guhuo-ask::"..player.id..":"..use.card.name, true)
       for _, p in ipairs(players) do
-        if result[p.id] == "question" then
+        if result[p] == "question" then
           table.insert(questioners, p)
         end
       end

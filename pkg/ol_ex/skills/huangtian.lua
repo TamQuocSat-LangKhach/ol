@@ -1,5 +1,6 @@
 local huangtian = fk.CreateSkill {
   name = "ol_ex__huangtian",
+  tags = { Skill.Lord },
   attached_skill_name = "ol_ex__huangtian_active&",
 }
 

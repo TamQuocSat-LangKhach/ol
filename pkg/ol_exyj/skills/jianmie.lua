@@ -21,11 +21,11 @@ jianmie:addEffect("active", {
     local target = effect.tos[1]
     local result = U.askForJointChoice({player, target}, {"red", "black"}, jianmie.name, "#jianmie-choice", true)
     local cards1 = table.filter(player:getCardIds("h"), function (id)
-      return Fk:getCardById(id):getColorString() == result[player.id] and
+      return Fk:getCardById(id):getColorString() == result[player] and
         not player:prohibitDiscard(id)
     end)
     local cards2 = table.filter(target:getCardIds("h"), function (id)
-      return Fk:getCardById(id):getColorString() == result[target.id] and
+      return Fk:getCardById(id):getColorString() == result[target] and
         not target:prohibitDiscard(id)
     end)
     local moves = {}

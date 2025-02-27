@@ -1,6 +1,6 @@
 local this = fk.CreateSkill{
   name = "ol_ex__zongshi",
-  frequency = Skill.Compulsory,
+  tags = { Skill.Compulsory },
 }
 
 this:addEffect(fk.DamageInflicted, {

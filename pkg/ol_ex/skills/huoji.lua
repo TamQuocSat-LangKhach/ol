@@ -8,6 +8,7 @@ Fk:loadTranslationTable {
   "颜色相同的手牌对其造成1点火焰伤害。",
 
   ["#ol_ex__huoji"] = "火计：你可以将一张红色牌当【火攻】使用",
+  ["#ol_ex__huoji-discard"] = "你可弃置一张 %arg 手牌，对 %src 造成1点火属性伤害",
 
   ["$ol_ex__huoji1"] = "赤壁借东风，燃火灭魏军。",
   ["$ol_ex__huoji2"] = "东风，让这火烧得再猛烈些吧！",
@@ -31,12 +32,10 @@ huoji:addEffect("viewas", {
 })
 
 huoji:addEffect(fk.PreCardEffect, {
-  mute = true,
-  can_trigger = function(self, event, target, player, data)
+  can_refresh = function(self, event, target, player, data)
     return player:hasSkill(huoji.name) and data.from == player and data.card.trueName == "fire_attack"
   end,
-  on_cost = Util.TrueFunc,
-  on_use = function(self, event, target, player, data)
+  on_refresh = function(self, event, target, player, data)
     local card = data.card:clone()
     local c = table.simpleClone(data.card)
     for k, v in pairs(c) do
