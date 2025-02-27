@@ -5,6 +5,15 @@ Fk:loadTranslationTable{ ["ol_ex"] = "OL界" }
 
 extension:loadSkillSkels(require("packages.ol.pkg.ol_ex.skills"))
 
+General:new(extension, "ol_ex__zhaoyun", "shu", 4):addSkills { "ol_ex__longdan", "ol_ex__yajiao" }
+Fk:loadTranslationTable{
+  ["ol_ex__zhaoyun"] = "界赵云",
+  ["#ol_ex__zhaoyun"] = "",
+  ["illustrator:ol_ex__zhaoyun"] = "木美人",
+
+  ["~ol_ex__zhaoyun"] = "伐逆寇，兴汉室，吾难忘之……",
+}
+
 local lvmeng = General:new(extension, "ol_ex__lvmeng", "wu", 4)
 lvmeng:addSkills { "keji", "ol_ex__qinxue", "ol_ex__botu", }
 lvmeng:addRelatedSkills { "gongxin" }

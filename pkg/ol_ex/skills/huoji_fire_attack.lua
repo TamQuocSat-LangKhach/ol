@@ -2,6 +2,10 @@ local fire_attack = fk.CreateSkill{
   name = "ol_ex__huoji__fire_attack_skill",
 }
 
+Fk:loadTranslationTable{
+  ["ol_ex__huoji__fire_attack_skill"] = "眩惑",
+}
+
 fire_attack:addEffect("cardskill", {
   prompt = "#fire_attack_skill",
   can_use = Util.CanUse,

@@ -1,6 +1,9 @@
 local prefix = "packages.ol.pkg.ol_ex.skills."
 
 return {
+  require(prefix .. "longdan"),
+  require(prefix .. "yajiao"),
+
   require(prefix .. "qinxue"),
   require(prefix .. "botu"),
 

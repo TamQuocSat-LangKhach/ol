@@ -1,5 +1,5 @@
 local zhiba = fk.CreateSkill {
-  name = "zhiba",
+  name = "ol_ex__zhiba",
   tags = { Skill.Lord },
   attached_skill_name = "ol_ex__zhiba_active&",
 }

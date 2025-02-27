@@ -3,7 +3,7 @@ local xuanhuo_active = fk.CreateSkill{
 }
 
 Fk:loadTranslationTable{
-  ["ol_ex__xuanhuo_choose"] = "眩惑",
+  ["ol_ex__xuanhuo_active"] = "眩惑",
 }
 xuanhuo_active:addEffect("active", {
   card_num = 2,
