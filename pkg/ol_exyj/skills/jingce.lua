@@ -4,7 +4,7 @@ local jingce = fk.CreateSkill{
 
 Fk:loadTranslationTable{
   ["ol_ex__jingce"] = "精策",
-  [":ol_ex__jingce"] = "你每于回合内使用一种花色的手牌，本回合的手牌上限便+1；每个出牌阶段结束时，你可以摸X张牌（X为你本回合使用过牌的类别数）。",
+  [":ol_ex__jingce"] = "你每于回合内使用一种花色的手牌，本回合的手牌上限便+1；一名角色的出牌阶段结束时，你可以摸X张牌（X为你本回合使用过牌的类别数）。",
 }
 
 jingce:addEffect(fk.CardUsing, {

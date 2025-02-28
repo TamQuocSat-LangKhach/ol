@@ -18,9 +18,9 @@ return {
   ["ol_ex__qinxue"] = "Diligence",
   [":ol_ex__qinxue"] = "(awakening) At Beginning or End Phase, if hand cards ≥ HP+2, "..
     "-1 maxHP, choose: [a) heal 1; b) draw 2], and gain Strike at the Heart.",
-  ["ol_ex__botu"] = "Extensive Plan",
-  [":ol_ex__botu"] = "X x round, at end of turn, if all 4 suits went to the discard pile this turn, you get an extra turn. X = min(survivors, 3).",
-  ["@ol_ex__botu-turn"] = "Extensive Plan",
+  ["botu"] = "Extensive Plan",
+  [":botu"] = "X x round, at end of turn, if all 4 suits went to the discard pile this turn, you get an extra turn. X = min(survivors, 3).",
+  ["@botu-turn"] = "Extensive Plan",
 
   ["ol_ex__huaxiong"] = "Jie Hua Xiong",
   ["#ol_ex__huaxiong"] = "Domineering",
@@ -30,8 +30,8 @@ return {
   [":ol_ex__yaowu"] = "When u suffer dmg, if the card that dealt the dmg is:"..
   "<br/> ▪ red, source draws 1,"..
   "<br/> ▪ not red, u draw 1.",
-  ["ol_ex__shizhan"] = "Potential Slash",
-  [":ol_ex__shizhan"] = "2 x Action Phase, you can choose another hero, view it as him using Duel on you.",
+  ["shizhan"] = "Potential Slash",
+  [":shizhan"] = "2 x Action Phase, you can choose another hero, view it as him using Duel on you.",
 
   ["ol_ex__xiahouyuan"] = "Jie Xiahou Yuan",
   ["#ol_ex__xiahouyuan"] = "Lightning-fast Cheetah",
@@ -41,12 +41,12 @@ return {
     "<br/>a) Skip Judgment Phase and Draw Phase. "..
     "<br/>b) Skip Action Phase and discard 1 equipment card. "..
     "<br/>c) Skip Discard Phase and flip. ",
-  ["ol_ex__shebian"] = "Arrange Rebellion",
-  [":ol_ex__shebian"] = "When you flip, you can move an equipment card on the field.",
+  ["shebian"] = "Arrange Rebellion",
+  [":shebian"] = "When you flip, you can move an equipment card on the field.",
   ["#ol_ex__shensu1-choose"] = "Amazing Speed-a: can skip Judgment Phase and Draw Phase, view as using a rangeless Sha",
   ["#ol_ex__shensu2-choose"] = "Amazing Speed-b: can skip Action Phase and discard 1 equipment card, view as using a rangeless Sha",
   ["#ol_ex__shensu3-choose"] = "Amazing Speed-c: can skip Discard Phase and flip, view as using a rangeless Sha",
-  ["#ol_ex__shebian-choose"] = "Arrange Rebellion: can move an equipment card on the field",
+  ["#shebian-choose"] = "Arrange Rebellion: can move an equipment card on the field",
 
   ["ol_ex__caoren"] = "Jie Cao Ren",
   ["ol_ex__jushou"] = "Entrenched",
@@ -101,10 +101,10 @@ return {
   ["ol_ex__buqu"] = "Refusing Death",
   [":ol_ex__buqu"] = " When u on the brink-of-death, show 1 card from the top of draw pile. If its value is ≠ than all the Wounds, place it atop your hero (named Wound), heal to 1 HP. | "..
     "If your #Wounds > 0, your hand limit = #Wounds.",
-  ["ol_ex__fenji"] = "Exertion",
-  [":ol_ex__fenji"] = "When a hero has hand cards taken or discarded by another, u can lose 1 HP to let him draw 2.",
+  ["fenji"] = "Exertion",
+  [":fenji"] = "When a hero has hand cards taken or discarded by another, u can lose 1 HP to let him draw 2.",
   ["ol_ex__buqu_scar"] = "Wound",
-  ["#ol_ex__fenji-invoke"] = "Exertion: can lose 1 HP to let %dest draw 2",
+  ["#fenji-invoke"] = "Exertion: can lose 1 HP to let %dest draw 2",
 
   ["ol_ex__zhangjiao"] = "Jie Zhang Jiao",
   ["ol_ex__leiji"] = "Lightning Strike",
@@ -133,8 +133,8 @@ return {
   ["#ol_ex__dianwei"] = "The E-Lai of ancient times",
   ["ol_ex__qiangxi"] = "Ferocious Assault",
   [":ol_ex__qiangxi"] = "2x Action Phase, you can discard 1 weapon or suffer 1 dmg to deal 1 dmg to another hero. You cannot use this skill on the same hero more than once per turn.",
-  ["ol_ex__ninge"] = "Fierce and Terrifying Appearance",
-  [":ol_ex__ninge"] = "Each turn, after a hero suffers dmg for the 2nd time, if u’re the source or victim, draw 1 & discard 1 from the victim‘s field. ",
+  ["ninge"] = "Fierce and Terrifying Appearance",
+  [":ninge"] = "Each turn, after a hero suffers dmg for the 2nd time, if u’re the source or victim, draw 1 & discard 1 from the victim‘s field. ",
   ["#ol_ex__qiangxi"] = "choose 1 weapon and 1 hero, or only choose 1 hero and suffer 1 dmg",
 
   ["ol_ex__xunyu"] = "Jie Xun Yu",
@@ -215,11 +215,11 @@ return {
   ["#ol_ex__jiezi-choose"] = "Intercept Provisions: can choose a hero, let him gain 1 Provision or draw 1",
 
   ["ol_ex__zhurong"] = "Jie Zhu Rong",
-  ["ol_ex__changbiao"] = "3 meters Javelin",
-  ["#ol_ex__changbiao_trigger"] = "3 meters Javelin",
-  [":ol_ex__changbiao"] = "1 x Action Phase, can use any hand cards (=X) as a rangeless Sha. If this Sha damages the target, u draw X cards at the end of Action Phase.",
-  ["#ol_ex__changbiao-active"] = "Activate 3 meters Javelin: can use any hand cards as a rangeless Sha",
-  ["@ol_ex__changbiao_draw-phase"] = "3 meters Javelin",
+  ["changbiao"] = "3 meters Javelin",
+  ["#changbiao_trigger"] = "3 meters Javelin",
+  [":changbiao"] = "1 x Action Phase, can use any hand cards (=X) as a rangeless Sha. If this Sha damages the target, u draw X cards at the end of Action Phase.",
+  ["#changbiao-active"] = "Activate 3 meters Javelin: can use any hand cards as a rangeless Sha",
+  ["@changbiao_draw-phase"] = "3 meters Javelin",
 
   ["ol_ex__menghuo"] = "Jie Meng Huo",
   ["ol_ex__zaiqi"] = "Arise Again",
@@ -230,11 +230,11 @@ return {
   ["ol_ex__zaiqi_recover"] = "let %src heal 1",
 
   ["ol_ex__sunjian"] = "Jie Sun Jian",
-  ["ol_ex__wulie"] = "Give your life for a noble cause",
-  ["#ol_ex__wulie_delay"] = "Give your life for a noble cause",
-  [":ol_ex__wulie"] = "1 x game, at End Phase, can lose X HP and choose other X heroes who gain an ‘Exploit’ token. | When a hero with an Exploit suffers dmg, drop the Exploit and prevent the dmg. ",
-  ["@@ol_ex__wulie_lie"] = "Exploit",
-  ["#ol_ex__wulie-choose"] = "Give your life for a noble cause: can lose X HP and choose other X heroes, prevent the dmg they seffer next time.",
+  ["wulie"] = "Give your life for a noble cause",
+  ["#wulie_delay"] = "Give your life for a noble cause",
+  [":wulie"] = "1 x game, at End Phase, can lose X HP and choose other X heroes who gain an ‘Exploit’ token. | When a hero with an Exploit suffers dmg, drop the Exploit and prevent the dmg. ",
+  ["@@wulie_lie"] = "Exploit",
+  ["#wulie-choose"] = "Give your life for a noble cause: can lose X HP and choose other X heroes, prevent the dmg they seffer next time.",
 
   ["ol_ex__lusu"] = "Jie Lu Su",
   ["ol_ex__haoshi"] = "Altruism",
@@ -310,12 +310,12 @@ return {
   [":ol_ex__fangquan"] = "Can skip ur Action Phase. If u do, can discard a hand card at start of Discard Phase. If u do, when this turn ends, give another hero an extra turn.",
   ["ol_ex__ruoyu"] = "Eiron",
   [":ol_ex__ruoyu"] = " (ruler, awakening) At Beginning Phase, if ur HP is the least: +1 maxHP, heal to 3 HP, gain Rouse and Forget Duty",
-  ["ol_ex__sishu"] = "Miss Shu",
-  [":ol_ex__sishu"] = "At start of Action Phase, can choose a hero who will reverse the judgement effect on Acedia.",
+  ["sishu"] = "Miss Shu",
+  [":sishu"] = "At start of Action Phase, can choose a hero who will reverse the judgement effect on Acedia.",
   ["#ol_ex__fangquan-choose"] = "Devolution: can discard a hand card, give another hero an extra turn",
-  ["#ol_ex__sishu-choose"] = "Miss Shu: can choose a hero who will reverse the judgement effect on Acedia",
-  ["@@ol_ex__sishu_effect"] = "Miss Shu",
-  ["#ol_ex__sishu_buff"] = "Miss Shu",
+  ["#sishu-choose"] = "Miss Shu: can choose a hero who will reverse the judgement effect on Acedia",
+  ["@@sishu_effect"] = "Miss Shu",
+  ["#sishu_buff"] = "Miss Shu",
   ["trans__indulgence_skill"] = "Acedia",
 
   ["ol_ex__sunce"] = "Jie Sun Ce",

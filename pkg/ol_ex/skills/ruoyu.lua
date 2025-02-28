@@ -34,7 +34,7 @@ ruoyu:addEffect(fk.EventPhaseStart, {
         skillName = ruoyu.name,
       }
     end
-    room:handleAddLoseSkills(player, "ol_ex__jijiang|ol_ex__sishu")
+    room:handleAddLoseSkills(player, "ol_ex__jijiang|sishu")
   end,
 })
 

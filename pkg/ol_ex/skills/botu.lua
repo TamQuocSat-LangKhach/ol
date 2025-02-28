@@ -1,15 +1,15 @@
 local botu = fk.CreateSkill{
-  name = "ol_ex__botu",
+  name = "botu",
 }
 
 Fk:loadTranslationTable {
-  ["ol_ex__botu"] = "博图",
-  [":ol_ex__botu"] = "每轮限X次（X为存活角色数且最多为3），回合结束时，若本回合内置入弃牌堆的牌包含四种花色，你可以获得一个额外回合。",
+  ["botu"] = "博图",
+  [":botu"] = "每轮限X次（X为存活角色数且最多为3），回合结束时，若本回合内置入弃牌堆的牌包含四种花色，你可以获得一个额外回合。",
 
-  ["@ol_ex__botu-turn"] = "博图",
+  ["@botu-turn"] = "博图",
 
-  ["$ol_ex__botu1"] = "厚积而薄发。",
-  ["$ol_ex__botu2"] = "我胸怀的是这天下！",
+  ["$botu1"] = "厚积而薄发。",
+  ["$botu2"] = "我胸怀的是这天下！",
 }
 
 botu:addEffect(fk.TurnEnd, {
@@ -39,7 +39,7 @@ botu:addEffect(fk.TurnEnd, {
 botu:addEffect(fk.AfterCardsMove, {
   can_refresh = function (self, event, target, player, data)
     return player.room.current == player and player:hasSkill(botu.name, true) and
-      #player:getTableMark("@ol_ex__botu-turn") < 4
+      #player:getTableMark("@botu-turn") < 4
   end,
   on_refresh = function (self, event, target, player, data)
     for _, move in ipairs(data) do
@@ -47,7 +47,7 @@ botu:addEffect(fk.AfterCardsMove, {
         for _, info in ipairs(move.moveInfo) do
           local suit = Fk:getCardById(info.cardId):getSuitString(true)
           if suit ~= "log_nosuit" then
-            player.room:addTableMarkIfNeed(player, "@ol_ex__botu-turn", suit)
+            player.room:addTableMarkIfNeed(player, "@botu-turn", suit)
           end
         end
       end

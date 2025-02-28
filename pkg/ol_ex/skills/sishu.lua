@@ -1,17 +1,17 @@
 
 local sishu = fk.CreateSkill {
-  name = "ol_ex__sishu",
+  name = "sishu",
 }
 
 Fk:loadTranslationTable {
-  ["ol_ex__sishu"] = "思蜀",
-  [":ol_ex__sishu"] = "出牌阶段开始时，你可选择一名角色，其本局游戏【乐不思蜀】的判定结果反转。",
+  ["sishu"] = "思蜀",
+  [":sishu"] = "出牌阶段开始时，你可选择一名角色，其本局游戏【乐不思蜀】的判定结果反转。",
 
-  ["#ol_ex__sishu-choose"] = "思蜀：选择一名角色，令其本局游戏【乐不思蜀】的判定结果反转",
-  ["@@ol_ex__sishu_effect"] = "思蜀",
+  ["#sishu-choose"] = "思蜀：选择一名角色，令其本局游戏【乐不思蜀】的判定结果反转",
+  ["@@sishu_effect"] = "思蜀",
 
-  ["$ol_ex__sishu1"] = "蜀乐乡土，怎不思念？",
-  ["$ol_ex__sishu2"] = "思乡心切，徘徊惶惶。",
+  ["$sishu1"] = "蜀乐乡土，怎不思念？",
+  ["$sishu2"] = "思乡心切，徘徊惶惶。",
 }
 
 sishu:addEffect(fk.EventPhaseStart, {
@@ -25,7 +25,7 @@ sishu:addEffect(fk.EventPhaseStart, {
       targets = room.alive_players,
       min_num = 1,
       max_num = 1,
-      prompt = "#ol_ex__sishu-choose",
+      prompt = "#sishu-choose",
       skill_name = sishu.name,
       cancelable = true,
     })
@@ -36,7 +36,7 @@ sishu:addEffect(fk.EventPhaseStart, {
   end,
   on_use = function(self, event, target, player, data)
     local to = event:getCostData(self).tos[1]
-    player.room:setPlayerMark(to, "@@ol_ex__sishu_effect", 1 - to:getMark("@@ol_ex__sishu_effect"))
+    player.room:setPlayerMark(to, "@@sishu_effect", 1 - to:getMark("@@sishu_effect"))
   end,
 })
 
@@ -45,7 +45,7 @@ local indulgenceSkill = Fk.skills["trans__indulgence_skill"]
 
 sishu:addEffect(fk.CardEffecting, {
   can_refresh = function(self, event, target, player, data)
-    return player:getMark("@@ol_ex__sishu_effect") > 0 and target == player and data.card.trueName == "indulgence"
+    return player:getMark("@@sishu_effect") > 0 and target == player and data.card.trueName == "indulgence"
   end,
   on_refresh = function(self, event, target, player, data)
     local card = data.card:clone()

@@ -1,14 +1,14 @@
 local ninge = fk.CreateSkill{
-  name = "ol_ex__ninge",
+  name = "ninge",
   tags = { Skill.Compulsory },
 }
 
 Fk:loadTranslationTable{
-  ["ol_ex__ninge"] = "狞恶",
-  [":ol_ex__ninge"] = "锁定技，当一名角色于当前回合内第二次受到伤害后，若其为你或来源为你，你摸一张牌，弃置其场上一张牌。",
+  ["ninge"] = "狞恶",
+  [":ninge"] = "锁定技，当一名角色于当前回合内第二次受到伤害后，若其为你或来源为你，你摸一张牌，弃置其场上一张牌。",
 
-  ["$ol_ex__ninge1"] = "古之恶来，今之典韦！",
-  ["$ol_ex__ninge2"] = "宁为刀俎，不为鱼肉！",
+  ["$ninge1"] = "古之恶来，今之典韦！",
+  ["$ninge2"] = "宁为刀俎，不为鱼肉！",
 }
 
 ninge:addEffect(fk.Damaged, {

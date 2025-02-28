@@ -8,14 +8,14 @@ extension:loadSkillSkels(require("packages.ol.pkg.ol_ex.skills"))
 General:new(extension, "ol_ex__zhaoyun", "shu", 4):addSkills { "ol_ex__longdan", "ol_ex__yajiao" }
 Fk:loadTranslationTable{
   ["ol_ex__zhaoyun"] = "界赵云",
-  ["#ol_ex__zhaoyun"] = "",
+  ["#ol_ex__zhaoyun"] = "虎威将军",
   ["illustrator:ol_ex__zhaoyun"] = "木美人",
 
   ["~ol_ex__zhaoyun"] = "伐逆寇，兴汉室，吾难忘之……",
 }
 
 local lvmeng = General:new(extension, "ol_ex__lvmeng", "wu", 4)
-lvmeng:addSkills { "keji", "ol_ex__qinxue", "ol_ex__botu", }
+lvmeng:addSkills { "keji", "ol_ex__qinxue", "botu", }
 lvmeng:addRelatedSkills { "gongxin" }
 Fk:loadTranslationTable{
   ["ol_ex__lvmeng"] = "界吕蒙",
@@ -29,7 +29,7 @@ Fk:loadTranslationTable{
   ["~ol_ex__lvmeng"] = "以后……就交给年轻人了……",
 }
 
-General:new(extension, "ol_ex__huaxiong", "qun", 6):addSkills { "ol_ex__yaowu", "ol_ex__shizhan" }
+General:new(extension, "ol_ex__huaxiong", "qun", 6):addSkills { "ol_ex__yaowu", "shizhan" }
 Fk:loadTranslationTable{
   ["ol_ex__huaxiong"] = "界华雄",
   ["#ol_ex__huaxiong"] = "飞扬跋扈",
@@ -39,7 +39,7 @@ Fk:loadTranslationTable{
   ["~ol_ex__huaxiong"] = "我掉以轻心了……",
 }
 
-General:new(extension, "ol_ex__xiahouyuan", "wei", 4):addSkills { "ol_ex__shensu", "ol_ex__shebian" }
+General:new(extension, "ol_ex__xiahouyuan", "wei", 4):addSkills { "ol_ex__shensu", "shebian" }
 Fk:loadTranslationTable{
   ["ol_ex__xiahouyuan"] = "界夏侯渊",
   ["#ol_ex__xiahouyuan"] = "疾行的猎豹",
@@ -84,7 +84,7 @@ Fk:loadTranslationTable{
   ["~ol_ex__xiaoqiao"] = "同心而离居，忧伤以终老……",
 }
 
-General:new(extension, "ol_ex__zhoutai", "wu", 4):addSkills { "ol_ex__buqu", "ol_ex__fenji" }
+General:new(extension, "ol_ex__zhoutai", "wu", 4):addSkills { "ol_ex__buqu", "fenji" }
 Fk:loadTranslationTable{
   ["ol_ex__zhoutai"] = "界周泰",
   ["#ol_ex__zhoutai"] = "历战之躯",
@@ -113,7 +113,7 @@ Fk:loadTranslationTable{
   ["~ol_ex__yuji"] = "符水失效，此病难医……",
 }
 
-General:new(extension, "ol_ex__dianwei", "wei", 4):addSkills { "ol_ex__qiangxi", "ol_ex__ninge" }
+General:new(extension, "ol_ex__dianwei", "wei", 4):addSkills { "ol_ex__qiangxi", "ninge" }
 Fk:loadTranslationTable{
   ["ol_ex__dianwei"] = "界典韦",
   ["#ol_ex__dianwei"] = "古之恶来",
@@ -208,7 +208,7 @@ Fk:loadTranslationTable{
   ["~ol_ex__xuhuang"] = "亚夫易老，李广难封……",
 }
 
-General:new(extension, "ol_ex__zhurong", "shu", 4, 4, General.Female):addSkills { "juxiang", "lieren", "ol_ex__changbiao" }
+General:new(extension, "ol_ex__zhurong", "shu", 4, 4, General.Female):addSkills { "juxiang", "lieren", "changbiao" }
 Fk:loadTranslationTable{
   ["ol_ex__zhurong"] = "界祝融",
   ["#ol_ex__zhurong"] = "野性的女王",
@@ -232,7 +232,7 @@ Fk:loadTranslationTable{
   ["~ol_ex__menghuo"] = "勿再放我，但求速死！",
 }
 
-General:new(extension, "ol_ex__sunjian", "wu", 4, 5):addSkills { "yinghun", "ol_ex__wulie" }
+General:new(extension, "ol_ex__sunjian", "wu", 4, 5):addSkills { "yinghun", "wulie" }
 Fk:loadTranslationTable{
   ["ol_ex__sunjian"] = "界孙坚",
   ["#ol_ex__sunjian"] = "武烈帝",

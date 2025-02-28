@@ -39,9 +39,9 @@ local cost1skills = {
   "shefu", "qizhi", "gushe", "sheyan", "shuimeng", "jiushi", "jueqing",
   "qice", "zhiyu", "quanji", "lijian", "shibei", "tianming", "zhuhai",
   "ex__fanjian", "juece", "fencheng", "zhuandui", "qianjie", "ex__biyue",
-  "hunzi", "zhuijix", "ol_ex__shizhan", "xiangshu", "ciwei", "guanxing",
+  "hunzi", "zhuijix", "shizhan", "xiangshu", "ciwei", "guanxing",
   "mengjin", "guzheng", "yongsi", "luoying", "jigong", "jj__lianhuan&",
-  "ex__wusheng", "duanfa", "ol_ex__changbiao", "tairan", "qizhou", "wangxi",
+  "ex__wusheng", "duanfa", "changbiao", "tairan", "qizhou", "wangxi",
 }
 local cost2skills = {
   "qingnang", "weimu", "shelie", "jingong", "xiansi",
@@ -80,7 +80,7 @@ local cost4skills = {
   "ol_ex__liegong", "ol__wushen", "longhun", "shenji", "fuji", "jiaozi",
   "re__pojun", "shangshi", "dangxian", "ty_ex__benxi", "qiangzhi", "jianying",
   "xiongluan", "lingren", "xionghuo", "neifa", "jili", "tuogu", "wangong",
-  "jianhui", "ol_ex__botu", "ol__shichou", "yuheng",
+  "jianhui", "botu", "ol__shichou", "yuheng",
 }
 for _, s in ipairs(cost1skills) do RougeUtil:addSkill { 1, s } end
 for _, s in ipairs(cost2skills) do RougeUtil:addSkill { 2, s } end

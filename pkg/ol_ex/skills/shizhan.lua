@@ -1,20 +1,20 @@
 local shizhan = fk.CreateSkill{
-  name = "ol_ex__shizhan"
+  name = "shizhan"
 }
 
 Fk:loadTranslationTable{
-  ["ol_ex__shizhan"] = "势斩",
-  [":ol_ex__shizhan"] = "出牌阶段限两次，你可以令一名其他角色视为对你使用【决斗】。",
+  ["shizhan"] = "势斩",
+  [":shizhan"] = "出牌阶段限两次，你可以令一名其他角色视为对你使用【决斗】。",
 
-  ["#ol_ex__shizhan"] = "势斩：你可以令一名其他角色视为对你使用【决斗】",
+  ["#shizhan"] = "势斩：你可以令一名其他角色视为对你使用【决斗】",
 
-  ["$ol_ex__shizhan1"] = "看你能坚持几个回合！",
-  ["$ol_ex__shizhan2"] = "兀那汉子，且报上名来！",
+  ["$shizhan1"] = "看你能坚持几个回合！",
+  ["$shizhan2"] = "兀那汉子，且报上名来！",
 }
 
 shizhan:addEffect("active", {
   anim_type = "offensive",
-  prompt = "#ol_ex__shizhan",
+  prompt = "#shizhan",
   times = function (self, player)
     return player.phase == Player.Play and 2 - player:usedSkillTimes(shizhan.name, Player.HistoryPhase) or -1
   end,

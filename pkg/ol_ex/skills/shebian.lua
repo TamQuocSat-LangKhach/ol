@@ -1,15 +1,15 @@
 local shebian = fk.CreateSkill {
-  name = "ol_ex__shebian",
+  name = "shebian",
 }
 
 Fk:loadTranslationTable{
-  ["ol_ex__shebian"] = "设变",
-  [":ol_ex__shebian"] = "当你翻面后，你可以移动场上一张装备牌。",
+  ["shebian"] = "设变",
+  [":shebian"] = "当你翻面后，你可以移动场上一张装备牌。",
 
-  ["#ol_ex__shebian-choose"] = "设变：你可以移动场上一张装备牌",
+  ["#shebian-choose"] = "设变：你可以移动场上一张装备牌",
 
-  ["$ol_ex__shebian1"] = "设变力战，虏敌千万！",
-  ["$ol_ex__shebian2"] = "随机应变，临机设变！",
+  ["$shebian1"] = "设变力战，虏敌千万！",
+  ["$shebian2"] = "随机应变，临机设变！",
 }
 
 shebian:addEffect(fk.TurnedOver, {
@@ -21,7 +21,7 @@ shebian:addEffect(fk.TurnedOver, {
   on_cost = function (self, event, target, player, data)
     local room = player.room
     local tos = room:askToChooseToMoveCardInBoard(player, {
-      prompt = "#ol_ex__shebian-choose",
+      prompt = "#shebian-choose",
       skill_name = shebian.name,
       cancelable = true,
       flag = "e",
