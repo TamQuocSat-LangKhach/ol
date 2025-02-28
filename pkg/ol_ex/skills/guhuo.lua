@@ -19,8 +19,8 @@ Fk:loadTranslationTable {
 guhuo:addEffect("viewas", {
   pattern = ".",
   interaction = function(self, player)
-    local all_names = U.getAllCardNames("bt")
-    local names = U.getViewAsCardNames(player, "ol_ex__guhuo", all_names)
+    local all_names = Fk:getAllCardNames("bt")
+    local names = player:getViewAsCardNames("ol_ex__guhuo", all_names)
     if #names > 0 then
       return U.CardNameBox { choices = names, all_choices = all_names }
     end

@@ -35,7 +35,6 @@ hunzi:addEffect(fk.EventPhaseStart, {
     return target == player and player.phase == Player.Finish and not player.dead and
       player:usedEffectTimes(hunzi.name, Player.HistoryTurn) > 0
   end,
-  on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     local room = player.room
     local choices = {"draw2"}

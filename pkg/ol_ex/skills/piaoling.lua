@@ -36,7 +36,6 @@ piaoling:addEffect(fk.FinishJudge, {
     return target == player and not player.dead and data.card.suit == Card.Heart and data.reason == piaoling.name
       and player.room:getCardArea(data.card) == Card.Processing
   end,
-  on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     local room = player.room
     if data.card.suit == Card.Heart and room:getCardArea(data.card) == Card.Processing then

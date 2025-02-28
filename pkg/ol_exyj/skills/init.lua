@@ -32,10 +32,15 @@ return {
   require(prefix .. "chengxiang"),
   require(prefix .. "renxin"),
 
+  require(prefix .. "jingce"),
+
   require(prefix .. "zhiyan"),
   require(prefix .. "zongxuan"),
 
   require(prefix .. "qiaoshui"),
+
+  require(prefix .. "zhuikong"),
+  require(prefix .. "qiuyuan"),
 
   require(prefix .. "juece"),
   require(prefix .. "mieji"),

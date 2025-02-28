@@ -57,7 +57,6 @@ dimeng:addEffect(fk.EventPhaseEnd, {
       end
     end
   end,
-  on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     local x = 0
     for _, tos in ipairs(player:getTableMark("ol_ex__dimeng_target-phase")) do

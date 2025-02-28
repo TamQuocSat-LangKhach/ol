@@ -56,7 +56,6 @@ jiezi:addEffect(fk.EventPhaseEnd, {
   can_trigger = function(self, event, target, player, data)
     return target == player and player.phase == Player.Draw and player:getMark("@@ol_ex__jiezi_zi") > 0
   end,
-  on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     player.room:setPlayerMark(player, "@@ol_ex__jiezi_zi", 0)
     player:gainAnExtraPhase(Player.Draw)

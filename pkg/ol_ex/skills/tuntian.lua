@@ -58,7 +58,6 @@ tuntian:addEffect(fk.FinishJudge, {
     return target == player and not player.dead and data.card.suit ~= Card.Heart and data.reason == tuntian.name
       and player.room:getCardArea(data.card) == Card.Processing
   end,
-  on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     player:addToPile("ol_ex__dengai_field", data.card, true, tuntian.name)
   end,

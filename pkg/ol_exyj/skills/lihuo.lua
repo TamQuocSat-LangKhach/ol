@@ -75,7 +75,6 @@ lihuo:addEffect(fk.CardUseFinished, {
   can_trigger = function(self, event, target, player, data)
     return not player.dead and data.damageDealt and data.extra_data and data.extra_data.ol_ex__lihuo == player
   end,
-  on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     local room = player.room
     if #room:askToDiscard(player, {

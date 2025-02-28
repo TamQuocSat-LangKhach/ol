@@ -28,7 +28,6 @@ haoshi:addEffect(fk.AfterDrawNCards, {
     return player:usedEffectTimes(haoshi.name, Player.HistoryPhase) > 0 and
       player:getHandcardNum() > 5 and not player.dead and #player.room:getOtherPlayers(player, false) > 0
   end,
-  on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     local room = player.room
     local x = player:getHandcardNum() // 2
@@ -77,7 +76,6 @@ haoshi:addEffect(fk.TargetConfirmed, {
         return not p.dead and not p:isKongcheng()
       end)
   end,
-  on_cost = Util.TrueFunc,
   on_use = function (self, event, target, player, data)
     local room = player.room
     local targets = table.filter(player:getTableMark("ol_ex__haoshi_target"), function (p)

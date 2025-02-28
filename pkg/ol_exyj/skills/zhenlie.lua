@@ -28,6 +28,7 @@ zhenlie:addEffect(fk.TargetConfirmed, {
     local room = player.room
     room:loseHp(player, 1, zhenlie.name)
     if player.dead then return false end
+    data.use.nullifiedTargets = data.use.nullifiedTargets or {}
     table.insertIfNeed(data.use.nullifiedTargets, player)
     local choices = {}
     local to = data.from

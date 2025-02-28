@@ -34,7 +34,6 @@ zishou:addEffect(fk.EventPhaseEnd, {
         end, Player.HistoryTurn) > 0
     end
   end,
-  on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     local kingdoms = {}
     for _, p in ipairs(Fk:currentRoom().alive_players) do

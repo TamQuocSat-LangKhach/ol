@@ -68,7 +68,6 @@ zhiba:addEffect(fk.PindianResultConfirmed, {
       return room:getCardArea(data.fromCard) == Card.Processing or room:getCardArea(data.toCard) == Card.Processing
     end
   end,
-  on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     local room = player.room
     local cards = {}

@@ -53,7 +53,6 @@ wulie:addEffect(fk.DamageInflicted, {
   can_trigger = function(self, event, target, player, data)
     return target == player and player:getMark("@@ol_ex__wulie_lie") > 0
   end,
-  on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     data:preventDamage()
     player.room:setPlayerMark(player, "@@ol_ex__wulie_lie", 0)

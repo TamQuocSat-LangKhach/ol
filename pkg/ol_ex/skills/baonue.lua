@@ -56,9 +56,8 @@ baonue:addEffect(fk.FinishJudge, {
     return target == player and data.card.suit == Card.Spade and data.reason == baonue.name
       and player.room:getCardArea(data.card.id) == Card.Processing
   end,
-  on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
-    player.room:obtainCard(player, data.card, true)
+    player.room:obtainCard(player, data.card, true, fk.ReasonJustMove, player, baonue.name)
   end,
 })
 

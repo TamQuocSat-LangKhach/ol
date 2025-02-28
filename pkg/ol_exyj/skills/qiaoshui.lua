@@ -45,7 +45,6 @@ qiaoshui:addEffect(fk.AfterCardTargetDeclared, {
     return target == player and player:getMark("@@ol_ex__qiaoshui-turn") > 0 and
       data.card.type ~= Card.TypeEquip and data.card.sub_type ~= Card.SubtypeDelayedTrick
   end,
-  on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     local room = player.room
     room:setPlayerMark(player, "@@ol_ex__qiaoshui-turn", 0)
