@@ -1,9 +1,12 @@
-local extension = Package:new("ol_ex")
+local extension = Package:new("ol_ex_shzl")
 extension.extensionName = "ol"
 
-Fk:loadTranslationTable{ ["ol_ex"] = "OL界" }
+extension:loadSkillSkelsByPath("./packages/ol/pkg/ol_ex/skills")
 
-extension:loadSkillSkels(require("packages.ol.pkg.ol_ex.skills"))
+Fk:loadTranslationTable{
+  ["ol_ex_shzl"] = "OL-界神话再临",
+  ["ol_ex"] = "OL界",
+}
 
 General:new(extension, "ol_ex__zhaoyun", "shu", 4):addSkills { "ol_ex__longdan", "ol_ex__yajiao" }
 Fk:loadTranslationTable{

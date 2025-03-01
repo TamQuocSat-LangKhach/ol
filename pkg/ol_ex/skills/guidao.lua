@@ -19,19 +19,19 @@ guidao:addEffect(fk.AskForRetrial, {
   end,
   on_cost = function(self, event, target, player, data)
     local room = player.room
-    local card = room:askToResponse(player, {
+    local response = room:askToResponse(player, {
       skill_name = guidao.name,
       pattern = ".|.|spade,club|hand,equip",
       prompt = "#ol_ex__guidao-ask::"..target.id..":"..data.reason,
       cancelable = true,
     })
-    if card then
-      event:setCostData(self, {extra_data = card})
+    if response then
+      event:setCostData(self, {extra_data = response.card})
       return true
     end
   end,
   on_use = function(self, event, target, player, data)
-    local card = Fk:getCardById(event:getCostData(self).extra_data)
+    local card = event:getCostData(self).extra_data
     player.room:retrial(card, player, data, guidao.name, true)
     if not player.dead and card.suit == Card.Spade and card.number > 1 and card.number < 10 then
       player:drawCards(1, guidao.name)

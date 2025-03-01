@@ -1,7 +1,7 @@
 local extension = Package:new("ol_mou")
 extension.extensionName = "ol"
 
-extension:loadSkillSkels(require("packages.ol.pkg.ol_mou.skills"))
+extension:loadSkillSkelsByPath("./packages/ol/pkg/ol_mou/skills")
 
 Fk:loadTranslationTable{
   ["ol_mou"] = "OL-上兵伐谋",

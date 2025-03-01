@@ -1,11 +1,13 @@
 local extension = Package:new("ol_exyj")
 extension.extensionName = "ol"
 
-Fk:loadTranslationTable{ ["ol_exyj"] = "OL界一将" }
+extension:loadSkillSkelsByPath("./packages/ol/pkg/ol_exyj/skills")
 
-extension:loadSkillSkels(require("packages.ol.pkg.ol_exyj.skills"))
+Fk:loadTranslationTable{
+  ["ol_exyj"] = "OL-界一将",
+}
 
-General:new(extension, "ol_ex__caozhi", "wei", 3, 3, General.Male):addSkills { "ol_ex__jiushi", "luoying" }
+General:new(extension, "ol_ex__caozhi", "wei", 3):addSkills { "ol_ex__jiushi", "luoying" }
 Fk:loadTranslationTable{
   ["ol_ex__caozhi"] = "界曹植",
   ["#ol_ex__caozhi"] = "才高八斗",
@@ -27,7 +29,7 @@ Fk:loadTranslationTable{
   ["~ol_ex__zhangchunhua"] = "我不负懿，懿负我。",
 }
 
-General:new(extension, "ol_ex__fazheng", "shu", 3, 3, General.Male):addSkills { "ol_ex__xuanhuo", "ol_ex__enyuan" }
+General:new(extension, "ol_ex__fazheng", "shu", 3):addSkills { "ol_ex__xuanhuo", "ol_ex__enyuan" }
 Fk:loadTranslationTable{
   ["ol_ex__fazheng"] = "界法正",
   ["#ol_ex__fazheng"] = "明理审事",
@@ -36,7 +38,7 @@ Fk:loadTranslationTable{
   ["~ol_ex__fazheng"] = "孝直不忠，不能佑主公复汉室了……",
 }
 
-General:new(extension, "ol_ex__lingtong", "wu", 4, 4, General.Male):addSkills { "ol_ex__xuanfeng" }
+General:new(extension, "ol_ex__lingtong", "wu", 4):addSkills { "ol_ex__xuanfeng" }
 Fk:loadTranslationTable{
   ["ol_ex__lingtong"] = "界凌统",
   ["#ol_ex__lingtong"] = "豪情烈胆",
@@ -55,7 +57,7 @@ Fk:loadTranslationTable{
   ["~ol_ex__wuguotai"] = "竖子，何以胞妹为饵乎？",
 }
 
-General:new(extension, "ol_ex__caozhang", "wei", 4, 4, General.Male):addSkills { "ol_ex__jiangchi" }
+General:new(extension, "ol_ex__caozhang", "wei", 4):addSkills { "ol_ex__jiangchi" }
 Fk:loadTranslationTable{
   ["ol_ex__caozhang"] = "界曹彰",
   ["#ol_ex__caozhang"] = "黄须儿",
@@ -74,7 +76,7 @@ Fk:loadTranslationTable{
   --["~ol_ex__wangyi"] = "",
 }
 
-General:new(extension, "ol_ex__liaohua", "shu", 4, 4, General.Male):addSkills { "ol_ex__dangxian", "ol_ex__fuli" }
+General:new(extension, "ol_ex__liaohua", "shu", 4):addSkills { "ol_ex__dangxian", "ol_ex__fuli" }
 Fk:loadTranslationTable{
   ["ol_ex__liaohua"] = "界廖化",
   ["#ol_ex__liaohua"] = "历尽沧桑",
@@ -83,7 +85,7 @@ Fk:loadTranslationTable{
   --["~ol_ex__liaohua"] = "",
 }
 
-General:new(extension, "ol_ex__chengpu", "wu", 4, 4, General.Male):addSkills { "ol_ex__lihuo", "ol_ex__chunlao" }
+General:new(extension, "ol_ex__chengpu", "wu", 4):addSkills { "ol_ex__lihuo", "ol_ex__chunlao" }
 Fk:loadTranslationTable{
   ["ol_ex__chengpu"] = "界程普",
   ["#ol_ex__chengpu"] = "三朝虎臣",
@@ -92,7 +94,7 @@ Fk:loadTranslationTable{
   ["~ol_ex__chengpu"] = "以暴讨贼，竟遭报应吗？",
 }
 
-General:new(extension, "ol_ex__liubiao", "qun", 3, 3, General.Male):addSkills { "ol_ex__zishou", "ol_ex__zongshi" }
+General:new(extension, "ol_ex__liubiao", "qun", 3):addSkills { "ol_ex__zishou", "ol_ex__zongshi" }
 Fk:loadTranslationTable{
   ["ol_ex__liubiao"] = "界刘表",
   ["#ol_ex__liubiao"] = "跨蹈汉南",

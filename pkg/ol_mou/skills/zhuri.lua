@@ -83,7 +83,7 @@ zhuri:addEffect(fk.EnterDying, {
           extraUse = true,
           expand_pile = ids,
         }
-    })
+      })
     else
       local choice = room:askToChoice(player, {
         choices = {"loseHp", "lose_zhuri"},
