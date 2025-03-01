@@ -40,11 +40,8 @@ xinsheng:addEffect(fk.Damaged, {
   can_trigger = function(self, event, target, player, data)
     return player:hasSkill(xinsheng.name) and target == player and player:hasSkill("ol_ex__huashen", true)
   end,
-  on_trigger = function(self, event, target, player, data)
-    for _ = 1, data.damage do
-      if event:isCancelCost(self) or not (player:hasSkill(xinsheng.name) and player:hasSkill("ol_ex__huashen", true)) then break end
-      self:doCost(event, target, player, data)
-    end
+  trigger_times = function(self, event, target, player, data)
+    return data.damage
   end,
   on_use = function(self, event, target, player, data)
     Gethuashen(player, 1)

@@ -64,13 +64,8 @@ enyuan:addEffect(fk.Damaged, {
   can_trigger = function (self, event, target, player, data)
     return target == player and player:hasSkill(enyuan.name) and data.from and not data.from.dead
   end,
-  on_trigger = function(self, event, target, player, data)
-    for i = 1, data.damage do
-      if event:isCancelCost(self) or player.dead or data.from.dead then
-        break
-      end
-      self:doCost(event, target, player, data)
-    end
+  trigger_times = function(self, event, target, player, data)
+    return data.damage
   end,
   on_cost = function (self, event, target, player, data)
     if player.room:askToSkillInvoke(player, {

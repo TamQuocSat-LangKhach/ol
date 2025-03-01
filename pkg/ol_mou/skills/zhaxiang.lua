@@ -13,11 +13,8 @@ Fk:loadTranslationTable{
 
 zhaxiang:addEffect(fk.HpLost, {
   anim_type = "drawcard",
-  on_trigger = function(self, event, target, player, data)
-    for _ = 1, data.num do
-      if not player:hasSkill(zhaxiang.name) then break end
-      self:doCost(event, target, player, data)
-    end
+  trigger_times = function(self, event, target, player, data)
+    return data.num
   end,
   on_use = function(self, event, target, player, data)
     player:drawCards(3, zhaxiang.name)

@@ -13,11 +13,8 @@ Fk:loadTranslationTable{
 
 chengxiang:addEffect(fk.Damaged, {
   anim_type = "masochism",
-  on_trigger = function(self, event, target, player, data)
-    for _ = 1, data.damage do
-      if event:isCancelCost(self) or not player:hasSkill(chengxiang.name) then break end
-      self:doCost(event, target, player, data)
-    end
+  trigger_times = function(self, event, target, player, data)
+    return data.damage
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room

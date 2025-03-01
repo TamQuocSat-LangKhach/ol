@@ -16,11 +16,8 @@ baonue:addEffect(fk.Damage, {
   can_trigger = function(self, event, target, player, data)
     return player:hasSkill(baonue.name) and target and player ~= target and target.kingdom == "qun"
   end,
-  on_trigger = function(self, event, target, player, data)
-    for i = 1, data.damage do
-      if i > 1 and (event:isCancelCost(self) or not player:hasSkill(baonue.name)) then break end
-      self:doCost(event, target, player, data)
-    end
+  trigger_times = function(self, event, target, player, data)
+    return data.damage
   end,
   on_cost = function(self, event, target, player, data)
     local room = player.room

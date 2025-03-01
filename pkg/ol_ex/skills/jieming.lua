@@ -50,11 +50,8 @@ jieming:addEffect(fk.Damaged, {
   can_trigger = function(self, event, target, player, data)
     return player:hasSkill(jieming.name) and player == target
   end,
-  on_trigger = function(self, event, target, player, data)
-    for i = 1, data.damage do
-      if i > 1 and (event:isCancelCost(self) or not player:hasSkill(jieming.name)) then break end
-      self:doCost(event, target, player, data)
-    end
+  trigger_times = function(self, event, target, player, data)
+    return data.damage
   end,
   on_cost = jieming_spec.on_cost,
   on_use = jieming_spec.on_use,
