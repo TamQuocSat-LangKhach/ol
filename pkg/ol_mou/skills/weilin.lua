@@ -5,7 +5,7 @@ local weilin = fk.CreateSkill{
 Fk:loadTranslationTable{
   ["weilingy"] = "威临",
   [":weilingy"] = "每回合限一次，你可以将一张牌当任意一种【杀】或【酒】使用。"..
-  "此牌的目标角色的所有与此牌颜色相同的手牌均视为【杀】直到回合结束。",
+  "此牌指定目标后，你令其所有与此牌颜色相同的手牌均视为【杀】直到回合结束。",
 
   ["#weilingy"] = "威临：将一张牌当任意属性的【杀】或【酒】使用",
   ["@weilingy-turn"] = "威临",
@@ -57,21 +57,18 @@ weilin:addEffect("viewas", {
     return not response and player:usedSkillTimes(weilin.name) == 0
   end,
 })
-weilin:addEffect(fk.CardUsing, {
-  can_refresh = function(self, event, target, player, data)
-    return not player.dead and data.extra_data and data.extra_data.weilingy == player and data.card.color ~= Card.NoColor
+weilin:addEffect(fk.TargetSpecified, {
+  is_delay_effect = true,
+  mute = true,
+  can_trigger = function(self, event, target, player, data)
+    return not player.dead and data.extra_data and data.extra_data.weilingy == player and
+      data.card.color ~= Card.NoColor and not data.to.dead
   end,
-  on_refresh = function(self, event, target, player, data)
-    local room = player.room
-    local color = data.card:getColorString()
-    for _, to in ipairs(data.tos) do
-      if not to.dead then
-        local mark = to:getTableMark("@weilingy-turn")
-        if table.insertIfNeed(mark, color) then
-          room:setPlayerMark(to, "@weilingy-turn", mark)
-          to:filterHandcards()
-        end
-      end
+  on_use = function(self, event, target, player, data)
+    local mark = data.to:getTableMark("@weilingy-turn")
+    if table.insertIfNeed(mark, data.card:getColorString()) then
+      player.room:setPlayerMark(data.to, "@weilingy-turn", mark)
+      data.to:filterHandcards()
     end
   end,
 })
