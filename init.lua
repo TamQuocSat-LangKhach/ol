@@ -15,6 +15,8 @@ local ol_sp = require(prefix .. "ol_sp")
 --local ol_test = require(prefix .. "ol_test")
 --local ol_other = require(prefix .. "ol_other")
 
+local ol_derived = require(prefix .. "ol_derived")
+
 Fk:loadTranslationTable{ ["ol"] = "OL", }
 
 return {
@@ -30,4 +32,6 @@ return {
   --ol_re,
   --ol_test,
   --ol_other,
+
+  ol_derived,
 }

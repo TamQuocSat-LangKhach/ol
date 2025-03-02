@@ -59,7 +59,7 @@ zhuangshu:addEffect(fk.GameStart, {
     room:moveCardIntoEquip(player, id, zhuangshu.name, true, player)
   end,
 })
-zhuangshu:addEffect(fk.GameStart, {
+zhuangshu:addEffect(fk.TurnStart, {
   mute = true,
   can_trigger = function(self, event, target, player, data)
     return player:hasSkill(zhuangshu.name) and not target.dead and

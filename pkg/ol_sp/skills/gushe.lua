@@ -60,7 +60,7 @@ gushe:addEffect("active", {
             include_equip = true,
             skill_name = gushe.name,
             prompt = "#gushe-discard::"..player.id,
-            cancelable = player.dead,
+            cancelable = not player.dead,
           }) == 0 then
           if not player.dead then
             player:drawCards(1, gushe.name)
