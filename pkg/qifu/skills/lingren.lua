@@ -60,14 +60,14 @@ lingren:addEffect(fk.TargetSpecified, {
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local to = room:getPlayerById(event:getCostData(self).tos[1])
+    local to = event:getCostData(self).tos[1]
     local choices = {"lingren_basic", "lingren_trick", "lingren_equip"}
     local yes = room:askToChoices(player, {
       choices = choices,
       min_num = 0,
       max_num = 3,
       skill_name = lingren.name,
-      prompt = "#lingren-choice::" .. to.id,
+      prompt = "#lingren-choice::"..to.id,
       cancelable = false,
     })
     for _, value in ipairs(yes) do
