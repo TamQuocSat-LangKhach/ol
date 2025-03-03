@@ -187,6 +187,145 @@ Fk:loadTranslationTable{
   [":py_blade"] = "装备牌·武器<br/><b>攻击范围</b>：3<br/><b>武器技能</b>：锁定技，你使用红色【杀】不能被响应。",
 }
 
+local blood_sword = fk.CreateCard{
+  name = "&blood_sword",
+  type = Card.TypeEquip,
+  sub_type = Card.SubtypeWeapon,
+  attack_range = 2,
+  equip_skill = "#blood_sword_skill",
+}
+extension:addCardSpec("blood_sword", Card.Spade, 6)
+Fk:loadTranslationTable{
+  ["blood_sword"] = "赤血青锋",
+  [":blood_sword"] = "装备牌·武器<br/><b>攻击范围</b>：2<br/><b>武器技能</b>：锁定技，你使用【杀】指定目标后，此【杀】无视目标角色的防具且"..
+  "目标不能使用或打出手牌，直至此【杀】结算完毕。",
+}
+
+local double_halberd = fk.CreateCard{
+  name = "&py_double_halberd",
+  type = Card.TypeEquip,
+  sub_type = Card.SubtypeWeapon,
+  attack_range = 3,
+  equip_skill = "#py_double_halberd_skill",
+}
+extension:addCardSpec("py_double_halberd", Card.Diamond, 13)
+Fk:loadTranslationTable{
+  ["py_double_halberd"] = "镔铁双戟",
+  [":py_double_halberd"] = "装备牌·武器<br/><b>攻击范围</b>：3<br/><b>武器技能</b>：你使用的【杀】被抵消后，你可以失去1点体力，"..
+  "然后获得此【杀】，摸一张牌，本回合使用【杀】的次数+1。",
+}
+
+local py_belt = fk.CreateCard{
+  name = "&py_belt",
+  type = Card.TypeEquip,
+  sub_type = Card.SubtypeArmor,
+  equip_skill = "#py_belt_skill",
+}
+extension:addCardSpec("py_belt", Card.Spade, 2)
+Fk:loadTranslationTable{
+  ["py_belt"] = "玲珑狮蛮带",
+  [":py_belt"] = "装备牌·防具<br/><b>防具技能</b>：当其他角色使用牌指定你为唯一目标后，你可以进行一次判定，若判定结果为"..
+  "<font color='red'>♥</font>，则此牌对你无效。",
+}
+
+local py_robe = fk.CreateCard{
+  name = "&py_robe",
+  type = Card.TypeEquip,
+  sub_type = Card.SubtypeArmor,
+  equip_skill = "#py_robe_skill",
+}
+extension:addCardSpec("py_robe", Card.Club, 1)
+Fk:loadTranslationTable{
+  ["py_robe"] = "红棉百花袍",
+  [":py_robe"] = "装备牌·防具<br/><b>防具技能</b>：锁定技，防止你受到的属性伤害。",
+}
+
+local py_cloak = fk.CreateCard{
+  name = "&py_cloak",
+  type = Card.TypeEquip,
+  sub_type = Card.SubtypeArmor,
+  equip_skill = "#py_cloak_skill",
+}
+extension:addCardSpec("py_cloak", Card.Spade, 9)
+Fk:loadTranslationTable{
+  ["py_cloak"] = "国风玉袍",
+  [":py_cloak"] = "装备牌·防具<br/><b>防具技能</b>：锁定技，你不能成为其他角色使用普通锦囊牌的目标。",
+}
+
+local py_diagram = fk.CreateCard{
+  name = "&py_diagram",
+  type = Card.TypeEquip,
+  sub_type = Card.SubtypeArmor,
+  equip_skill = "#py_diagram_skill",
+}
+extension:addCardSpec("py_diagram", Card.Spade, 2)
+Fk:loadTranslationTable{
+  ["py_diagram"] = "奇门八卦",
+  [":py_diagram"] = "装备牌·防具<br/><b>防具技能</b>：锁定技，【杀】对你无效。",
+}
+
+local py_hat = fk.CreateCard{
+  name = "&py_hat",
+  type = Card.TypeEquip,
+  sub_type = Card.SubtypeTreasure,
+  equip_skill = "#py_hat_skill",
+}
+extension:addCardSpec("py_hat", Card.Diamond, 1)
+Fk:loadTranslationTable{
+  ["py_hat"] = "束发紫金冠",
+  [":py_hat"] = "装备牌·宝具<br/><b>宝具技能</b>：准备阶段，你可以对一名其他角色造成1点伤害。",
+}
+
+local py_coronet = fk.CreateCard{
+  name = "&py_coronet",
+  type = Card.TypeEquip,
+  sub_type = Card.SubtypeTreasure,
+  equip_skill = "#py_coronet_skill",
+}
+extension:addCardSpec("py_coronet", Card.Club, 4)
+Fk:loadTranslationTable{
+  ["py_coronet"] = "虚妄之冕",
+  [":py_coronet"] = "装备牌·宝具<br/><b>宝具技能</b>：锁定技，摸牌阶段，你额外摸两张牌；你的手牌上限-1。",
+}
+
+local py_threebook = fk.CreateCard{
+  name = "&py_threebook",
+  type = Card.TypeEquip,
+  sub_type = Card.SubtypeTreasure,
+  equip_skill = "#py_threebook_skill",
+}
+extension:addCardSpec("py_threebook", Card.Spade, 5)
+Fk:loadTranslationTable{
+  ["py_threebook"] = "三略",
+  [":py_threebook"] = "装备牌·宝具<br/><b>宝具技能</b>：锁定技，你的攻击范围+1；你的手牌上限+1；你出牌阶段使用【杀】的次数+1。",
+}
+
+local py_mirror = fk.CreateCard{
+  name = "&py_mirror",
+  type = Card.TypeEquip,
+  sub_type = Card.SubtypeTreasure,
+  equip_skill = "#py_mirror_skill",
+}
+extension:addCardSpec("py_mirror", Card.Diamond, 1)
+Fk:loadTranslationTable{
+  ["py_mirror"] = "照骨镜",
+  [":py_mirror"] = "装备牌·宝具<br/><b>宝具技能</b>：出牌阶段结束时，你可以展示一张基本牌或普通锦囊牌，视为使用之。",
+}
+
+local sizhao_sword = fk.CreateCard{
+  name = "&sizhao_sword",
+  type = Card.TypeEquip,
+  sub_type = Card.SubtypeWeapon,
+  attack_range = 2,
+  equip_skill = "#sizhao_sword_skill",
+}
+extension:addCardSpec("sizhao_sword", Card.Diamond, 6)
+Fk:loadTranslationTable{
+  ["sizhao_sword"] = "思召剑",
+  [":sizhao_sword"] = "装备牌·武器<br/><b>攻击范围</b>：2<br/>"..
+  "<b>武器技能</b>：锁定技，当你使用【杀】指定一名角色为目标后，该角色不能使用点数小于此【杀】的【闪】以抵消此【杀】。",
+}
+
 extension:loadCardSkels {
   honey_trap,
   daggar_in_smile,
@@ -206,6 +345,18 @@ extension:loadCardSkels {
 
   halberd,
   blade,
+  blood_sword,
+  double_halberd,
+  py_belt,
+  py_robe,
+  py_cloak,
+  py_diagram,
+  py_hat,
+  py_coronet,
+  py_threebook,
+  py_mirror,
+
+  sizhao_sword,
 }
 
 return extension
