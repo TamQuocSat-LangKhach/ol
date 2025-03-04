@@ -19,7 +19,7 @@ Fk:loadTranslationTable{
 hetao:addEffect(fk.TargetSpecified, {
   anim_type = "control",
   can_trigger = function(self, event, target, player, data)
-    return target ~= player and player:hasSkill(self) and not player:isNude() and data.firstTarget and
+    return target ~= player and player:hasSkill(hetao.name) and not player:isNude() and data.firstTarget and
       data.card.color ~= Card.NoColor and #data.use.tos > 1
   end,
   on_cost = function(self, event, target, player, data)

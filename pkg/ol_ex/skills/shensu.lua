@@ -18,7 +18,7 @@ Fk:loadTranslationTable{
 shensu:addEffect(fk.EventPhaseChanging, {
   anim_type = "offensive",
   can_trigger = function(self, event, target, player, data)
-    if target == player and player:hasSkill(self) and not data.skipped then
+    if target == player and player:hasSkill(shensu.name) and not data.skipped then
       if data.phase == Player.Judge then
         if not player:canSkip(Player.Draw) then return end
       elseif data.phase == Player.Play then

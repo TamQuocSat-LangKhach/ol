@@ -71,7 +71,7 @@ Fk:addQmlMark{
 ziruo:addEffect(fk.CardUsing, {
   anim_type = "drawcard",
   can_trigger = function(self, event, target, player, data)
-    if target == player and player:hasSkill(self) and
+    if target == player and player:hasSkill(ziruo.name) and
       data.extra_data and data.extra_data.ziruoSideCards then
       if player:getSwitchSkillState(ziruo.name) == fk.SwitchYang then
         return table.contains(Card:getIdList(data.card), data.extra_data.ziruoSideCards[1])

@@ -12,7 +12,7 @@ zongshi:addEffect(fk.DamageInflicted, {
   anim_type = "defensive",
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(zongshi.name) and data.from and data.from ~= player and
-      not table.contains(player:getTableMark("@ol_ex__zongshi"), data.from.kingdom)
+      not table.contains(player:getTableMark(zongshi.name), data.from.kingdom)
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
