@@ -5,7 +5,7 @@ local shiren = fk.CreateSkill{
 
 Fk:loadTranslationTable{
   ["shiren"] = "识人",
-  [":shiren"] = "隐匿技，你于其他角色的回合登场后，你可以对其发动〖宴戏〗。",
+  [":shiren"] = "隐匿技，当你于其他角色的回合登场后，你可以对其发动〖宴戏〗。",
 
   ["#shiren-invoke"] = "识人：你可以对 %dest 发动〖宴戏〗",
 

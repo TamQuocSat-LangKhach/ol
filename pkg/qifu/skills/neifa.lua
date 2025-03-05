@@ -125,8 +125,8 @@ neifa:addEffect(fk.AfterCardTargetDeclared, {
       skill_name = neifa.name,
       prompt = "#neifa_trigger-choose:::"..data.card:toLogString(),
       cancelable = true,
-      --target_tip_name = "addandcanceltarget_tip",
-      --extra_data = data.tos,
+      extra_data = table.map(data.tos, Util.IdMapper),
+      target_tip_name = "addandcanceltarget_tip",
     })
     if #to > 0 then
       event:setCostData(self, {tos = to})

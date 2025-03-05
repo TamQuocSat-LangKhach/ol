@@ -92,6 +92,42 @@ Fk:loadTranslationTable{
   ["~zhanghuyuechen"] = "儿有辱……父亲威名……",
 }
 
+General:new(extension, "xiahouhui", "jin", 3, 3, General.Female):addSkills { "yishi", "shidu" }  --"baoqie"
+Fk:loadTranslationTable{
+  ["xiahouhui"] = "夏侯徽",
+  ["#xiahouhui"] = "景怀皇后",
+  ["illustrator:xiahouhui"] = "凝聚永恒",
+
+  ["~xiahouhui"] = "夫君，你怎么对我如此狠心……",
+}
+
+General:new(extension, "ol__simashi", "jin", 3, 4):addSkills { "yimie", "tairan", "ruilue" }  --"taoyin"
+Fk:loadTranslationTable{
+  ["ol__simashi"] = "司马师",
+  ["#ol__simashi"] = "晋景王",
+  ["illustrator:ol__simashi"] = "拉布拉卡",
+
+  ["~ol__simashi"] = "子上，这是为兄给你打下的江山……",
+}
+
+General:new(extension, "ol__yanghuiyu", "jin", 3, 3, General.Female):addSkills { "ciwei", "caiyuan" }  --"huirong"
+Fk:loadTranslationTable{
+  ["ol__yanghuiyu"] = "羊徽瑜",
+  ["#ol__yanghuiyu"] = "景献皇后",
+  ["illustrator:ol__yanghuiyu"] = "Jzeo",
+
+  ["~ol__yanghuiyu"] = "韶华易老，佳容不再……",
+}
+
+General:new(extension, "shibao", "jin", 4):addSkills { "zhuosheng" }
+Fk:loadTranslationTable{
+  ["shibao"] = "石苞",
+  ["#shibao"] = "乐陵郡公",
+  ["illustrator:shibao"] = "凝聚永恒",
+
+  ["~shibao"] = "寒门出身，难以擢升。",
+}
+
 --果：宣公主 司马昭 王元姬 杜预 卫瓘
 General:new(extension, "xuangongzhu", "jin", 3, 3, General.Female):addSkills { "qimei", "zhuijix" }  --"gaoling"
 Fk:loadTranslationTable{
@@ -199,5 +235,15 @@ Fk:loadTranslationTable{
 }
 
 --牢衍
+General:new(extension, "wangyan", "jin", 3):addSkills { "yangkuang", "cihuang", "sanku" }
+Fk:loadTranslationTable{
+  ["wangyan"] = "王衍",
+  ["#wangyan"] = "玄虚陆沉",
+  ["designer:wangyan"] = "玄蝶既白",
+  ["illustrator:wangyan"] = "匠人绘",
+
+  ["~wangyan"] = "影摇枭鸱动，三窟难得生。",
+}
+
 
 return extension
