@@ -17,7 +17,7 @@ tairan:addEffect(fk.TurnEnd, {
   anim_type = "defensive",
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(tairan.name) and
-      player:isWounded() or player:getHandcardNum() < player.maxHp
+      (player:isWounded() or player:getHandcardNum() < player.maxHp)
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room

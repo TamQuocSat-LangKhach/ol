@@ -22,6 +22,13 @@ chuming_viewas:addEffect("active", {
       return card.skill:targetFilter(player, to_select, {Fk:currentRoom():getPlayerById(self.chuming_info[1])}, {}, card)
     end
   end,
+  feasible = function (self, player, selected, selected_cards)
+    if #selected > 0 then
+      local card = Fk:cloneCard(self.interaction.data)
+      card.skillName = "chuming"
+      return card.skill:feasible(player, selected, {}, card)
+    end
+  end,
 })
 
 return chuming_viewas

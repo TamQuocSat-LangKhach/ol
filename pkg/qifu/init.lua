@@ -15,9 +15,9 @@ Fk:loadTranslationTable{
   ["#ol__guansuo"] = "承父武志",
   ["illustrator:ol__guansuo"] = "白夜零BYL",
 
-  ["ex__wusheng_ol__guansuo"] = "关氏威名，可敌千军！",
-  ["dangxian_ol__guansuo"] = "一马当先，万险皆破！",
-  ["ty_ex__zhiman_ol__guansuo"] = "蛮夷之辈，不足为惧。",
+  ["$ex__wusheng_ol__guansuo"] = "关氏威名，可敌千军！",
+  ["$dangxian_ol__guansuo"] = "一马当先，万险皆破！",
+  ["$ty_ex__zhiman_ol__guansuo"] = "蛮夷之辈，不足为惧。",
   ["~ol__guansuo"] = "花落人陨情意消。",
 }
 

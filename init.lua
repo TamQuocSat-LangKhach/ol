@@ -4,8 +4,8 @@ local prefix = "packages.ol.pkg."
 
 local ex_shzl = require(prefix .. "ol_ex")
 local ex_yj = require(prefix .. "ol_exyj")
---local wende = require(prefix .. "wende")
---local xinghe = require(prefix .. "xinghe")
+local wende = require(prefix .. "wende")
+local xinghe = require(prefix .. "xinghe")
 local ol_mou = require(prefix .. "ol_mou")
 --local menfa = require(prefix .. "menfa")
 --jsrg?
@@ -22,8 +22,8 @@ Fk:loadTranslationTable{ ["ol"] = "OL", }
 return {
   ex_shzl,
   ex_yj,
-  --wende,
-  --xinghe,
+  wende,
+  xinghe,
   ol_mou,
   --menfa,
   --jsrg?
