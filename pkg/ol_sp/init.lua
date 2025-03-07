@@ -46,6 +46,17 @@ Fk:loadTranslationTable{
   ["~ol_sp__zhanghe"] = "我终究是看不透这人心。",
 }
 
+local huangyueying = General:new(extension, "ol_sp__huangyueying", "qun", 3, 3, General.Female)
+huangyueying:addSkills { "ol__jiqiao", "ol__linglong" }
+huangyueying:addRelatedSkill("qicai")
+Fk:loadTranslationTable{
+  ["ol_sp__huangyueying"] = "黄月英",
+  ["#ol_sp__huangyueying"] = "闺中璞玉",
+  ["illustrator:ol_sp__huangyueying"] = "杨杨和夏季",
+
+  ["~ol_sp__huangyueying"] = "世人难容有才之女……",
+}
+
 General:new(extension, "ol_sp__zhangliao", "qun", 4):addSkills { "mubing", "ziqu", "diaoling" }
 Fk:loadTranslationTable{
   ["ol_sp__zhangliao"] = "张辽",

@@ -26,36 +26,46 @@ zhaoran:addEffect(fk.EventPhaseStart, {
       prompt = "#zhaoran-invoke",
     })
   end,
+  on_use = function (self, event, target, player, data)
+    player.room:setPlayerMark(player, "@zhaoran-phase", {})
+  end,
 })
 zhaoran:addEffect(fk.AfterCardsMove, {
   anim_type = "control",
   is_delay_effect = true,
-  trigger_times = function(self, event, target, player, data)
+  can_trigger = function(self, event, target, player, data)
     if player:usedSkillTimes(zhaoran.name, Player.HistoryPhase) > 0 and not player.dead then
       local mark = player:getTableMark("@zhaoran-phase")
       local suits = {}
       for _, move in ipairs(data) do
         if move.from == player then
           for _, info in ipairs(move.moveInfo) do
-            if info.fromArea == Card.PlayerHand and
-              not table.find(player:getCardIds("h"), function(id)
-                return Fk:getCardById(id):compareSuitWith(Fk:getCardById(info.cardId))
+            if info.fromArea == Card.PlayerHand then
+              local suit = Fk:getCardById(info.cardId):getSuitString(true)
+              if not table.find(player:getCardIds("h"), function(id)
+                return Fk:getCardById(id):getSuitString(true) == suit
               end) and
-              not table.contains(mark, Fk:getCardById(info.cardId):getSuitString(true)) then
-              table.insert(suits, Fk:getCardById(info.cardId):getSuitString(true))
+                not table.contains(mark, suit) then
+                table.insertIfNeed(suits, suit)
+              end
             end
           end
         end
       end
       table.insertTable(mark, suits)
-      player.room:setPlayerMark(player, "@zhaoran-phase", mark)
-      return #suits
-    else
-      return 0
+      table.removeOne(suits, "log_nosuit")
+      if #suits > 0 then
+        player.room:setPlayerMark(player, "@zhaoran-phase", mark)
+        event:setCostData(self, {extra_data = #suits})
+      end
     end
   end,
-  can_trigger = function(self, event, target, player, data)
-    return player:usedSkillTimes(zhaoran.name, Player.HistoryPhase) > 0 and not player.dead
+  on_trigger = function (self, event, target, player, data)
+    local n = event:getCostData(self).extra_data
+    for _ = 1, n do
+      if player.dead then return end
+      self:doCost(event, target, player, data)
+    end
   end,
   on_use = function (self, event, target, player, data)
     local room = player.room

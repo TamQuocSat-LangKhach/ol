@@ -32,7 +32,14 @@ guidao:addEffect(fk.AskForRetrial, {
   end,
   on_use = function(self, event, target, player, data)
     local card = event:getCostData(self).extra_data
-    player.room:retrial(card, player, data, guidao.name, true)
+    player.room:ChangeJudge{
+      card = card,
+      player = player,
+      data = data,
+      skillName = guidao.name,
+      response = true,
+      exchange = true,
+    }
     if not player.dead and card.suit == Card.Spade and card.number > 1 and card.number < 10 then
       player:drawCards(1, guidao.name)
     end

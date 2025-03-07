@@ -32,7 +32,7 @@ BolanSkills = {
   "lilun","chongxin","xiaosi", "ol__mouzhu",
   --mobile
   "wuyuan", "zhujian", "duansuo", "poxiang", "hannan", "shihe", "wisdom__qiai", "shameng", "zundi", "mobile__shangyi", "yangjie",
-  "m_ex__anxu", "beizhu", "mobile__zhouxuan", "mobile__yizheng", "guli", "m_ex__xianzhen", "m_ex__ganlu", "m_ex__mieji", "yingba",
+  "m_ex__anxu", "beizhu", "mobile__zhouxuan", "mobile__yizheng", "guli", "m_ex__xianzhen", "m_ex__ganlu", "m_ex__mieji",
   "qiaosi", "pingcai","guanxu","guangu","shandao", "mou__zhiheng", "m_ex__junxing","mobile__yinju","dingzhou","guanzong","huiyao",
   --mougong
   "mou__qixi", "mou__lijian",
