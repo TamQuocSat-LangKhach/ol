@@ -40,7 +40,7 @@ dimeng:addEffect("active", {
     local player = effect.from
     local target1 = effect.tos[1]
     local target2 = effect.tos[2]
-    U.swapHandCards(room, player, target1, target2, dimeng.name)
+    room:swapAllCards(player, {target1, target2}, dimeng.name)
     room:addTableMark(player, "ol_ex__dimeng_target-phase", effect.tos)
   end,
 })

@@ -47,6 +47,15 @@ Fk:loadTranslationTable{
   ["~caoying"] = "曹魏天下存，魂归故土安……",
 }
 
+General:new(extension, "ol__caochun", "wei", 4):addSkills { "ol__shanjia" }
+Fk:loadTranslationTable{
+  ["ol__caochun"] = "曹纯",
+  ["#ol__caochun"] = "虎豹骑首",
+  ["illustrator:ol__caochun"] = "磐蒲",
+
+  ["~ol__caochun"] = "三属之下，竟也护不住我性命……",
+}
+
 General:new(extension, "yuantanyuanshang", "qun", 4):addSkills { "neifa" }
 Fk:loadTranslationTable{
   ["yuantanyuanshang"] = "袁谭袁尚",

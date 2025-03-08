@@ -22,7 +22,7 @@ zhenlie:addEffect(fk.TargetConfirmed, {
   on_cost = function(self, event, target, player, data)
     return player.room:askToSkillInvoke(player, {
       skill_name = zhenlie.name,
-      prompt = "#ol_ex__zhenlie-invoke:"..data.from.."::".. data.card:toLogString()})
+      prompt = "#ol_ex__zhenlie-invoke:"..data.from.id.."::".. data.card:toLogString()})
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room

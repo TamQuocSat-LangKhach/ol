@@ -23,8 +23,7 @@ chengxiang:addEffect(fk.Damaged, {
       num = 5
       room:setPlayerMark(player, chengxiang.name, 0)
     end
-    local cards = room:getNCards(num)
-    room:moveCardTo(cards, Card.Processing, nil, fk.ReasonJustMove, chengxiang.name, nil, true, player)
+    local cards = room:turnOverCardsFromDrawPile(player, room:getNCards(num), chengxiang.name)
     local get = room:askToArrangeCards(player, {
       skill_name = chengxiang.name,
       card_map = {cards},

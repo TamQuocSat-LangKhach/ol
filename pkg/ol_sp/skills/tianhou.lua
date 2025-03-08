@@ -23,8 +23,6 @@ Fk:loadTranslationTable{
   ["$tianhou2"] = "天象之所显，世事之所为。",
 }
 
-local U = require "packages/utility/utility"
-
 tianhou:addEffect(fk.EventPhaseStart, {
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(tianhou.name) and player.phase == Player.Start
@@ -40,7 +38,7 @@ tianhou:addEffect(fk.EventPhaseStart, {
       },
       prompt = "#tianhou-exchange",
     })
-    U.swapCardsWithPile(player, piles[1], piles[2], tianhou.name, "Top")
+    room:swapCardsWithPile(player, piles[1], piles[2], tianhou.name, "Top")
     if player.dead then return end
     top_cards = room:getNCards(1)
     player:showCards(top_cards)

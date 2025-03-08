@@ -67,7 +67,7 @@ jigu:addEffect(fk.TurnStart, {
       prompt = "#jigud-exchange",
       cancelable = true,
     })
-    U.swapCardsWithPile(player, cids[1], cids[2], jigu.name, "dengai_grain")
+    room:swapCardsWithPile(player, cids[1], cids[2], jigu.name, "dengai_grain")
   end,
 })
 

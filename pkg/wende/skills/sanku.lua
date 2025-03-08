@@ -6,6 +6,9 @@ local sanku = fk.CreateSkill{
 Fk:loadTranslationTable{
   ["sanku"] = "三窟",
   [":sanku"] = "锁定技，当你进入濒死状态时，你减1点体力上限并回复体力至上限；当你的体力上限增加时，防止之。",
+
+  ["$sanku1"] = "纲常难为，应存后路。",
+  ["$sanku2"] = "世将大乱，当思保全。",
 }
 
 sanku:addEffect(fk.EnterDying, {

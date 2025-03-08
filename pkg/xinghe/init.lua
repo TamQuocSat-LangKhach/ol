@@ -7,7 +7,8 @@ Fk:loadTranslationTable{
   ["ol_xinghe"] = "OL-璀璨星河",
 }
 
---天极：刘协x 曹昂x 何太后√ 孙鲁育√ 孙皓 王荣 左棻 刘琦 曹嵩x 卞夫人 刘辩x 清河公主 滕芳兰 芮姬 唐姬x 刘宏x 杜夫人x 曹宇√ 曹腾√ 刘焉x 秦朗√ 袁姬√
+--天极：刘协x 曹昂x 何太后√ 孙鲁育√ 孙皓√ 王荣 左棻√ 刘琦√ 曹嵩x 卞夫人√ 刘辩x 清河公主√ 滕芳兰√ 芮姬√ 唐姬x 刘宏x 杜夫人x
+--曹宇√ 曹腾√ 刘焉x 秦朗√ 袁姬√
 General:new(extension, "ol__hetaihou", "qun", 3, 3, General.Female):addSkills { "ol__zhendu", "ol__qiluan" }
 Fk:loadTranslationTable{
   ["ol__hetaihou"] = "何太后",
@@ -28,7 +29,73 @@ Fk:loadTranslationTable{
   ["~ol__sunluyu"] = "姐妹之间，何必至此？",
 }
 
+General:new(extension, "sunhao", "wu", 5):addSkills { "canshi", "chouhai", "guiming" }
+Fk:loadTranslationTable{
+  ["sunhao"] = "孙皓",
+  ["#sunhao"] = "时日曷丧",
+  ["illustrator:sunhao"] = "LiuHeng",
 
+  ["~sunhao"] = "命啊！命！",
+}
+
+General:new(extension, "zuofen", "jin", 3, 3, General.Female):addSkills { "zhaosong", "lisi" }
+Fk:loadTranslationTable{
+  ["zuofen"] = "左棻",
+  ["#zuofen"] = "无宠的才女",
+  ["illustrator:zuofen"] = "明暗交界",
+
+  ["~zuofen"] = "惨怆愁悲……",
+}
+
+local liuqi = General:new(extension, "liuqi", "qun", 3)
+liuqi.subkingdom = "shu"
+liuqi:addSkills { "wenji", "tunjiang" }
+Fk:loadTranslationTable{
+  ["liuqi"] = "刘琦",
+  ["#liuqi"] = "居外而安",
+  ["cv:liuqi"] = "戴超行",
+  ["illustrator:liuqi"] = "NOVART",
+
+  ["~liuqi"] = "父亲，孩儿来见你了。",
+}
+
+General:new(extension, "ol__bianfuren", "wei", 3, 3, General.Female):addSkills { "ol__wanwei", "ol__yuejian" }
+Fk:loadTranslationTable{
+  ["ol__bianfuren"] = "卞夫人",
+  ["#ol__bianfuren"] = "奕世之雍容",
+  ["illustrator:ol__bianfuren"] = "罔両",
+
+  ["~ol__bianfuren"] = "心肝涂地，惊愕断绝……",
+}
+
+General:new(extension, "qinghegongzhu", "wei", 3, 3, General.Female):addSkills { "zengou", "zhangjiq" }
+Fk:loadTranslationTable{
+  ["qinghegongzhu"] = "清河公主",
+  ["#qinghegongzhu"] = "魏长公主",
+  ["illustrator:qinghegongzhu"] = "君桓文化",
+
+  ["~qinghegongzhu"] = "我言非虚，君上何疑于我？",
+}
+
+General:new(extension, "ol__tengfanglan", "wu", 3, 3, General.Female):addSkills { "luochong", "aichen" }
+Fk:loadTranslationTable{
+  ["ol__tengfanglan"] = "滕芳兰",
+  ["#ol__tengfanglan"] = "铃兰凋落",
+  ["designer:ol__tengfanglan"] = "步穗",
+  ["illustrator:ol__tengfanglan"] = "DH",
+
+  ["~ol__tengfanglan"] = "封侯归命，夫妻同归……",
+}
+
+General:new(extension, "ruiji", "wu", 3, 3, General.Female):addSkills { "qiaoli", "qingliang" }
+Fk:loadTranslationTable{
+  ["ruiji"] = "芮姬",
+  ["#ruiji"] = "伶形俐影",
+  ["illustrator:ruiji"] = "君桓文化",
+  ["designer:ruiji"] = "豌豆帮帮主",
+
+  ["~ruiji"] = "这斧头，怎么变这么重了……",
+}
 
 General:new(extension, "caoyu", "wei", 3):addSkills { "gongjie", "xiangxu", "xiangzuo" }
 Fk:loadTranslationTable{
@@ -71,7 +138,7 @@ Fk:loadTranslationTable{
 }
 
 --四弼：伏完x 杨修x 陈琳x 诸葛瑾√ 马良√ 程昱 士燮 邓芝 董昭 司马朗x 步骘 董允 阚泽 王允 戏志才 孙乾√ 王粲x 吕虔x 孙邵√ 辛毗x 审配√ 荀谌√ 吕凯x 蒋干x
---潘濬x 严峻x 杜袭 杨仪 陈登 羊祜 伊籍 夏侯玄 马日磾x 屈晃 孙弘 谯周x 阎圃x 张华 曹羲 王瓘 陆凯 田畴 郭图 陶谦√ 韩馥√
+--潘濬x 严峻x 杜袭 杨仪 陈登 羊祜 伊籍 夏侯玄 马日磾x 屈晃 孙弘 谯周x 阎圃x 张华 曹羲 王瓘 陆凯 田畴√ 郭图 陶谦√ 韩馥√
 General:new(extension, "ol__zhugejin", "wu", 3):addSkills { "huanshi", "ol__hongyuan", "ol__mingzhe" }
 Fk:loadTranslationTable{
   ["ol__zhugejin"] = "诸葛瑾",
@@ -137,6 +204,16 @@ Fk:loadTranslationTable{
 
 
 
+General:new(extension, "tianchou", "qun", 4):addSkills { "shandao" }
+Fk:loadTranslationTable{
+  ["tianchou"] = "田畴",
+  ["#tianchou"] = "乱世族隐",
+  ["illustrator:tianchou"] = "君桓文化",
+  ["designer:tianchou"] = "扬林",
+
+  ["~tianchou"] = "吾罪大矣，何堪封侯之荣……",
+}
+
 
 
 
@@ -156,7 +233,7 @@ Fk:loadTranslationTable{
   ["~ol__hanfu"] = "本初，我可是请你吃过饭的！",
 }
 
---天柱：潘凤x 诸葛诞√ 兀突骨√ 蹋顿√ 严白虎√ 李傕x 张济x 樊稠√ 郭汜x 沙摩柯x 丁原x 黄祖√ 高干√ 王双x 范疆张达 梁兴x 阿会喃 马玩√ 文钦 雅丹 张燕
+--天柱：潘凤x 诸葛诞√ 兀突骨√ 蹋顿√ 严白虎√ 李傕x 张济x 樊稠√ 郭汜x 沙摩柯x 丁原x 黄祖√ 高干√ 王双x 范疆张达√ 梁兴x 阿会喃√ 马玩√ 文钦 雅丹 张燕
 --何进√ 牛金√ 韩遂√ 李异 刘辟 轲比能√ 吴景x 马元义x
 local zhugedan = General:new(extension, "ol__zhugedan", "wei", 4)
 zhugedan:addSkills { "gongao", "ol__juyi" }
@@ -229,9 +306,28 @@ Fk:loadTranslationTable{
   ["~gaogan"] = "天不助我！",
 }
 
+local fanjiangzhangda = General:new(extension, "fanjiangzhangda", "wu", 4)
+fanjiangzhangda.subkingdom = "shu"
+fanjiangzhangda:addSkills { "yuanchou", "juesheng" }
+Fk:loadTranslationTable{
+  ["fanjiangzhangda"] = "范疆张达",
+  ["#fanjiangzhangda"] = "你死我亡",
+  ["designer:fanjiangzhangda"] = "七哀",
+  ["cv:fanjiangzhangda"] = "虞晓旭/段杰达",
+  ["illustrator:fanjiangzhangda"] = "游漫美绘",
 
+  ["~fanjiangzhangda"] = "吴侯救我！",
+}
 
+General:new(extension, "ahuinan", "qun", 4):addSkills { "jueman" }
+Fk:loadTranslationTable{
+  ["ahuinan"] = "阿会喃",
+  ["#ahuinan"] = "维绳握雾",
+  ["designer:ahuinan"] = "大宝",
+  ["illustrator:ahuinan"] = "monkey",
 
+  ["~ahuinan"] = "什么？大王要杀我？",
+}
 
 General:new(extension, "mawan", "qun", 4):addSkills { "hunjiang" }
 Fk:loadTranslationTable{
@@ -291,7 +387,7 @@ Fk:loadTranslationTable{
   ["~ol__kebineng"] = "未驱青马饮于黄河，死难瞑目。",
 }
 
---女史：灵雎√ 关银屏√ 大乔小乔x 张星彩x 马云騄√ 董白√ 赵襄 花鬘x 张昌蒲x 杨婉x 郭槐 陆郁生 丁尚涴 李婉 胡金定 孙茹√ 董翓√ 阮慧x
+--女史：灵雎√ 关银屏√ 大乔小乔x 张星彩x 马云騄√ 董白√ 赵襄√ 花鬘x 张昌蒲x 杨婉x 郭槐√ 陆郁生√ 丁尚涴√ 李婉 胡金定 孙茹√ 董翓√ 阮慧x
 General:new(extension, "ol__lingju", "qun", 3, 3, General.Female):addSkills { "ol__jieyuan", "ol__fenxin" }
 Fk:loadTranslationTable{
   ["ol__lingju"] = "灵雎",
@@ -330,9 +426,64 @@ Fk:loadTranslationTable{
   ["~dongbai"] = "放肆，我要让爷爷赐你们死罪！",
 }
 
+General:new(extension, "zhaoxiang", "shu", 4, 4, General.Female):addSkills { "fanghun", "fuhan" }
+Fk:loadTranslationTable{
+  ["zhaoxiang"] = "赵襄",
+  ["#zhaoxiang"] = "拾梅鹊影",
+  ["designer:zhaoxiang"] = "千幻",
+  ["illustrator:zhaoxiang"] = "木美人",
 
+  ["~zhaoxiang"] = "遁入阴影之中……",
+}
 
+General:new(extension, "guohuaij", "jin", 3, 3, General.Female):addSkills { "zhefu", "yidu" }
+Fk:loadTranslationTable{
+  ["guohuaij"] = "郭槐",
+  ["#guohuaij"] = "嫉贤妒能",
+  ["illustrator:guohuaij"] = "凝聚永恒",
 
+  ["~guohuaij"] = "我死后，切勿从粲、午之言。",
+}
+
+General:new(extension, "ol__luyusheng", "wu", 3, 3, General.Female):addSkills { "cangxin", "runwei" }
+Fk:loadTranslationTable{
+  ["ol__luyusheng"] = "陆郁生",
+  ["#ol__luyusheng"] = "义姑",
+  ["designer:ol__luyusheng"] = "zzcclll朱苦力",
+  ["illustrator:ol__luyusheng"] = "土豆",
+
+  ["~ol__luyusheng"] = "郁生既为张妇，誓不再许……",
+}
+
+General:new(extension, "ol__dingfuren", "wei", 3, 3, General.Female):addSkills { "ol__fudao", "ol__fengyan" }
+Fk:loadTranslationTable{
+  ["ol__dingfuren"] = "丁尚涴",
+  ["#ol__dingfuren"] = "我心匪席",
+  ["cv:ol__dingfuren"] = "闲踏梧桐",
+  ["designer:ol__dingfuren"] = "幽蝶化烬",
+  ["illustrator:ol__dingfuren"] = "匠人绘",
+
+  ["~ol__dingfuren"] = "今生与曹，不复相见……",
+}
+
+--General:new(extension, "ol__liwan", "wei", 3, 3, General.Female):addSkills { "lianju", "silv" }
+Fk:loadTranslationTable{
+  ["ol__liwan"] = "李婉",
+  ["#ol__liwan"] = "遐雁归迩",
+  ["designer:ol__liwan"] = "对勾对勾w",
+  ["illustrator:ol__liwan"] = "游卡",
+
+  ["~ol__liwan"] = "及尔偕老，老使我怨……",
+}
+
+--General:new(extension, "ol__hujinding", "shu", 3, 3, General.Female):addSkills { "qingyuan", "chongshen" }
+Fk:loadTranslationTable{
+  ["ol__hujinding"] = "胡金定",
+  ["#ol__hujinding"] = "怀子求怜",
+  ["illustrator:ol__hujinding"] = "君桓文化",
+
+  ["~ol__hujinding"] = "君无愧于天下，可有悔于妻儿？",
+}
 
 General:new(extension, "ol__sunru", "wu", 3, 3, General.Female):addSkills { "chishi", "weimian" }
 Fk:loadTranslationTable{
@@ -351,7 +502,7 @@ Fk:loadTranslationTable{
   ["~ol__dongxie"] = "牛家哥哥，我来……与你黄泉作伴……",
 }
 
---少微：张宝√ 张鲁√ 诸葛果√ 卑弥呼x 司马徽x 许靖 张陵 黄承彦 张芝 卢氏 彭羕
+--少微：张宝√ 张鲁√ 诸葛果√ 卑弥呼x 司马徽x 许靖√ 张陵 黄承彦 张芝 卢氏 彭羕√
 General:new(extension, "ol__zhangbao", "qun", 3):addSkills { "ol__zhoufu", "ol__yingbing" }
 Fk:loadTranslationTable{
   ["ol__zhangbao"] = "张宝",
@@ -380,10 +531,32 @@ Fk:loadTranslationTable{
   ["~ol__zhugeguo"] = "化羽难成，仙境已逝。",
 }
 
+General:new(extension, "ol__xujing", "shu", 3):addSkills { "yuxu", "shijian" }
+Fk:loadTranslationTable{
+  ["ol__xujing"] = "许靖",
+  ["#ol__xujing"] = "品评名士",
+  ["designer:ol__xujing"] = "pui980178",
+  ["illustrator:ol__xujing"] = "君桓文化",
+
+  ["~ol__xujing"] = "漂薄风波，绝粮茹草……",
+}
 
 
---虎贲：公孙瓒x 曹洪x 夏侯霸x 诸葛恪√ 乐进x 祖茂x 丁奉√ 文聘x 吾彦 李通 贺齐 马忠 麹义 鲁芝 苏飞 黄权 唐咨 吕旷吕翔 高览 周鲂x 曹性x 朱灵x 田豫
---赵俨 邓忠 霍峻 文鸯x 阎柔x 朱儁 马承 傅肜 胡班 马休马铁 张翼 罗宪 郝普 孟达 段熲 牵招 凌操√ 刘磐 蔡瑁 王匡√ 成公英√
+
+General:new(extension, "ol__pengyang", "shu", 3):addSkills { "xiaofan", "tuoshi", "cunmu" }
+Fk:loadTranslationTable{
+  ["ol__pengyang"] = "彭羕",
+  ["#ol__pengyang"] = "翻然轻举",
+  ["designer:ol__pengyang"] = "玄蝶既白",
+  ["illustrator:ol__pengyang"] = "君桓文化",
+
+  ["$cunmu_ol__pengyang1"] = "腹有锦绣千里，奈何偏居一隅。",
+  ["$cunmu_ol__pengyang2"] = "心大志广之人，必难以保安。",
+  ["~ol__pengyang"] = "羕酒后失言，主公勿怪……",
+}
+
+--虎贲：公孙瓒x 曹洪x 夏侯霸x 诸葛恪√ 乐进x 祖茂x 丁奉√ 文聘x 吾彦√ 李通√ 贺齐 马忠 麹义√ 鲁芝√ 苏飞 黄权 唐咨 吕旷吕翔 高览 周鲂x 曹性x 朱灵x 田豫
+--赵俨 邓忠 霍峻 文鸯x 阎柔x 朱儁√ 马承 傅肜√ 胡班 马休马铁 张翼 罗宪 郝普 孟达 段熲 牵招 凌操√ 刘磐 蔡瑁 王匡√ 成公英√
 General:new(extension, "zhugeke", "wu", 3):addSkills { "aocai", "duwu" }
 Fk:loadTranslationTable{
   ["zhugeke"] = "诸葛恪",
@@ -403,6 +576,104 @@ Fk:loadTranslationTable{
   ["~ol__dingfeng"] = "命乎！命乎……",
 }
 
+General:new(extension, "wuyanw", "wu", 4):addSkills { "lanjiang" }
+Fk:loadTranslationTable{
+  ["wuyanw"] = "吾彦",
+  ["#wuyanw"] = "断浪南竹",
+  ["designer:wuyanw"] = "七哀",
+  ["illustrator:wuyanw"] = "匠人绘",
+
+  ["~wuyanw"] = "世间再无擒虎客……",
+}
+
+General:new(extension, "litong", "wei", 4):addSkills { "tuifeng" }
+Fk:loadTranslationTable{
+  ["litong"] = "李通",
+  ["#litong"] = "万亿吾独往",
+  ["illustrator:litong"] = "瞎子Ghe",
+
+  ["~litong"] = "战死沙场，快哉。",
+}
+
+--local heqi = General:new(extension, "heqi", "wu", 4)
+--heqi:addSkills { "qizhou", "shanxi" }
+--heqi:addRelatedSkills { "ol__duanbing", "ex__yingzi", "fenwei", "lanjiang" }
+Fk:loadTranslationTable{
+  ["heqi"] = "贺齐",
+  ["#heqi"] = "马踏群峦",
+  ["designer:heqi"] = "千幻",
+  ["illustrator:heqi"] = "DH",
+
+  ["~heqi"] = "别拿走……我的装备！",
+}
+
+--General:new(extension, "ol__mazhong", "shu", 4):addSkills { "ol__fuman" }
+Fk:loadTranslationTable{
+  ["ol__mazhong"] = "马忠",
+  ["#ol__mazhong"] = "笑合南中",
+  ["illustrator:ol__mazhong"] = "",
+
+  ["~ol__mazhong"] = "南中不定，后患无穷……",
+}
+
+General:new(extension, "quyi", "qun", 4):addSkills { "fuji", "jiaozi" }
+Fk:loadTranslationTable{
+  ["quyi"] = "麴义",
+  ["#quyi"] = "名门的骁将",
+  ["cv:quyi"] = "冷泉月夜",
+  ["illustrator:quyi"] = "王立雄",
+  ["designer:quyi"] = "荼蘼",
+
+  ["~quyi"] = "主公，我无异心啊！",
+}
+
+General:new(extension, "luzhiw", "wei", 3):addSkills { "qingzhong", "weijing" }
+Fk:loadTranslationTable{
+  ["luzhiw"] = "鲁芝",
+  ["#luzhiw"] = "夷夏慕德",
+  ["designer:luzhiw"] = "世外高v狼",
+  ["illustrator:luzhiw"] = "秋呆呆",
+
+  ["~luzhiw"] = "年迈力微，是该告老还乡了……",
+}
+
+
+
+
+
+
+
+General:new(extension, "ol__zhujun", "qun", 4):addSkills { "cuipo" }
+Fk:loadTranslationTable{
+  ["ol__zhujun"] = "朱儁",
+  ["#ol__zhujun"] = "钦明神武",
+  ["illustrator:ol__zhujun"] = "梦回唐朝",
+
+  ["~ol__zhujun"] = "李郭匹夫，安敢辱我！",
+}
+
+
+
+
+General:new(extension, "ol__furong", "shu", 4):addSkills { "xiaosi" }
+Fk:loadTranslationTable{
+  ["ol__furong"] = "傅肜",
+  ["#ol__furong"] = "矢忠不二",
+  ["illustrator:ol__furong"] = "君桓文化",
+
+  ["~ol__furong"] = "吴狗！何有汉将军降者！",
+}
+
+
+
+
+
+
+
+
+
+
+
 
 
 General:new(extension, "ol__lingcao", "wu", 4):addSkills { "ol__dujin" }
@@ -414,10 +685,25 @@ Fk:loadTranslationTable{
   ["~ol__lingcao"] = "不好，此处有埋伏……",
 }
 
+--General:new(extension, "liupan", "qun", 4):addSkills { "pijingl" }
+Fk:loadTranslationTable{
+  ["liupan"] = "刘磐",
+  ["#liupan"] = "骁隽悍勇",
+  ["illustrator:liupan"] = "君桓文化",
+  ["designer:liupan"] = "cyc",
 
+  ["~liupan"] = "今袍泽离散，无以为战……",
+}
 
+--General:new(extension, "caimao", "wei", 4):addSkills { "zuolian", "jingzhou" }
+Fk:loadTranslationTable{
+  ["caimao"] = "蔡瑁",
+  ["#caimao"] = "蛟海腾云",
+  ["illustrator:caimao"] = "depp",
+  ["designer:caimao"] = "步穗",
 
-
+  ["~caimao"] = "丞相！末将忠心耿耿呀！",
+}
 
 General:new(extension, "wangkuang", "qun", 4):addSkills { "renxia" }
 Fk:loadTranslationTable{
@@ -437,7 +723,7 @@ Fk:loadTranslationTable{
   ["~chenggongying"] = "假使英本主人在，实不来此也。",
 }
 
---列肆：糜竺√ 卫兹 刘巴 张世平 吕伯奢
+--列肆：糜竺√ 卫兹√ 刘巴√ 张世平√ 吕伯奢√
 General:new(extension, "mizhu", "shu", 3):addSkills { "ziyuan", "jugu" }
 Fk:loadTranslationTable{
   ["mizhu"] = "糜竺",
@@ -448,6 +734,42 @@ Fk:loadTranslationTable{
   ["~mizhu"] = "劣弟背主，我之罪也。",
 }
 
+General:new(extension, "weizi", "qun", 3):addSkills { "yuanzi", "liejie" }
+Fk:loadTranslationTable{
+  ["weizi"] = "卫兹",
+  ["#weizi"] = "倾家资君",
+  ["illustrator:weizi"] = "君桓文化",
+
+  ["~weizi"] = "敌军势众，速退！",
+}
+
+General:new(extension, "ol__liuba", "shu", 3):addSkills { "ol__tongdu", "ol__zhubi" }
+Fk:loadTranslationTable{
+  ["ol__liuba"] = "刘巴",
+  ["#ol__liuba"] = "清尚之节",
+  ["illustrator:ol__liuba"] = "匠人绘",
+
+  ["~ol__liuba"] = "恨未见，铸兵为币之日……",
+}
+
+General:new(extension, "zhangshiping", "shu", 3):addSkills { "hongji", "xinggu" }
+Fk:loadTranslationTable{
+  ["zhangshiping"] = "张世平",
+  ["#zhangshiping"] = "中山大商",
+  ["illustrator:zhangshiping"] = "匠人绘",
+
+  ["~zhangshiping"] = "奇货犹在，其人老矣……",
+}
+
+General:new(extension, "lvboshe", "qun", 4):addSkills { "fushi", "dongdao" }
+Fk:loadTranslationTable{
+  ["lvboshe"] = "吕伯奢",
+  ["#lvboshe"] = "醉乡路稳",
+  ["illustrator:lvboshe"] = "匠人绘",
+  ["designer:lvboshe"] = "玄蝶既白",
+
+  ["~lvboshe"] = "阿瞒，我沽酒回来……呃！",
+}
 
 
 return extension

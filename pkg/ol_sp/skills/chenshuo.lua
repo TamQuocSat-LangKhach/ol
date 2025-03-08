@@ -41,8 +41,7 @@ chenshuo:addEffect(fk.EventPhaseStart, {
     if player.dead then return end
     local cards = {}
     for i = 1, 3, 1 do
-      local get = room:getNCards(1)
-      room:moveCardTo(get, Card.Processing, nil, fk.ReasonJustMove, chenshuo.name, nil, true, player)
+      local get = room:turnOverCardsFromDrawPile(player, room:getNCards(1), chenshuo.name)
       table.insert(cards, get[1])
       local card2 = Fk:getCardById(get[1])
       if card.type == card2.type or card.suit == card2.suit or card.number == card2.number or

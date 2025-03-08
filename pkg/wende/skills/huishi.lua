@@ -30,8 +30,7 @@ huishi:addEffect(fk.EventPhaseStart, {
     data.phase_end = true
     local x = #room.draw_pile % 10
     if x == 0 then return end
-    local cards = room:getNCards(x)
-    room:moveCardTo(cards, Card.Processing, nil, fk.ReasonJustMove, huishi.name, nil, true, player)
+    local cards = room:turnOverCardsFromDrawPile(player, room:getNCards(x), huishi.name)
     local y = x // 2
     local rusult = room:askToGuanxing(player, {
       cards = cards,

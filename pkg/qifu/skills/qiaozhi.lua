@@ -27,8 +27,7 @@ qiaozhi:addEffect("active", {
     local player = effect.from
     room:throwCard(effect.cards, qiaozhi.name, player, player)
     if player.dead then return end
-    local cards = room:getNCards(2)
-    room:moveCardTo(cards, Card.Processing, nil, fk.ReasonJustMove, qiaozhi.name, nil, true, player)
+    local cards = room:turnOverCardsFromDrawPile(player, room:getNCards(2), qiaozhi.name)
     local id = room:askToChooseCard(player, {
       target = player,
       flag = {

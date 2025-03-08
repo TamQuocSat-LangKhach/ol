@@ -110,8 +110,7 @@ shengong:addEffect("active", {
       end
     end
     local good, bad = 0, 0
-    local show = room:getNCards(#players)
-    room:moveCardTo(show, Card.Processing, nil, fk.ReasonJustMove, shengong.name, nil, true, player)
+    local show = room:turnOverCardsFromDrawPile(player, room:getNCards(#players), shengong.name)
     for i, p in ipairs(players) do
       room:delay(200)
       local num = Fk:getCardById(show[i]).number

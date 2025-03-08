@@ -56,7 +56,7 @@ mubing:addEffect(fk.EventPhaseStart, {
   on_use = function(self, event, target, player, data)
     local room = player.room
     local cards = room:getNCards(player:usedSkillTimes("diaoling", Player.HistoryGame) > 0 and 4 or 3)
-    room:moveCardTo(cards, Card.Processing, nil, fk.ReasonJustMove, mubing.name, nil, true, player)
+    room:turnOverCardsFromDrawPile(player, cards, mubing.name)
     if not player:isKongcheng() then
       local result = room:askToPoxi(player, {
         poxi_type = mubing.name,

@@ -94,7 +94,7 @@ zhubei:addEffect("active", {
           skill_name = zhubei.name,
           prompt = "#zhubei-swap::"..target.id,
         }) then
-        U.swapHandCards(room, player, player, target, zhubei.name)
+        room:swapAllCards(player, {player, target}, zhubei.name)
       end
     end
   end,

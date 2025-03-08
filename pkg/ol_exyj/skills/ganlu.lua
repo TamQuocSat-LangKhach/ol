@@ -28,9 +28,9 @@ ganlu:addEffect("active", {
       local n1 = #selected_targets[1]:getCardIds("e")
       local n2 = #selected_targets[2]:getCardIds("e")
       if math.abs(n1 - n2) <= player:getLostHp() then
-        return "#ol_ex__ganlu1:"..selected_targets[1]..":"..selected_targets[2]
+        return "#ol_ex__ganlu1:"..selected_targets[1].id..":"..selected_targets[2].id
       else
-        return "#ol_ex__ganlu2:"..selected_targets[1]..":"..selected_targets[2]..":"..math.abs(n1 - n2)
+        return "#ol_ex__ganlu2:"..selected_targets[1].id..":"..selected_targets[2].id..":"..math.abs(n1 - n2)
       end
     end
   end,
@@ -62,12 +62,7 @@ ganlu:addEffect("active", {
     if #effect.cards > 0 then
       room:throwCard(effect.cards, ganlu.name, player, player)
     end
-    local target1 = effect.tos[1]
-    local target2 = effect.tos[2]
-    if target1.dead or target2.dead then return end
-    local cards1 = table.clone(target1:getCardIds("e"))
-    local cards2 = table.clone(target2:getCardIds("e"))
-    U.swapCards(room, player, target1, target2, cards1, cards2, ganlu.name, Card.PlayerEquip)
+    room:swapAllCards(player, effect.tos, ganlu.name, "e")
   end,
 })
 

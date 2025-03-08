@@ -1101,12 +1101,11 @@ for loop = 1, 30, 1 do  --30个肯定够用
         end,
         [28] = function ()
           local targets = table.map(self.cost_data.tos, Util.Id2PlayerMapper)
-          U.swapCards(room, player, targets[1], targets[2], targets[1]:getCardIds("e"), targets[2]:getCardIds("e"), self.name,
-            Card.PlayerEquip)
+          room:swapAllCards(player, targets, self.name, "e")
         end,
         [29] = function ()
           local targets = table.map(self.cost_data.tos, Util.Id2PlayerMapper)
-          U.swapHandCards(room, player, targets[1], targets[2], self.name)
+          room:swapAllCards(player, targets, self.name)
         end,
         [30] = function ()
           if data.from and not data.from.dead then
