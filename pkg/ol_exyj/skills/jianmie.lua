@@ -15,7 +15,7 @@ Fk:loadTranslationTable{
   ["$jianmie2"] = "你我不到黄泉，不复相见！",
 }
 
-local U =require("packages/utility/utility")
+local U = require("packages/utility/utility")
 
 jianmie:addEffect("active", {
   anim_type = "offensive",

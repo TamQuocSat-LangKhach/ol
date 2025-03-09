@@ -5,7 +5,7 @@ local silv = fk.CreateSkill{
 
 Fk:loadTranslationTable{
   ["silv"] = "思闾",
-  [":silv"] = "锁定技，当你受到伤害后，你摸一张牌并称为“闾”。当一名角色的“闾”因弃置而移至弃牌堆后，其获得之。",
+  [":silv"] = "锁定技，一名角色因〖联句〗获得的牌称为“闾”；当你受到伤害后，你摸一张牌并称为“闾”。当一名角色的“闾”因弃置进入弃牌堆后，其获得之。",
 
   ["@@silv"] = "闾",
 
@@ -26,9 +26,6 @@ silv:addEffect(fk.AfterCardsMove, {
   can_trigger = function(self, event, target, player, data)
     if not player.dead then
       if not (data.extra_data and data.extra_data.silv_cards and data.extra_data.silv_cards[tostring(player.id)]) then return end
-      if not table.find(player.room.alive_players, function (p)
-        return p:hasSkill(silv.name)
-      end) then return end
       local ids = {}
       local room = player.room
       for _, move in ipairs(data) do
