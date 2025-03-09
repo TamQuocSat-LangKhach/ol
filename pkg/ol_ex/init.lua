@@ -4,7 +4,7 @@ extension.extensionName = "ol"
 extension:loadSkillSkelsByPath("./packages/ol/pkg/ol_ex/skills")
 
 Fk:loadTranslationTable{
-  ["ol_ex_shzl"] = "OL-界神话再临",
+  ["ol_ex_shzl"] = "OL-界限突破",
   ["ol_ex"] = "OL界",
 }
 
