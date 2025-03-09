@@ -2,6 +2,16 @@ local shanduan = fk.CreateSkill{
   name = "shanduan",
   tags = { Skill.Compulsory },
 }
+shanduan.dynamicDesc = function (self, player, lang)
+  local nums = player:getTableMark(shanduan.name)
+  for i = 1, 4, 1 do
+    if player:getMark("shanduan"..i.."-turn") > 0 then
+      table.insert(nums, player:getMark("shanduan"..i.."-turn"))
+    end
+  end
+  table.sort(nums)
+  return "shanduan_inner:"..nums[1]..":"..nums[2]..":"..nums[3]..":"..nums[4]
+end
 
 Fk:loadTranslationTable{
   ["shanduan"] = "善断",
@@ -33,16 +43,6 @@ shanduan:addLoseEffect(function (self, player, is_death)
 end)
 
 shanduan:addEffect(fk.EventPhaseStart, {
-  dynamic_desc = function(self, player)
-    local nums = player:getTableMark(shanduan.name)
-    for i = 1, 4, 1 do
-      if player:getMark("shanduan"..i.."-turn") > 0 then
-        table.insert(nums, player:getMark("shanduan"..i.."-turn"))
-      end
-    end
-    table.sort(nums)
-    return "shanduan_inner:"..nums[1]..":"..nums[2]..":"..nums[3]..":"..nums[4]
-  end,
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(shanduan.name) and
       player.phase >= Player.Draw and player.phase <= Player.Discard and

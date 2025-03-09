@@ -78,4 +78,16 @@ tuogu:addEffect(fk.EventLoseSkill, {
   end,
 })
 
+tuogu:addTest(function(room, me)
+  local comp2 = room.players[2]
+  FkTest.setNextReplies(me, {"1"})
+  FkTest.runInRoom(function ()
+    room:handleAddLoseSkills(me, tuogu.name)
+    room:killPlayer{who = comp2}
+  end)
+  -- p(Fk.generals[comp2.general].other_skills)
+  -- p(Fk.generals[comp2.general].skills)
+end)
+
+
 return tuogu
