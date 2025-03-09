@@ -4,9 +4,9 @@ local kanpo = fk.CreateSkill{
 
 Fk:loadTranslationTable {
   ["ol_ex__kanpo"] = "看破",
-  [":ol_ex__kanpo"] = "你可以将一张黑色牌当为【无懈可击】使用。你使用的【无懈可击】不能被响应。",
+  [":ol_ex__kanpo"] = "你可以将一张黑色牌当【无懈可击】使用。你使用的【无懈可击】不能被响应。",
 
-  ["#ol_ex__kanpo-viewas"] = "看破：你可以将一张黑色牌当为【无懈可击】使用",
+  ["#ol_ex__kanpo-viewas"] = "看破：你可以将一张黑色牌当【无懈可击】使用",
 
   ["$ol_ex__kanpo1"] = "此计奥妙，我已看破。",
   ["$ol_ex__kanpo2"] = "还有什么是我看不破的？",

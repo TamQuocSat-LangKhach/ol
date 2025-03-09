@@ -4,7 +4,7 @@ local luanji = fk.CreateSkill{
 
 Fk:loadTranslationTable{
   ["ol_ex__luanji"] = "乱击",
-  [":ol_ex__luanji"] = "你可以将两张花色相同的手牌当为【万箭齐发】使用；当你使用【万箭齐发】选择目标后，你可取消其中一个目标。",
+  [":ol_ex__luanji"] = "你可以将两张花色相同的手牌当【万箭齐发】使用；当你使用【万箭齐发】选择目标后，你可取消其中一个目标。",
 
   ["#ol_ex__luanji"] = "乱击：你可以将两张花色相同的手牌当【万箭齐发】使用",
   ["#ol_ex__luanji-choose"] = "乱击：你可以为此%arg减少一个目标",

@@ -4,8 +4,7 @@ local changbiao = fk.CreateSkill{
 
 Fk:loadTranslationTable {
   ["changbiao"] = "长标",
-  [":changbiao"] = "出牌阶段限一次，你可以将至少一张手牌转化为【杀】使用（无距离限制），此阶段结束时，若此【杀】造成过伤害，你摸X张牌"..
-  "（X为以此法转化的牌数）。",
+  [":changbiao"] = "出牌阶段限一次，你可以将任意张手牌当【杀】使用（无距离限制），若此【杀】造成过伤害，此阶段结束时，你摸等量的牌。",
 
   ["#changbiao"] = "长标：你可以将任意张手牌当【杀】使用",
   ["@changbiao_draw-phase"] = "长标",
