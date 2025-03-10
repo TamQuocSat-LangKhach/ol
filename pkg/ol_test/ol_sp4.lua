@@ -1462,7 +1462,7 @@ local jiaoyu = fk.CreateTriggerSkill{
     elseif event == fk.EventPhaseEnd then
       room:setPlayerMark(player, "jiaoyu_extra_phase-round", 0)
       room:setPlayerMark(player, "jiaoyu_prohibit-turn", 1)
-      player:gainAnExtraPhase(Player.Play)
+      player:gainAnExtraPhase(Player.Play, jiaoyu.name)
     end
   end,
 

@@ -84,10 +84,10 @@ hongji:addEffect(fk.EventPhaseEnd, {
   on_use = function(self, event, target, player, data)
     if player.phase == Player.Draw then
       player.room:setPlayerMark(player, "hongji1-turn", 0)
-      player:gainAnExtraPhase(Player.Draw)
+      player:gainAnExtraPhase(Player.Draw, hongji.name)
     else
       player.room:setPlayerMark(player, "hongji2-turn", 0)
-      player:gainAnExtraPhase(Player.Play)
+      player:gainAnExtraPhase(Player.Play, hongji.name)
     end
   end,
 })

@@ -31,9 +31,9 @@ qingya:addEffect(fk.TargetSpecified, {
       if math.min(left, right) > 1 then
         local choice = "both"
         if left > right then
-          choice = "right"
+          choice = "anticlockwise"
         elseif left < right then
-          choice = "left"
+          choice = "clockwise"
         end
         event:setCostData(self, {choice = choice})
         return true
@@ -42,22 +42,22 @@ qingya:addEffect(fk.TargetSpecified, {
   end,
   on_cost = function(self, event, target, player, data)
     local room = player.room
-    local choices = {"left", "right", "Cancel"}
+    local choices = {"clockwise", "anticlockwise", "Cancel"}
     local choice = event:getCostData(self).choice
-    if choice == "left" then
-      table.removeOne(choices, "right")
-    elseif choice == "right" then
-      table.removeOne(choices, "left")
+    if choice == "clockwise" then
+      table.removeOne(choices, "anticlockwise")
+    elseif choice == "anticlockwise" then
+      table.removeOne(choices, "clockwise")
     end
     choice = room:askToChoice(player, {
       choices = choices,
       skill_name = qingya.name,
       prompt = "#qingya-invoke::"..data.to.id,
-      all_choices = {"left", "right", "Cancel"},
+      all_choices = {"clockwise", "anticlockwise", "Cancel"},
     })
     if choice ~= "Cancel" then
       local tos = {}
-      if choice == "left" then
+      if choice == "clockwise" then
         local temp = data.to.next
         while temp ~= player do
           if not temp.dead then

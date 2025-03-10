@@ -58,7 +58,7 @@ jiezi:addEffect(fk.EventPhaseEnd, {
   end,
   on_use = function(self, event, target, player, data)
     player.room:setPlayerMark(player, "@@ol_ex__jiezi_zi", 0)
-    player:gainAnExtraPhase(Player.Draw)
+    player:gainAnExtraPhase(Player.Draw, jiezi.name)
   end,
 })
 
