@@ -127,7 +127,8 @@ hongtu:addEffect(fk.EventPhaseEnd, {
     end
   end,
 })
-hongtu:addEffect(fk.AfterTurnEnd, {
+hongtu:addEffect(fk.TurnEnd, {
+  late_refresh = true,
   can_refresh = function(self, event, target, player, data)
     return player == target and not target.dead
   end,

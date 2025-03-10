@@ -73,7 +73,8 @@ qirang:addEffect(fk.AfterCardTargetDeclared, {
     data:addTarget(event:getCostData(self).tos[1])
   end,
 })
-qirang:addEffect(fk.AfterTurnEnd, {
+qirang:addEffect(fk.TurnEnd, {
+  late_refresh = true,
   can_refresh = function (self, event, target, player, data)
     return target == player and player:getMark("ol__yuhua_extra") ~= 0
   end,

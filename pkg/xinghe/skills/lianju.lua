@@ -109,7 +109,8 @@ lianju:addEffect(fk.EventPhaseStart, {
     end
   end,
 })
-lianju:addEffect(fk.AfterTurnEnd, {
+lianju:addEffect(fk.TurnEnd, {
+  late_refresh = true,
   can_refresh = function(self, event, target, player, data)
     return target == player and player:getMark("@lianju") ~= 0
   end,

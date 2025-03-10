@@ -70,7 +70,8 @@ xiayong:addEffect(fk.TargetSpecified, {
     data.to:addQinggangTag(data)
   end,
 })
-xiayong:addEffect(fk.AfterTurnEnd, {
+xiayong:addEffect(fk.TurnEnd, {
+  late_refresh = true,
   can_refresh = function (self, event, target, player, data)
     return table.contains(player:getTableMark(xiayong.name), target.id)
   end,

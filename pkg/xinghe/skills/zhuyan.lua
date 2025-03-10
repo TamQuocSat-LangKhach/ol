@@ -75,7 +75,8 @@ zhuyan:addEffect(fk.GameStart, {
     player.room:setPlayerMark(player, zhuyan.name, {player.hp, math.min(player:getHandcardNum(), 5)})
   end,
 })
-zhuyan:addEffect(fk.AfterPhaseEnd, {
+zhuyan:addEffect(fk.EventPhaseEnd, {
+  late_refresh = true,
   can_refresh = function(self, event, target, player, data)
     return target == player and player.phase == Player.Finish
   end,
