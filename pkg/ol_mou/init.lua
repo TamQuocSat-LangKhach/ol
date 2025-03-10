@@ -177,4 +177,13 @@ Fk:loadTranslationTable{
   --["~olmou__zhaoyun"] = "",
 }
 
+General:new(extension, "olmou__zhangrang", "qun", 3):addSkills { "lucun", "tuisheng" }
+Fk:loadTranslationTable{
+  ["olmou__zhangrang"] = "谋张让",
+  ["#olmou__zhangrang"] = "侵威乱天常",
+  --["illustrator:olmou__zhangrang"] = "",
+
+  --["~olmou__zhangrang"] = "",
+}
+
 return extension
