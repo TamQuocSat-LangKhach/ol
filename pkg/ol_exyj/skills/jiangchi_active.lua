@@ -3,7 +3,7 @@ local jiangchi_active = fk.CreateSkill{
 }
 
 Fk:loadTranslationTable{
-  ["ol_ex__jiangchi_select"] = "将驰",
+  ["ol_ex__jiangchi_active"] = "将驰",
   ["ol_ex__jiangchi1"] = "摸一张牌，使用【杀】次数上限-1",
   ["ol_ex__jiangchi2"] = "重铸一张牌，使用【杀】次数上限+1",
 }
