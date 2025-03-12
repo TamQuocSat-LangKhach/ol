@@ -137,7 +137,7 @@ Fk:loadTranslationTable{
   ["~ol__yuanji"] = "空捧冰心抱玉壶……",
 }
 
---四弼：伏完x 杨修x 陈琳x 诸葛瑾√ 马良√ 程昱√ 士燮 邓芝 董昭 司马朗x 步骘 董允 阚泽 王允 戏志才 孙乾√ 王粲x 吕虔x 孙邵√
+--四弼：伏完x 杨修x 陈琳x 诸葛瑾√ 马良√ 程昱√ 士燮√ 邓芝√ 董昭√ 司马朗x 步骘√ 董允√ 阚泽√ 王允√ 戏志才√ 孙乾√ 王粲x 吕虔x 孙邵√
 --辛毗x 审配√ 荀谌√ 吕凯x 蒋干x 潘濬x 严峻x 杜袭√ 杨仪√ 陈登√ 羊祜√ 伊籍x 夏侯玄√ 马日磾x 屈晃√ 孙弘√ 谯周x 阎圃x
 --张华√ 曹羲√ 王瓘√ 陆凯√ 田畴√ 郭图√ 陶谦√ 韩馥√
 General:new(extension, "ol__zhugejin", "wu", 3):addSkills { "huanshi", "ol__hongyuan", "ol__mingzhe" }

@@ -15,7 +15,7 @@ Fk:loadTranslationTable{
 shuimeng:addEffect(fk.EventPhaseEnd, {
   anim_type = "control",
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self) and player.phase == Player.Play and
+    return target == player and player:hasSkill(shuimeng.name) and player.phase == Player.Play and
       table.find(player.room:getOtherPlayers(player, false), function (p)
         return player:canPindian(p)
       end)

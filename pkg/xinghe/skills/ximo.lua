@@ -15,7 +15,7 @@ Fk:loadTranslationTable{
 ximo:addEffect(fk.AfterSkillEffect, {
   mute = true,
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self) and data.skill.name == "#bixin_2_trig"
+    return target == player and player:hasSkill(ximo.name) and data.skill.name == "#bixin_2_trig"
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room

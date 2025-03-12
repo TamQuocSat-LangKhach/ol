@@ -24,7 +24,7 @@ yidu:addEffect(fk.CardUseFinished, {
       return not (data.damageDealt and data.damageDealt[p]) and not p.damageDealt
     end)
     for _, p in ipairs(targets) do
-      if not player:hasSkill(self) then return end
+      if not player:hasSkill(yidu.name) then return end
       if not p.dead and not p:isKongcheng() then
         event:setCostData(self, {tos = {p}})
         self:doCost(event, target, player, data)

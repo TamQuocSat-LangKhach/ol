@@ -11,7 +11,7 @@ Fk:loadTranslationTable{
   ["#qiejian-choose"] = "切谏：弃置你或 %dest 场上一张牌，或点“取消”本轮不能再对其发动“切谏”",
 
   ["$qiejian1"] = "东宫不稳，必使众人生异。",
-  ["$qiejian2"] = "今三方鼎持，不宜擅动储君。",
+  ["$qiejian2"] = "今三方鼎峙，不宜擅动储君。",
 }
 
 qiejian:addEffect(fk.AfterCardsMove, {

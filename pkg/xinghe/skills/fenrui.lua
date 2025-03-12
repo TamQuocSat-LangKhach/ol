@@ -18,7 +18,7 @@ Fk:loadTranslationTable{
 fenrui:addEffect(fk.EventPhaseStart, {
   anim_type = "defensive",
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self) and player.phase == Player.Finish and not player:isNude() and
+    return target == player and player:hasSkill(fenrui.name) and player.phase == Player.Finish and not player:isNude() and
       #player.sealedSlots > 0 and not table.every(player.sealedSlots, function (slot)
         return slot == Player.JudgeSlot
       end)

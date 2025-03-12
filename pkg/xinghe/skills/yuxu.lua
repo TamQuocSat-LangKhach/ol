@@ -15,7 +15,7 @@ Fk:loadTranslationTable{
 yuxu:addEffect(fk.CardUseFinished, {
   anim_type = "drawcard",
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self) and player.phase == Player.Play
+    return target == player and player:hasSkill(yuxu.name) and player.phase == Player.Play
   end,
   on_cost = function(self, event, target, player, data)
     return player:usedSkillTimes(yuxu.name, Player.HistoryPhase) % 2 == 1 or

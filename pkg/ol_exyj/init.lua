@@ -155,7 +155,7 @@ Fk:loadTranslationTable{
   ["illustrator:ol_ex__liru"] = "君桓文化",
 
   ["$ty_ex__fencheng_ol_ex__liru1"] = "愿这火光，照亮董公西行之路！",
-  ["$ty_ex__fencheng_ol_ex__liru2"] = "诸公且看，此火可戏天下诸否？",
+  ["$ty_ex__fencheng_ol_ex__liru2"] = "诸公且看，此火可戏天下诸侯否？",
   ["~ol_ex__liru"] = "火熄人亡，都结束了……",
 }
 

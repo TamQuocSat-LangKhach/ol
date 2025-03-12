@@ -33,7 +33,7 @@ xinggu:addEffect(fk.GameStart, {
 xinggu:addEffect(fk.EventPhaseStart, {
   anim_type = "support",
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self) and player.phase == Player.Finish and
+    return target == player and player:hasSkill(xinggu.name) and player.phase == Player.Finish and
       #player:getPile(xinggu.name) > 0
   end,
   on_cost = function(self, event, target, player, data)

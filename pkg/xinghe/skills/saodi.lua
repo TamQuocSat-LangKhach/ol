@@ -8,9 +8,6 @@ Fk:loadTranslationTable{
 
   ["#saodi-invoke"] = "扫狄：你可以令你与 %dest 之间一个方向上所有角色均成为%arg的目标",
 
-  ["clockwise"] = "↻顺时针方向",
-  ["anticlockwise"] = "↺逆时针方向",
-
   ["$saodi1"] = "狄获悬野，秋风扫之！",
   ["$saodi2"] = "戎狄作乱，岂能坐视！",
 }
