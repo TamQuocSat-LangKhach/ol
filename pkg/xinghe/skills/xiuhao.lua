@@ -32,7 +32,7 @@ xiuhao:addEffect(fk.DamageCaused, {
   on_use = function(self, event, target, player, data)
     data:preventDamage()
     if not data.from.dead then
-      data.from:drawCards(2, self.name)
+      data.from:drawCards(2, xiuhao.name)
     end
   end,
 })

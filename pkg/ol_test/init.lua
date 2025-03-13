@@ -105,6 +105,16 @@ Fk:loadTranslationTable{
   ["~ol__xiahouen"] = "丞相！就是他抢咱们东西！",
 }
 
+--local zhaozhong = General:new(extension, "ol__zhaozhong", "qun", 3)
+--zhaozhong:addSkills { "pengbi", "dici" }
+--zhaozhong:addRelatedSkills { "yintian", "biri" }
+Fk:loadTranslationTable{
+  ["ol__zhaozhong"] = "赵忠",
+  --["#ol__zhaozhong"] = "",
+
+  ["~ol__zhaozhong"] = "",
+}
+
 General:new(extension, "ol__yangfu", "wei", 3).hidden = true
 Fk:loadTranslationTable{
   ["ol__yangfu"] = "杨阜",

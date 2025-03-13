@@ -38,7 +38,7 @@ jinghua:addEffect(fk.TurnStart, {
     end)
     if #cards > 1 then
       cards = room:askToArrangeCards(player, {
-        skill_name = self.name,
+        skill_name = jinghua.name,
         card_map = {cards, "Bottom"},
         free_arrange = true,
         max_limit = {#cards},

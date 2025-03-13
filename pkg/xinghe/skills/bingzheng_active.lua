@@ -1,6 +1,5 @@
 local bingzheng_active = fk.CreateSkill{
   name = "bingzheng_active",
-  tags = { Skill.Lord, Skill.Compulsory },
 }
 
 Fk:loadTranslationTable{

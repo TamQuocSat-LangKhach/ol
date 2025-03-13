@@ -13,7 +13,7 @@ local qifu = require(prefix .. "qifu")
 local ol_sp = require(prefix .. "ol_sp")
 --local ol_re = require(prefix .. "ol_re")
 local ol_test = require(prefix .. "ol_test")
---local ol_other = require(prefix .. "ol_other")
+local ol_other = require(prefix .. "ol_other")
 
 local ol_derived = require(prefix .. "ol_derived")
 
@@ -31,7 +31,7 @@ return {
   ol_sp,
   --ol_re,
   ol_test,
-  --ol_other,
+  ol_other,
 
   ol_derived,
 }

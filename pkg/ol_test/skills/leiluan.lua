@@ -40,10 +40,10 @@ leiluan:addEffect("viewas", {
     return card
   end,
   enabled_at_play = function(self, player)
-    return player:usedEffectTimes(self.name, Player.HistoryTurn)
+    return player:usedEffectTimes(self.name, Player.HistoryTurn) == 0
   end,
   enabled_at_response = function(self, player, response)
-    return not response and player:usedEffectTimes(self.name, Player.HistoryTurn) and
+    return not response and player:usedEffectTimes(self.name, Player.HistoryTurn) == 0 and
       #player:getViewAsCardNames(leiluan.name, Fk:getAllCardNames("b"), nil, player:getTableMark("leiluan-round")) > 0
   end,
 })

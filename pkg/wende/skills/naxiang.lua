@@ -15,7 +15,7 @@ Fk:loadTranslationTable{
 
 naxiang:addLoseEffect(function (self, player, is_death)
   local room = player.room
-  for _, id in ipairs(player:getMark(naxiang.name)) do
+  for _, id in ipairs(player:getTableMark(naxiang.name)) do
     local p = room:getPlayerById(id)
     if not p.dead and not table.find(room:getOtherPlayers(player, false), function(p2)
       return table.contains(p:getTableMark(naxiang.name), p2)

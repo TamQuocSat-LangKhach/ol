@@ -43,7 +43,7 @@ hetao:addEffect(fk.TargetSpecified, {
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    room:throwCard(event:getCostData(self).cards, self.name, player, player)
+    room:throwCard(event:getCostData(self).cards, hetao.name, player, player)
     data.use.additionalEffect = 1
     data.use.nullifiedTargets = data.use.nullifiedTargets or {}
     for _, p in ipairs(data.use.tos) do

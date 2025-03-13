@@ -32,7 +32,7 @@ chouce:addEffect(fk.Damaged, {
     local room = player.room
     local judge = {
       who = player,
-      reason = self.name,
+      reason = chouce.name,
       pattern = ".|.|^nosuit",
     }
     room:judge(judge)

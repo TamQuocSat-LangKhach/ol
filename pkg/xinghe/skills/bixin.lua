@@ -132,7 +132,6 @@ bixin:addEffect(fk.EventPhaseStart, {
     local success, dat = room:askToUseActiveSkill(player, {
       skill_name = bixin.name,
       prompt = "#bixin:::3",
-      skip = true,
     })
     if success and dat then
       event:setCostData(self, {extra_data = dat})

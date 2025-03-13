@@ -48,10 +48,7 @@ wuniang:addEffect(fk.CardUseFinished, {
     end
     if not player.dead then
       room:addPlayerMark(player, MarkEnum.SlashResidue.."-phase")
-      player:drawCards(1, self.name)
-    end
-    for _, path in ipairs(FileIO.ls("./packages/ol/pkg/qifu/skills")) do
-      print(path)
+      player:drawCards(1, wuniang.name)
     end
   end,
 })

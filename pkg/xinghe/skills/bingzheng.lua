@@ -30,7 +30,7 @@ bingzheng:addEffect(fk.EventPhaseEnd, {
       prompt = "#bingzheng-choose",
       cancelable = true,
     })
-    if #success and dat then
+    if success and dat then
       event:setCostData(self, {tos = dat.targets, choice = dat.interaction})
       return true
     end

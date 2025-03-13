@@ -36,7 +36,6 @@ dangxian:addEffect(fk.EventPhaseStart, {
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    print(self.name)
     local cards = room:getCardsFromPileByRule("slash", 1, "allPiles")
     if #cards > 0 then
       room:moveCardTo(cards, Card.PlayerHand, player, fk.ReasonJustMove, dangxian.name, nil, true, player, "@@ol_ex__dangxian-inhand")

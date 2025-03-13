@@ -41,7 +41,6 @@ xinggu:addEffect(fk.EventPhaseStart, {
     local success, dat = room:askToUseActiveSkill(player, {
       skill_name = "xinggu_active",
       prompt = "#xinggu-invoke",
-      no_indicate = true,
     })
     if success and dat then
       event:setCostData(self, {tos = dat.targets, cards = dat.cards})

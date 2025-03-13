@@ -44,6 +44,7 @@ huaiyuan:addEffect(fk.AfterCardsMove, {
       skill_name = "huaiyuan_active",
       prompt = "#huaiyuan-invoke",
       cancelable = false,
+      no_indicate = false,
     })
     if not (success and dat) then
       dat = {}

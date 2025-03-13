@@ -22,7 +22,7 @@ dulie:addEffect(fk.TargetConfirming, {
   end,
   on_cost = function(self, event, target, player, data)
     return player.room:askToSkillInvoke(player, {
-      skill_name = self.name,
+      skill_name = dulie.name,
       prompt = "#ol__dulie-invoke:"..data.from.id.."::"..data.card:toLogString(),
     })
   end,

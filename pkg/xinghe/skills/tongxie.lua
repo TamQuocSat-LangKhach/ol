@@ -34,7 +34,7 @@ tongxie:addEffect(fk.EventPhaseStart, {
         min_num = 0,
         pattern = "",
         skillName = tongxie.name,
-      }
+      },
     })
     if success and dat then
       table.insert(dat.targets, player)

@@ -19,7 +19,7 @@ shuiyue:addEffect(fk.TurnEnd, {
     return target == player and player:hasSkill(shuiyue.name)
   end,
   on_use = function (self, event, target, player, data)
-    player:drawCards(2, self.name, "top", "@@shuiyue-inhand")
+    player:drawCards(2, shuiyue.name, "top", "@@shuiyue-inhand")
   end,
 })
 shuiyue:addEffect(fk.RoundEnd, {
@@ -37,7 +37,7 @@ shuiyue:addEffect(fk.RoundEnd, {
     end)
     if #cards > 1 then
       cards = room:askToArrangeCards(player, {
-        skill_name = self.name,
+        skill_name = shuiyue.name,
         card_map = {cards, "Top"},
         free_arrange = true,
         max_limit = {#cards},

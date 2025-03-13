@@ -60,7 +60,7 @@ lucun:addEffect("viewas", {
   end,
   enabled_at_response = function(self, player, response)
     return not response and player:usedEffectTimes(self.name) == 0 and Fk:currentRoom():getCurrent() and
-      #U.getViewAsCardNames(player, lucun.name,  U.getAllCardNames("bt"), nil, player:getTableMark("lucun-round")) > 0
+      #player:getViewAsCardNames(lucun.name, Fk:getAllCardNames("bt"), nil, player:getTableMark("lucun-round")) > 0
   end,
 })
 

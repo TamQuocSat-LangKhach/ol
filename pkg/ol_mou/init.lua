@@ -177,6 +177,15 @@ Fk:loadTranslationTable{
   --["~olmou__zhaoyun"] = "",
 }
 
+General:new(extension, "olmou__wenchou", "qun", 4):addSkills { "lunzhan", "juejuew" }
+Fk:loadTranslationTable{
+  ["olmou__wenchou"] = "谋文丑",
+  --["#olmou__wenchou"] = "",
+  --["illustrator:olmou__wenchou"] = "",
+
+  --["~olmou__wenchou"] = "",
+}
+
 General:new(extension, "olmou__zhangrang", "qun", 3):addSkills { "lucun", "tuisheng" }
 Fk:loadTranslationTable{
   ["olmou__zhangrang"] = "谋张让",

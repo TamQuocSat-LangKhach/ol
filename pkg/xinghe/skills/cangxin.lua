@@ -58,7 +58,7 @@ cangxin:addEffect(fk.DamageInflicted, {
         ids = to_throw,
         toArea = Card.DiscardPile,
         moveReason = fk.ReasonPutIntoDiscardPile,
-        skillName = self.name,
+        skillName = cangxin.name,
         proposer = player,
       }
     end
