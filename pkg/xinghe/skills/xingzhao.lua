@@ -40,18 +40,18 @@ xingzhao:addEffect(fk.EventPhaseChanging, {
 local xingzhao_spec = {
   can_refresh = function (self, event, target, player, data)
     return player:hasSkill(xingzhao.name, true) and
-      (player:hasSkill("xunxun", true) and not table.find(player.room.alive_players, function(p)
+      ((player:hasSkill("xunxun", true) and not table.find(player.room.alive_players, function(p)
         return p:isWounded()
       end)) or
       (not player:hasSkill("xunxun", true) and table.find(player.room.alive_players, function(p)
         return p:isWounded()
-      end))
+      end)))
   end,
   on_refresh = function(self, event, target, player, data)
     if player:hasSkill("xunxun", true) then
-      player.room:handleAddLoseSkills(player, "-xunxun", nil, false, true)
+      player.room:handleAddLoseSkills(player, "-xunxun")
     else
-      player.room:handleAddLoseSkills(player, "xunxun", nil, false, true)
+      player.room:handleAddLoseSkills(player, "xunxun")
     end
   end,
 }

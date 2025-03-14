@@ -1185,7 +1185,7 @@ Fk:loadTranslationTable{
   ["ol__wuanguo"] = "武安国",
   ["#ol__wuanguo"] = "料脑编须",
 
-  ["~ol__wuanguo"] = "",
+  ["~ol__wuanguo"] = "诶呀，我的膀子！",
 }
 
 --列肆：糜竺√ 卫兹√ 刘巴√ 张世平√ 吕伯奢√

@@ -123,14 +123,6 @@ Fk:loadTranslationTable{
   ["~ol__peiyuanshao"] = "",
 }
 
-General:new(extension, "olz__xunshuang", "qun", 3).hidden = true
-Fk:loadTranslationTable{
-  ["olz__xunshuang"] = "族荀爽",
-  --["#olz__xunshuang"] = "",
-
-  ["~olz__xunshuang"] = "",
-}
-
 General:new(extension, "ol__zhangmancheng", "qun", 5).hidden = true
 Fk:loadTranslationTable{
   ["ol__zhangmancheng"] = "张曼成",
