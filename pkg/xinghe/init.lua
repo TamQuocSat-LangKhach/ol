@@ -841,7 +841,7 @@ Fk:loadTranslationTable{
 
 --虎贲：公孙瓒x 曹洪x 夏侯霸x 诸葛恪√ 乐进x 祖茂x 丁奉√ 文聘x 吾彦√ 李通√ 贺齐√ 马忠√ 麹义√ 鲁芝√ 苏飞√ 黄权√ 唐咨√ 吕旷吕翔√ 高览√
 --周鲂x 曹性x 朱灵√ 田豫√ 赵俨√ 邓忠√ 霍峻√ 文鸯x 阎柔x 朱儁√ 马承√ 傅肜√ 胡班√ 马休马铁√ 张翼√ 罗宪√ 郝普√ 孟达√ 段熲√ 牵招√ 凌操√
---刘磐√ 蔡瑁√ 王匡√ 成公英√
+--刘磐√ 蔡瑁√ 王匡√ 成公英√ 武安国√
 General:new(extension, "zhugeke", "wu", 3):addSkills { "aocai", "duwu" }
 Fk:loadTranslationTable{
   ["zhugeke"] = "诸葛恪",
@@ -1178,6 +1178,14 @@ Fk:loadTranslationTable{
   ["#chenggongying"] = "尽欢竭忠",
 
   ["~chenggongying"] = "假使英本主人在，实不来此也。",
+}
+
+General:new(extension, "ol__wuanguo", "qun", 4):addSkills { "liyongw" }
+Fk:loadTranslationTable{
+  ["ol__wuanguo"] = "武安国",
+  ["#ol__wuanguo"] = "料脑编须",
+
+  ["~ol__wuanguo"] = "",
 }
 
 --列肆：糜竺√ 卫兹√ 刘巴√ 张世平√ 吕伯奢√

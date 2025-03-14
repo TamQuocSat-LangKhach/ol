@@ -49,14 +49,6 @@ Fk:loadTranslationTable{
   ["~ol__niufu"] = "",
 }
 
-General:new(extension, "ol__wuanguo", "qun", 4):addSkills { "liyongw" }
-Fk:loadTranslationTable{
-  ["ol__wuanguo"] = "武安国",
-  --["#ol__wuanguo"] = "",
-
-  ["~ol__wuanguo"] = "",
-}
-
 General:new(extension, "ol__guozhao", "wei", 3, 3, General.Female):addSkills { "jiaoyu", "neixun" }
 Fk:loadTranslationTable{
   ["ol__guozhao"] = "郭照",

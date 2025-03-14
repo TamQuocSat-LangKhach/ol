@@ -18,10 +18,7 @@ Fk:loadTranslationTable{
 jiaoyu:addEffect(fk.RoundStart, {
   anim_type = "drawcard",
   can_trigger = function(self, event, target, player, data)
-    return player:hasSkill(jiaoyu.name) and
-      table.find({3, 4, 5, 6, 7}, function (sub_type)
-        return player:hasEmptyEquipSlot(sub_type)
-      end)
+    return player:hasSkill(jiaoyu.name) and player:hasEmptyEquipSlot()
   end,
   on_use = function (self, event, target, player, data)
     local room = player.room

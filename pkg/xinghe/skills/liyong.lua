@@ -12,8 +12,8 @@ Fk:loadTranslationTable{
   ["#liyongw-yin"] = "历勇：获得弃牌堆中一张本回合已使用花色的牌，选择一名角色视为对你使用【决斗】",
   ["@liyongw-turn"] = "历勇",
 
-  ["$liyong1"] = "",
-  ["$liyong2"] = "",
+  ["$liyong1"] = "今日，我虽死，却未辱武安之名！",
+  ["$liyong2"] = "我受文举恩义，今当以死报之！",
 }
 
 liyong:addEffect("active", {

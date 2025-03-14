@@ -15,6 +15,7 @@ Fk:loadTranslationTable{
 }
 
 fulu:addEffect(fk.CardUseFinished, {
+  mute = true,
   can_trigger = function (self, event, target, player, data)
     if player:hasSkill(fulu.name) and data.card.trueName == "slash" then
       if target == player then
@@ -23,26 +24,42 @@ fulu:addEffect(fk.CardUseFinished, {
             return not p.dead
           end)
       else
-        return not target:isKongcheng() and table.contains(data.tos, player) and not target.dead
+        return not target:isKongcheng() and table.contains(data.tos, player) and not target.dead and
+          target.hp < player.hp
       end
     end
   end,
   on_cost = function (self, event, target, player, data)
     local room = player.room
     if target == player then
-      local to, cards = room:askToChooseCardsAndPlayers(player, {
-        min_card_num = 1,
-        max_card_num = 1,
-        min_num = 1,
-        max_num = 1,
-        targets = data.tos,
-        pattern = ".|.|.|hand",
-        skill_name = fulu.name,
-        prompt = "#fulux-choose",
-        cancelable = true,
-      })
-      if #to > 0 and #cards == 1 then
-        event:setCostData(self, {tos = to, cards = cards})
+      local targets = table.filter(data.tos, function (p)
+        return not p.dead
+      end)
+      local to, card = targets, {}
+      if #targets > 1 then
+        to, card = room:askToChooseCardsAndPlayers(player, {
+          min_card_num = 1,
+          max_card_num = 1,
+          min_num = 1,
+          max_num = 1,
+          targets = data.tos,
+          pattern = ".|.|.|hand",
+          skill_name = fulu.name,
+          prompt = "#fulux-choose",
+          cancelable = true,
+        })
+      else
+        card = room:askToCards(player, {
+          min_num = 1,
+          max_num = 1,
+          include_equip = false,
+          skill_name = fulu.name,
+          prompt = "#fulux-invoke:"..to[1].id,
+          cancelable = true,
+        })
+      end
+      if #to > 0 and #card == 1 then
+        event:setCostData(self, {tos = to, cards = card})
         return true
       end
     else
@@ -51,7 +68,7 @@ fulu:addEffect(fk.CardUseFinished, {
         max_num = 1,
         include_equip = false,
         skill_name = fulu.name,
-        prompt = "#fulu-invoke:"..player.id,
+        prompt = "#fulux-invoke:"..player.id,
         cancelable = true,
       })
       if #cards > 0 then
@@ -63,6 +80,13 @@ fulu:addEffect(fk.CardUseFinished, {
   on_use = function (self, event, target, player, data)
     local room = player.room
     local to = target == player and event:getCostData(self).tos[1] or player
+    if to == player then
+      player:broadcastSkillInvoke(fulu.name, 2)
+      room:notifySkillInvoked(player, fulu.name, "negative")
+    else
+      player:broadcastSkillInvoke(fulu.name, 1)
+      room:notifySkillInvoked(player, fulu.name, "offensive")
+    end
     room:moveCardTo(event:getCostData(self).cards, Card.PlayerHand, to, fk.ReasonGive, fulu.name, nil, false, target)
     if target.dead or to.dead or to:isKongcheng() then return end
     local cards = room:askToChooseCards(target, {
