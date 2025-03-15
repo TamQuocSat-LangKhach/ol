@@ -21,7 +21,8 @@ cangxin:addEffect(fk.EventPhaseStart, {
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local cards = room:turnOverCardsFromDrawPile(player, room:getNCards(3, "bottom"), cangxin.name)
+    local cards = room:getNCards(3, "bottom")
+    room:turnOverCardsFromDrawPile(player, cards, cangxin.name)
     room:delay(1500)
     local n = #table.filter(cards, function (id)
       return Fk:getCardById(id).suit == Card.Heart
@@ -40,7 +41,8 @@ cangxin:addEffect(fk.DamageInflicted, {
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local cards = room:turnOverCardsFromDrawPile(player, room:getNCards(3, "bottom"), cangxin.name)
+    local cards = room:getNCards(3, "bottom")
+    room:turnOverCardsFromDrawPile(player, cards, cangxin.name)
     local to_throw = room:askToChooseCards(player, {
       target = player,
       min = 0,

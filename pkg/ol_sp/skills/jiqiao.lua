@@ -38,7 +38,8 @@ jiqiao:addEffect(fk.EventPhaseStart, {
     local room = player.room
     room:throwCard(event:getCostData(self).cards, jiqiao.name, player, player)
     if player.dead then return end
-    local cards = room:turnOverCardsFromDrawPile(player, room:getNCards(2 * #event:getCostData(self).cards), jiqiao.name)
+    local cards = room:getNCards(2 * #event:getCostData(self).cards)
+    room:turnOverCardsFromDrawPile(player, cards, jiqiao.name)
     room:delay(1000)
     local ids = table.filter(cards, function (id)
       return Fk:getCardById(id).type ~= Card.TypeEquip

@@ -26,7 +26,8 @@ xiongzhi:addEffect("active", {
   on_use = function(self, room, effect)
     local player = effect.from
     while not player.dead do
-      local cards = room:turnOverCardsFromDrawPile(player, room:getNCards(1), xiongzhi.name)
+      local cards = room:getNCards(1)
+      room:turnOverCardsFromDrawPile(player, cards, xiongzhi.name)
       if not room:askToUseRealCard(player, {
         pattern = cards,
         skill_name = xiongzhi.name,

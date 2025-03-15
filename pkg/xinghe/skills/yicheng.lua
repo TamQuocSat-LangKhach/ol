@@ -35,7 +35,8 @@ yicheng:addEffect("active", {
   card_filter = Util.FalseFunc,
   on_use = function(self, room, effect)
     local player = effect.from
-    local cards = room:turnOverCardsFromDrawPile(player, room:getNCards(player.maxHp), yicheng.name)
+    local cards = room:getNCards(player.maxHp)
+    room:turnOverCardsFromDrawPile(player, cards, yicheng.name)
     local n = 0
     for _, id in ipairs(cards) do
       n = n + Fk:getCardById(id).number

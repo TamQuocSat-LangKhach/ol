@@ -32,9 +32,10 @@ yajiao:addEffect(fk.AfterCardsMove, {
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local cards = U.turnOverCardsFromDrawPile(player, 1, yajiao.name)
+    local cards = room:getNCards(1)
+    room:turnOverCardsFromDrawPile(player, cards, yajiao.name)
     if player.dead then
-      U.returnCardsToDrawPile(player, cards, yajiao.name)
+      room:returnCardsToDrawPile(player, cards, yajiao.name)
       return false
     end
     local card_type = nil
@@ -68,7 +69,7 @@ yajiao:addEffect(fk.AfterCardsMove, {
       if #tos > 0 then
         room:obtainCard(tos[1], cards, true, fk.ReasonGive, player, yajiao.name)
       else
-        U.returnCardsToDrawPile(player, cards, yajiao.name)
+        room:returnCardsToDrawPile(player, cards, yajiao.name)
       end
     else
       local tos = room:askToChoosePlayers(player, {
@@ -89,7 +90,7 @@ yajiao:addEffect(fk.AfterCardsMove, {
         })
         room:throwCard(cid, yajiao.name, tos[1], player)
       end
-      U.returnCardsToDrawPile(player, cards, yajiao.name)
+      room:returnCardsToDrawPile(player, cards, yajiao.name)
     end
   end,
 })
