@@ -102,7 +102,7 @@ zhaozhong:addSkills { "pengbi", "dici" }
 zhaozhong:addRelatedSkills { "yintian", "biri" }
 Fk:loadTranslationTable{
   ["ol__zhaozhong"] = "赵忠",
-  --["#ol__zhaozhong"] = "",
+  ["#ol__zhaozhong"] = "环佩动帷帟",
 
   ["~ol__zhaozhong"] = "",
 }

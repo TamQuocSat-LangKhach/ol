@@ -114,7 +114,7 @@ siqi:addEffect(fk.Damaged, {
       end
     end
     if #to_show == 0 then return false end
-    U.turnOverCardsFromDrawPile(player, to_show, siqi.name)
+    room:turnOverCardsFromDrawPile(player, to_show, siqi.name)
     local to_use
     repeat
       to_use = table.filter(cards, function(cid)
