@@ -12,17 +12,16 @@ Fk:loadTranslationTable {
   ["$fenji2"] = "两肋插刀，愿赴此去！",
 }
 
-
 ---@param player ServerPlayer
 ---@return boolean
-local fenjiTargetFilter = function(player)
+local targetFilter = function(player)
   return not player.dead
 end
 
 ---@param player ServerPlayer
 ---@param data MoveCardsData[]
 ---@return ServerPlayer[]
-local getFenjiTargets = function(player, data)
+local getTargets = function(player, data)
   local room = player.room
   local targets = {}
   for _, move in ipairs(data) do
@@ -38,7 +37,7 @@ local getFenjiTargets = function(player, data)
     end
   end
   return table.filter(targets, function (p)
-    return fenjiTargetFilter(p)
+    return targetFilter(p)
   end)
 end
 
@@ -46,13 +45,13 @@ fenji:addEffect(fk.AfterCardsMove, {
   anim_type = "support",
   trigger_times = function(self, event, target, player, data)
     local room = player.room
-    local fenjiTargets = event:getSkillData(self, "fenji_" .. player.id)
-    if fenjiTargets then
-      return #table.filter(fenjiTargets.unDone, function (p)
-        return fenjiTargetFilter(p)
+    local targets = event:getSkillData(self, self.name .. ":" .. player.id)
+    if targets then
+      return #table.filter(targets.unDone, function (p)
+        return targetFilter(p)
       end) + (event.invoked_times[self.name] or 0)
     else
-      return #getFenjiTargets(player, data)
+      return #getTargets(player, data)
     end
   end,
   can_trigger = function(self, event, target, player, data)
@@ -61,28 +60,27 @@ fenji:addEffect(fk.AfterCardsMove, {
   on_trigger = function(self, event, target, player, data)
     event:setSkillData(self, "cancel_cost", false)
     self:doCost(event, target, player, data)
-    --用于躲cancel_cost判定
     event:setSkillData(self, "cancel_cost", false)
   end,
   on_cost = function(self, event, target, player, data)
     local room = player.room
-    local fenjiTargets = event:getSkillData(self, "fenji_" .. player.id)
+    local targets = event:getSkillData(self, self.name .. ":" .. player.id)
     local to
-    if fenjiTargets then
-      while #fenjiTargets.unDone > 0 do
-        local p = table.remove(fenjiTargets.unDone, 1)
-        table.insert(fenjiTargets.done, p)
-        if fenjiTargetFilter(p) then
+    if targets then
+      while #targets.unDone > 0 do
+        local p = table.remove(targets.unDone, 1)
+        table.insert(targets.done, p)
+        if targetFilter(p) then
           to = p
           break
         end
       end
     else
-      local targets = getFenjiTargets(player, data)
+      targets = getTargets(player, data)
       if #targets > 0 then
         room:sortByAction(targets)
         to = table.remove(targets, 1)
-        event:setSkillData(self, "fenji_" .. player.id, { done = { to }, unDone = targets })
+        event:setSkillData(self, self.name .. ":" .. player.id, { done = { to }, unDone = targets })
       end
     end
     if to and player.room:askToSkillInvoke(player, {

@@ -14,47 +14,81 @@ Fk:loadTranslationTable{
   ["$qiejian2"] = "今三方鼎峙，不宜擅动储君。",
 }
 
-qiejian:addEffect(fk.AfterCardsMove, {
-  anim_type = "drawcard",
-  can_trigger = function(self, event, target, player, data)
-    if player:hasSkill(qiejian.name) then
-      local targets, targetRecorded = {}, player:getTableMark("qiejian_prohibit-round")
-      for _, move in ipairs(data) do
-        if move.from and not table.contains(targetRecorded, move.from.id) then
-          if move.from:isKongcheng() and not move.from.dead and
-            not table.every(move.moveInfo, function (info)
-              return info.fromArea ~= Card.PlayerHand
-            end) then
-            table.insertIfNeed(targets, move.from)
-          end
+---@param player ServerPlayer
+---@param target ServerPlayer
+---@return boolean
+local targetFilter = function(player, target)
+  return not (target.dead or table.contains(player:getTableMark("qiejian_prohibit-round"), target.id))
+end
+
+---@param player ServerPlayer
+---@param data MoveCardsData[]
+---@return ServerPlayer[]
+local getTargets = function(player, data)
+  local room = player.room
+  local targets = {}
+  for _, move in ipairs(data) do
+    if move.from and not table.contains(targets, move.from) and move.from:isKongcheng() then
+      for _, info in ipairs(move.moveInfo) do
+        if info.fromArea == Card.PlayerHand then
+          table.insert(targets, move.from)
+          break
         end
       end
-      if #targets > 0 then
-        event:setCostData(self, {extra_data = targets})
-        return true
-      end
+    end
+  end
+  return table.filter(targets, function (p)
+    return targetFilter(player, p)
+  end)
+end
+
+qiejian:addEffect(fk.AfterCardsMove, {
+  anim_type = "drawcard",
+  trigger_times = function(self, event, target, player, data)
+    local room = player.room
+    local targets = event:getSkillData(self, self.name .. ":" .. player.id)
+    if targets then
+      return #table.filter(targets.unDone, function(p)
+        return targetFilter(player, p)
+      end) + (event.invoked_times[self.name] or 0)
+    else
+      return #getTargets(player, data)
     end
   end,
+  can_trigger = function(self, event, target, player, data)
+    return player:hasSkill(qiejian.name)
+  end,
   on_trigger = function(self, event, target, player, data)
-    local room = player.room
-    local targets = event:getCostData(self).extra_data
-    room:sortByAction(targets)
-    for _, p in ipairs(targets) do
-      if not player:hasSkill(qiejian.name) then return end
-      if not table.contains(player:getTableMark("qiejian_prohibit-round"), p.id) and not p.dead then
-        event:setCostData(self, {tos = {p}})
-        self:doCost(event, target, player, data)
-      end
-    end
+    event:setSkillData(self, "cancel_cost", false)
+    self:doCost(event, target, player, data)
+    event:setSkillData(self, "cancel_cost", false)
   end,
   on_cost = function(self, event, target, player, data)
     local room = player.room
-    local to = event:getCostData(self).tos[1]
-    if room:askToSkillInvoke(player, {
+    local targets = event:getSkillData(self, self.name .. ":" .. player.id)
+    local to
+    if targets then
+      while #targets.unDone > 0 do
+        local p = table.remove(targets.unDone, 1)
+        table.insert(targets.done, p)
+        if targetFilter(player, p) then
+          to = p
+          break
+        end
+      end
+    else
+      local targets = getTargets(player, data)
+      if #targets > 0 then
+        room:sortByAction(targets)
+        to = table.remove(targets, 1)
+        event:setSkillData(self, self.name .. ":" .. player.id, { done = { to }, unDone = targets })
+      end
+    end
+    if to and player.room:askToSkillInvoke(player, {
       skill_name = qiejian.name,
       prompt = "#qiejian-invoke::"..to.id,
     }) then
-      event:setCostData(self, {tos = {to}})
+      event:setCostData(self, {tos = { to }})
       return true
     end
   end,
@@ -67,7 +101,7 @@ qiejian:addEffect(fk.AfterCardsMove, {
     end
     if player.dead then return end
     local tos = table.filter({player, to}, function (p)
-      return #p:getCardIds("he") > 0
+      return #p:getCardIds("ej") > 0
     end)
     if #tos > 0 then
       tos = room:askToChoosePlayers(player, {
