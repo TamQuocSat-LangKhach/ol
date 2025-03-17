@@ -1,6 +1,12 @@
 local shouhun = fk.CreateSkill{
   name = "shouhun",
   tags = { Skill.Compulsory },
+  dynamic_desc = function (self, player)
+    return "shouhun_inner:" ..
+      (player:getMark("shouhun1") + 2) .. ":" ..
+      (player:getMark("shouhun2") + 2) .. ":" ..
+      (player:getMark("shouhun3") + 2)
+  end,
 }
 
 Fk:loadTranslationTable{
@@ -9,13 +15,6 @@ Fk:loadTranslationTable{
 
   [":shouhun_inner"] = "锁定技，你的摸牌阶段摸牌数+{1}、手牌上限+{2}、体力上限+{3}；当你受到伤害时，令数值最低的一项数值+1（最大+4）。",
 }
-
-shouhun.dynamicDesc = function (self, player)
-  return "shouhun_inner:" ..
-    (player:getMark("shouhun1") + 2) .. ":" ..
-    (player:getMark("shouhun2") + 2) .. ":" ..
-    (player:getMark("shouhun3") + 2)
-end
 
 shouhun:addAcquireEffect(function (self, player, is_start)
   if player:getMark("shouhun_acquire") == 0 then

@@ -1,5 +1,22 @@
 local luochong = fk.CreateSkill{
   name = "luochong",
+  dynamic_desc = function (self, player)
+    if #player:getTableMark("luochong_removed") == 4 then
+      return "dummyskill"
+    else
+      local choices = {}
+      for i = 1, 4, 1 do
+        if not table.contains(player:getTableMark("luochong_removed"), i) then
+          if not table.contains(player:getTableMark("luochong_used-round"), i) then
+            table.insert(choices, Fk:translate("luochong"..i))
+          else
+            table.insert(choices, "<font color=\'gray\'>"..Fk:translate("luochong"..i).."</font>")
+          end
+        end
+      end
+      return "luochong_inner:"..table.concat(choices, "；")
+    end
+  end,
 }
 
 Fk:loadTranslationTable{
@@ -68,23 +85,6 @@ local luochong_spec = {
 }
 
 luochong:addEffect(fk.EventPhaseStart, {
-  dynamic_desc = function (self, player)
-    if #player:getTableMark("luochong_removed") == 4 then
-      return "dummyskill"
-    else
-      local choices = {}
-      for i = 1, 4, 1 do
-        if not table.contains(player:getTableMark("luochong_removed"), i) then
-          if not table.contains(player:getTableMark("luochong_used-round"), i) then
-            table.insert(choices, Fk:translate("luochong"..i))
-          else
-            table.insert(choices, "<font color=\'gray\'>"..Fk:translate("luochong"..i).."</font>")
-          end
-        end
-      end
-      return "luochong_inner:"..table.concat(choices, "；")
-    end
-  end,
   anim_type = "control",
   can_trigger = function (self, event, target, player, data)
     return target == player and player:hasSkill(luochong.name) and player.phase == Player.Start and

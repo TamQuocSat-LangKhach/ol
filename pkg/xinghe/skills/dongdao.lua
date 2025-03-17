@@ -1,6 +1,13 @@
 local dongdao = fk.CreateSkill{
   name = "dongdao",
   tags = { Skill.Switch },
+  dynamic_desc = function(self, player)
+    if Fk:currentRoom():isGameMode("1v2_mode") then
+      return "dongdao"
+    else
+      return "dummyskill"
+    end
+  end,
 }
 
 Fk:loadTranslationTable{
@@ -16,13 +23,6 @@ Fk:loadTranslationTable{
 }
 
 dongdao:addEffect(fk.TurnEnd, {
-  dynamic_desc = function(self, player)
-    if Fk:currentRoom():isGameMode("1v2_mode") then
-      return "dongdao"
-    else
-      return "dummyskill"
-    end
-  end,
   anim_type = "switch",
   can_trigger = function(self, event, target, player, data)
     return player.room:isGameMode("1v2_mode") and player:hasSkill(dongdao.name) and target.role == "rebel"

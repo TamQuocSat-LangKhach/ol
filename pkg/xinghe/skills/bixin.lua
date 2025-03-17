@@ -1,5 +1,18 @@
 local bixin = fk.CreateSkill{
   name = "bixin",
+  dynamic_desc = function(self, player)
+    local x = player:usedSkillTimes("ximo", Player.HistoryGame)
+    local text = "bixin_inner:"
+    for i = 1, 3, 1 do
+      text = text .. (i <= x and "" or "bixin_piece"..i) .. ":"
+    end
+    if x >= 3 then
+      text = text .. "1:3"
+    else
+      text = text .. "3:1"
+    end
+    return text
+  end,
 }
 
 Fk:loadTranslationTable{
@@ -26,19 +39,6 @@ Fk:loadTranslationTable{
 local U = require "packages/utility/utility"
 
 bixin:addEffect("viewas", {
-  dynamic_desc = function(self, player)
-    local x = player:usedSkillTimes("ximo", Player.HistoryGame)
-    local text = "bixin_inner:"
-    for i = 1, 3, 1 do
-      text = text .. (i <= x and "" or "bixin_piece"..i) .. ":"
-    end
-    if x >= 3 then
-      text = text .. "1:3"
-    else
-      text = text .. "3:1"
-    end
-    return text
-  end,
   pattern = ".|.|.|.|.|basic",
   prompt = function (self, player, selected_cards, selected)
     local n = player:usedSkillTimes("ximo", Player.HistoryGame) >= 3 and 1 or 3

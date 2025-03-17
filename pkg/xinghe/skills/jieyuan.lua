@@ -1,5 +1,14 @@
 local jieyuan = fk.CreateSkill{
   name = "ol__jieyuan",
+  dynamic_desc = function(self, player)
+    local desc1 = table.contains(player:getTableMark("ol__fenxin"), "rebel") and "" or Fk:translate("ol__jieyuan_hp")
+    local desc3 = table.contains(player:getTableMark("ol__fenxin"), "loyalist") and "" or Fk:translate("ol__jieyuan_hp")
+    if table.contains(player:getTableMark("ol__fenxin"), "renegade") then
+      return "ol__jieyuan_inner:"..desc1..":"..Fk:translate("card")..":"..desc3..":"..Fk:translate("card")
+    else
+      return "ol__jieyuan_inner:"..desc1..":"..Fk:translate("ol__jieyuan1_card")..":"..desc3..":"..Fk:translate("ol__jieyuan2_card")
+    end
+  end,
 }
 
 Fk:loadTranslationTable{
@@ -23,15 +32,6 @@ Fk:loadTranslationTable{
 }
 
 jieyuan:addEffect(fk.DamageCaused, {
-  dynamic_desc = function(self, player)
-    local desc1 = table.contains(player:getTableMark("ol__fenxin"), "rebel") and "" or Fk:translate("ol__jieyuan_hp")
-    local desc3 = table.contains(player:getTableMark("ol__fenxin"), "loyalist") and "" or Fk:translate("ol__jieyuan_hp")
-    if table.contains(player:getTableMark("ol__fenxin"), "renegade") then
-      return "ol__jieyuan_inner:"..desc1..":"..Fk:translate("card")..":"..desc3..":"..Fk:translate("card")
-    else
-      return "ol__jieyuan_inner:"..desc1..":"..Fk:translate("ol__jieyuan1_card")..":"..desc3..":"..Fk:translate("ol__jieyuan2_card")
-    end
-  end,
   anim_type = "offensive",
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(jieyuan.name) and data.to ~= player and not player:isNude() and

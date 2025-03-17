@@ -1,17 +1,17 @@
 local shanduan = fk.CreateSkill{
   name = "shanduan",
   tags = { Skill.Compulsory },
-}
-shanduan.dynamicDesc = function (self, player, lang)
-  local nums = player:getTableMark(shanduan.name)
-  for i = 1, 4, 1 do
-    if player:getMark("shanduan"..i.."-turn") > 0 then
-      table.insert(nums, player:getMark("shanduan"..i.."-turn"))
+  dynamic_desc = function (self, player, lang)
+    local nums = player:getTableMark(shanduan.name)
+    for i = 1, 4, 1 do
+      if player:getMark("shanduan"..i.."-turn") > 0 then
+        table.insert(nums, player:getMark("shanduan"..i.."-turn"))
+      end
     end
-  end
-  table.sort(nums)
-  return "shanduan_inner:"..nums[1]..":"..nums[2]..":"..nums[3]..":"..nums[4]
-end
+    table.sort(nums)
+    return "shanduan_inner:"..nums[1]..":"..nums[2]..":"..nums[3]..":"..nums[4]
+  end,
+}
 
 Fk:loadTranslationTable{
   ["shanduan"] = "善断",

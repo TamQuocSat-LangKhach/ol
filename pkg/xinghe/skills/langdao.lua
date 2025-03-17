@@ -1,5 +1,18 @@
 local langdao = fk.CreateSkill{
   name = "langdao",
+  dynamic_desc = function(self, player)
+    if #player:getTableMark("langdao_removed") == 3 then
+      return "dummyskill"
+    else
+      local desc = {}
+      for i = 1, 3, 1 do
+        if not table.contains(player:getTableMark("langdao_removed"), "langdao"..i) then
+          table.insert(desc, Fk:translate("langdao"..i))
+        end
+      end
+      return "langdao_inner:"..table.concat(desc, "/")
+    end
+  end,
 }
 
 Fk:loadTranslationTable{
@@ -24,19 +37,6 @@ Fk:loadTranslationTable{
 local U = require("packages/utility/utility")
 
 langdao:addEffect(fk.TargetSpecifying, {
-  dynamic_desc = function(self, player)
-    if #player:getTableMark("langdao_removed") == 3 then
-      return "dummyskill"
-    else
-      local desc = {}
-      for i = 1, 3, 1 do
-        if not table.contains(player:getTableMark("langdao_removed"), "langdao"..i) then
-          table.insert(desc, Fk:translate("langdao"..i))
-        end
-      end
-      return "langdao_inner:"..table.concat(desc, "/")
-    end
-  end,
   anim_type = "offensive",
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(langdao.name) and data.card.trueName == "slash" and
