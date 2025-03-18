@@ -107,20 +107,20 @@ Fk:loadTranslationTable{
   ["~ol__zhaozhong"] = "",
 }
 
+General:new(extension, "ol__peiyuanshao", "qun", 4):addSkills { "fulve" }
+Fk:loadTranslationTable{
+  ["ol__peiyuanshao"] = "裴元绍",
+  --["#ol__peiyuanshao"] = "",
+
+  ["~ol__peiyuanshao"] = "",
+}
+
 General:new(extension, "ol__yangfu", "wei", 3).hidden = true
 Fk:loadTranslationTable{
   ["ol__yangfu"] = "杨阜",
   --["#ol__yangfu"] = "",
 
   ["~ol__yangfu"] = "",
-}
-
-General:new(extension, "ol__peiyuanshao", "qun", 4).hidden = true
-Fk:loadTranslationTable{
-  ["ol__peiyuanshao"] = "裴元绍",
-  --["#ol__peiyuanshao"] = "",
-
-  ["~ol__peiyuanshao"] = "",
 }
 
 General:new(extension, "ol__zhangmancheng", "qun", 5).hidden = true
