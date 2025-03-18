@@ -16,30 +16,7 @@ Fk:loadTranslationTable{
   ["$ol__qingxian2"] = "流水清音听，高山弦拨心。",
 }
 
-qingxian:addEffect(fk.Damaged, {
-  anim_type = "masochism",
-  can_trigger = function (self, event, target, player, data)
-    return target == player and player:hasSkill(qingxian.name) and
-      data.from and not data.from.dead and
-      not table.find(player.room.alive_players, function(p)
-        return p.dying
-      end)
-  end,
-  on_cost = function (self, event, target, player, data)
-    local room = player.room
-    local success, dat = room:askToUseActiveSkill(player, {
-      skill_name = "ol__qingxian_active",
-      prompt = "#ol__qingxian-invoke::"..data.from.id,
-      cancelable = true,
-      extra_data = {
-        ol__qingxian = true,
-      }
-    })
-    if success and dat then
-      event:setCostData(self, {tos = {data.from}, choice = dat.interaction})
-      return true
-    end
-  end,
+local spec = {
   on_use = function (self, event, target, player, data)
     local room = player.room
     local to = event:getCostData(self).tos[1]
@@ -90,6 +67,33 @@ qingxian:addEffect(fk.Damaged, {
       player:drawCards(1, qingxian.name)
     end
   end,
+}
+
+qingxian:addEffect(fk.Damaged, {
+  anim_type = "masochism",
+  can_trigger = function (self, event, target, player, data)
+    return target == player and player:hasSkill(qingxian.name) and
+      data.from and not data.from.dead and
+      not table.find(player.room.alive_players, function(p)
+        return p.dying
+      end)
+  end,
+  on_cost = function (self, event, target, player, data)
+    local room = player.room
+    local success, dat = room:askToUseActiveSkill(player, {
+      skill_name = "ol__qingxian_active",
+      prompt = "#ol__qingxian-invoke::"..data.from.id,
+      cancelable = true,
+      extra_data = {
+        ol__qingxian = true,
+      }
+    })
+    if success and dat then
+      event:setCostData(self, {tos = {data.from}, choice = dat.interaction})
+      return true
+    end
+  end,
+  on_use = spec.on_use,
 })
 qingxian:addEffect(fk.HpRecover, {
   anim_type = "control",
@@ -112,6 +116,7 @@ qingxian:addEffect(fk.HpRecover, {
       return true
     end
   end,
+  on_use = spec.on_use,
 })
 
 return qingxian
