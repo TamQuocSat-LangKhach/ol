@@ -14,7 +14,7 @@ skill:addEffect(fk.AfterCardUseDeclared, {
       player:usedSkillTimes(skill.name, Player.HistoryTurn) == 0
   end,
   on_use = function(self, event, target, player, data)
-    data.unoffsetableList = player.room.players
+    data.unoffsetableList = table.simpleClone(player.room.players)
   end,
 })
 

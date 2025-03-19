@@ -195,4 +195,13 @@ Fk:loadTranslationTable{
   --["~olmou__zhangrang"] = "",
 }
 
+General:new(extension, "olmou__luzhi", "qun", 4).hidden = true
+Fk:loadTranslationTable{
+  ["olmou__luzhi"] = "谋卢植",
+  --["#olmou__luzhi"] = "",
+  --["illustrator:olmou__luzhi"] = "",
+
+  --["~olmou__luzhi"] = "",
+}
+
 return extension

@@ -77,7 +77,7 @@ jiushi:addEffect(fk.AfterCardsMove, {
         room:addPlayerMark(player, "@ol_ex__jiushi_count", #move.moveInfo)
       end
     end
-  end
+  end,
 })
 
 jiushi:addEffect(fk.PreCardUse, {
@@ -90,8 +90,8 @@ jiushi:addEffect(fk.PreCardUse, {
   end,
   on_cost = Util.TrueFunc,
   on_use = function (self, event, target, player, data)
-    data.disresponsiveList = player.room.players
-  end
+    data.disresponsiveList = table.simpleClone(player.room.players)
+  end,
 })
 
 jiushi:addEffect(fk.TurnedOver, {
@@ -100,7 +100,7 @@ jiushi:addEffect(fk.TurnedOver, {
   end,
   on_refresh = function (self, event, target, player, data)
     player.room:setPlayerMark(player, "@ol_ex__jiushi_count", 0)
-  end
+  end,
 })
 
 jiushi:addEffect("targetmod", {

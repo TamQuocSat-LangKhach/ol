@@ -34,7 +34,7 @@ kanpo:addEffect(fk.PreCardUse, {
     return target == player and player:hasSkill(kanpo.name) and data.card.trueName == "nullification"
   end,
   on_refresh = function(self, event, target, player, data)
-    data.disresponsiveList = player.room.alive_players
+    data.disresponsiveList = table.simpleClone(player.room.players)
   end,
 })
 

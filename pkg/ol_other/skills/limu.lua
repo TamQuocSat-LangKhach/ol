@@ -16,7 +16,7 @@ limu:addEffect(fk.AfterCardUseDeclared, {
     return target == player and player:hasSkill(limu.name) and data.card:isCommonTrick()
   end,
   on_use = function(self, event, target, player, data)
-    data.unoffsetableList = player.room.players
+    data.unoffsetableList = table.simpleClone(player.room.players)
   end,
 })
 

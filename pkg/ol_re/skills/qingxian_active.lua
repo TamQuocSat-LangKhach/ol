@@ -10,9 +10,7 @@ qingxian_active:addEffect("active", {
   card_num = 0,
   min_target_num = 0,
   max_target_num = 1,
-  interaction = function()
-    return UI.ComboBox { choices = { "ol__qingxian_losehp", "ol__qingxian_recover" } }
-  end,
+  interaction = UI.ComboBox { choices = { "ol__qingxian_losehp", "ol__qingxian_recover" } },
   card_filter = Util.FalseFunc,
   target_filter = function (self, player, to_select, selected, selected_cards)
     if self.ol__qingxian then

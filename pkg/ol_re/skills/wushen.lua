@@ -22,7 +22,7 @@ wushen:addEffect(fk.CardUsing, {
       data.extraUse = true
       player:addCardUseHistory(data.card.trueName, -1)
     end
-    data.disresponsiveList = player.room.players
+    data.disresponsiveList = table.simpleClone(player.room.players)
   end,
 })
 wushen:addEffect("filter", {

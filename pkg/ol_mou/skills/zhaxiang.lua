@@ -31,7 +31,7 @@ zhaxiang:addEffect(fk.PreCardUse, {
       player:getMark("@@ol_ex__zhaxiang-turn") > 0
   end,
   on_refresh = function(self, event, target, player, data)
-    data.disresponsiveList = player.room.alive_players
+    data.disresponsiveList = table.simpleClone(player.room.players)
   end,
 })
 zhaxiang:addEffect("targetmod", {
