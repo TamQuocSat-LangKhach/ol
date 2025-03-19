@@ -108,7 +108,7 @@ xijue:addEffect(fk.EventPhaseStart, {
       min_num = 1,
       max_num = 1,
       include_equip = false,
-      skill_name = "xiaoguo",
+      skill_name = "sp__xiaoguo",
       pattern = ".|.|.|.|.|basic",
       prompt = "#xijue_xiaoguo-invoke::"..target.id,
       cancelable = true,
@@ -122,28 +122,28 @@ xijue:addEffect(fk.EventPhaseStart, {
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    player:broadcastSkillInvoke("xiaoguo")
-    room:notifySkillInvoked(player, "xiaoguo", "offensive")
-    room:throwCard(event:getCostData(self).cards, "xiaoguo", player, player)
+    player:broadcastSkillInvoke("sp__xiaoguo")
+    room:notifySkillInvoked(player, "sp__xiaoguo", "offensive")
+    room:throwCard(event:getCostData(self).cards, "sp__xiaoguo", player, player)
     if target.dead then return false end
     if #room:askToDiscard(target, {
       min_num = 1,
       max_num = 1,
       include_equip = true,
-      skill_name = "xiaoguo",
+      skill_name = "sp__xiaoguo",
       pattern = ".|.|.|.|.|equip",
-      prompt = "#xiaoguo-discard:"..player.id,
+      prompt = "#sp__xiaoguo-discard:"..player.id,
       cancelable = true,
     }) > 0 then
       if not player.dead then
-        player:drawCards(1, "xiaoguo")
+        player:drawCards(1, "sp__xiaoguo")
       end
     else
       room:damage{
         from = player,
         to = target,
         damage = 1,
-        skillName = "xiaoguo",
+        skillName = "sp__xiaoguo",
       }
     end
   end,

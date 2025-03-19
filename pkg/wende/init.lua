@@ -78,7 +78,7 @@ Fk:loadTranslationTable{
 
 local zhanghuyuechen = General:new(extension, "zhanghuyuechen", "jin", 4)
 zhanghuyuechen:addSkills { "xijue" }
-zhanghuyuechen:addRelatedSkills { "ex__tuxi", "xiaoguo" }
+zhanghuyuechen:addRelatedSkills { "ex__tuxi", "sp__xiaoguo" }
 Fk:loadTranslationTable{
   ["zhanghuyuechen"] = "张虎乐綝",
   ["#zhanghuyuechen"] = "不辱门庭",
@@ -87,8 +87,8 @@ Fk:loadTranslationTable{
 
   ["$ex__tuxi_zhanghuyuechen1"] = "动如霹雳，威震宵小！",
   ["$ex__tuxi_zhanghuyuechen2"] = "行略如风，摧枯拉朽！",
-  ["$xiaoguo_zhanghuyuechen1"] = "大丈夫生于世，当沙场效忠！",
-  ["$xiaoguo_zhanghuyuechen2"] = "骁勇善战，刚毅果断！",
+  ["$sp__xiaoguo_zhanghuyuechen1"] = "大丈夫生于世，当沙场效忠！",
+  ["$sp__xiaoguo_zhanghuyuechen2"] = "骁勇善战，刚毅果断！",
   ["~zhanghuyuechen"] = "儿有辱……父亲威名……",
 }
 
