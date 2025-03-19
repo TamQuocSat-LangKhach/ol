@@ -46,6 +46,18 @@ Fk:loadTranslationTable{
   ["~ol__godzhangliao"] = "辽来，辽来！辽去！辽去……",
 }
 
+local godsunquan = General:new(extension, "godsunquan", "god", 4)
+godsunquan:addSkills { "yuheng", "dili" }
+godsunquan:addRelatedSkills { "shengzhi", "quandao", "chigang", "qionglan", "jiaohui", "yuanlv" }
+Fk:loadTranslationTable{
+  ["godsunquan"] = "神孙权",
+  ["#godsunquan"] = "坐断东南",
+  ["designer:godsunquan"] = "玄蝶既白",
+  ["illustrator:godsunquan"] = "鬼画府",
+
+  ["~godsunquan"] = "困居江东，枉称至尊……",
+}
+
 General:new(extension, "ol__masu", "shu", 3):addSkills { "ol__sanyao", "ty_ex__zhiman" }
 Fk:loadTranslationTable{
   ["ol__masu"] = "马谡",

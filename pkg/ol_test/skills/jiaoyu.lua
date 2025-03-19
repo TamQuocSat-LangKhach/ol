@@ -6,7 +6,8 @@ local jiaoyu = fk.CreateSkill{
 Fk:loadTranslationTable{
   ["jiaoyu"] = "椒遇",
   [":jiaoyu"] = "锁定技，每轮开始时，你判定X次（X为你空置装备栏数），然后声明一种颜色并获得弃牌堆里此颜色的判定牌。"..
-  "你的下个回合的结束阶段结束时，你获得一个额外出牌阶段，此阶段内其他角色不能使用与你装备区内牌颜色相同的牌直到有角色受到伤害。",
+  "你的下个回合的结束阶段结束时，你获得一个额外出牌阶段，此阶段内：你不能使用与声明颜色不同的牌；其他角色不能使用与你装备区内牌颜色相同的牌"..
+  "直到有角色受到伤害时。",
 
   ["@jiaoyu-round"] = "椒遇",
   ["#jiaoyu-choice"] = "椒遇：选择获得一种颜色的判定牌",
@@ -62,21 +63,20 @@ jiaoyu:addEffect(fk.EventPhaseEnd, {
   on_use = function (self, event, target, player, data)
     local room = player.room
     room:setPlayerMark(player, "jiaoyu_extra_phase-round", 0)
-    room:setPlayerMark(player, "jiaoyu_prohibit-turn", 1)
     player:gainAnExtraPhase(Player.Play, jiaoyu.name)
   end,
 })
 jiaoyu:addEffect(fk.EventPhaseStart, {
   can_refresh = function (self, event, target, player, data)
-    return target == player and player.phase == Player.Play and player:getMark("jiaoyu_prohibit-turn") > 0
+    return target == player and player.phase == Player.Play and data.reason == jiaoyu.name
   end,
   on_refresh = function (self, event, target, player, data)
     local room = player.room
-    room:setPlayerMark(player, "jiaoyu_prohibit-turn", 0)
+    room:setPlayerMark(player, "jiaoyu_self_prohibit-phase", 1)
     room:setPlayerMark(player, "jiaoyu_prohibit-phase", 1)
   end,
 })
-jiaoyu:addEffect(fk.Damaged, {
+jiaoyu:addEffect(fk.DamageInflicted, {
   can_refresh = function (self, event, target, player, data)
     return player:getMark("jiaoyu_prohibit-phase") > 0
   end,
@@ -86,13 +86,17 @@ jiaoyu:addEffect(fk.Damaged, {
 })
 jiaoyu:addEffect("prohibit", {
   prohibit_use = function(self, player, card)
-    local src = table.find(Fk:currentRoom().alive_players, function (p)
-      return p:getMark("jiaoyu_prohibit-phase") > 0
-    end)
-    if src and src ~= player then
-      return table.find(src:getCardIds("e"), function (id)
-        return card:compareColorWith(Fk:getCardById(id))
+    if player:getMark("jiaoyu_self_prohibit-phase") > 0 then
+      return card and card.color ~= player:getMark("@jiaoyu-round")
+    else
+      local src = table.find(Fk:currentRoom().alive_players, function (p)
+        return p:getMark("jiaoyu_prohibit-phase") > 0
       end)
+      if src and src ~= player then
+        return table.find(src:getCardIds("e"), function (id)
+          return card:compareColorWith(Fk:getCardById(id))
+        end)
+      end
     end
   end,
 })

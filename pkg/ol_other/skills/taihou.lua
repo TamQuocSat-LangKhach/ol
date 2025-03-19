@@ -31,7 +31,7 @@ taihou:addEffect(fk.TargetConfirming, {
         prompt = "#qin__taihou-card:::"..data.card:getTypeString()..":"..data.card:toLogString(),
         cancelable = true,
       }) == 0 then
-      data.use.nullifiedTargets = room.players
+      data.use.nullifiedTargets = table.simpleClone(room.players)
     end
   end,
 })

@@ -22,7 +22,7 @@ guanbian:addEffect(fk.GameStart, {
   can_trigger = function(self, event, target, player, data)
     return player:hasSkill(guanbian.name)
   end,
-  on_use = function(self, event, target, player)
+  on_use = function(self, event, target, player, data)
     local room = player.room
     room:addPlayerMark(player, "@guanbian-round", #room.players)
   end,
@@ -32,7 +32,7 @@ guanbian:addEffect(fk.RoundEnd, {
   can_trigger = function(self, event, target, player, data)
     return player:hasSkill(guanbian.name)
   end,
-  on_use = function(self, event, target, player)
+  on_use = function(self, event, target, player, data)
     player.room:handleAddLoseSkills(player, "-guanbian")
   end,
 })
@@ -42,7 +42,7 @@ guanbian:addEffect(fk.AfterSkillEffect, {
     return target == player and player:hasSkill(guanbian.name) and
       (data.skill.name == "xiongni" or data.skill.name == "fengshang")
   end,
-  on_use = function(self, event, target, player)
+  on_use = function(self, event, target, player, data)
     player.room:handleAddLoseSkills(player, "-guanbian")
   end,
 })

@@ -57,7 +57,7 @@ qiaoli:addEffect("viewas", {
     else
       room:setPlayerMark(player, "qiaoli1-phase", 2)
       room:addPlayerMark(player, "qiaoli2-turn")
-      use.disresponsiveList = room.alive_players
+      use.disresponsiveList = table.simpleClone(room.alive_players)
     end
   end,
   enabled_at_play = function(self, player)

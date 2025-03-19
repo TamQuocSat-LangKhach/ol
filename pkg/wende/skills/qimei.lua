@@ -15,7 +15,7 @@ Fk:loadTranslationTable{
 }
 
 qimei:addLoseEffect(function (self, player, is_death)
-  if is_death then
+  if is_death and player:getMark("qimei_couple") ~= 0 then
     local room = player.room
     local to = room:getPlayerById(player:getMark("qimei_couple"))
     room:setPlayerMark(player, "qimei_couple", 0)

@@ -43,7 +43,7 @@ shanwu:addEffect(fk.TargetConfirmed, {
     }
     room:judge(judge)
     if judge:matchPattern() then
-      data.use.nullifiedTargets = room.players
+      data.use.nullifiedTargets = table.simpleClone(room.players)
     end
   end,
 })

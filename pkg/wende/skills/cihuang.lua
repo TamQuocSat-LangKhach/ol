@@ -62,7 +62,7 @@ cihuang:addEffect(fk.CardEffectCancelledOut, {
       card = card,
       extraUse = true,
     }
-    use.disresponsiveList = room.players
+    use.disresponsiveList = table.simpleClone(room.players)
     room:useCard(use)
   end,
 })

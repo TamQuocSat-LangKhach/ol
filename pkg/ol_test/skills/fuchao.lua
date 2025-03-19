@@ -48,7 +48,7 @@ local fuchao_spec = {
     })
     if choice == "fuchao2" then
       if #use.tos > 0 then
-        use.nullifiedTargets = room:getOtherPlayers(player, false)
+        use.nullifiedTargets = table.simpleClone(room:getOtherPlayers(player, false))
         use.additionalEffect = (use.additionalEffect or 0) + 1
       end
     else
