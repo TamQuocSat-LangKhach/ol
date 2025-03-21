@@ -115,7 +115,12 @@ local caiwang_spec = {
 caiwang:addEffect(fk.CardUseFinished, {
   anim_type = "control",
   can_trigger = function(self, event, target, player, data)
-    if player:hasSkill(caiwang.name) and data.responseToEvent and data.toCard and data.toCard:compareColorWith(data.card) then
+    if
+      player:hasSkill(caiwang.name) and
+      data.responseToEvent and
+      data.responseToEvent.card and
+      data.responseToEvent.card:compareColorWith(data.card)
+    then
       local to
       if data.responseToEvent.from == player then
         to = target

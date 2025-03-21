@@ -46,7 +46,7 @@ xudai:addEffect(fk.CardUseFinished, {
       table.find(player.room:getOtherPlayers(player), function (p)
         return not p:hasSkill("zhujiu", true)
       end) and
-      data.responseToEvent and data.toCard
+      data.responseToEvent and data.responseToEvent.card
   end,
   on_cost = xudai_spec.on_cost,
   on_use = xudai_spec.on_use,
