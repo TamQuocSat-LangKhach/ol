@@ -41,7 +41,12 @@ zhenying:addEffect("active", {
         return not p:prohibitDiscard(Fk:getCardById(id))
       end)
     end
-    local result = U.askForJointChoice(tos, {"0", "1", "2"}, zhenying.name, "#zhenying-choice")
+    local result = room:askToJointChoice(player, {
+      players = tos,
+      choices = {"0", "1", "2"},
+      skill_name = zhenying.name,
+      prompt = "#zhenying-choice",
+    })
     local discard_num_map = {}
     for _, p in ipairs(tos) do
       discard_num_map[p.id] = p:getHandcardNum() - tonumber(result[p])

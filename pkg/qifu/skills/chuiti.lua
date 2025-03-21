@@ -12,8 +12,6 @@ Fk:loadTranslationTable{
   ["$chuiti2"] = "宜数涕泣，示忧愁也。",
 }
 
-local U = require "packages/utility/utility"
-
 chuiti:addEffect(fk.AfterCardsMove, {
   can_trigger = function(self, event, target, player, data)
     if not player:hasSkill(chuiti.name) or player:usedSkillTimes(chuiti.name, Player.HistoryTurn) > 0 then return false end
@@ -36,7 +34,7 @@ chuiti:addEffect(fk.AfterCardsMove, {
         end
       end
     end
-    ids = U.moveCardsHoldingAreaCheck(player.room, ids)
+    ids = player.room.logic:moveCardsHoldingAreaCheck(ids)
     if #ids > 0 then
       event:setCostData(self, {cards = ids})
       return true

@@ -66,8 +66,13 @@ guhuo:addEffect("viewas", {
     end)
     if #players > 0 then
       local questioners = {}
-      local result = U.askForJointChoice(players, {"noquestion", "question"}, guhuo.name,
-        "#guhuo-ask::"..player.id..":"..use.card.name, true)
+      local result = room:askToJointChoice(player, {
+        players = players,
+        choices = {"noquestion", "question"},
+        skill_name = guhuo.name,
+        prompt = "#guhuo-ask::"..player.id..":"..use.card.name,
+        send_log = true,
+      })
       for _, p in ipairs(players) do
         if result[p] == "question" then
           table.insert(questioners, p)

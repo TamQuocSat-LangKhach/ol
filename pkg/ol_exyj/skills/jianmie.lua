@@ -15,8 +15,6 @@ Fk:loadTranslationTable{
   ["$jianmie2"] = "你我不到黄泉，不复相见！",
 }
 
-local U = require("packages/utility/utility")
-
 jianmie:addEffect("active", {
   anim_type = "offensive",
   prompt = "#jianmie",
@@ -32,7 +30,13 @@ jianmie:addEffect("active", {
   on_use = function(self, room, effect)
     local player = effect.from
     local target = effect.tos[1]
-    local result = U.askForJointChoice({player, target}, {"red", "black"}, jianmie.name, "#jianmie-choice", true)
+    local result = room:askToJointChoice(player, {
+      players = {player, target},
+      choices = {"red", "black"},
+      skill_name = jianmie.name,
+      prompt = "#jianmie-choice",
+      send_log = true,
+    })
     local cards1 = table.filter(player:getCardIds("h"), function (id)
       return Fk:getCardById(id):getColorString() == result[player] and
         not player:prohibitDiscard(id)

@@ -34,8 +34,6 @@ Fk:loadTranslationTable{
   ["$langdao2"] = "狼顾四野，视幽冀为饵。",
 }
 
-local U = require("packages/utility/utility")
-
 langdao:addEffect(fk.TargetSpecifying, {
   anim_type = "offensive",
   can_trigger = function(self, event, target, player, data)
@@ -57,7 +55,13 @@ langdao:addEffect(fk.TargetSpecifying, {
     local choices = table.filter({"langdao1", "langdao2", "langdao3"}, function (str)
       return not table.contains(player:getTableMark("langdao_removed"), str)
     end)
-    local result = U.askForJointChoice({player, data.to}, choices, langdao.name, "#langdao-choice", true)
+    local result = room:askToJointChoice(player, {
+      players = {player, data.to},
+      choices = choices,
+      skill_name = langdao.name,
+      prompt = "#langdao-choice",
+      send_log = true,
+    })
     data.extra_data = data.extra_data or {}
     data.extra_data.langdao = {}
     local target_num = 0

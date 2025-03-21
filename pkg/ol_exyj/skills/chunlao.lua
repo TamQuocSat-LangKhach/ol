@@ -16,8 +16,6 @@ Fk:loadTranslationTable{
   ["$ol_ex__chunlao2"] = "饮此壮行酒，当立先头功。",
 }
 
-local U = require("packages/utility/utility")
-
 chunlao:addEffect(fk.AfterCardsMove, {
   anim_type = "special",
   derived_piles = "ol_ex__chengpu_chun",
@@ -37,7 +35,7 @@ chunlao:addEffect(fk.AfterCardsMove, {
           end
         end
       end
-      cards = U.moveCardsHoldingAreaCheck(room, cards)
+      cards = room.logic:moveCardsHoldingAreaCheck(cards)
       if #cards > 0 then
         event:setCostData(self, {cards = cards})
         return true

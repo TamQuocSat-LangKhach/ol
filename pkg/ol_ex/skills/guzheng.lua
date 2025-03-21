@@ -41,7 +41,7 @@ guzheng:addEffect(fk.AfterCardsMove, {
         local guzheng_data, ids = {{}, {}}, {}
         for key, value in pairs(guzheng_pairs) do
           if not key.dead and #value > 1 then
-            ids = U.moveCardsHoldingAreaCheck(room, table.filter(value, function (id)
+            ids = room.logic:moveCardsHoldingAreaCheck(table.filter(value, function (id)
               return room:getCardArea(id) == Card.DiscardPile
             end))
             if #ids > 0 then

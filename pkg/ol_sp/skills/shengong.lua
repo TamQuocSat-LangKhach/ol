@@ -103,8 +103,12 @@ shengong:addEffect("active", {
       end
     end
     if #others > 0 then
-      local result = U.askForJointChoice(others, {"shengong_good", "shengong_bad", "Cancel"}, shengong.name,
-        "#shengong-help:"..player.id)
+      local result = room:askToJointChoice(player, {
+        players = others,
+        choices = {"shengong_good", "shengong_bad", "Cancel"},
+        skill_name = shengong.name,
+        prompt = "#shengong-help:"..player.id,
+      })
       for _, p in ipairs(others) do
         choiceMap[p.id] = result[p]
       end

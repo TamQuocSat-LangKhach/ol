@@ -14,8 +14,6 @@ Fk:loadTranslationTable{
   ["$siqi2"] = "挥泪别古道，唯见瘦马曳西风。",
 }
 
-local U = require "packages/utility/utility"
-
 siqi:addEffect(fk.AfterCardsMove, {
   can_trigger = function(self, event, target, player, data)
     if not player:hasSkill(siqi.name) then return false end
@@ -68,7 +66,7 @@ siqi:addEffect(fk.AfterCardsMove, {
         end
       end
     end
-    cards = U.moveCardsHoldingAreaCheck(room, cards)
+    cards = room.logic:moveCardsHoldingAreaCheck(cards)
     if #cards > 0 then
       event:setCostData(self, {cards = cards})
       return true

@@ -18,8 +18,6 @@ Fk:loadTranslationTable{
   ["$hunjiang2"] = "漫天浑雪，弥散八荒。",
 }
 
-local U = require "packages/utility/utility"
-
 hunjiang:addEffect("active", {
   anim_type = "offensive",
   prompt = "#hunjiang",
@@ -36,9 +34,12 @@ hunjiang:addEffect("active", {
     local player = effect.from
     local targets = table.simpleClone(effect.tos)
     room:sortByAction(targets)
-    local result = U.askForJointChoice(targets, { "hunjiang_extra_target:"..player.id, "hunjiang_draw::"..player.id }, hunjiang.name,
-      "#hunjiang-choice")
-
+    local result = room:askToJointChoice(player, {
+      players = targets,
+      choices = { "hunjiang_extra_target:"..player.id, "hunjiang_draw::"..player.id },
+      skill_name = hunjiang.name,
+      prompt = "#hunjiang-choice",
+    })
     local firstChosen
     for _, p in ipairs(targets) do
       local choice = result[p]

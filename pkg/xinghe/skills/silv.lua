@@ -13,8 +13,6 @@ Fk:loadTranslationTable{
   ["$silv2"] = "人谁不虑终，日月有合离。",
 }
 
-local U = require "packages/utility/utility"
-
 silv:addEffect(fk.Damaged, {
   anim_type = "drawcard",
   on_use = function(self, event, target, player, data)
@@ -38,7 +36,7 @@ silv:addEffect(fk.AfterCardsMove, {
           end
         end
       end
-      ids = U.moveCardsHoldingAreaCheck(room, ids)
+      ids = room.logic:moveCardsHoldingAreaCheck(ids)
       if #ids > 0 then
         event:setCostData(self, {cards = ids})
         return true

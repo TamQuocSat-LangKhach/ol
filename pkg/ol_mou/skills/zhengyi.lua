@@ -13,8 +13,6 @@ Fk:loadTranslationTable{
   ["$ol__zhengyi2"] = "子曰当仁不让，当义，亦不能让。",
 }
 
-local U = require "packages/utility/utility"
-
 zhengyi:addEffect(fk.DamageInflicted, {
   anim_type = "support",
   can_trigger = function(self, event, target, player, data)
@@ -29,8 +27,13 @@ zhengyi:addEffect(fk.DamageInflicted, {
     local targets = table.filter(room:getOtherPlayers(target, false), function (p)
       return p:getMark("@kongrong_virtuous") > 0
     end)
-    local result = U.askForJointChoice(targets, {"yes", "no"}, zhengyi.name,
-      "#ol__zhengyi-choice::"..target.id..":"..data.damage, true)
+    local result = room:askToJointChoice(player, {
+      players = targets,
+      choices = {"yes", "no"},
+      skill_name = zhengyi.name,
+      prompt = "#ol__zhengyi-choice::"..target.id..":"..data.damage,
+      send_log = true,
+    })
     local n = 0
     for _, p in ipairs(targets) do
       if result[p] == "yes" and p.hp > n then

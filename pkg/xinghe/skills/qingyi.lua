@@ -15,8 +15,6 @@ Fk:loadTranslationTable{
   ["$qingyix2"] = "领军伐谋，还请诸位献策。",
 }
 
-local U = require "packages/utility/utility"
-
 qingyi:addEffect("active", {
   anim_type = "control",
   prompt = "#qingyix",
@@ -36,7 +34,17 @@ qingyi:addEffect("active", {
     local targets = table.simpleClone(effect.tos)
     table.insert(targets, player)
     while not player.dead do
-      local result = U.askForJointCard(targets, 1, 1, true, qingyi.name, false, ".|.|.|hand,equip", "#AskForDiscard:::1:1", nil, true)
+      local result = room:askToJointCards(player, {
+        players = targets,
+        min_num = 1,
+        max_num = 1,
+        includeEquip = true,
+        cancelable = false,
+        pattern = ".|.|.|hand,equip",
+        skill_name = qingyi.name,
+        prompt = "#AskForDiscard:::1:1",
+        will_throw = true,
+      })
       local moves = {}
       local chosen = {}
       for _, p in ipairs(targets) do

@@ -8,8 +8,6 @@ Fk:loadTranslationTable{
   [":shengxiao_haizhu"] = "锁定技，当其他角色的黑色牌因弃置而置入弃牌堆后，你获得这些牌；准备阶段，若你的手牌数为全场最多，你失去1点体力。",
 }
 
-local U = require "packages/utility/utility"
-
 haizhu:addEffect(fk.AfterCardsMove, {
   anim_type = "drawcard",
   can_trigger = function(self, event, target, player, data)
@@ -29,7 +27,7 @@ haizhu:addEffect(fk.AfterCardsMove, {
           end
         end
       end
-      ids = U.moveCardsHoldingAreaCheck(room, ids)
+      ids = room.logic:moveCardsHoldingAreaCheck(ids)
       if #ids > 0 then
         event:setCostData(self, {cards = ids})
         return true

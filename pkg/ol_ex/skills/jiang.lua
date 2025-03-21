@@ -10,8 +10,6 @@ Fk:loadTranslationTable {
   ["$ol_ex__jiang2"] = "收合流散，东据吴会。",
 }
 
-local U = require("packages/utility/utility")
-
 jiang:addEffect(fk.TargetSpecified, {
   anim_type = "drawcard",
   can_trigger = function (self, event, target, player, data)
@@ -60,7 +58,7 @@ jiang:addEffect(fk.AfterCardsMove, {
       return cards
     end
     local cards = searchJiangCards(data, false)
-    if #U.moveCardsHoldingAreaCheck(room, table.filter(cards, function (id)
+    if #room.logic:moveCardsHoldingAreaCheck(table.filter(cards, function (id)
       return room:getCardArea(id) == Card.DiscardPile
     end)) == 0 then return false end
     if x == 0 then
@@ -83,7 +81,7 @@ jiang:addEffect(fk.AfterCardsMove, {
     local cards = table.simpleClone(event:getCostData(self).cards)
     room:loseHp(player, 1, jiang.name)
     if player.dead then return false end
-    cards = U.moveCardsHoldingAreaCheck(room, table.filter(cards, function (id)
+    cards = room.logic:moveCardsHoldingAreaCheck(table.filter(cards, function (id)
       return room:getCardArea(id) == Card.DiscardPile
     end))
     if #cards > 0 then

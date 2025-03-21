@@ -13,8 +13,6 @@ Fk:loadTranslationTable{
   ["$dingxi2"] = "饮马瀚海、封狼居胥，大丈夫当如此！",
 }
 
-local U = require "packages/utility/utility"
-
 dingxi:addEffect(fk.AfterCardsMove, {
   anim_type = "offensive",
   derived_piles = "dingxi",
@@ -41,7 +39,7 @@ dingxi:addEffect(fk.AfterCardsMove, {
           end
         end
       end
-      cards = U.moveCardsHoldingAreaCheck(room, cards)
+      cards = room.logic:moveCardsHoldingAreaCheck(cards)
       cards = table.filter(cards, function (id)
         local card = Fk:getCardById(id)
         if player:getLastAlive() == player then

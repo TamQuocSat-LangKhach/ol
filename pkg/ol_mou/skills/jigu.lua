@@ -12,8 +12,6 @@ Fk:loadTranslationTable{
   ["#jigud-exchange"] = "积谷：用任意张手牌交换等量的“谷”",
 }
 
-local U = require "packages/utility/utility"
-
 jigu:addEffect(fk.AfterCardsMove, {
   derived_piles = "dengai_grain",
   can_trigger = function(self, event, target, player, data)
@@ -37,7 +35,7 @@ jigu:addEffect(fk.AfterCardsMove, {
           end
         end
       end
-      cards = U.moveCardsHoldingAreaCheck(room, cards)
+      cards = room.logic:moveCardsHoldingAreaCheck(cards)
       cards = table.filter(cards, function (id)
         return Fk:getCardById(id).suit ~= Card.Heart
       end)

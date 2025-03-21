@@ -15,8 +15,6 @@ Fk:loadTranslationTable{
   ["$ol_ex__zongxuan2"] = "笔著太玄十四卷，继往圣之学。",
 }
 
-local U = require("packages/utility/utility")
-
 zongxuan:addEffect(fk.AfterCardsMove, {
   anim_type = "control",
   can_trigger = function(self, event, target, player, data)
@@ -55,7 +53,7 @@ zongxuan:addEffect(fk.AfterCardsMove, {
           end
         end
       end
-      cards1 = U.moveCardsHoldingAreaCheck(room, cards1)
+      cards1 = room.logic:moveCardsHoldingAreaCheck(cards1)
       if #cards2 > 0 then
         if mark == 0 then
           room.logic:getEventsOfScope(GameEvent.MoveCards, 1, function (e)
@@ -77,7 +75,7 @@ zongxuan:addEffect(fk.AfterCardsMove, {
         end
       end
       if #cards2 > 0 then
-        table.insertTable(cards1, U.moveCardsHoldingAreaCheck(room, cards2))
+        table.insertTable(cards1, room.logic:moveCardsHoldingAreaCheck(cards2))
       end
       if #cards1 > 0 then
         event:setCostData(self, {cards = cards1})
