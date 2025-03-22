@@ -1,6 +1,6 @@
 local baozu = fk.CreateSkill{
   name = "baozu",
-  tags = { "Family" , Skill.Limited },
+  tags = { Skill.Family , Skill.Limited },
 }
 
 Fk:loadTranslationTable{

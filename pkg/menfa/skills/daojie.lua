@@ -1,6 +1,6 @@
 local daojie = fk.CreateSkill{
   name = "daojie",
-  tags = { "Family", Skill.Compulsory },
+  tags = { Skill.Family, Skill.Compulsory },
 }
 
 Fk:loadTranslationTable{

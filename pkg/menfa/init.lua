@@ -8,8 +8,6 @@ Fk:loadTranslationTable{
   ["olz"] = "宗族",
 }
 
-Skill.Family = "Family" -- 宗族技
-
 --颍川荀氏：荀淑 荀谌 荀采 荀粲 荀攸
 General:new(extension, "olz__xunshu", "qun", 3):addSkills { "shenjun", "balong", "daojie" }
 Fk:loadTranslationTable{
@@ -313,6 +311,29 @@ Fk:loadTranslationTable{
 Fk:loadTranslationTable{
   ["olz__wangjiw"] = "族王机",
   ["#olz__wangjiw"] = "寒花疏寂",
+}
+
+--弘农杨氏：杨赐 杨修
+General:new(extension, "olz__yangci", "qun", 3):addSkills { "qieyi", "jianzhi", "quhuo" }
+Fk:loadTranslationTable{
+  ["olz__yangci"] = "族杨赐",
+  --["#olz__yangci"] = "",
+  --["illustrator:olz__yangci"] = "",
+
+  ["$quhuo_olz__yangci1"] = "",
+  ["$quhuo_olz__yangci2"] = "",
+  ["~olz__yangci"] = "",
+}
+
+General:new(extension, "olz__yangxiu", "wei", 3):addSkills { "jiewu", "gaoshi", "quhuo" }
+Fk:loadTranslationTable{
+  ["olz__yangxiu"] = "族杨修",
+  --["#olz__yangxiu"] = "",
+  --["illustrator:olz__yangxiu"] = "",
+
+  ["$quhuo_olz__yangxiu1"] = "",
+  ["$quhuo_olz__yangxiu2"] = "",
+  ["~olz__yangxiu"] = "",
 }
 
 return extension

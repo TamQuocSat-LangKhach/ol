@@ -1,6 +1,6 @@
 local muyin = fk.CreateSkill{
   name = "muyin",
-  tags = { "Family" },
+  tags = { Skill.Family },
 }
 
 Fk:loadTranslationTable{

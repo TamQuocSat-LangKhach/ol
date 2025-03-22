@@ -1,6 +1,6 @@
 local xumin = fk.CreateSkill{
   name = "xumin",
-  tags = { "Family" , Skill.Limited },
+  tags = { Skill.Family, Skill.Limited },
 }
 
 Fk:loadTranslationTable{

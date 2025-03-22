@@ -41,7 +41,7 @@ tianhou:addEffect(fk.EventPhaseStart, {
     room:swapCardsWithPile(player, piles[1], piles[2], tianhou.name, "Top")
     if player.dead then return end
     top_cards = room:getNCards(1)
-    player:showCards(top_cards)
+    room:showCards(top_cards)
     local suit = Fk:getCardById(top_cards[1], true).suit
     if suit == Card.NoSuit then return end
     local suits = {Card.Heart, Card.Diamond, Card.Spade, Card.Club}
