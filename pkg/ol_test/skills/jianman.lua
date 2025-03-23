@@ -43,7 +43,7 @@ jianman:addEffect(fk.TurnEnd, {
         choice = "discard"
         event:setCostData(self, {tos = {to}})
       end
-      return choice ~= nil
+      return choice ~= ""
     end
   end,
   on_use = function(self, event, target, player, data)

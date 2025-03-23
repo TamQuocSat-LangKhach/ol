@@ -44,6 +44,7 @@ gaoshi:addEffect(fk.EventPhaseStart, {
       cards = table.filter(cards, function(id)
         return table.contains(room.draw_pile, id)
       end)
+      if #cards == 0 then break end
       local use = room:askToUseRealCard(player, {
         pattern = cards,
         skill_name = gaoshi.name,
