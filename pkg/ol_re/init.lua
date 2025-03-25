@@ -58,6 +58,20 @@ Fk:loadTranslationTable{
   ["~godsunquan"] = "困居江东，枉称至尊……",
 }
 
+General:new(extension, "ol__godzhangjiao", "god", 3):addSkills { "ol__yizhao", "sijun", "tianjie" }
+Fk:loadTranslationTable{
+  ["ol__godzhangjiao"] = "神张角",
+  ["#ol__godzhangjiao"] = "清淼没川",
+  ["designer:ol__godzhangjiao"] = "韩旭",
+  --["illustrator:ol__godzhangjiao"] = "",
+
+  ["$sijun_ol__godzhangjiao1"] = "山河为罗，苍生为醮。问诸天神佛，何为大道！",
+  ["$sijun_ol__godzhangjiao2"] = "微渺之蛾可以熄离火，方寸之雪可以教天地变色！",
+  ["$tianjie_ol__godzhangjiao1"] = "彼肉食者，奈何枉顾庶民之怒！",
+  ["$tianjie_ol__godzhangjiao2"] = "我等载舟之水，欲覆不仁之舟于黄泉。",
+  ["~ol__godzhangjiao"] = "这覆舟的水，皆是百姓的泪……",
+}
+
 General:new(extension, "ol__masu", "shu", 3):addSkills { "ol__sanyao", "ty_ex__zhiman" }
 Fk:loadTranslationTable{
   ["ol__masu"] = "马谡",
