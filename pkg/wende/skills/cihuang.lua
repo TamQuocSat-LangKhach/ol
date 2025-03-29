@@ -17,7 +17,7 @@ cihuang:addEffect(fk.CardEffectCancelledOut, {
   anim_type = "control",
   can_trigger = function(self, event, target, player, data)
     return player:hasSkill(cihuang.name) and player.room.current == target and not target.dead and
-      #data.tos == 1 and not player:isNude()
+      data:isOnlyTarget(data.tos[1]) and not player:isNude()
   end,
   on_cost = function (self, event, target, player, data)
     local room = player.room

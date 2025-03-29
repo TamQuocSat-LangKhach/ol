@@ -10,7 +10,7 @@ Fk:loadTranslationTable{
 skill:addEffect(fk.TargetConfirmed, {
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(skill.name) and
-      data.from ~= player and #data.use.tos == 1
+      data.from ~= player and data:isOnlyTarget(target)
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room

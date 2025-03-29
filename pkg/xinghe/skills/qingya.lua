@@ -17,7 +17,7 @@ qingya:addEffect(fk.TargetSpecified, {
   anim_type = "control",
   can_trigger = function(self, event, target, player, data)
     if target == player and player:hasSkill(qingya.name) and data.card.trueName == "slash" and
-      #data.use.tos == 1 and not data.to.dead and
+      data:isOnlyTarget(data.to) and not data.to.dead and
       #player.room.alive_players > 3 then
       local left, right = 0, 0
       local temp = player

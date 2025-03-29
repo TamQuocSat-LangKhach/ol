@@ -19,8 +19,8 @@ wanyi:addEffect(fk.TargetSpecified, {
   derived_piles = "wanyi",
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(wanyi.name) and
-      (data.card.trueName == "slash" or data.card:isCommonTrick()) and #data.use.tos == 1 and
-      data.to ~= player and not data.to:isNude()
+      (data.card.trueName == "slash" or data.card:isCommonTrick()) and
+      data:isOnlyTarget(data.to) and data.to ~= player and not data.to:isNude()
   end,
   on_cost = function(self, event, target, player, data)
     local room = player.room

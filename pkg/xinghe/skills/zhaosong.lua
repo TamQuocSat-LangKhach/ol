@@ -173,7 +173,7 @@ zhaosong:addEffect(fk.AfterCardTargetDeclared, {
   is_delay_effect = true,
   can_trigger = function(self, event, target, player, data)
     return target == player and player:getMark("@@zuofen_song") > 0 and data.card.trueName == "slash" and
-      #data.tos == 1 and #data:getExtraTargets() > 0
+      data:isOnlyTarget(data.tos[1]) and #data:getExtraTargets() > 0
   end,
   on_cost = function(self, event, target, player, data)
     local room = player.room

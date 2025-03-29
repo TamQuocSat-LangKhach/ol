@@ -16,8 +16,8 @@ Fk:loadTranslationTable{
 jiaodi:addEffect(fk.TargetSpecifying, {
   anim_type = "offensive",
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(jiaodi.name) and data.card.trueName == "slash" and
-      #data.use.tos == 1
+    return target == player and player:hasSkill(jiaodi.name) and
+      data.card.trueName == "slash" and data:isOnlyTarget(data.to)
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room

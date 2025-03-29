@@ -16,7 +16,7 @@ juejue:addEffect(fk.TargetSpecifying, {
   can_trigger = function (self, event, target, player, data)
     return target == player and player:hasSkill(juejue.name) and
       player.room.current == player and
-      #data.use.tos == 1 and data.to ~= player and
+      data:isOnlyTarget(data.to) and data.to ~= player and
       data.extra_data and data.extra_data.juejue == player and
       not data.to.dead and not data.to:isNude()
   end,
@@ -43,7 +43,7 @@ juejue:addEffect(fk.PreCardUse, {
   can_refresh = function (self, event, target, player, data)
     return target == player and player:hasSkill(juejue.name, true) and
       player.room.current == player and player:getMark("juejuew-turn") == 0 and
-      #data.tos == 1 and data.tos[1] ~= player and
+      data:isOnlyTarget(data.tos[1]) and data.tos[1] ~= player and
       table.every(player:getCardIds("h"), function (id)
         return table.contains(Card:getIdList(data.card), id)
       end)

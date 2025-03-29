@@ -7,6 +7,9 @@ Fk:loadTranslationTable{
   [":ol__shichou"] = "你使用【杀】可以多选择至多X+1名角色为目标（X为你已损失的体力值）。",
 
   ["#ol__shichou-choose"] = "誓仇：你可以为此%arg额外指定至多%arg2个目标",
+
+  ["$ol__shichou1"] = "你们一个都别想跑！",
+  ["$ol__shichou2"] = "新仇旧恨，一并结算！",
 }
 
 shichou:addEffect(fk.AfterCardTargetDeclared, {

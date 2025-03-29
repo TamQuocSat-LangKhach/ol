@@ -16,7 +16,7 @@ congjian:addEffect(fk.TargetConfirming, {
   anim_type = "control",
   can_trigger = function(self, event, target, player, data)
     return target ~= player and player:hasSkill(congjian.name) and data.card:isCommonTrick() and
-      #data.use.tos == 1 and
+      data:isOnlyTarget(target) and
       table.every(player.room:getOtherPlayers(target, false), function (p)
         return target.hp > p.hp
       end) and

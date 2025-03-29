@@ -73,9 +73,7 @@ Fk:loadTranslationTable{
   ["~olz__xunyou"] = "吾知命之寿，明知命之节……",
 }
 
-local xunshuang = General:new(extension, "olz__xunshuang", "qun", 3)
-xunshuang:addSkills { "daojie" }
-xunshuang.hidden = true
+General:new(extension, "olz__xunshuang", "qun", 3):addSkills { "yangji", "dandao", "qingli", "daojie" }
 Fk:loadTranslationTable{
   ["olz__xunshuang"] = "族荀爽",
   --["#olz__xunshuang"] = "",

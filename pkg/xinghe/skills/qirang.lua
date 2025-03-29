@@ -51,7 +51,7 @@ qirang:addEffect(fk.AfterCardTargetDeclared, {
   is_delay_effect = true,
   can_trigger = function (self, event, target, player, data)
     return target == player and data.extra_data and data.extra_data.ol__qirang == player and
-      #data.tos == 1 and #data:getExtraTargets() > 0
+      data:isOnlyTarget(data.tos[1]) and #data:getExtraTargets() > 0
   end,
   on_cost = function(self, event, target, player, data)
     local room = player.room

@@ -71,7 +71,7 @@ tongxie:addEffect(fk.CardUseFinished, {
   can_trigger = function (self, event, target, player, data)
     if data.card.trueName == "slash" and player:getMark("@@tongxie") ~= 0 and
       target ~= player and not player.dead and
-      #data.tos == 1 and data.tos[1] ~= player and not data.tos[1].dead then
+      data:isOnlyTarget(data.tos[1]) and data.tos[1] ~= player then
       for _, value in pairs(player:getMark("@@tongxie")) do
         if not (data.extra_data and data.extra_data.tongxie) and
           table.contains(value, target.id) then

@@ -9,9 +9,6 @@ Fk:loadTranslationTable{
   "当你使用【杀】指定距离为1的角色为目标后，其弃置一张牌或重铸装备区里的所有牌。",
 
   ["#ol__zhuiji-discard"] = "追击：弃置一张牌，或点“取消”重铸装备区所有牌",
-
-  ["$ol__shichou1"] = "你们一个都别想跑！",
-  ["$ol__shichou2"] = "新仇旧恨，一并结算！",
 }
 
 zhuiji:addEffect(fk.TargetSpecified, {

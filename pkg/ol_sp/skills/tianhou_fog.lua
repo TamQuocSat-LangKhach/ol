@@ -22,7 +22,7 @@ fog:addEffect(fk.TargetSpecifying, {
   anim_type = "control",
   can_trigger = function(self, event, target, player, data)
     return target ~= player and player:hasSkill(fog.name) and data.card.trueName == "slash" and
-      #data.use.tos == 1 and data.to:getNextAlive() ~= target and target:getNextAlive() ~= data.to
+      data:isOnlyTarget(data.to) and data.to:getNextAlive() ~= target and target:getNextAlive() ~= data.to
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room

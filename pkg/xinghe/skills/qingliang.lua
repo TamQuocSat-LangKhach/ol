@@ -21,7 +21,7 @@ qingliang:addEffect(fk.TargetConfirming, {
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(qingliang.name) and
       data.from ~= player and data.card.is_damage_card and
-      #data.use.tos == 1 and not player:isKongcheng() and
+      data:isOnlyTarget(player) and not player:isKongcheng() and
       player:usedSkillTimes(qingliang.name, Player.HistoryTurn) == 0
   end,
   on_cost = function (self, event, target, player, data)

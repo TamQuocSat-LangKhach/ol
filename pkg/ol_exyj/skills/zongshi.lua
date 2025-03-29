@@ -5,7 +5,7 @@ local zongshi = fk.CreateSkill{
 
 Fk:loadTranslationTable{
   ["ol_ex__zongshi"] = "宗室",
-  [":ol_ex__zongshi"] = "锁定技，你的手牌上限+X（X为全场势力数）。其他角色对你造成伤害时，防止此伤害并令其摸一张牌，每个势力限一次。",
+  [":ol_ex__zongshi"] = "锁定技，你的手牌上限+X（X为全场势力数）。其他角色对你造成伤害时，防止此伤害并令其获得你区域内的一张牌，每个势力限一次。",
 }
 
 zongshi:addEffect(fk.DamageInflicted, {
@@ -18,9 +18,14 @@ zongshi:addEffect(fk.DamageInflicted, {
     local room = player.room
     data:preventDamage()
     room:addTableMark(player, zongshi.name, data.from.kingdom)
-    if not data.from.dead then
+    if not data.from.dead and not player:isAllNude() then
       room:doIndicate(player, {data.from})
-      data.from:drawCards(1, zongshi.name)
+      local card = room:askToChooseCard(data.from, {
+        target = player,
+        flag = "hej",
+        skill_name = zongshi.name,
+      })
+      room:moveCardTo(card, Card.PlayerHand, data.from, fk.ReasonJustMove, zongshi.name, nil, false, data.from)
     end
   end,
 })

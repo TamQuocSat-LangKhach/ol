@@ -18,7 +18,7 @@ saodi:addEffect(fk.TargetSpecifying, {
     if target == player and player:hasSkill(saodi.name) and
       (data.card.trueName == "slash" or data.card:isCommonTrick()) and
       #player.room.alive_players > 3 and
-      #data.use.tos == 1 and data.to ~= player then
+      data:isOnlyTarget(data.to) and data.to ~= player then
       local left, right = 0, 0
       if data.to.dead or player:isRemoved() or data.to:isRemoved() then return end
       local temp = player

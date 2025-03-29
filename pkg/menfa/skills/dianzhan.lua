@@ -51,7 +51,7 @@ dianzhan:addEffect(fk.CardUseFinished, {
   on_use = function(self, event, target, player, data)
     local room = player.room
     local dianzhan1, dianzhan2 = false, false
-    if #data.tos == 1 and not data.tos[1].dead and not data.tos[1].chained then
+    if data:isOnlyTarget(data.tos[1]) and not data.tos[1].dead and not data.tos[1].chained then
       dianzhan1 = true
       data.tos[1]:setChainState(true)
       if player.dead then return end

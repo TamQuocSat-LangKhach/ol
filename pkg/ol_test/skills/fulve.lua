@@ -20,7 +20,7 @@ fulve:addEffect(fk.TargetSpecified, {
   anim_type = "offensive",
   can_trigger = function (self, event, target, player, data)
     if target == player and player:hasSkill(fulve.name) and data.card.is_damage_card and
-      #data.use.tos == 1 and not data.to.dead and #player:getTableMark("fulve-turn") < 2 then
+      data:isOnlyTarget(data.to) and not data.to.dead and #player:getTableMark("fulve-turn") < 2 then
       if #player:getTableMark("fulve-turn") == 1 then
         if table.contains(player:getTableMark("fulve-turn"), "fulve_prey") then
           return true

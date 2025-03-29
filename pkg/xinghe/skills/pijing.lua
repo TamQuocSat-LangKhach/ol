@@ -87,7 +87,7 @@ pijing:addEffect(fk.AfterCardTargetDeclared, {
   can_trigger = function(self, event, target, player, data)
     return not player.dead and not target.dead and
       table.contains(player:getTableMark(pijing.name), target.id) and
-      (data.card.type == Card.TypeBasic or data.card:isCommonTrick()) and #data.tos == 1
+      (data.card.type == Card.TypeBasic or data.card:isCommonTrick()) and data:isOnlyTarget(data.tos[1])
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room

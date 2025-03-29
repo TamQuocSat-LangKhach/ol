@@ -4,7 +4,7 @@ local zishou = fk.CreateSkill{
 
 Fk:loadTranslationTable{
   ["ol_ex__zishou"] = "自守",
-  [":ol_ex__zishou"] = "摸牌阶段，你可以多摸X张牌，若如此做，本回合结束阶段，若你本回合对其他角色造成过伤害，你弃置X张牌（X为全场势力数）。",
+  [":ol_ex__zishou"] = "摸牌阶段，你可以多摸X张牌，若如此做，本回合结束阶段，若你本回合使用过伤害牌，你弃置X张牌（X为全场势力数）。",
 }
 
 zishou:addEffect(fk.DrawNCards, {
@@ -25,14 +25,12 @@ zishou:addEffect(fk.EventPhaseEnd, {
   anim_type = "negative",
   is_delay_effect = true,
   can_trigger = function(self, event, target, player, data)
-    if target == player then
-      return player.phase == Player.Finish and
-        player:usedSkillTimes(zishou.name, Player.HistoryTurn) > 0 and
-        #player.room.logic:getEventsOfScope(GameEvent.Damage, 1, function(e)
-          local damage = e.data
-          return damage.from and damage.from == target and damage.to ~= target
-        end, Player.HistoryTurn) > 0
-    end
+    return target == player and player.phase == Player.Finish and
+      player:usedSkillTimes(zishou.name, Player.HistoryTurn) > 0 and
+      #player.room.logic:getEventsOfScope(GameEvent.UseCard, 1, function(e)
+        local use = e.data
+        return use.from == player and use.card.is_damage_card
+      end, Player.HistoryTurn) > 0
   end,
   on_use = function(self, event, target, player, data)
     local kingdoms = {}

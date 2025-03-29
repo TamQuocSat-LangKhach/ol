@@ -19,7 +19,7 @@ wuniang:addEffect(fk.CardUseFinished, {
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(wuniang.name) and
       data.card.trueName == "slash" and player.phase == Player.Play and
-      #data.tos == 1 and not data.tos[1].dead and player:usedSkillTimes(wuniang.name, Player.HistoryPhase) == 0
+      data:isOnlyTarget(data.tos[1]) and player:usedSkillTimes(wuniang.name, Player.HistoryPhase) == 0
   end,
   on_cost = function(self, event, target, player, data)
     if player.room:askToSkillInvoke(player, {

@@ -17,7 +17,7 @@ qigong:addEffect(fk.CardEffectCancelledOut, {
   anim_type = "offensive",
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(qigong.name) and data.card.trueName == "slash" and
-      #data.tos == 1 and not data.to.dead
+      data:isOnlyTarget(data.to)
   end,
   on_cost = function(self, event, target, player, data)
     local room = player.room

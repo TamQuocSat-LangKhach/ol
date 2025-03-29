@@ -19,7 +19,7 @@ maihuo:addEffect(fk.TargetConfirmed, {
   derived_piles = "yangzhi_huo",
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(maihuo.name) and
-      #data.use.tos == 1 and data.card.trueName == "slash" and not data.card:isVirtual() and
+      data:isOnlyTarget(player) and data.card.trueName == "slash" and not data.card:isVirtual() and
       data.from ~= player and not data.from.dead and
       #data.from:getPile("yangzhi_huo") == 0 and
       not (data.extra_data and data.extra_data.maihuo)

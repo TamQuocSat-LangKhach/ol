@@ -17,7 +17,7 @@ pimi:addEffect(fk.TargetSpecified, {
   anim_type = "offensive",
   can_trigger = function (self, event, target, player, data)
     return target == player and player:hasSkill(pimi.name) and
-      #data.use.tos == 1 and data.to ~= player and not player:isNude()
+      data:isOnlyTarget(data.to) and data.to ~= player and not player:isNude()
   end,
   on_cost = function (self, event, target, player, data)
     local room = player.room
@@ -49,7 +49,7 @@ pimi:addEffect(fk.TargetConfirmed, {
   anim_type = "control",
   can_trigger = function (self, event, target, player, data)
     return target == player and player:hasSkill(pimi.name) and
-      #data.use.tos == 1 and data.from ~= player and not data.from:isNude() and not data.from.dead
+      data:isOnlyTarget(player) and data.from ~= player and not data.from:isNude() and not data.from.dead
   end,
   on_cost = function(self, event, target, player, data)
     local room = player.room

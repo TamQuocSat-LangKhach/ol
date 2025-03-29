@@ -38,7 +38,7 @@ langdao:addEffect(fk.TargetSpecifying, {
   anim_type = "offensive",
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(langdao.name) and data.card.trueName == "slash" and
-      #data.use.tos == 1 and #player:getTableMark("langdao_removed") < 3
+      data:isOnlyTarget(data.to) and #player:getTableMark("langdao_removed") < 3
   end,
   on_cost = function(self, event, target, player, data)
     local room = player.room

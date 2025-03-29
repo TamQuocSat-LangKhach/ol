@@ -22,7 +22,7 @@ bihun:addEffect(fk.TargetSpecifying, {
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    if #data.use.tos == 1 and not data.to.dead and room:getCardArea(data.card) == Card.Processing then
+    if data:isOnlyTarget(data.to) and not data.to.dead and room:getCardArea(data.card) == Card.Processing then
       room:obtainCard(data.to, data.card, true, fk.ReasonJustMove, player, bihun.name)
     end
     for _, p in ipairs(data.use.tos) do

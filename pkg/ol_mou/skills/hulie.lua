@@ -19,7 +19,7 @@ hulie:addEffect(fk.TargetSpecified, {
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(hulie.name) and
       (data.card.trueName == "slash" or data.card.trueName == "duel") and
-      #data.use.tos == 1 and player:getMark("hulie_"..data.card.trueName.."-turn") == 0
+      data:isOnlyTarget(data.to) and player:getMark("hulie_"..data.card.trueName.."-turn") == 0
   end,
   on_cost = function(self, event, target, player, data)
     return player.room:askToSkillInvoke(player, {
