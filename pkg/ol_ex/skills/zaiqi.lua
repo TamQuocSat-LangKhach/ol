@@ -19,9 +19,7 @@ zaiqi:addEffect(fk.EventPhaseEnd, {
     if target == player and player:hasSkill(zaiqi.name) and player.phase == Player.Discard then
       local ids = {}
       local room = player.room
-      local turn_event = room.logic:getCurrentEvent():findParent(GameEvent.Turn)
-      if turn_event == nil then return false end
-      room.logic:getEventsByRule(GameEvent.MoveCards, 1, function (e)
+      room.logic:getEventsOfScope(GameEvent.MoveCards, 1, function (e)
         for _, move in ipairs(e.data) do
           if move.toArea == Card.DiscardPile then
             for _, info in ipairs(move.moveInfo) do
@@ -29,7 +27,7 @@ zaiqi:addEffect(fk.EventPhaseEnd, {
             end
           end
         end
-      end, turn_event.id)
+      end, Player.HistoryTurn)
       local x = #table.filter(ids, function (id)
         return Fk:getCardById(id).color == Card.Red
       end)

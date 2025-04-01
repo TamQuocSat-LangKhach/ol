@@ -40,11 +40,9 @@ guixiang:addEffect(fk.EventPhaseChanging, {
     if target == player and player:hasSkill(guixiang.name) and
       data.phase ~= Player.Play and data.phase >= Player.Start and data.phase <= Player.Finish then
       local room = player.room
-      local turn_event = room.logic:getCurrentEvent():findParent(GameEvent.Turn, true)
-      if turn_event == nil then return false end
-      return #room.logic:getEventsByRule(GameEvent.Phase, player:getMaxCards(), function (e)
+      return #room.logic:getEventsOfScope(GameEvent.Phase, player:getMaxCards(), function (e)
         return e.data.phase >= Player.Start and e.data.phase <= Player.Finish
-      end, turn_event.id) + 1 == player:getMaxCards()
+      end, Player.HistoryTurn) + 1 == player:getMaxCards()
     end
   end,
   on_use = function(self, event, target, player, data)

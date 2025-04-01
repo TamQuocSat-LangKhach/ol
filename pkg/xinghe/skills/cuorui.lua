@@ -1,6 +1,6 @@
 local cuorui = fk.CreateSkill{
   name = "ol__cuorui",
-  tag = { Skill.Compulsory },
+  tags = { Skill.Compulsory },
 }
 
 Fk:loadTranslationTable{

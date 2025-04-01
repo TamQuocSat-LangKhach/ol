@@ -31,12 +31,10 @@ jiane:addEffect(fk.CardEffecting, {
         table.insert(tos2, p)
       end
     end
-    local turn_event = room.logic:getCurrentEvent():findParent(GameEvent.Turn, true)
-    if turn_event == nil then return end
     room.logic:getEventsByRule(GameEvent.UseCard, 1, function (e)
       e.data.unoffsetableList = e.data.unoffsetableList or {}
       table.insertTableIfNeed(e.data.unoffsetableList, tos2)
-    end, turn_event.id)
+    end, nil, Player.HistoryTurn)
   end,
 })
 jiane:addEffect(fk.CardEffectCancelledOut, {

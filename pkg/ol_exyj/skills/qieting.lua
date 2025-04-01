@@ -19,13 +19,11 @@ qieting:addEffect(fk.TurnEnd, {
   can_trigger = function(self, event, target, player, data)
     if player:hasSkill(qieting.name) and target ~= player then
       local room = player.room
-      local turn_event = room.logic:getCurrentEvent():findParent(GameEvent.Turn, true)
-      if turn_event == nil then return false end
       return #player.room.logic:getActualDamageEvents(1, function (e)
         local damage = e.data
         return damage.from == target and damage.to ~= target
-      end, nil, turn_event.id) == 0 or
-        #room.logic:getEventsByRule(GameEvent.UseCard, 1, function (e)
+      end, Player.HistoryTurn) == 0 or
+        #room.logic:getEventsOfScope(GameEvent.UseCard, 1, function (e)
           local use = e.data
           if use.from == target and table.find(use.tos, function(p)
             return p ~= target
@@ -33,7 +31,7 @@ qieting:addEffect(fk.TurnEnd, {
             return true
           end
         return false
-      end, turn_event.id) == 0
+      end, Player.HistoryTurn) == 0
     end
   end,
   on_cost = function (self, event, target, player, data)
@@ -59,9 +57,7 @@ qieting:addEffect(fk.TurnEnd, {
     if event:getCostData(self).choice == "draw1" then
       player:drawCards(1, qieting.name)
       if player.dead or target.dead or not target:canMoveCardsInBoardTo(player, "e") then return false end
-      local turn_event = room.logic:getCurrentEvent():findParent(GameEvent.Turn, true)
-      if turn_event == nil then return false end
-      if #room.logic:getEventsByRule(GameEvent.UseCard, 1, function (e)
+      if #room.logic:getEventsOfScope(GameEvent.UseCard, 1, function (e)
         local use = e.data
         if use.from == target and table.find(use.tos, function(p)
           return p ~= target
@@ -69,7 +65,7 @@ qieting:addEffect(fk.TurnEnd, {
           return true
         end
         return false
-      end, turn_event.id) == 0 then
+      end, Player.HistoryTurn) == 0 then
         if room:askToChoice(player, {
           choices = {"ol_ex__qieting_move::"..target.id, "Cancel"},
           skill_name = qieting.name,
@@ -96,7 +92,7 @@ qieting:addEffect(fk.TurnEnd, {
       if player.dead then return false end
       local turn_event = room.logic:getCurrentEvent():findParent(GameEvent.Turn, true)
       if turn_event == nil then return false end
-      if #room.logic:getEventsByRule(GameEvent.UseCard, 1, function (e)
+      if #room.logic:getEventsOfScope(GameEvent.UseCard, 1, function (e)
         local use = e.data
         if use.from == target and table.find(use.tos, function(p)
           return p ~= target
@@ -104,7 +100,7 @@ qieting:addEffect(fk.TurnEnd, {
           return true
         end
         return false
-      end, turn_event.id) == 0 then
+      end, Player.HistoryTurn) == 0 then
         if room:askToChoice(player, {
           choices = {"draw1", "Cancel"},
           skill_name = qieting.name,

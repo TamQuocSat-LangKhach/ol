@@ -21,16 +21,13 @@ lianju:addEffect(fk.EventPhaseStart, {
     if not player:hasSkill(lianju.name) or target.dead or target.phase ~= Player.Finish then return false end
     local room = player.room
     if player == target then
-      local turn_event = room.logic:getCurrentEvent():findParent(GameEvent.Turn, false)
-      if turn_event == nil then return false end
-      local end_id = turn_event.id
       local cards = {}
-      room.logic:getEventsByRule(GameEvent.UseCard, 1, function (e)
+      room.logic:getEventsOfScope(GameEvent.UseCard, 1, function (e)
         local use = e.data
         if use.from == target then
           table.insertTableIfNeed(cards, Card:getIdList(use.card))
         end
-      end, end_id)
+      end, Player.HistoryTurn)
       cards = table.filter(cards, function (id)
         return room:getCardArea(id) == Card.DiscardPile
       end)
@@ -40,18 +37,15 @@ lianju:addEffect(fk.EventPhaseStart, {
       end
     elseif table.contains(target:getTableMark("lianju_sources"), player.id) then
       local color = target:getMark("@lianju")
-      local turn_event = room.logic:getCurrentEvent():findParent(GameEvent.Turn, false)
-      if turn_event == nil then return false end
-      local end_id = turn_event.id
       local cards = {}
-      room.logic:getEventsByRule(GameEvent.UseCard, 1, function (e)
+      room.logic:getEventsOfScope(GameEvent.UseCard, 1, function (e)
         local use = e.data
         if use.from == target then
           table.insertTableIfNeed(cards, table.filter(Card:getIdList(use.card), function (id)
             return Fk:getCardById(id, true):getColorString() ~= color
           end))
         end
-      end, end_id)
+      end, Player.HistoryTurn)
       cards = table.filter(cards, function (id)
         return room:getCardArea(id) == Card.DiscardPile
       end)

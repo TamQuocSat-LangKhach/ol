@@ -1,6 +1,6 @@
 local yingbing = fk.CreateSkill{
   name = "ol__yingbing",
-  tag = { Skill.Compulsory },
+  tags = { Skill.Compulsory },
 }
 
 Fk:loadTranslationTable{

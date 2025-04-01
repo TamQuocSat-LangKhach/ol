@@ -1,6 +1,6 @@
 local buqu = fk.CreateSkill{
   name = "ol_ex__buqu",
-  tag = { Skill.Compulsory },
+  tags = { Skill.Compulsory },
 }
 
 Fk:loadTranslationTable {

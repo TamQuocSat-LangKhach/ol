@@ -19,9 +19,6 @@ lianpian:addEffect(fk.TargetSpecified, {
     if target == player and player:hasSkill(lianpian.name) and player.phase == Player.Play and data.firstTarget and
       player:usedSkillTimes(lianpian.name, Player.HistoryTurn) < 3 then
       local room = player.room
-      local phase_event = room.logic:getCurrentEvent():findParent(GameEvent.Phase)
-      if phase_event == nil then return end
-      local end_id = phase_event.id
       local tos
       if #room.logic:getEventsByRule(GameEvent.UseCard, 2, function (e)
         local use = e.data
@@ -29,7 +26,7 @@ lianpian:addEffect(fk.TargetSpecified, {
           tos = use.tos
           return true
         end
-      end, end_id) < 2 then return end
+      end, nil, Player.HistoryPhase) < 2 then return end
       if not tos then return end
       local targets = table.filter(data.use.tos, function (p)
         return table.contains(tos, p)

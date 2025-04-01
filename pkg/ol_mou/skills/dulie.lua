@@ -18,7 +18,7 @@ dulie:addEffect(fk.TargetConfirming, {
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(dulie.name) and player:usedSkillTimes(dulie.name, Player.HistoryTurn) == 0 and
       (data.card.type == Card.TypeBasic or data.card:isCommonTrick()) and
-      data.from ~= player and data:isOnlyTarget(target)
+      data.from ~= player and data:isOnlyTarget(player)
   end,
   on_cost = function(self, event, target, player, data)
     return player.room:askToSkillInvoke(player, {

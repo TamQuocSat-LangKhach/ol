@@ -22,8 +22,6 @@ hongtu:addEffect(fk.EventPhaseEnd, {
     if player:hasSkill(hongtu.name) and target.phase >= Player.Start and target.phase <= Player.Finish then
       local x = 0
       local room = player.room
-      local phase_event = room.logic:getCurrentEvent():findParent(GameEvent.Phase, true)
-      if phase_event == nil then return false end
       room.logic:getEventsByRule(GameEvent.MoveCards, 1, function (e)
         for _, move in ipairs(e.data) do
           if move.to == player and move.toArea == Card.PlayerHand then
@@ -31,7 +29,7 @@ hongtu:addEffect(fk.EventPhaseEnd, {
             if x > 1 then return true end
           end
         end
-      end, phase_event.id)
+      end, nil, Player.HistoryPhase)
       return x > 1
     end
   end,

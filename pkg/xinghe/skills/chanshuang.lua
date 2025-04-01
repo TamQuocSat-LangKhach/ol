@@ -99,19 +99,17 @@ chanshuang:addEffect(fk.EventPhaseStart, {
   can_trigger = function(self, event, target, player, data)
     if target == player and player:hasSkill(chanshuang.name) and player.phase == Player.Finish then
       local room = player.room
-      local turn_event = room.logic:getCurrentEvent():findParent(GameEvent.Turn)
-      if turn_event == nil then return false end
       local x = 0
       local use = nil
-      room.logic:getEventsByRule(GameEvent.UseCard, 1, function (e)
+      room.logic:getEventsOfScope(GameEvent.UseCard, 1, function (e)
         use = e.data
         if use.from == player and use.card.trueName == "slash" then
           x = 1
           return true
         end
-      end, turn_event.id)
+      end, Player.HistoryTurn)
       local choices = {}
-      room.logic:getEventsByRule(GameEvent.MoveCards, 1, function (e)
+      room.logic:getEventsOfScope(GameEvent.MoveCards, 1, function (e)
         local a, b = 0, 0
         for _, move in ipairs(e.data) do
           if move.from == player then
@@ -133,7 +131,7 @@ chanshuang:addEffect(fk.EventPhaseStart, {
           table.insertIfNeed(choices, "b")
         end
         return #choices == 2
-      end, turn_event.id)
+      end, Player.HistoryTurn)
       x = x + #choices
       if x > 0 then
         event:setCostData(self, {choice = x})

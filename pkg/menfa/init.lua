@@ -275,7 +275,7 @@ General:new(extension, "olz__wangshen", "wei", 3):addSkills { "anran", "gaobian"
 Fk:loadTranslationTable{
   ["olz__wangshen"] = "族王沈",
   ["#olz__wangshen"] = "崇虎田光",
-  ["designer:olz__wangshen"] = "张浩",
+  ["designer:olz__wangshen"] = "食茸",
 
   ["$zhongliu_olz__wangshen1"] = "活水驱沧海，天下大势不可违！",
   ["$zhongliu_olz__wangshen2"] = "志随中流之水，可济沧海之云帆！",

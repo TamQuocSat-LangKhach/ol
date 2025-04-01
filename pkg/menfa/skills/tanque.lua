@@ -26,7 +26,7 @@ tanque:addEffect(fk.CardUseFinished, {
           n = use.card.number ~= 0 and math.abs(use.card.number - data.card.number) or 0
           return true
         end
-      end, -1)
+      end, 0)
       if n ~= 0 and
         table.find(player.room.alive_players, function (p)
           return p.hp == n

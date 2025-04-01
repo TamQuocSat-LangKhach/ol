@@ -51,12 +51,9 @@ zhixi:addAcquireEffect(function (self, player, is_start)
   local room = player.room
   room:setPlayerMark(player, "@[ol__zhixi]", 1)
   if player.phase ~= Player.Play then return end
-  local phase_event = room.logic:getCurrentEvent():findParent(GameEvent.Phase, true)
-  if phase_event == nil then return end
-  local end_id = phase_event.id
   local x = 0
   local use_trick = false
-  room.logic:getEventsByRule(GameEvent.UseCard, 1, function (e)
+  room.logic:getEventsOfScope(GameEvent.UseCard, 1, function (e)
     local use = e.data
     if use.from == player then
       if use.card.type == Card.TypeTrick then
@@ -65,7 +62,7 @@ zhixi:addAcquireEffect(function (self, player, is_start)
       end
       x = x + 1
     end
-  end, end_id)
+  end, Player.HistoryPhase)
   if use_trick then
     room:setPlayerMark(player, "ol__zhixi_prohibit-phase", 1)
   else

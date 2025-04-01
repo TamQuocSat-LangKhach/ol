@@ -23,8 +23,6 @@ huamu:addEffect(fk.CardUseFinished, {
   can_trigger = function(self, event, target, player, data)
     if player ~= target or not player:hasSkill(huamu.name) or not data:IsUsingHandcard(player) then return end
     local room = player.room
-    local turn_event = room.logic:getCurrentEvent():findParent(GameEvent.Turn)
-    if turn_event == nil then return end
     local card_ids = Card:getIdList(data.card)
     if #card_ids == 0 then return end
     if data.card.type == Card.TypeEquip then
@@ -42,7 +40,7 @@ huamu:addEffect(fk.CardUseFinished, {
         yes = e.data.card:compareColorWith(data.card, true)
         return true
       end
-    end, turn_event.id)
+    end, nil, Player.HistoryTurn)
     return yes
   end,
   on_use = function(self, event, target, player, data)

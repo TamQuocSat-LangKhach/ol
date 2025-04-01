@@ -59,11 +59,9 @@ qushi:addEffect(fk.EventPhaseStart, {
       table.insertIfNeed(card_types, Fk:getCardById(id).type)
     end
     room:moveCardTo(player:getPile("$qushi_pile"), Card.DiscardPile, nil, fk.ReasonPutIntoDiscardPile, qushi.name)
-    local turn_event = room.logic:getCurrentEvent():findParent(GameEvent.Turn, true)
-    if turn_event == nil then return end
     local players = {}
     local yes = false
-    room.logic:getEventsByRule(GameEvent.UseCard, 1, function (e)
+    room.logic:getEventsOfScope(GameEvent.UseCard, 1, function (e)
       local use = e.data
       if use.from == player then
         if table.contains(card_types, use.card.type) then
@@ -71,7 +69,7 @@ qushi:addEffect(fk.EventPhaseStart, {
         end
         table.insertTableIfNeed(players, use.tos)
       end
-    end, turn_event.id)
+    end, Player.HistoryTurn)
     local n = math.min(#players, 5)
     if not yes or n == 0 then return end
     room:sortByAction(targets)

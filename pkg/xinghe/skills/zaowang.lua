@@ -1,6 +1,6 @@
 local zaowang = fk.CreateSkill{
   name = "zaowang",
-  banners = { Skill.Limited },
+  tags = { Skill.Limited },
 }
 
 Fk:loadTranslationTable{
