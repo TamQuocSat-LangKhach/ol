@@ -66,7 +66,7 @@ Fk:loadTranslationTable{
   ["~olmou__kongrong"] = "为父将去，子何以不辞？",
 }
 
---奋勇扬威：太史慈 孙坚 袁绍 华雄 张绣
+--奋勇扬威：太史慈 孙坚 袁绍 华雄 文丑 张绣
 General:new(extension, "olmou__taishici", "wu", 4):addSkills { "ol__dulie", "douchan" }
 Fk:loadTranslationTable{
   ["olmou__taishici"] = "谋太史慈",
@@ -101,6 +101,15 @@ Fk:loadTranslationTable{
   --["illustrator:olmou__huaxiong"] = "",
 
   ["~olmou__huaxiong"] = "我已连战三场，匹夫胜之不武！",
+}
+
+General:new(extension, "olmou__wenchou", "qun", 4):addSkills { "lunzhan", "juejuew" }
+Fk:loadTranslationTable{
+  ["olmou__wenchou"] = "谋文丑",
+  ["#olmou__wenchou"] = "万夫之勇",
+  --["illustrator:olmou__wenchou"] = "",
+
+  ["~olmou__wenchou"] = "何人……杀吾兄弟……",
 }
 
 General:new(extension, "olmou__zhangxiu", "qun", 4):addSkills { "zhuijiao", "choulie" }
@@ -175,15 +184,6 @@ Fk:loadTranslationTable{
   --["illustrator:olmou__zhaoyun"] = "",
 
   --["~olmou__zhaoyun"] = "",
-}
-
-General:new(extension, "olmou__wenchou", "qun", 4):addSkills { "lunzhan", "juejuew" }
-Fk:loadTranslationTable{
-  ["olmou__wenchou"] = "谋文丑",
-  --["#olmou__wenchou"] = "",
-  --["illustrator:olmou__wenchou"] = "",
-
-  --["~olmou__wenchou"] = "",
 }
 
 General:new(extension, "olmou__zhangrang", "qun", 3):addSkills { "lucun", "tuisheng" }

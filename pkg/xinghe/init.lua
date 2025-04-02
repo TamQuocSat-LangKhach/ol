@@ -139,7 +139,7 @@ Fk:loadTranslationTable{
 
 --四弼：伏完x 杨修x 陈琳x 诸葛瑾√ 马良√ 程昱√ 士燮√ 邓芝√ 董昭√ 司马朗x 步骘√ 董允√ 阚泽√ 王允√ 戏志才√ 孙乾√ 王粲x 吕虔x 孙邵√
 --辛毗x 审配√ 荀谌√ 吕凯x 蒋干x 潘濬x 严峻x 杜袭√ 杨仪√ 陈登√ 羊祜√ 伊籍x 夏侯玄√ 马日磾x 屈晃√ 孙弘√ 谯周x 阎圃x
---张华√ 曹羲√ 王瓘√ 陆凯√ 田畴√ 郭图√ 陶谦√ 韩馥√
+--张华√ 曹羲√ 王瓘√ 陆凯√ 田畴√ 郭图√ 陶谦√ 韩馥√ 袁涣√
 General:new(extension, "ol__zhugejin", "wu", 3):addSkills { "huanshi", "ol__hongyuan", "ol__mingzhe" }
 Fk:loadTranslationTable{
   ["ol__zhugejin"] = "诸葛瑾",
@@ -434,6 +434,14 @@ Fk:loadTranslationTable{
   ["#ol__hanfu"] = "挈瓶之知",
 
   ["~ol__hanfu"] = "本初，我可是请你吃过饭的！",
+}
+
+General:new(extension, "ol__yuanhuan", "qun", 3):addSkills { "deru", "linjie" }
+Fk:loadTranslationTable{
+  ["ol__yuanhuan"] = "袁涣",
+  ["#ol__yuanhuan"] = "无愆垣下",
+
+  ["~ol__yuanhuan"] = "乱世无礼，亦无义！",
 }
 
 --天柱：潘凤x 诸葛诞√ 兀突骨√ 蹋顿√ 严白虎√ 李傕x 张济x 樊稠√ 郭汜x 沙摩柯x 丁原x 黄祖√ 高干√ 王双x 范疆张达√ 梁兴x 阿会喃√ 马玩√ 文钦√ 雅丹√ 张燕√

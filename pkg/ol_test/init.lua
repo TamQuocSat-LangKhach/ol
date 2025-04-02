@@ -49,28 +49,12 @@ Fk:loadTranslationTable{
   ["~ol__niufu"] = "",
 }
 
-General:new(extension, "ol__guozhao", "wei", 3, 3, General.Female):addSkills { "jiaoyu", "neixun" }
-Fk:loadTranslationTable{
-  ["ol__guozhao"] = "郭照",
-  --["#ol__guozhao"] = "",
-
-  ["~ol__guozhao"] = "",
-}
-
 General:new(extension, "ol__liuzhang", "qun", 3):addSkills { "fengwei", "zonghu" }
 Fk:loadTranslationTable{
   ["ol__liuzhang"] = "刘璋",
   --["#ol__liuzhang"] = "",
 
   ["~ol__liuzhang"] = "",
-}
-
-General:new(extension, "ol__yuanhuan", "qun", 3):addSkills { "deru", "linjie" }
-Fk:loadTranslationTable{
-  ["ol__yuanhuan"] = "袁涣",
-  --["#ol__yuanhuan"] = "",
-
-  ["~ol__yuanhuan"] = "",
 }
 
 General:new(extension, "ol__yangfeng", "qun", 4):addSkills { "jiawei" }

@@ -7,8 +7,8 @@ Fk:loadTranslationTable{
   ["juejuew"] = "决绝",
   [":juejuew"] = "锁定技，当你于回合内首次使用所有手牌指定其他角色为唯一目标时，令其弃置X张牌（X为本回合你使用牌指定其为目标的次数）。",
 
-  ["$juejuew1"] = "",
-  ["$juejuew2"] = "",
+  ["$juejuew1"] = "冠绝河北，威震冀幽，一勇可当万夫。",
+  ["$juejuew2"] = "今丑单骑独往，必绝曹军之威。",
 }
 
 juejue:addEffect(fk.TargetSpecifying, {

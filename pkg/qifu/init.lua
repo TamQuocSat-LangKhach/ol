@@ -153,4 +153,12 @@ Fk:loadTranslationTable{
   ["~ol__xuelingyun"] = "宫墙阻春柳，此心藏玉壶。",
 }
 
+General:new(extension, "ol__guozhao", "wei", 3, 3, General.Female):addSkills { "jiaoyu", "neixun" }
+Fk:loadTranslationTable{
+  ["ol__guozhao"] = "郭照",
+  ["#ol__guozhao"] = "慕贤明德",
+
+  ["~ol__guozhao"] = "我本浮萍，何能长居椒房……",
+}
+
 return extension

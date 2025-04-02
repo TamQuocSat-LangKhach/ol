@@ -12,8 +12,8 @@ Fk:loadTranslationTable{
   ["@jiaoyu-round"] = "椒遇",
   ["#jiaoyu-choice"] = "椒遇：选择获得一种颜色的判定牌",
 
-  ["$jiaoyu1"] = "",
-  ["$jiaoyu2"] = "",
+  ["$jiaoyu1"] = "椒房熠辉，长寄心于君王。",
+  ["$jiaoyu2"] = "妾本蒲柳，幸载皇恩，昭母仪于天下。",
 }
 
 jiaoyu:addEffect(fk.RoundStart, {

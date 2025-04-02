@@ -2,7 +2,7 @@ local manwang = fk.CreateSkill{
   name = "manwang",
   dynamic_desc = function(self, player)
     local choices = {}
-    for i = 1, 4 - player:getMark(manwang.name), 1 do
+    for i = 1, 4 - player:getMark(self.name), 1 do
       table.insert(choices, Fk:translate("manwang_inner"..i))
     end
     return "manwang_inner:"..table.concat(choices, "；")

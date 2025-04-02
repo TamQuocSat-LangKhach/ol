@@ -7,8 +7,8 @@ Fk:loadTranslationTable{
   ["linjie"] = "临节",
   [":linjie"] = "锁定技，当你受到伤害后，伤害来源须弃置一张手牌，若为【杀】，你摸一张牌。",
 
-  ["$linjie1"] = "",
-  ["$linjie2"] = "",
+  ["$linjie1"] = "仁不怯于勇，义不患于凶。",
+  ["$linjie2"] = "生义不可得兼，舍生而取义者也。",
 }
 
 linjie:addEffect(fk.Damaged, {

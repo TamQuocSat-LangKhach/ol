@@ -10,8 +10,8 @@ Fk:loadTranslationTable{
   ["#deru"] = "德辱：选择一名角色，猜测其手牌中的基本牌牌名",
   ["#deru-choice"] = "德辱：选择你认为 %dest 手牌中有的基本牌",
 
-  ["$deru1"] = "",
-  ["$deru2"] = "",
+  ["$deru1"] = "我闻唯德可以辱人，不闻以骂。",
+  ["$deru2"] = "涣去他处，复骂将军，可乎？",
 }
 
 local U = require "packages/utility/utility"

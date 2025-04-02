@@ -30,12 +30,12 @@ kuanshi:addEffect(fk.EventPhaseStart, {
       no_indicate = true
     })
     if #to > 0 then
-      event:setCostData(self, {tos = to})
+      event:setCostData(self, {extra_data = to})
       return true
     end
   end,
   on_use = function(self, event, target, player, data)
-    player.room:addTableMarkIfNeed(player, kuanshi.name, event:getCostData(self).tos[1].id)
+    player.room:addTableMarkIfNeed(player, kuanshi.name, event:getCostData(self).extra_data[1].id)
   end,
 })
 kuanshi:addEffect(fk.TurnStart, {
@@ -45,7 +45,6 @@ kuanshi:addEffect(fk.TurnStart, {
   on_refresh = function(self, event, target, player, data)
     player.room:setPlayerMark(player, kuanshi.name, 0)
     if player:getMark("@@kuanshi") > 0 then
-      player.room:setPlayerMark(player, kuanshi.name, 0)
       player:skip(Player.Draw)
     end
   end,
@@ -57,7 +56,7 @@ kuanshi:addEffect(fk.DamageInflicted, {
     return data.damage > 1 and table.contains(player:getTableMark(kuanshi.name), target.id)
   end,
   on_cost = function (self, event, target, player, data)
-    event:setCostData(self, {tos = target})
+    event:setCostData(self, {tos = {target}})
     return true
   end,
   on_use = function (self, event, target, player, data)

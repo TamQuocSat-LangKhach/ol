@@ -12,8 +12,8 @@ Fk:loadTranslationTable{
   ["#neixun-prey"] = "内训：获得 %dest 一张牌",
   ["@@neixun-inhand"] = "内训",
 
-  ["$neixun1"] = "",
-  ["$neixun2"] = "",
+  ["$neixun1"] = "妾充女君之位，当处中馈之任。",
+  ["$neixun2"] = "诸宫人非圣贤，偶有失，亦可谅。",
 }
 
 neixun:addEffect(fk.CardUseFinished, {

@@ -10,8 +10,8 @@ Fk:loadTranslationTable{
   ["#lunzhan"] = "轮战：将任意张牌当【决斗】使用（至多5张，本回合张数不能重复）",
   ["#lunzhan-draw"] = "轮战：是否摸%arg张牌，本回合不能再对 %dest 发动“轮战”？",
 
-  ["$lunzhan1"] = "",
-  ["$lunzhan2"] = "",
+  ["$lunzhan1"] = "杀！尽歼贼败军之众。",
+  ["$lunzhan2"] = "白马公孙？哼！不过吾一合之敌！",
 }
 
 lunzhan:addEffect("viewas", {
