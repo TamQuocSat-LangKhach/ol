@@ -195,7 +195,7 @@ Fk:loadTranslationTable{
   --["~olmou__zhangrang"] = "",
 }
 
-General:new(extension, "olmou__luzhi", "qun", 4).hidden = true
+General:new(extension, "olmou__luzhi", "qun", 4):addSkills { "sibing", "liance" }
 Fk:loadTranslationTable{
   ["olmou__luzhi"] = "谋卢植",
   --["#olmou__luzhi"] = "",

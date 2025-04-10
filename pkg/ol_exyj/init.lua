@@ -76,6 +76,15 @@ Fk:loadTranslationTable{
   --["~ol_ex__wangyi"] = "",
 }
 
+General:new(extension, "ol_ex__madai", "shu", 4):addSkills { "mashu", "ol_ex__qianxi" }
+Fk:loadTranslationTable{
+  ["ol_ex__madai"] = "界马岱",
+  ["#ol_ex__madai"] = "临危受命",
+  --["illustrator:ol_ex__madai"] = "",
+
+  --["~ol_ex__madai"] = "",
+}
+
 General:new(extension, "ol_ex__liaohua", "shu", 4):addSkills { "ol_ex__dangxian", "ol_ex__fuli" }
 Fk:loadTranslationTable{
   ["ol_ex__liaohua"] = "界廖化",
@@ -83,6 +92,15 @@ Fk:loadTranslationTable{
   --["illustrator:ol_ex__liaohua"] = "",
 
   --["~ol_ex__liaohua"] = "",
+}
+
+General:new(extension, "ol_ex__guanxingzhangbao", "shu", 4):addSkills { "ol_ex__fuhun" }
+Fk:loadTranslationTable{
+  ["ol_ex__guanxingzhangbao"] = "界关兴张苞",
+  ["#ol_ex__guanxingzhangbao"] = "将门虎子",
+  --["illustrator:ol_ex__guanxingzhangbao"] = "",
+
+  --["~ol_ex__guanxingzhangbao"] = "",
 }
 
 General:new(extension, "ol_ex__chengpu", "wu", 4):addSkills { "ol_ex__lihuo", "ol_ex__chunlao" }

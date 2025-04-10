@@ -4,7 +4,7 @@ local xiongni = fk.CreateSkill{
 
 Fk:loadTranslationTable{
   ["xiongni"] = "凶逆",
-  [":xiongni"] = "出牌阶段开始时，你可以弃置一张牌，所有其他角色需弃置一张与花色相同的牌，否则你对其造成1点伤害。",
+  [":xiongni"] = "出牌阶段开始时，你可以弃置一张牌，所有其他角色需弃置一张花色相同的牌，否则你对其造成1点伤害。",
 
   ["#xiongni-invoke"] = "凶逆：你可以弃一张牌，所有其他角色选择弃一张相同花色的牌或你对其造成1点伤害",
   ["#xiongni-discard"] = "凶逆：弃置一张%arg牌，否则 %src 对你造成1点伤害！",

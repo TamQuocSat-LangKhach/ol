@@ -15,8 +15,6 @@ local U = require "packages/utility/utility"
 
 fujian:addEffect(fk.EventPhaseStart, {
   anim_type = "control",
-  frequency = Skill.Compulsory,
-  events = {fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
     if target == player and player:hasSkill(fujian.name) and (player.phase == Player.Finish or player.phase == Player.Start) then
       local n = 0

@@ -104,4 +104,8 @@ jieyuan:addEffect(fk.DamageInflicted, {
   end,
 })
 
+jieyuan:addLoseEffect(function (self, player, is_death)
+  player.room:setPlayerMark(player, "ol__fenxin", 0)
+end)
+
 return jieyuan

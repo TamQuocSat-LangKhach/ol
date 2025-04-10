@@ -15,7 +15,9 @@ Fk:loadTranslationTable{
 fenxin:addEffect(fk.Deathed, {
   anim_type = "control",
   can_trigger = function(self, event, target, player, data)
-    return player:hasSkill(fenxin.name) and table.contains({"loyalist", "rebel", "renegade"}, target.role) and
+    return player:hasSkill(fenxin.name) and
+      player:hasSkill("ol__jieyuan", true) and
+      table.contains({"loyalist", "rebel", "renegade"}, target.role) and
       not table.contains(player:getTableMark(fenxin.name), target.role)
   end,
   on_use = function(self, event, target, player, data)

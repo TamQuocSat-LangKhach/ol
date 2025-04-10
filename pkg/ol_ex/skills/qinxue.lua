@@ -30,7 +30,7 @@ qinxue:addEffect(fk.EventPhaseStart, {
     end
     local choice = room:askToChoice(player, {
       choices = choices,
-      skillName = qinxue.name,
+      skill_name = qinxue.name,
     })
     if choice == "draw2" then
       room:drawCards(player, 2, qinxue.name)
@@ -39,7 +39,7 @@ qinxue:addEffect(fk.EventPhaseStart, {
         who = player,
         num = 1,
         recoverBy = player,
-        skillName = qinxue.name
+        skillName = qinxue.name,
       }
     end
     if player.dead then return false end

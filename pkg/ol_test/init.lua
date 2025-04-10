@@ -115,6 +115,14 @@ Fk:loadTranslationTable{
   ["~ol__lifeng"] = "",
 }
 
+General:new(extension, "ol__miheng", "qun", 3):addSkills { "kuangjuan", "feibian" }
+Fk:loadTranslationTable{
+  ["ol__miheng"] = "祢衡",
+  --["#ol__miheng"] = "",
+
+  ["~ol__miheng"] = "",
+}
+
 General:new(extension, "ol__zhangmancheng", "qun", 5).hidden = true
 Fk:loadTranslationTable{
   ["ol__zhangmancheng"] = "张曼成",

@@ -4,8 +4,8 @@ local jiewu = fk.CreateSkill{
 
 Fk:loadTranslationTable{
   ["jiewu"] = "捷悟",
-  [":jiewu"] = "出牌阶段开始时，你可以令一名角色的手牌此阶段始终对你可见。然后你此阶段使用牌指定目标后，你可以展示“捷悟”角色一张手牌，"..
-  "若两张牌花色相同，你摸一张牌；若此牌本回合以此法展示过，你将你与其之中手牌较多的角色一张牌置于牌堆顶。",
+  [":jiewu"] = "出牌阶段开始时，你可以令一名角色的手牌此阶段始终对你可见。然后你此阶段使用牌指定其他角色为目标后，你可以展示“捷悟”角色"..
+  "一张手牌，若两张牌花色相同，你摸一张牌；若此牌本回合以此法展示过，你将你与其之中手牌较多的角色一张牌置于牌堆顶。",
 
   ["#jiewu-choose"] = "捷悟：选择一名角色，其手牌此阶段对你可见",
   ["@@jiewu-phase"] = "捷悟",
@@ -45,6 +45,9 @@ jiewu:addEffect(fk.TargetSpecified, {
     return target == player and player:usedSkillTimes(jiewu.name, Player.HistoryPhase) > 0 and data.firstTarget and
       table.find(player.room.alive_players, function (p)
         return p:getMark("@@jiewu-phase") == player.id and not p:isKongcheng()
+      end) and
+      table.find(data.use.tos, function (p)
+        return p ~= player
       end) and
       not player.dead
   end,

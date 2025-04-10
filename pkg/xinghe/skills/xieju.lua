@@ -40,6 +40,7 @@ xieju:addEffect("active", {
     return table.contains(player:getTableMark("xieju-turn"), to_select.id)
   end,
   on_use = function(self, room, effect)
+    room:sortByAction(effect.tos)
     for _, target in ipairs(effect.tos) do
       if not target.dead then
         local success, dat = room:askToUseActiveSkill(target, {

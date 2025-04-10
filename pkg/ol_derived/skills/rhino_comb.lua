@@ -11,15 +11,11 @@ Fk:loadTranslationTable{
 
 skill:addEffect(fk.EventPhaseChanging, {
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(skill.name) and data.phase == Player.Judge and
-      not (data.skipped and player.skipped_phases[Player.Discard])
+    return target == player and player:hasSkill(skill.name) and data.phase == Player.Judge and not data.skipped
   end,
   on_cost = function (self, event, target, player, data)
     local room = player.room
-    local choices = {"Cancel"}
-    if not player.skipped_phases[Player.Discard] then
-      table.insert(choices, 1, "rhino_comb_discard")
-    end
+    local choices = {"rhino_comb_discard", "Cancel"}
     if not data.skipped then
       table.insert(choices, 1, "rhino_comb_judge")
     end

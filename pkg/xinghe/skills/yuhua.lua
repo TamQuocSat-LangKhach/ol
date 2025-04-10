@@ -13,7 +13,6 @@ Fk:loadTranslationTable{
 
 yuhua:addEffect(fk.EventPhaseStart, {
   anim_type = "control",
-  frequency = Skill.Compulsory,
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(yuhua.name) and
       (player.phase == Player.Start or player.phase == Player.Finish)

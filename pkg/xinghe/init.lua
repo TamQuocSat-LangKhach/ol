@@ -587,7 +587,7 @@ General:new(extension, "ol__hejin", "qun", 4):addSkills { "ol__mouzhu", "ol__yan
 Fk:loadTranslationTable{
   ["ol__hejin"] = "何进",
   ["#ol__hejin"] = "色厉内荏",
-  ["cv:ol__hejin"] = "冷泉月夜",
+  ["cv:ol__hejin"] = "冷泉夜月",
   ["illustrator:ol__hejin"] = "鬼画府",
 
   ["~ol__hejin"] = "阉人造反啦！护卫！呀——",
@@ -913,7 +913,7 @@ General:new(extension, "quyi", "qun", 4):addSkills { "fuji", "jiaozi" }
 Fk:loadTranslationTable{
   ["quyi"] = "麴义",
   ["#quyi"] = "名门的骁将",
-  ["cv:quyi"] = "冷泉月夜",
+  ["cv:quyi"] = "冷泉夜月",
   ["illustrator:quyi"] = "王立雄",
   ["designer:quyi"] = "荼蘼",
 
@@ -952,7 +952,7 @@ Fk:loadTranslationTable{
   ["~ol__huangquan"] = "魏王厚待于我，降魏又有何错？",
 }
 
-local tangzi = General:new(extension, "tangzi", "wei", 3)
+local tangzi = General:new(extension, "tangzi", "wei", 4)
 tangzi.subkingdom = "wu"
 tangzi:addSkills { "xingzhao" }
 tangzi:addRelatedSkill("xunxun")

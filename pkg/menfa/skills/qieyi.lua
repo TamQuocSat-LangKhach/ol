@@ -5,7 +5,7 @@ local qieyi = fk.CreateSkill{
 Fk:loadTranslationTable{
   ["qieyi"] = "切议",
   [":qieyi"] = "出牌阶段开始时，你可以观看牌堆顶两张牌。若如此做，本回合你使用每种花色的第一张牌结算后，展示牌堆顶的一张牌，若这两张牌："..
-  "花色或类别相同，你获得展示牌；均不同，你将一张牌置于牌堆顶。",
+  "颜色或类别相同，你获得展示牌；均不同，你将一张牌置于牌堆顶。",
 
   ["@qieyi-turn"] = "切议",
   ["#qieyi-ask"] = "切议：请将一张牌置于牌堆顶",
@@ -21,6 +21,7 @@ qieyi:addEffect(fk.EventPhaseStart, {
     U.viewCards(player, player.room:getNCards(2), qieyi.name)
   end,
 })
+
 qieyi:addEffect(fk.CardUsing, {
   anim_type = "control",
   can_trigger = function (self, event, target, player, data)
@@ -34,7 +35,7 @@ qieyi:addEffect(fk.CardUsing, {
     room:addTableMark(player, "@qieyi-turn", data.card:getSuitString(true))
     local id = room:getNCards(1)[1]
     room:showCards(id)
-    if Fk:getCardById(id):compareSuitWith(data.card) or Fk:getCardById(id).type == data.card.type then
+    if Fk:getCardById(id).color == data.card.color or Fk:getCardById(id).type == data.card.type then
       room:setCardEmotion(id, "judgegood")
       room:delay(1000)
       room:obtainCard(player, id, true, fk.ReasonJustMove, player, qieyi.name)

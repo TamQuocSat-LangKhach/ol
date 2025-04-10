@@ -14,7 +14,10 @@ tunjiang:addEffect(fk.EventPhaseStart, {
   anim_type = "drawcard",
   can_trigger = function(self, event, target, player, data)
     if target == player and player:hasSkill(tunjiang.name) and player.phase == Player.Finish and
-      not player.skipped_phases[Player.Play] then
+      #player.room.logic:getEventsOfScope(GameEvent.Phase, 1, function (e)
+        local phase = e.data
+        return phase.who == player and phase.phase == Player.Play and phase.skipped
+      end, Player.HistoryTurn) then
       local phase_events = player.room.logic:getEventsOfScope(GameEvent.Phase, 999, function (e)
         return e.data.phase == Player.Play
       end, Player.HistoryTurn)

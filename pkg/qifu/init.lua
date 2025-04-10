@@ -157,6 +157,8 @@ General:new(extension, "ol__guozhao", "wei", 3, 3, General.Female):addSkills { "
 Fk:loadTranslationTable{
   ["ol__guozhao"] = "郭照",
   ["#ol__guozhao"] = "慕贤明德",
+  --["illustrator:ol__guozhao"] = "",
+  ["designer:ol__guozhao"] = "对勾对勾w",
 
   ["~ol__guozhao"] = "我本浮萍，何能长居椒房……",
 }
