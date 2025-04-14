@@ -31,7 +31,7 @@ qianxi:addEffect(fk.EventPhaseStart, {
     })
     local color = Fk:getCardById(card[1]):getColorString()
     room:setCardMark(Fk:getCardById(card[1]), "@@ol_ex__qianxi-inhand-turn", 1)
-    room:showCards(card, player)
+    player:showCards(card)
     if player.dead or color == "nocolor" then return end
     for _, p in ipairs(room.alive_players) do
       if player:distanceTo(p) == 1 then
