@@ -18,8 +18,9 @@ gaoshi:addEffect(fk.EventPhaseStart, {
   end,
   on_use = function (self, event, target, player, data)
     local room = player.room
-    local all_cards = table.simpleClone(room:getNCards(player:usedSkillTimes("jiewu", Player.HistoryTurn)))
-    room:showCards(all_cards)
+    local all_cards = room:getNCards(player:usedSkillTimes("jiewu", Player.HistoryTurn))
+    local tempIds = table.simpleClone(all_cards)
+    room:turnOverCardsFromDrawPile(player, all_cards, gaoshi.name)
     local dat = {}
     player.room.logic:getEventsOfScope(GameEvent.Phase, 1, function (e)
       if e.data.phase == Player.Play and e.end_id then
@@ -42,7 +43,7 @@ gaoshi:addEffect(fk.EventPhaseStart, {
     end)
     while not player.dead do
       cards = table.filter(cards, function(id)
-        return table.contains(room.draw_pile, id)
+        return room:getCardArea(id) == Card.Processing
       end)
       if #cards == 0 then break end
       local use = room:askToUseRealCard(player, {
@@ -66,6 +67,8 @@ gaoshi:addEffect(fk.EventPhaseStart, {
     if #all_cards == 0 and not player.dead then
       player:drawCards(2, gaoshi.name)
     end
+
+    room:cleanProcessingArea(tempIds, gaoshi.name)
   end,
 })
 
