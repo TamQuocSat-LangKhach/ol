@@ -8,7 +8,7 @@ local wende = require(prefix .. "wende")
 local xinghe = require(prefix .. "xinghe")
 local ol_mou = require(prefix .. "ol_mou")
 local menfa = require(prefix .. "menfa")
---jsrg?
+local jsrg = require(prefix .. "jsrg")
 local qifu = require(prefix .. "qifu")
 local ol_sp = require(prefix .. "ol_sp")
 local ol_re = require(prefix .. "ol_re")
@@ -26,7 +26,7 @@ return {
   xinghe,
   ol_mou,
   menfa,
-  --jsrg?
+  jsrg,
   qifu,
   ol_sp,
   ol_re,

@@ -23,12 +23,8 @@ guliang:addEffect(fk.TargetConfirmed, {
     })
   end,
   on_use = function(self, event, target, player, data)
-    if data.card.sub_type == Card.SubtypeDelayedTrick then
-      data:cancelTarget(player)
-    else
-      data.use.nullifiedTargets = data.use.nullifiedTargets or {}
-      table.insertIfNeed(data.use.nullifiedTargets, player)
-    end
+    data.use.nullifiedTargets = data.use.nullifiedTargets or {}
+    table.insertIfNeed(data.use.nullifiedTargets, player)
     player.room:setPlayerMark(player, "@@guliang-turn", data.from.id)
   end,
 })

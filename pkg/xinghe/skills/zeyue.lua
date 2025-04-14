@@ -22,12 +22,12 @@ zeyue:addEffect(fk.EventPhaseStart, {
     if target == player and player:hasSkill(zeyue.name) and player.phase == Player.Start and
       player:usedSkillTimes(zeyue.name, Player.HistoryGame) == 0 then
       local end_id = 1
-      local turn_event = player.room.logic:getEventsByRule(GameEvent.Turn, 1, function (e)
-        return e.end_id ~= -1 and e.data.who == player
+      player.room.logic:getEventsByRule(GameEvent.Turn, 1, function (e)
+        if e.end_id ~= -1 and e.data.who == player then
+          end_id = e.end_id
+          return true
+        end
       end, end_id)
-      if turn_event then
-        end_id = turn_event[1].end_id
-      end
       local optional = {}
       player.room.logic:getActualDamageEvents(1, function(e)
         local damage = e.data

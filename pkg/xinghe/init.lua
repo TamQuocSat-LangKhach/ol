@@ -7,7 +7,7 @@ Fk:loadTranslationTable{
   ["ol_xinghe"] = "OL-璀璨星河",
 }
 
---天极：刘协x 曹昂x 何太后√ 孙鲁育√ 孙皓√ 王荣? 左棻√ 刘琦√ 曹嵩x 卞夫人√ 刘辩x 清河公主√ 滕芳兰√ 芮姬√ 唐姬x 刘宏x 杜夫人x
+--天极：刘协x 曹昂x 何太后√ 孙鲁育√ 孙皓√ 王荣√ 左棻√ 刘琦√ 曹嵩x 卞夫人√ 刘辩x 清河公主√ 滕芳兰√ 芮姬√ 唐姬x 刘宏x 杜夫人x
 --曹宇√ 曹腾√ 刘焉x 秦朗√ 袁姬√
 General:new(extension, "ol__hetaihou", "qun", 3, 3, General.Female):addSkills { "ol__zhendu", "ol__qiluan" }
 Fk:loadTranslationTable{
@@ -36,6 +36,15 @@ Fk:loadTranslationTable{
   ["illustrator:sunhao"] = "LiuHeng",
 
   ["~sunhao"] = "命啊！命！",
+}
+
+General:new(extension, "wangrongh", "qun", 3, 3, General.Female):addSkills { "fengzi", "jizhan", "fusong" }
+Fk:loadTranslationTable{
+  ["wangrongh"] = "王荣",
+  ["#wangrongh"] = "灵怀皇后",
+  ["illustrator:wangrongh"] = "君桓文化",
+
+  ["~wangrongh"] = "只求吾儿，一生平安……",
 }
 
 General:new(extension, "zuofen", "jin", 3, 3, General.Female):addSkills { "zhaosong", "lisi" }
