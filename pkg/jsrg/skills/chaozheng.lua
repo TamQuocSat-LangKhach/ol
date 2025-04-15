@@ -4,7 +4,7 @@ local chaozheng = fk.CreateSkill {
 
 Fk:loadTranslationTable{
   ["ol__chaozheng"] = "朝争",
-  [":ol__chaozheng"] = "准备阶段，你可以与所有其他角色议事，结果为：红色，意见为红色的角色各回复1点体力；黑色，意见为红色的其他角色"..
+  [":ol__chaozheng"] = "出牌阶段开始时，你可以与所有其他角色议事，若结果为：红色，意见为红色的角色各回复1点体力；黑色，意见为红色的其他角色"..
   "各失去1点体力。议事结束后，你摸X张牌（X为意见与你相同的角色数，至多为2）。你参与议事的意见视为+1。",
 
   ["#ol__chaozheng-invoke"] = "朝争：你可以与所有其他角色议事！",
@@ -18,7 +18,7 @@ local U = require "packages/utility/utility"
 chaozheng:addEffect(fk.EventPhaseStart, {
   anim_type = "control",
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(chaozheng.name) and player.phase == Player.Start and
+    return target == player and player:hasSkill(chaozheng.name) and player.phase == Player.Play and
       not player:isKongcheng()
   end,
   on_cost = function(self, event, target, player, data)
