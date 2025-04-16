@@ -32,7 +32,7 @@ guidao:addEffect(fk.AskForRetrial, {
   end,
   on_use = function(self, event, target, player, data)
     local card = event:getCostData(self).extra_data
-    player.room:ChangeJudge{
+    player.room:changeJudge{
       card = card,
       player = player,
       data = data,
