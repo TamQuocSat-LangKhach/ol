@@ -91,14 +91,6 @@ Fk:loadTranslationTable{
   ["~ol__zhaozhong"] = "",
 }
 
-General:new(extension, "ol__peiyuanshao", "qun", 4):addSkills { "fulve" }
-Fk:loadTranslationTable{
-  ["ol__peiyuanshao"] = "裴元绍",
-  --["#ol__peiyuanshao"] = "",
-
-  ["~ol__peiyuanshao"] = "",
-}
-
 General:new(extension, "ol__yangfu", "wei", 4):addSkills { "pingzhong", "suyi" }
 Fk:loadTranslationTable{
   ["ol__yangfu"] = "杨阜",

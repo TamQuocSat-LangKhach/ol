@@ -41,7 +41,7 @@ Fk:loadTranslationTable{
 General:new(extension, "ol_ex__lingtong", "wu", 4):addSkills { "ol_ex__xuanfeng" }
 Fk:loadTranslationTable{
   ["ol_ex__lingtong"] = "界凌统",
-  ["#ol_ex__lingtong"] = "豪情烈胆",
+  ["#ol_ex__lingtong"] = "血涕津渚",
   ["designer:ol_ex__lingtong"] = "玄蝶既白",
   ["illustrator:ol_ex__lingtong"] = "君桓文化",
 
@@ -60,7 +60,7 @@ Fk:loadTranslationTable{
 General:new(extension, "ol_ex__caozhang", "wei", 4):addSkills { "ol_ex__jiangchi" }
 Fk:loadTranslationTable{
   ["ol_ex__caozhang"] = "界曹彰",
-  ["#ol_ex__caozhang"] = "黄须儿",
+  ["#ol_ex__caozhang"] = "任城威王",
   ["designer:ol_ex__caozhang"] = "玄蝶既白",
   ["illustrator:ol_ex__caozhang"] = "枭瞳",
 
@@ -142,7 +142,7 @@ Fk:loadTranslationTable{
 General:new(extension, "ol_ex__yufan", "wu", 3):addSkills { "ol_ex__zongxuan", "ol_ex__zhiyan" }
 Fk:loadTranslationTable{
   ["ol_ex__yufan"] = "界虞翻",
-  ["#ol_ex__yufan"] = "狂直之士",
+  ["#ol_ex__yufan"] = "犯颜谏争",
   ["illustrator:ol_ex__yufan"] = "YanBai",
 
   ["~ol_ex__yufan"] = "彼皆死人，何语神仙？",
@@ -160,10 +160,10 @@ Fk:loadTranslationTable{
 General:new(extension, "ol_ex__fuhuanghou", "qun", 3, 3, General.Female):addSkills { "ol_ex__zhuikong", "ol_ex__qiuyuan" }
 Fk:loadTranslationTable{
   ["ol_ex__fuhuanghou"] = "界伏皇后",
-  --["#ol_ex__fuhuanghou"] = "",
+  ["#ol_ex__fuhuanghou"] = "巾帼拚生",
   --["illustrator:ol_ex__fuhuanghou"] = "",
 
-  --["~ol_ex__fuhuanghou"] = "",
+  ["~ol_ex__fuhuanghou"] = "只恨邪风不静，不能杀了老贼……",
 }
 
 General:new(extension, "ol_ex__liru", "qun", 3):addSkills { "ol_ex__juece", "ol_ex__mieji", "ty_ex__fencheng" }

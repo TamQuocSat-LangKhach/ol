@@ -8,7 +8,10 @@ Fk:loadTranslationTable{
   "2.成为此牌的额外目标。",
 
   ["#ol_ex__qiuyuan-choose"] = "求援：令一名角色选择：交给你一张相同类别不同牌名的牌，或成为此%arg额外目标",
-  ["#ol_ex__qiuyuan-give"] = "求援：交给 %dest 一张不为%arg的%arg2，否则成为此牌额外目标",
+  ["#ol_ex__qiuyuan-give"] = "求援：交给 %dest 一张不为【%arg】的%arg2，否则成为此牌额外目标",
+
+  ["$ol_ex__qiuyuan1"] = "我父伏完常有杀操之心，今当修书一封，秘密图之。",
+  ["$ol_ex__qiuyuan2"] = "中朝能称忠义者，莫当黄门穆顺。",
 }
 
 qiuyuan:addEffect(fk.TargetConfirming, {

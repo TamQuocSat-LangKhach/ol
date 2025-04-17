@@ -12,8 +12,8 @@ Fk:loadTranslationTable{
   ["fulve_prey"] = "获得其一张牌",
   ["#fulve-use"] = "复掠：你可以对 %src 使用一张【杀】且%arg",
 
-  ["$fulve1"] = "",
-  ["$fulve2"] = "",
+  ["$fulve1"] = "吹牛呢？这马日行千里，只有关将军才能骑!",
+  ["$fulve2"] = "子什么？什么龙？没听说过！还不速速离去！",
 }
 
 fulve:addEffect(fk.TargetSpecified, {

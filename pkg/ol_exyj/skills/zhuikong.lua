@@ -9,6 +9,9 @@ Fk:loadTranslationTable{
 
   ["#ol_ex__zhuikong-invoke"] = "惴恐：你可以与 %dest 拼点，若赢，其只能对自己使用牌，若没赢，你获得其拼点牌，其视为对你使用【杀】",
   ["@@ol_ex__zhuikong-turn"] = "惴恐",
+
+  ["$ol_ex__zhuikong1"] = "曹贼一日不除，旦夕如不终日。",
+  ["$ol_ex__zhuikong2"] = "见许田曹瞒骖乘，叫人如芒在背",
 }
 
 zhuikong:addEffect(fk.TurnStart, {
