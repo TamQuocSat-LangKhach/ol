@@ -32,6 +32,7 @@ chuming:addEffect(fk.DamageCaused, {
     end
   end,
 })
+
 chuming:addEffect(fk.DamageInflicted, {
   anim_type = "negative",
   can_trigger = function (self, event, target, player, data)
@@ -45,6 +46,7 @@ chuming:addEffect(fk.DamageInflicted, {
     end
   end,
 })
+
 chuming:addEffect(fk.TurnEnd, {
   anim_type = "negative",
   is_delay_effect = true,
@@ -60,52 +62,16 @@ chuming:addEffect(fk.TurnEnd, {
       if not from.dead and table.every(info[2], function(id)
         return room:getCardArea(id) == Card.DiscardPile
       end) then
-        local names = {}
-        local other_targets = {}
-        for i, name in ipairs({"dismantlement", "collateral"}) do
-          local card = Fk:cloneCard(name)
-          card:addSubcards(info[2])
-          if from:canUseTo(card, player) then
-            if i == 1 then
-              table.insert(names, name)
-            else
-              for _, p in ipairs(room.alive_players) do
-                if p ~= player and card.skill:targetFilter(from, p, {player}, {}, card) then
-                  table.insert(other_targets, p)
-                end
-              end
-              if #other_targets > 0 then
-                table.insert(names, name)
-              end
-            end
-          end
-        end
-        if #names > 0 then
-          local success, dat = room:askToUseActiveSkill(from, {
-            skill_name = "chuming_viewas",
-            prompt = "#chuming-invoke::"..player.id,
-            cancelable = false,
-            extra_data = {
-              chuming_info = {player.id},
-            }
-          })
-          if not (success and dat) then
-            dat = dat or {}
-            dat.interaction = names[1]
-            dat.targets = {player}
-            if names[1] == "collateral" then
-              table.insert(dat.targets, table.random(other_targets))
-            end
-          end
-          local card = Fk:cloneCard(dat.interaction)
-          card.skillName = chuming.name
-          local use = {
-            from = from,
-            tos = dat.targets,
-            card = card,
-          }
-          room:useCard(use)
-        end
+        room:askToUseVirtualCard(from, {
+          name = {"dismantlement", "collateral"},
+          skill_name = chuming.name,
+          prompt = "#chuming-invoke::"..player.id,
+          cancelable = false,
+          extra_data = {
+            exclusive_targets = {player.id},
+          },
+          subcards = info[2],
+        })
       end
     end
   end,

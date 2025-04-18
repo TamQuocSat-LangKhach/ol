@@ -19,32 +19,29 @@ suji:addEffect(fk.EventPhaseStart, {
   end,
   on_cost = function (self, event, target, player, data)
     local room = player.room
-    local success, dat = room:askToUseActiveSkill(player, {
-      skill_name = "suji_viewas",
+    local use = room:askToUseVirtualCard(player, {
+      name = "slash",
+      skill_name = suji.name,
       prompt = "#suji-invoke::"..target.id,
       cancelable = true,
       extra_data = {
         bypass_times = true,
         extraUse = true,
       },
+      card_filter = {
+        n = 1,
+        pattern = ".|.|spade,club",
+      },
+      skip = true,
     })
-    if success and dat then
-      event:setCostData(self, {extra_data = dat})
+    if use then
+      event:setCostData(self, {extra_data = use})
       return true
     end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local dat = table.simpleClone(event:getCostData(self).extra_data)
-    local card = Fk:cloneCard("slash")
-    card.skillName = suji.name
-    card:addSubcards(dat.cards)
-    local use = {
-      from = player,
-      tos = dat.targets,
-      card = card,
-      extraUse = true,
-    }
+    local use = event:getCostData(self).extra_data
     room:useCard(use)
     if use.damageDealt and use.damageDealt[target] and not player.dead and not target:isNude() and not target.dead then
       local id = room:askToChooseCard(player, {

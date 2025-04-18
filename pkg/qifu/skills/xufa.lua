@@ -9,7 +9,6 @@ Fk:loadTranslationTable{
 
   ["xufa_put"] = "置入蓄发",
   ["xufa_remove"] = "移去蓄发",
-  ["xufa_viewAs"] = "蓄发",
   ["#xufa-use"] = "蓄发：你可以将一张牌当其中一张普通锦囊牌使用",
   ["#xufa_put"] = "将至少%arg张手牌置入“蓄发”，然后可将一张牌当“蓄发”中普通锦囊牌使用",
   ["#xufa_remove"] = "移去至少%arg张“蓄发”，然后可将一张牌当移去牌中普通锦囊牌使用",
@@ -80,26 +79,18 @@ xufa:addEffect("active", {
     end
 
     if #tricks > 0 then
-      room:setPlayerMark(player, "xufa_tricks", tricks)
-      local success, dat = room:askToUseActiveSkill(player, {
-        skill_name = "xufa_viewas",
+      room:askToUseVirtualCard(player, {
+        name = tricks,
+        skill_name = xufa.name,
         prompt = "#xufa-use",
-        no_indicate = true,
-      })
-      room:setPlayerMark(player, "xufa_tricks", 0)
-
-      if success and dat then
-        local card = Fk:cloneCard(dat.interaction)
-        card:addSubcards(dat.cards)
-        card.skillName = xufa.name
-        room:sortByAction(dat.targets)
-        room:useCard{
-          from = player,
-          tos = dat.targets,
-          card = card,
+        cancelable = true,
+        extra_data = {
           extraUse = true,
-        }
-      end
+        },
+        card_filter = {
+          n = 1,
+        },
+      })
     end
   end,
 })

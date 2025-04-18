@@ -43,30 +43,26 @@ xieju:addEffect("active", {
     room:sortByAction(effect.tos)
     for _, target in ipairs(effect.tos) do
       if not target.dead then
-        local success, dat = room:askToUseActiveSkill(target, {
-          skill_name = "xieju_viewas",
+        room:askToUseVirtualCard(target, {
+          name = "slash",
+          skill_name = xieju.name,
           prompt = "#xieju-slash",
           cancelable = true,
           extra_data = {
             bypass_times = true,
             extraUse = true,
           },
+          card_filter = {
+            n = 1,
+            pattern = ".|.|spade,club",
+          },
+          skip = true,
         })
-        if success and dat then
-          local card = Fk:cloneCard("slash")
-          card.skillName = xieju.name
-          card:addSubcards(dat.cards)
-          room:useCard{
-            from = target,
-            tos = dat.targets,
-            card = card,
-            extraUse = true,
-          }
-        end
       end
     end
   end,
 })
+
 xieju:addEffect(fk.TargetConfirmed, {
   can_refresh = function(self, event, target, player, data)
     return player:hasSkill(xieju.name, true)

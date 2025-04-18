@@ -14,25 +14,20 @@ skill:addEffect(fk.EventPhaseStart, {
   end,
   on_cost = function (self, event, target, player, data)
     local room = player.room
-    local success, dat = room:askToUseActiveSkill(player, {
-      skill_name = "qin_seal_viewas",
+    local use = room:askToUseVirtualCard(player, {
+      name = {"savage_assault", "archery_attack", "god_salvation", "amazing_grace"},
+      skill_name = skill.name,
       prompt = "#qin_seal-use",
       cancelable = true,
+      skip = true,
     })
-    if success and dat then
-      event:setCostData(self, {choice = dat.interaction})
+    if use then
+      event:setCostData(self, {extra_data = use})
       return true
     end
   end,
   on_use = function(self, event, target, player, data)
-    local room = player.room
-    local card = Fk:cloneCard(event:getCostData(self).choice)
-    card.skillName = skill.name
-    room:useCard{
-      from = player,
-      tos = {},
-      card = card,
-    }
+    player.room:useCard(event:getCostData(self).extra_data)
   end,
 })
 

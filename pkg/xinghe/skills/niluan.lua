@@ -26,8 +26,9 @@ niluan:addEffect(fk.EventPhaseStart, {
   end,
   on_cost = function(self, event, target, player, data)
     local room = player.room
-    local success, dat = room:askToUseActiveSkill(player, {
-      skill_name = "ol__niluan_viewas",
+    local use = room:askToUseVirtualCard(player, {
+      name = "slash",
+      skill_name = niluan.name,
       prompt = "#ol__niluan-invoke::"..target.id,
       cancelable = true,
       extra_data = {
@@ -36,14 +37,19 @@ niluan:addEffect(fk.EventPhaseStart, {
         extraUse = true,
         exclusive_targets = {target.id},
       },
+      card_filter = {
+        n = 1,
+        pattern = ".|.|spade,club",
+      },
+      skip = true,
     })
-    if success and dat then
-      event:setCostData(self, {cards = dat.cards})
+    if use then
+      event:setCostData(self, {extra_data = use})
       return true
     end
   end,
   on_use = function(self, event, target, player, data)
-    player.room:useVirtualCard("slash", event:getCostData(self).cards, player, target, niluan.name, true)
+    player.room:useCard(event:getCostData(self).extra_data)
   end,
 })
 

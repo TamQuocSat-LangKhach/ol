@@ -22,8 +22,9 @@ qingleng:addEffect(fk.TurnEnd, {
   end,
   on_cost = function (self, event, target, player, data)
     local room = player.room
-    local success, dat = room:askToUseActiveSkill(player, {
-      skill_name = "qingleng_viewas",
+    local use = room:askToUseVirtualCard(player, {
+      name = "ice__slash",
+      skill_name = qingleng.name,
       prompt = "#qingleng-invoke::"..target.id,
       cancelable = true,
       extra_data = {
@@ -32,16 +33,21 @@ qingleng:addEffect(fk.TurnEnd, {
         extraUse = true,
         exclusive_targets = {target.id},
       },
+      card_filter = {
+        n = 1,
+      },
+      skip = true,
     })
-    if success and dat then
-      event:setCostData(self, {cards = dat.cards})
+    if use then
+      event:setCostData(self, {extra_data = use})
       return true
     end
   end,
   on_use = function(self, event, target, player, data)
-    player.room:useVirtualCard("ice__slash", event:getCostData(self).cards, player, target, qingleng.name, true)
+    player.room:useCard(event:getCostData(self).extra_data)
   end,
 })
+
 qingleng:addEffect(fk.AfterCardUseDeclared, {
   mute = true,
   is_delay_effect = true,

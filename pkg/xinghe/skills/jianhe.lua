@@ -1,6 +1,5 @@
 local jianhe = fk.CreateSkill{
   name = "jianhe",
-  tags = { Skill.Compulsory },
 }
 
 Fk:loadTranslationTable{

@@ -62,25 +62,19 @@ fuxun:addEffect("active", {
           end
         end
       end, Player.HistoryPhase) > 0 then return end
-      local success, dat = room:askToUseActiveSkill(player, {
-        skill_name = "fuxun_viewas",
+      room:askToUseVirtualCard(player, {
+        name = Fk:getAllCardNames("b"),
+        skill_name = fuxun.name,
         prompt = "#fuxun-use",
         cancelable = true,
         extra_data = {
           bypass_times = true,
+          extraUse = true,
+        },
+        card_filter = {
+          n = 1,
         },
       })
-      if success and dat then
-        local card = Fk:cloneCard(dat.interaction)
-        card.skillName = fuxun.name
-        card:addSubcards(dat.cards)
-        room:useCard{
-          from = player,
-          tos = dat.targets,
-          card = card,
-          extraUse = true,
-        }
-      end
     end
   end,
 })

@@ -48,19 +48,20 @@ jiewan:addEffect(fk.EventPhaseStart, {
       else
         room:changeMaxHp(player, -1)
       end
-      if player.dead or #player:getCardIds("h&") == 0 then return end
-      local success, dat = room:askToUseActiveSkill(player, {
-        skill_name = "jiewan_viewas",
+      if player.dead or #player:getHandlyIds() == 0 then return end
+      room:askToUseVirtualCard(player, {
+        name = "snatch",
+        skill_name = jiewan.name,
         prompt = "#jiewan-use",
-        no_indicate = true,
+        cancelable = true,
         extra_data = {
           bypass_distances = true,
-        }
+        },
+        card_filter = {
+          n = 1,
+          cards = player:getHandlyIds(),
+        },
       })
-      if success and dat then
-        room:sortByAction(dat.targets)
-        room:useVirtualCard("snatch", dat.cards, player, dat.targets, jiewan.name)
-      end
     elseif target.phase == Player.Finish then
       room:changeMaxHp(player, 1)
     end

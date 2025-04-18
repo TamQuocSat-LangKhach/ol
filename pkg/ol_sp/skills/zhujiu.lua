@@ -34,7 +34,7 @@ zhujiu:addEffect("viewas", {
     return #selected < player:getMark("zhujiu-turn") + 1
   end,
   view_as = function(self, player, cards)
-    if #cards ~= player:getMark("zhujiu-turn") + 1 then return end
+    if #cards < player:getMark("zhujiu-turn") + 1 then return end
     local card = Fk:cloneCard("analeptic")
     card:addSubcards(cards)
     card.skillName = zhujiu.name

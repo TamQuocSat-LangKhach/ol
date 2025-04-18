@@ -9,7 +9,6 @@ Fk:loadTranslationTable{
   ["@$shenjun-phase"] = "神君",
   ["@@shenjun-inhand-phase"] = "神君",
   ["#shenjun-invoke"] = "神君：你可以将%arg张牌当一种“神君”牌使用",
-  ["shenjun_viewas"] = "神君",
 
   ["$shenjun1"] = "区区障眼之法，难遮神人之目。",
   ["$shenjun2"] = "我以天地为师，自可道法自然。",
@@ -41,6 +40,7 @@ shenjun:addEffect(fk.CardUsing, {
     end
   end,
 })
+
 shenjun:addEffect(fk.EventPhaseEnd, {
   can_trigger = function(self, event, target, player, data)
     return player:hasSkill(shenjun.name) and player:usedSkillTimes(shenjun.name, Player.HistoryPhase) > 0 and
@@ -48,33 +48,37 @@ shenjun:addEffect(fk.EventPhaseEnd, {
   end,
   on_cost = function(self, event, target, player, data)
     local room = player.room
-    local success, dat = room:askToUseActiveSkill(player, {
-      skill_name = "shenjun_viewas",
+    local names = {}
+    for _, id in ipairs(player:getCardIds("h")) do
+      local card = Fk:getCardById(id)
+      if card:getMark("@@shenjun-inhand-phase") > 0 then
+        table.insertIfNeed(names, card.name)
+      end
+    end
+    local use = room:askToUseVirtualCard(player, {
+      name = names,
+      skill_name = shenjun.name,
       prompt = "#shenjun-invoke:::"..#player:getMark("@$shenjun-phase"),
       cancelable = true,
       extra_data = {
         bypass_times = true,
-      }
+        extraUse = true,
+      },
+      card_filter = {
+        n = #player:getTableMark("@$shenjun-phase"),
+      },
+      skip = true,
     })
-    if success and dat then
-      event:setCostData(self, {extra_data = dat})
+    if use then
+      event:setCostData(self, {extra_data = use})
       return true
     end
   end,
   on_use = function(self, event, target, player, data)
-    local room = player.room
-    local dat = table.simpleClone(event:getCostData(self).extra_data)
-    local card = Fk:cloneCard(dat.interaction)
-    card:addSubcards(dat.cards)
-    card.skillName = shenjun.name
-    room:useCard{
-      from = player,
-      tos = dat.targets,
-      card = card,
-      extraUse = true,
-    }
+    player.room:useCard(event:getCostData(self).extra_data)
   end,
 })
+
 shenjun:addEffect(fk.AfterCardsMove, {
   can_refresh = function(self, event, target, player, data)
     return player:getMark("@$shenjun") ~= 0
