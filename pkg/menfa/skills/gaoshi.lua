@@ -4,8 +4,8 @@ local gaoshi = fk.CreateSkill{
 
 Fk:loadTranslationTable{
   ["gaoshi"] = "高视",
-  [":gaoshi"] = "结束阶段，你可以亮出牌堆顶X张牌（X为你本回合发动〖捷悟〗的次数），然后可以使用其中本回合出牌阶段你未使用过的牌名的牌。"..
-  "若你因此使用了所有亮出牌，你摸两张牌。",
+  [":gaoshi"] = "结束阶段，你可以连续展示牌堆顶牌，直到展示了本回合你使用过牌名的牌或展示了X张牌（X为你本回合发动〖捷悟〗的次数），\
+  然后可以使用展示的牌。若你因此使用了所有亮出牌，你摸两张牌，否则将其余牌置入弃牌堆。",
 
   ["#gaoshi-use"] = "高视：你可以使用这些牌",
 }
@@ -18,8 +18,6 @@ gaoshi:addEffect(fk.EventPhaseStart, {
   end,
   on_use = function (self, event, target, player, data)
     local room = player.room
-    local all_cards = table.simpleClone(room:getNCards(player:usedSkillTimes("jiewu", Player.HistoryTurn)))
-    room:showCards(all_cards)
     local dat = {}
     player.room.logic:getEventsOfScope(GameEvent.Phase, 1, function (e)
       if e.data.phase == Player.Play and e.end_id then
@@ -37,9 +35,17 @@ gaoshi:addEffect(fk.EventPhaseStart, {
         end
       end
     end, Player.HistoryTurn)
-    local cards = table.filter(all_cards, function (id)
-      return not table.contains(names, Fk:getCardById(id).trueName)
-    end)
+    local all_cards = {}
+    while #all_cards < player:usedSkillTimes("jiewu", Player.HistoryTurn) do
+      local id = room:getNCards(#all_cards + 1)[#all_cards + 1]
+      room:showCards(id)
+      table.insert(all_cards, id)
+      room:delay(600)
+      if table.contains(names, Fk:getCardById(id).trueName) then
+        break
+      end
+    end
+    local cards = table.simpleClone(all_cards)
     while not player.dead do
       cards = table.filter(cards, function(id)
         return table.contains(room.draw_pile, id)
@@ -65,6 +71,13 @@ gaoshi:addEffect(fk.EventPhaseStart, {
     end
     if #all_cards == 0 and not player.dead then
       player:drawCards(2, gaoshi.name)
+    else
+      all_cards = table.filter(all_cards, function(id)
+        return table.contains(room.draw_pile, id)
+      end)
+      if #all_cards > 0 then
+        room:moveCardTo(all_cards, Card.DiscardPile, nil, fk.ReasonPutIntoDiscardPile, gaoshi.name, nil, true)
+      end
     end
   end,
 })

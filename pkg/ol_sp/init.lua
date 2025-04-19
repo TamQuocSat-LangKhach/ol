@@ -126,12 +126,17 @@ Fk:loadTranslationTable{
   ["~ol_sp__liubei"] = "一介凡夫俗子，不识龙为何物。",
 }
 
---General:new(extension, "ol__nanhualaoxian", "qun", 3):addSkills { "qingshu", "ol__shoushu", "hedao" }
+General:new(extension, "ol__nanhualaoxian", "qun", 3):addSkills { "qingshu", "ol__shoushu", "hedao" }
 Fk:loadTranslationTable{
   ["ol__nanhualaoxian"] = "南华老仙",
   ["#ol__nanhualaoxian"] = "逍遥仙游",
 
   ["~ol__nanhualaoxian"] = "尔生异心，必获恶报！",
 }
+
+local tianshu_skels = require("packages.ol.pkg.ol_sp.skills.tianshu.tianshu")
+for _, skel in ipairs(tianshu_skels) do
+  table.insert(extension.skill_skels, skel)
+end
 
 return extension

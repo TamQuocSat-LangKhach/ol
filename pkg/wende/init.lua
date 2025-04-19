@@ -11,7 +11,7 @@ Fk:loadTranslationTable{
 }
 
 --理：司马懿 张春华 李肃 司马伷 彻里吉 华歆
-General:new(extension, "ol__simayi", "jin", 3):addSkills { "yingshis", "xiongzhi", "quanbian" }  --"buchen"
+General:new(extension, "ol__simayi", "jin", 3):addSkills { "buchen", "yingshis", "xiongzhi", "quanbian" }
 Fk:loadTranslationTable{
   ["ol__simayi"] = "司马懿",
   ["#ol__simayi"] = "通权达变",
@@ -20,7 +20,7 @@ Fk:loadTranslationTable{
   ["~ol__simayi"] = "虎入骷冢，司马难兴。",
 }
 
-General:new(extension, "ol__zhangchunhua", "jin", 3, 3, General.Female):addSkills { "ol__huishi", "qingleng" }  --"xuanmu"
+General:new(extension, "ol__zhangchunhua", "jin", 3, 3, General.Female):addSkills { "xuanmu", "ol__huishi", "qingleng" }
 Fk:loadTranslationTable{
   ["ol__zhangchunhua"] = "张春华",
   ["#ol__zhangchunhua"] = "宣穆皇后",
@@ -66,7 +66,9 @@ Fk:loadTranslationTable{
 }
 
 --备：成济成倅 张虎乐綝 夏侯徽 司马师 羊徽瑜 石苞
-General:new(extension, "chengjichengcui", "jin", 6):addSkills { "tousui", "chuming" }
+local chengjichengcui = General:new(extension, "chengjichengcui", "wei", 6)
+chengjichengcui.subkingdom = "jin"
+chengjichengcui:addSkills { "tousui", "chuming" }
 Fk:loadTranslationTable{
   ["chengjichengcui"] = "成济成倅",
   ["#chengjichengcui"] = "袒忿半瓦",
@@ -92,7 +94,7 @@ Fk:loadTranslationTable{
   ["~zhanghuyuechen"] = "儿有辱……父亲威名……",
 }
 
-General:new(extension, "xiahouhui", "jin", 3, 3, General.Female):addSkills { "yishi", "shidu" }  --"baoqie"
+General:new(extension, "xiahouhui", "jin", 3, 3, General.Female):addSkills { "baoqie", "yishi", "shidu" }
 Fk:loadTranslationTable{
   ["xiahouhui"] = "夏侯徽",
   ["#xiahouhui"] = "景怀皇后",
@@ -101,7 +103,7 @@ Fk:loadTranslationTable{
   ["~xiahouhui"] = "夫君，你怎么对我如此狠心……",
 }
 
-General:new(extension, "ol__simashi", "jin", 3, 4):addSkills { "yimie", "tairan", "ruilue" }  --"taoyin"
+General:new(extension, "ol__simashi", "jin", 3, 4):addSkills { "taoyin", "yimie", "tairan", "ruilue" }
 Fk:loadTranslationTable{
   ["ol__simashi"] = "司马师",
   ["#ol__simashi"] = "晋景王",
@@ -110,7 +112,7 @@ Fk:loadTranslationTable{
   ["~ol__simashi"] = "子上，这是为兄给你打下的江山……",
 }
 
-General:new(extension, "ol__yanghuiyu", "jin", 3, 3, General.Female):addSkills { "ciwei", "caiyuan" }  --"huirong"
+General:new(extension, "ol__yanghuiyu", "jin", 3, 3, General.Female):addSkills { "huirong", "ciwei", "caiyuan" }
 Fk:loadTranslationTable{
   ["ol__yanghuiyu"] = "羊徽瑜",
   ["#ol__yanghuiyu"] = "景献皇后",
@@ -129,7 +131,7 @@ Fk:loadTranslationTable{
 }
 
 --果：宣公主 司马昭 王元姬 杜预 卫瓘
-General:new(extension, "xuangongzhu", "jin", 3, 3, General.Female):addSkills { "qimei", "zhuijix" }  --"gaoling"
+General:new(extension, "xuangongzhu", "jin", 3, 3, General.Female):addSkills { "gaoling", "qimei", "zhuijix" }
 Fk:loadTranslationTable{
   ["xuangongzhu"] = "宣公主",
   ["#xuangongzhu"] = "高陵公主",
@@ -139,7 +141,7 @@ Fk:loadTranslationTable{
   ["~xuangongzhu"] = "元凯，我去也……",
 }
 
-General:new(extension, "ol__simazhao", "jin", 3):addSkills { "choufa", "zhaoran", "chengwu" }  --"tuishi"
+General:new(extension, "ol__simazhao", "jin", 3):addSkills { "tuishi", "choufa", "zhaoran", "chengwu" }
 Fk:loadTranslationTable{
   ["ol__simazhao"] = "司马昭",
   ["#ol__simazhao"] = "晋文帝",
@@ -148,7 +150,7 @@ Fk:loadTranslationTable{
   ["~ol__simazhao"] = "司马三代，一梦成空……",
 }
 
-General:new(extension, "ol__wangyuanji", "jin", 3, 3, General.Female):addSkills { "yanxi" }  --"shiren"
+General:new(extension, "ol__wangyuanji", "jin", 3, 3, General.Female):addSkills { "shiren", "yanxi" }
 Fk:loadTranslationTable{
   ["ol__wangyuanji"] = "王元姬",
   ["#ol__wangyuanji"] = "文明皇后",

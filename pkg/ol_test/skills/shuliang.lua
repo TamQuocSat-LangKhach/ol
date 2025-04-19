@@ -4,10 +4,10 @@ local shuliang = fk.CreateSkill{
 
 Fk:loadTranslationTable{
   ["ol__shuliang"] = "输粮",
-  [":ol__shuliang"] = "每回合限一次，你可以使用或打出一张“粮”。结束阶段，你可以分配任意张“粮”，然后摸X张牌（X为获得“粮”的角色数）。",
+  [":ol__shuliang"] = "每回合限一次，你可以使用或打出一张“粮”。结束阶段，你可以将任意张“粮”分配给其他角色，然后摸X张牌（X为获得“粮”的角色数）。",
 
   ["#ol__shuliang"] = "输粮：你可以使用或打出一张“粮”",
-  ["#ol__shuliang-give"] = "输粮：你可以分配任意张“粮”，然后摸获得“粮”角色数的牌",
+  ["#ol__shuliang-give"] = "输粮：将任意张“粮”分配给其他角色，然后摸获得“粮”角色数的牌",
 
   ["$ol__shuliang1"] = "",
   ["$ol__shuliang2"] = "",
@@ -53,13 +53,13 @@ shuliang:addEffect(fk.EventPhaseStart, {
   anim_type = "support",
   can_trigger = function (self, event, target, player, data)
     return target == player and player:hasSkill(shuliang.name) and player.phase == Player.Finish and
-      #player:getPile("ol__lifeng_liang") > 0
+      #player:getPile("ol__lifeng_liang") > 0 and #player.room:getOtherPlayers(player, false) > 0
   end,
   on_cost = function (self, event, target, player, data)
     local room = player.room
     local result = room:askToYiji(player, {
       cards = player:getPile("ol__lifeng_liang"),
-      targets = room.alive_players,
+      targets = room:getOtherPlayers(player, false),
       skill_name = shuliang.name,
       min_num = 0,
       max_num = 3,

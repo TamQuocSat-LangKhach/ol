@@ -23,8 +23,8 @@ hedao:addEffect(fk.AfterDying, {
     room:setPlayerMark(player, "tianshu_max", 2)
   end,
 })
+
 hedao:addEffect(fk.GameStart, {
-  --FIXME
   can_refresh = function (self, event, target, player, data)
     return player:hasSkill(hedao.name)
   end,
