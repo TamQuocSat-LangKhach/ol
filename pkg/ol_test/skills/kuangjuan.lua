@@ -24,7 +24,7 @@ kuangjuan:addEffect("active", {
   end,
   card_filter = Util.FalseFunc,
   target_filter = function (self, player, to_select, selected, selected_cards)
-    return #selected == 0 and to_select ~= player
+    return #selected == 0 and player:getHandcardNum() ~= to_select:getHandcardNum()
   end,
   on_use = function(self, room, effect)
     local player = effect.from

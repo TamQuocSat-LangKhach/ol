@@ -58,20 +58,23 @@ local bianyu_spec = {
 bianyu:addEffect(fk.Damage, bianyu_spec)
 bianyu:addEffect(fk.Damaged, bianyu_spec)
 
-bianyu:addEffect(fk.AfterCardUseDeclared, {
+bianyu:addEffect(fk.PreCardUse, {
   can_refresh = function (self, event, target, player, data)
-    return target == player and data.card.type ~= Card.TypeBasic and
-      table.find(player:getCardIds("h"), function (id)
-        return Fk:getCardById(id):getMark("@@bianyu-inhand") > 0
-      end)
+    return target == player
   end,
   on_refresh = function (self, event, target, player, data)
-    for _, id in ipairs(player:getCardIds("h")) do
-      player.room:setCardMark(Fk:getCardById(id), "@@bianyu-inhand", 0)
+    if data.card:getMark("@@bianyu-inhand") > 0 then
+      data.extraUse = true
     end
-    player:filterHandcards()
+    if data.card.type ~= Card.TypeBasic then
+      for _, id in ipairs(player:getCardIds("h")) do
+        player.room:setCardMark(Fk:getCardById(id), "@@bianyu-inhand", 0)
+      end
+      player:filterHandcards()
+    end
   end,
 })
+
 bianyu:addEffect("filter", {
   mute = true,
   card_filter = function(self, card, player)
@@ -81,6 +84,7 @@ bianyu:addEffect("filter", {
     return Fk:cloneCard("slash", card.suit, card.number)
   end,
 })
+
 bianyu:addEffect("targetmod", {
   bypass_times = function(self, player, skill, scope, card, to)
     return card and card:getMark("@@bianyu-inhand") > 0
