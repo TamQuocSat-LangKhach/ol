@@ -32,13 +32,13 @@ kuizhu:addEffect(fk.EventPhaseEnd, {
         end
       end
     end, Player.HistoryPhase)
-    room:setPlayerMark(player, kuizhu.name, n)
+    room:setPlayerMark(player, "kuizhu", n)
     local success, dat = room:askToUseActiveSkill(player, {
       skill_name = "kuizhu_active",
       prompt = "#kuizhu-invoke",
       cancelable = true,
     })
-    room:setPlayerMark(player, kuizhu.name, 0)
+    room:setPlayerMark(player, "kuizhu", 0)
     if success and dat then
       local tos = dat.targets
       room:sortByAction(tos)
