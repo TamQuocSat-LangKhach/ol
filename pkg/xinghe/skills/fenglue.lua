@@ -68,7 +68,6 @@ fenglue:addEffect(fk.EventPhaseStart, {
 })
 fenglue:addEffect(fk.PindianResultConfirmed, {
   anim_type = "support",
-  events = {fk.PindianResultConfirmed},
   can_trigger = function(self, event, target, player, data)
     if player:hasSkill(fenglue.name) then
       if data.from == player then
