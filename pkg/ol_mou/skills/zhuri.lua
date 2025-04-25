@@ -16,7 +16,6 @@ Fk:loadTranslationTable{
 
 zhuri:addEffect(fk.EnterDying, {
   anim_type = "control",
-  events = {fk.EventPhaseEnd},
   can_trigger = function(self, event, target, player, data)
     if target == player and player:hasSkill(zhuri.name) and
       player.phase >= Player.Start and player.phase <= Player.Finish and not player:isKongcheng() then

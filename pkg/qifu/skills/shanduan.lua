@@ -2,7 +2,7 @@ local shanduan = fk.CreateSkill{
   name = "shanduan",
   tags = { Skill.Compulsory },
   dynamic_desc = function (self, player, lang)
-    local nums = player:getTableMark(shanduan.name)
+    local nums = player:getTableMark(self.name)
     for i = 1, 4, 1 do
       if player:getMark("shanduan"..i.."-turn") > 0 then
         table.insert(nums, player:getMark("shanduan"..i.."-turn"))

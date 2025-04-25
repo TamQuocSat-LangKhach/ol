@@ -16,7 +16,7 @@ Fk:loadTranslationTable{
 }
 
 liangyin:addEffect(fk.AfterCardsMove, {
-  events = {fk.AfterCardsMove},
+  anim_type = "control",
   can_trigger = function(self, event, target, player, data)
     if player:hasSkill(liangyin.name) and #player.room:getOtherPlayers(player, false) > 0 then
       local x, y = player:getMark("ol__liangyin1_record-turn"), player:getMark("ol__liangyin2_record-turn")

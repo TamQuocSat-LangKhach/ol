@@ -32,13 +32,14 @@ kuizhu:addEffect(fk.EventPhaseEnd, {
         end
       end
     end, Player.HistoryPhase)
-    room:setPlayerMark(player, "kuizhu", n)
     local success, dat = room:askToUseActiveSkill(player, {
       skill_name = "kuizhu_active",
       prompt = "#kuizhu-invoke",
       cancelable = true,
+      extra_data = {
+        num = n,
+      }
     })
-    room:setPlayerMark(player, "kuizhu", 0)
     if success and dat then
       local tos = dat.targets
       room:sortByAction(tos)
@@ -51,6 +52,7 @@ kuizhu:addEffect(fk.EventPhaseEnd, {
     player:broadcastSkillInvoke(kuizhu.name)
     local targets = event:getCostData(self).tos
     local choice = event:getCostData(self).choice
+    room:doIndicate(player, targets)
     if choice:startsWith("kuizhu_choice1") then
       room:notifySkillInvoked(player, kuizhu.name, "support")
       for _, p in ipairs(targets) do

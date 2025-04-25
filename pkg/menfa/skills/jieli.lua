@@ -16,7 +16,6 @@ Fk:loadTranslationTable{
 
 jieli:addEffect(fk.EventPhaseStart, {
   anim_type = "control",
-  events = {fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(jieli.name) and player.phase == Player.Finish and
       table.find(player.room.alive_players, function (p)

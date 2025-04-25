@@ -50,7 +50,6 @@ end
 
 yongzu:addEffect(fk.EventPhaseStart, {
   anim_type = "support",
-  events = {fk.EventPhaseStart},
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(yongzu.name) and player.phase == Player.Start and
       #player.room:getOtherPlayers(player, false) > 0
