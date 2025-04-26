@@ -19,7 +19,7 @@ Fk:loadTranslationTable{
 
 local liuhong = General:new(extension, "ol_js__liuhong", "qun", 4)
 liuhong:addSkills { "ol__chaozheng", "ol__shenchong", "ol__julian" }
-liuhong:addRelatedSkills { "m_feiyang", "m_feiyang" }
+liuhong:addRelatedSkills { "m_feiyang", "m_bahu" }
 Fk:loadTranslationTable{
   ["ol_js__liuhong"] = "闪刘宏",
   ["#ol_js__liuhong"] = "轧庭焚礼",

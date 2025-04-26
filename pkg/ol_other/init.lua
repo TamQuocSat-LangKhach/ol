@@ -261,7 +261,7 @@ Fk:loadTranslationTable{
 General:new(extension, "wuhushangjiang", "shu", 4):addSkills { "huyi" }
 Fk:loadTranslationTable{
   ["wuhushangjiang"] = "魂·五虎",
-  --["#wuhushangjiang"] = ""
+  ["#wuhushangjiang"] = "蜀汉之魂",  --称号出自官盗2025尊享
   --["illustrator:wuhushangjiang"] = "",
 
   --["~wuhushangjiang"] = "麦城残阳……洗长刀……",
@@ -273,7 +273,7 @@ Fk:loadTranslationTable{
 
 General:new(extension, "ol__caocao", "qun", 4):addSkills { "dingxi", "nengchen", "huojie" }
 Fk:loadTranslationTable{
-  ["ol__caocao"] = "忠曹操",
+  ["ol__caocao"] = "汉曹操",
   ["illustrator:ol__caocao"] = "凡果",
 
   ["~ol__caocao"] = "此征西将军曹侯之墓。",

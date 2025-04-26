@@ -6,17 +6,19 @@ local jijiang = fk.CreateSkill {
 Fk:loadTranslationTable {
   ["ol_ex__jijiang"] = "激将",
   [":ol_ex__jijiang"] = "主公技，当你需要使用或打出【杀】时，你可以令其他蜀势力角色选择是否打出一张【杀】（视为由你使用或打出）；"..
-  "每回合限一次，其他蜀势力角色于其回合外使用或打出【杀】时，可令你摸一张牌。",
+  "每回合限一次，其他蜀势力角色于其回合外使用或打出【杀】时，其可以令你摸一张牌。",
 
+  ["#ol_ex__jijiang"] = "激将：令其他蜀势力角色选择是否替你出【杀】",
   ["#ol_ex__jijiang-invoke"] = "激将：是否令 %src 摸一张牌？",
 
-  ["$ol_ex__jijiang_ol_ex__liushan1"] = "爱卿爱卿，快来护驾！",
-  ["$ol_ex__jijiang_ol_ex__liushan2"] = "将军快替我，拦下此贼！",
+  ["$ol_ex__jijiang1"] = "此战，有将军在，方可胜。",
+  ["$ol_ex__jijiang2"] = "蜀汉霸业，方需将军出战。",
 }
 
 jijiang:addEffect("viewas", {
   anim_type = "offensive",
   pattern = "slash",
+  prompt = "#ol_ex__jijiang",
   card_filter = Util.FalseFunc,
   view_as = function(self, player, cards)
     if #cards ~= 0 then return end
@@ -26,7 +28,7 @@ jijiang:addEffect("viewas", {
   end,
   before_use = function(self, player, use)
     local room = player.room
-    if #use.tos > 0 then
+    if #use.tos > 0 and not use.noIndicate then
       room:doIndicate(player, use.tos)
     end
 
@@ -64,27 +66,30 @@ jijiang:addEffect("viewas", {
   end,
 })
 
-local jijiang_spec = {
-  anim_type = "drawcard",
+local spec = {
+  anim_type = "support",
   can_trigger = function(self, event, target, player, data)
-    return player:hasSkill(jijiang.name) and data.card.trueName == "slash" and target ~= player and
-      target.kingdom == "shu" and target ~= player.room.current and not target.dead and
-      player:getMark("ol_ex__jijiang_draw-turn") == 0
+    return player:hasSkill(jijiang.name) and data.card.trueName == "slash" and
+      target ~= player and target.kingdom == "shu" and not target.dead and player.room.current ~= target and
+      player:usedEffectTimes("#ol_ex__jijiang_2_trig", Player.HistoryTurn) +
+      player:usedEffectTimes("#ol_ex__jijiang_3_trig", Player.HistoryTurn) == 0
   end,
   on_cost = function (self, event, target, player, data)
-    return player.room:askToSkillInvoke(target, {
+    local room = player.room
+    if room:askToSkillInvoke(target, {
       skill_name = jijiang.name,
       prompt = "#ol_ex__jijiang-invoke:"..player.id,
-    })
+    }) then
+      room:doIndicate(target, {player})
+      return true
+    end
   end,
   on_use = function(self, event, target, player, data)
-    local room = player.room
-    room:setPlayerMark(player, "ol_ex__jijiang_draw-turn", 1)
     player:drawCards(1, jijiang.name)
   end,
 }
 
-jijiang:addEffect(fk.CardUsing, jijiang_spec)
-jijiang:addEffect(fk.CardResponding, jijiang_spec)
+jijiang:addEffect(fk.CardUsing, spec)
+jijiang:addEffect(fk.CardResponding, spec)
 
 return jijiang

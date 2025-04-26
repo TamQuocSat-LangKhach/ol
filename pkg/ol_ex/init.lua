@@ -8,6 +8,30 @@ Fk:loadTranslationTable{
   ["ol_ex"] = "OL界",
 }
 
+General:new(extension, "ol_ex__caocao", "wei", 4):addSkills { "ex__jianxiong", "ol_ex__hujia" }
+Fk:loadTranslationTable{
+  ["ol_ex__caocao"] = "界曹操",
+  ["#ol_ex__caocao"] = "魏太祖",
+  ["illustrator:ol_ex__caocao"] = "凡果",
+
+  ["$ex__jianxiong_ol_ex__caocao1"] = "日月之行，若出其中。",
+  ["$ex__jianxiong_ol_ex__caocao2"] = "星汉灿烂，若出其里。",
+  ["~ol_ex__caocao"] = "心常叹怨，戚戚多悲……",
+}
+
+General:new(extension, "ol_ex__liubei", "shu", 4):addSkills { "ex__rende", "ol_ex__jijiang" }
+Fk:loadTranslationTable{
+  ["ol_ex__liubei"] = "界刘备",
+  ["#ol_ex__liubei"] = "汉昭烈帝",
+  ["illustrator:ol_ex__liubei"] = "凡果",
+  ["ol_ex__jijiang"] = "激将",
+  [":ol_ex__jijiang"] = "主公技，其他蜀势力角色可以在你需要时代替你使用或打出【杀】(视为由你使用或打出);每回合限一次，其他蜀势力角色于其回合外使用、打出或替你使用或打出【杀】时，其可以令你摸一张牌",
+
+  ["$ex__rende_ol_ex__liubei1"] = "仁爱之心，贤德之才。",
+  ["$ex__rende_ol_ex__liubei2"] = "以德服人，以仁待人。",
+  ["~ol_ex__liubei"] = "蜀汉重任，丞相请多担待……",
+}
+
 General:new(extension, "ol_ex__zhaoyun", "shu", 4):addSkills { "ol_ex__longdan", "ol_ex__yajiao" }
 Fk:loadTranslationTable{
   ["ol_ex__zhaoyun"] = "界赵云",
@@ -15,6 +39,17 @@ Fk:loadTranslationTable{
   ["illustrator:ol_ex__zhaoyun"] = "木美人",
 
   ["~ol_ex__zhaoyun"] = "伐逆寇，兴汉室，吾难忘之……",
+}
+
+General:new(extension, "ol_ex__sunquan", "wu", 4):addSkills { "ex__zhiheng", "ol_ex__jiuyuan" }
+Fk:loadTranslationTable{
+  ["ol_ex__sunquan"] = "界孙权",
+  ["#ol_ex__sunquan"] = "东吴大帝",
+  ["illustrator:ol_ex__sunquan"] = "凡果",
+
+  ["$ex__zhiheng_ol_ex__sunquan1"] = "三思而行，游刃有余。",
+  ["$ex__zhiheng_ol_ex__sunquan2"] = "制衡联合，稳而不乱。",
+  ["~ol_ex__sunquan"] = "哥哥，汝之所托我尽力了……",
 }
 
 local lvmeng = General:new(extension, "ol_ex__lvmeng", "wu", 4)
@@ -45,7 +80,7 @@ Fk:loadTranslationTable{
 General:new(extension, "ol_ex__xiahouyuan", "wei", 4):addSkills { "ol_ex__shensu", "shebian" }
 Fk:loadTranslationTable{
   ["ol_ex__xiahouyuan"] = "界夏侯渊",
-  ["#ol_ex__xiahouyuan"] = "疾行的猎豹",
+  ["#ol_ex__xiahouyuan"] = "虎步关右",
   ["illustrator:ol_ex__xiahouyuan"] = "李秀森",
 
   ["~ol_ex__xiahouyuan"] = "我的速度，还是不够……",
@@ -72,7 +107,7 @@ Fk:loadTranslationTable{
 General:new(extension, "ol_ex__weiyan", "shu", 4):addSkills { "ol_ex__kuanggu", "ol_ex__qimou" }
 Fk:loadTranslationTable{
   ["ol_ex__weiyan"] = "界魏延",
-  ["#ol_ex__weiyan"] = "嗜血的独狼",
+  ["#ol_ex__weiyan"] = "子午奇谋",
   ["illustrator:ol_ex__weiyan"] = "王强",
 
   ["~ol_ex__weiyan"] = "这次失败，意料之中……",
@@ -81,7 +116,7 @@ Fk:loadTranslationTable{
 General:new(extension, "ol_ex__xiaoqiao", "wu", 3, 3, General.Female):addSkills { "ol_ex__tianxiang", "ol_ex__hongyan", "ol_ex__piaoling" }
 Fk:loadTranslationTable{
   ["ol_ex__xiaoqiao"] = "界小乔",
-  ["#ol_ex__xiaoqiao"] = "矫情之花",
+  ["#ol_ex__xiaoqiao"] = "仙姿玉质",
   ["illustrator:ol_ex__xiaoqiao"] = "王强",
 
   ["~ol_ex__xiaoqiao"] = "同心而离居，忧伤以终老……",
@@ -99,7 +134,7 @@ Fk:loadTranslationTable{
 General:new(extension, "ol_ex__zhangjiao", "qun", 3):addSkills { "ol_ex__leiji", "ol_ex__guidao", "ol_ex__huangtian" }
 Fk:loadTranslationTable{
   ["ol_ex__zhangjiao"] = "界张角",
-  ["#ol_ex__zhangjiao"] = "天公将军",
+  ["#ol_ex__zhangjiao"] = "太平教主",
   ["illustrator:ol_ex__zhangjiao"] = "青骑士",
 
   ["~ol_ex__zhangjiao"] = "天书无效，人心难聚……",
@@ -110,7 +145,7 @@ yuji:addSkills { "ol_ex__guhuo" }
 yuji:addRelatedSkills { "ol_ex__chanyuan" }
 Fk:loadTranslationTable{
   ["ol_ex__yuji"] = "界于吉",
-  ["#ol_ex__yuji"] = "太平道人",
+  ["#ol_ex__yuji"] = "缠怨索魂",
   ["illustrator:ol_ex__yuji"] = "波子",
 
   ["~ol_ex__yuji"] = "符水失效，此病难医……",
@@ -119,7 +154,7 @@ Fk:loadTranslationTable{
 General:new(extension, "ol_ex__dianwei", "wei", 4):addSkills { "ol_ex__qiangxi", "ninge" }
 Fk:loadTranslationTable{
   ["ol_ex__dianwei"] = "界典韦",
-  ["#ol_ex__dianwei"] = "古之恶来",
+  ["#ol_ex__dianwei"] = "临危横贯",
   ["illustrator:ol_ex__dianwei"] = "君桓文化",
 
   ["~ol_ex__dianwei"] = "为将者，怎可徒手而亡？",
@@ -128,7 +163,7 @@ Fk:loadTranslationTable{
 General:new(extension, "ol_ex__xunyu", "wei", 3):addSkills { "quhu", "ol_ex__jieming" }
 Fk:loadTranslationTable{
   ["ol_ex__xunyu"] = "界荀彧",
-  ["#ol_ex__xunyu"] = "王佐之才",
+  ["#ol_ex__xunyu"] = "万岁亭侯",
   ["illustrator:ol_ex__xunyu"] = "罔両",
 
   ["$quhu_ol_ex__xunyu1"] = "两虎相斗，旁观成败。",
@@ -139,7 +174,7 @@ Fk:loadTranslationTable{
 General:new(extension, "ol_ex__wolong", "shu", 3):addSkills { "bazhen", "ol_ex__huoji", "ol_ex__kanpo", "cangzhuo" }
 Fk:loadTranslationTable{
   ["ol_ex__wolong"] = "界卧龙诸葛亮",
-  ["#ol_ex__wolong"] = "卧龙",
+  ["#ol_ex__wolong"] = "隆中对",
   ["illustrator:ol_ex__wolong"] = "李秀森",
 
   ["$bazhen_ol_ex__wolong1"] = "八阵连心，日月同辉。",
@@ -152,7 +187,7 @@ pangtong:addSkills { "ol_ex__lianhuan", "ol_ex__niepan" }
 pangtong:addRelatedSkills { "bazhen", "ol_ex__huoji", "ol_ex__kanpo" }
 Fk:loadTranslationTable{
   ["ol_ex__pangtong"] = "界庞统",
-  ["#ol_ex__pangtong"] = "凤雏",
+  ["#ol_ex__pangtong"] = "凤雏高翔",
   ["illustrator:ol_ex__pangtong"] = "MUMU",
 
   ["$bazhen_ol_ex__pangtong1"] = "八卦四象，阴阳运转。",
@@ -167,7 +202,7 @@ Fk:loadTranslationTable{
 General:new(extension, "ol_ex__taishici", "wu", 4):addSkills { "tianyi", "hanzhan" }
 Fk:loadTranslationTable{
   ["ol_ex__taishici"] = "界太史慈",
-  ["#ol_ex__taishici"] = "笃烈之士",
+  ["#ol_ex__taishici"] = "信义笃烈",
   ["illustrator:ol_ex__taishici"] = "biou09",
 
   ["$tianyi_ol_ex__taishici1"] = "天降大任，速战解围！",
@@ -178,7 +213,7 @@ Fk:loadTranslationTable{
 General:new(extension, "ol_ex__pangde", "qun", 4):addSkills { "mashu", "ol_ex__jianchu" }
 Fk:loadTranslationTable{
   ["ol_ex__pangde"] = "界庞德",
-  ["#ol_ex__pangde"] = "人马一体",
+  ["#ol_ex__pangde"] = "关门亭侯",
   ["illustrator:ol_ex__pangde"] = "YanBai",
 
   ["~ol_ex__pangde"] = "人亡马倒，命之所归……",
@@ -187,7 +222,7 @@ Fk:loadTranslationTable{
 General:new(extension, "ol_ex__yanliangwenchou", "qun", 4):addSkills { "ol_ex__shuangxiong" }
 Fk:loadTranslationTable{
   ["ol_ex__yanliangwenchou"] = "界颜良文丑",
-  ["#ol_ex__yanliangwenchou"] = "虎狼兄弟",
+  ["#ol_ex__yanliangwenchou"] = "二夫之勇",
   ["illustrator:ol_ex__yanliangwenchou"] = "梦回唐朝",
 
   ["~ol_ex__yanliangwenchou"] = "双雄皆陨，徒隆武圣之名……",
@@ -196,7 +231,7 @@ Fk:loadTranslationTable{
 General:new(extension, "ol_ex__yuanshao", "qun", 4):addSkills { "ol_ex__luanji", "ol_ex__xueyi" }
 Fk:loadTranslationTable{
   ["ol_ex__yuanshao"] = "界袁绍",
-  ["#ol_ex__yuanshao"] = "高贵的名门",
+  ["#ol_ex__yuanshao"] = "义军盟主",
   ["illustrator:ol_ex__yuanshao"] = "罔両",
 
   ["~ol_ex__yuanshao"] = "孟德此计，防不胜防……",
@@ -205,7 +240,7 @@ Fk:loadTranslationTable{
 General:new(extension, "ol_ex__xuhuang", "wei", 4):addSkills { "ol_ex__duanliang", "ol_ex__jiezi" }
 Fk:loadTranslationTable{
   ["ol_ex__xuhuang"] = "界徐晃",
-  ["#ol_ex__xuhuang"] = "周亚夫之风",
+  ["#ol_ex__xuhuang"] = "功逾孙子右",
   ["illustrator:ol_ex__xuhuang"] = "biou09",
 
   ["~ol_ex__xuhuang"] = "亚夫易老，李广难封……",
@@ -214,7 +249,7 @@ Fk:loadTranslationTable{
 General:new(extension, "ol_ex__zhurong", "shu", 4, 4, General.Female):addSkills { "juxiang", "lieren", "changbiao" }
 Fk:loadTranslationTable{
   ["ol_ex__zhurong"] = "界祝融",
-  ["#ol_ex__zhurong"] = "野性的女王",
+  ["#ol_ex__zhurong"] = "火神血裔",
   ["illustrator:ol_ex__zhurong"] = "匠人绘",
 
   ["$juxiang_ol_ex__zhurong1"] = "巨象冲锋，踏平敌阵！",
@@ -227,7 +262,7 @@ Fk:loadTranslationTable{
 General:new(extension, "ol_ex__menghuo", "shu", 4):addSkills { "huoshou", "ol_ex__zaiqi" }
 Fk:loadTranslationTable{
   ["ol_ex__menghuo"] = "界孟获",
-  ["#ol_ex__menghuo"] = "南蛮王",
+  ["#ol_ex__menghuo"] = "扫坛蛮王",
   ["illustrator:ol_ex__menghuo"] = "磐蒲",
 
   ["$huoshou_ol_ex__menghuo1"] = "啸据哀牢，闻祸而喜！",
@@ -238,7 +273,7 @@ Fk:loadTranslationTable{
 General:new(extension, "ol_ex__sunjian", "wu", 4, 5):addSkills { "yinghun", "wulie" }
 Fk:loadTranslationTable{
   ["ol_ex__sunjian"] = "界孙坚",
-  ["#ol_ex__sunjian"] = "武烈帝",
+  ["#ol_ex__sunjian"] = "忠壮之烈",
   ["illustrator:ol_ex__sunjian"] = "匠人绘",
 
   ["$yinghun_ol_ex__sunjian1"] = "提刀奔走，灭敌不休。",
@@ -249,7 +284,7 @@ Fk:loadTranslationTable{
 General:new(extension, "ol_ex__lusu", "wu", 3):addSkills { "ol_ex__haoshi", "ol_ex__dimeng" }
 Fk:loadTranslationTable{
   ["ol_ex__lusu"] = "界鲁肃",
-  ["#ol_ex__lusu"] = "独断的外交家",
+  ["#ol_ex__lusu"] = "股肱腹心",
   ["illustrator:ol_ex__lusu"] = "游漫美绘",
 
   ["~ol_ex__lusu"] = "一生为国，纵死无憾……",
@@ -258,7 +293,7 @@ Fk:loadTranslationTable{
 General:new(extension, "ol_ex__dongzhuo", "qun", 8):addSkills { "ol_ex__jiuchi", "roulin", "benghuai", "ol_ex__baonue" }
 Fk:loadTranslationTable{
   ["ol_ex__dongzhuo"] = "界董卓",
-  ["#ol_ex__dongzhuo"] = "魔王",
+  ["#ol_ex__dongzhuo"] = "祸乱朝纲",
   ["illustrator:ol_ex__dongzhuo"] = "磐蒲",
 
   ["$roulin_ol_ex__dongzhuo1"] = "醇酒美人，幸甚乐甚！",
@@ -271,7 +306,7 @@ Fk:loadTranslationTable{
 General:new(extension, "ol_ex__jiaxu", "qun", 3):addSkills { "ol_ex__wansha", "ol_ex__luanwu", "ol_ex__weimu" }
 Fk:loadTranslationTable{
   ["ol_ex__jiaxu"] = "界贾诩",
-  ["#ol_ex__jiaxu"] = "冷酷的毒士",
+  ["#ol_ex__jiaxu"] = "洞悉先机者",
   ["illustrator:ol_ex__jiaxu"] = "游漫美绘",
 
   ["~ol_ex__jiaxu"] = "此劫，我亦有所算……",
@@ -280,7 +315,7 @@ Fk:loadTranslationTable{
 General:new(extension, "ol_ex__zhanghe", "wei", 4):addSkills { "ol_ex__qiaobian" }
 Fk:loadTranslationTable{
   ["ol_ex__zhanghe"] = "界张郃",
-  ["#ol_ex__zhanghe"] = "料敌机先",
+  ["#ol_ex__zhanghe"] = "识变善营",
   ["illustrator:ol_ex__zhanghe"] = "君桓文化",
 
   ["~ol_ex__zhanghe"] = "何处之流矢……",
@@ -291,7 +326,7 @@ dengai:addSkills { "ol_ex__tuntian", "ol_ex__zaoxian" }
 dengai:addRelatedSkill("ol_ex__jixi")
 Fk:loadTranslationTable{
   ["ol_ex__dengai"] = "界邓艾",
-  ["#ol_ex__dengai"] = "矫然的壮士",
+  ["#ol_ex__dengai"] = "壮士解腕",
   ["illustrator:ol_ex__dengai"] = "君桓文化",
 
   ["~ol_ex__dengai"] = "钟会！你为何害我！",
@@ -302,7 +337,7 @@ jiangwei:addSkills { "ol_ex__tiaoxin", "ol_ex__zhiji" }
 jiangwei:addRelatedSkills { "ex__guanxing" }
 Fk:loadTranslationTable{
   ["ol_ex__jiangwei"] = "界姜维",
-  ["#ol_ex__jiangwei"] = "龙的衣钵",
+  ["#ol_ex__jiangwei"] = "声畅华夏",
   ["illustrator:ol_ex__jiangwei"] = "游漫美绘",
 
   ["$ex__guanxing_ol_ex__jiangwei1"] = "星象相弦，此乃吉兆！",
@@ -315,11 +350,13 @@ liushan:addSkills { "xiangle", "ol_ex__fangquan", "ol_ex__ruoyu" }
 liushan:addRelatedSkills { "ol_ex__jijiang", "sishu" }
 Fk:loadTranslationTable{
   ["ol_ex__liushan"] = "界刘禅",
-  ["#ol_ex__liushan"] = "无为的真命主",
+  ["#ol_ex__liushan"] = "蜀后主",
   ["illustrator:ol_ex__liushan"] = "拉布拉卡",
 
   ["$xiangle_ol_ex__liushan1"] = "美好的日子，应该好好享受。",
   ["$xiangle_ol_ex__liushan2"] = "嘿嘿嘿，还是玩耍快乐。",
+  ["$ol_ex__jijiang_ol_ex__liushan1"] = "爱卿爱卿，快来护驾！",
+  ["$ol_ex__jijiang_ol_ex__liushan2"] = "将军快替我，拦下此贼！",
   ["~ol_ex__liushan"] = "将军英勇，我……我投降……",
 }
 
@@ -328,7 +365,7 @@ sunce:addSkills { "ol_ex__jiang", "ol_ex__hunzi", "ol_ex__zhiba" }
 sunce:addRelatedSkills{ "ex__yingzi", "yinghun" }
 Fk:loadTranslationTable{
   ["ol_ex__sunce"] = "界孙策",
-  ["#ol_ex__sunce"] = "江东的小霸王",
+  ["#ol_ex__sunce"] = "长沙桓王",
   ["illustrator:ol_ex__sunce"] = "李敏然",
 
   ["$ex__yingzi_ol_ex__sunce1"] = "得公瑾辅助，策必当一战！",
@@ -341,7 +378,7 @@ Fk:loadTranslationTable{
 General:new(extension, "ol_ex__zhangzhaozhanghong", "wu", 3):addSkills { "ol_ex__zhijian", "ol_ex__guzheng" }
 Fk:loadTranslationTable{
   ["ol_ex__zhangzhaozhanghong"] = "界张昭张纮",
-  ["#ol_ex__zhangzhaozhanghong"] = "经天纬地",
+  ["#ol_ex__zhangzhaozhanghong"] = "内事之托",
   ["designer:ol_ex__zhangzhaozhanghong"] = "玄蝶既白",
   ["illustrator:ol_ex__zhangzhaozhanghong"] = "君桓文化",
 
@@ -351,7 +388,7 @@ Fk:loadTranslationTable{
 General:new(extension, "ol_ex__zuoci", "qun", 3):addSkills { "ol_ex__huashen", "ol_ex__xinsheng" }
 Fk:loadTranslationTable{
   ["ol_ex__zuoci"] = "界左慈",
-  ["#ol_ex__zuoci"] = "迷之仙人",
+  ["#ol_ex__zuoci"] = "羽化飞升",
   ["illustrator:ol_ex__zuoci"] = "波子",
 
   ["~ol_ex__zuoci"] = "红尘看破，驾鹤仙升……",
@@ -360,7 +397,7 @@ Fk:loadTranslationTable{
 General:new(extension, "ol_ex__caiwenji", "qun", 3, 3, General.Female):addSkills { "ol_ex__beige", "duanchang" }
 Fk:loadTranslationTable{
   ["ol_ex__caiwenji"] = "界蔡文姬",
-  ["#ol_ex__caiwenji"] = "异乡的孤女",
+  ["#ol_ex__caiwenji"] = "至柔动刚",
   ["illustrator:ol_ex__caiwenji"] = "罔両",
 
   ["$duanchang_ol_ex__caiwenji1"] = "红颜留塞外，愁思欲断肠。",
