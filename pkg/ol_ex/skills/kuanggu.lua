@@ -13,7 +13,7 @@ Fk:loadTranslationTable {
 kuanggu:addEffect(fk.Damage, {
   anim_type = "drawcard",
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(kuanggu.name) and (data.extra_data or {}).kuanggucheck
+    return target == player and player:hasSkill(kuanggu.name) and (data.extra_data or {}).kuangguCheck
   end,
   trigger_times = function(self, event, target, player, data)
     return data.damage
@@ -35,7 +35,7 @@ kuanggu:addEffect(fk.Damage, {
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    if event:getCostData(self) == "recover" then
+    if event:getCostData(self).choice == "recover" then
       room:recover{
         who = player,
         num = 1,
@@ -50,13 +50,13 @@ kuanggu:addEffect(fk.Damage, {
 
 kuanggu:addEffect(fk.BeforeHpChanged, {
   can_refresh = function(self, event, target, player, data)
-    if data.damageEvent and player == data.damageEvent.from and player:distanceTo(target) < 2 and not target:isRemoved() then
+    if data.damageEvent and player == data.damageEvent.from and player:compareDistance(target, 2, "<") then
       return true
     end
   end,
   on_refresh = function(self, event, target, player, data)
     data.damageEvent.extra_data = data.damageEvent.extra_data or {}
-    data.damageEvent.extra_data.kuanggucheck = true
+    data.damageEvent.extra_data.kuangguCheck = true
   end,
 })
 
