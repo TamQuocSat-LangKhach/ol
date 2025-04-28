@@ -300,4 +300,12 @@ Fk:loadTranslationTable{
   ["nianshou"] = "普通年兽",
 }
 
+General:new(extension, "zhangjiaozhangbaozhangliang", "qun", 4):addSkills { "tiangong", "digong", "rengong" }
+Fk:loadTranslationTable{
+  ["zhangjiaozhangbaozhangliang"] = "张角三兄弟",
+  --["illustrator:zhangjiaozhangbaozhangliang"] = "",
+
+  ["~zhangjiaozhangbaozhangliang"] = "大哥二哥，为何当生而不生，当养所不养……",
+}
+
 return extension

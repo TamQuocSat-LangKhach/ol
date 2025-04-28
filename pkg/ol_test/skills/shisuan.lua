@@ -11,8 +11,8 @@ Fk:loadTranslationTable{
   ["shisuan_give"] = "交给 %src 装备区一张牌",
   ["#shisuan-give"] = "蓍算：请交给 %src 装备区一张牌",
 
-  ["$shisuan1"] = "",
-  ["$shisuan2"] = "",
+  ["$shisuan1"] = "匹夫，我早就知道你不是好人！",
+  ["$shisuan2"] = "原来卦象上说的小人就是你！",
 }
 
 shisuan:addEffect(fk.Damaged, {

@@ -4,7 +4,7 @@ local sibing = fk.CreateSkill {
 
 Fk:loadTranslationTable{
   ["sibing"] = "司兵",
-  [":sibing"] = "当你使用伤害牌指定唯一目标时，你可以弃置任意张红色牌，目标需弃置等量红色手牌，否则其不能响应此牌；"..
+  [":sibing"] = "每回合限一次，当你使用伤害牌指定唯一目标时，你可以弃置任意张红色牌，目标需弃置等量红色手牌，否则其不能响应此牌；"..
   "以你为目标的伤害牌结算完成后，若未对你造成伤害，你可以弃置一张黑色牌，视为使用一张【杀】。",
 
   ["#sibing1-invoke"] = "司兵：你可以弃置任意张红色牌，令 %dest 需弃置等量红色手牌，否则其不能响应此牌",
@@ -17,7 +17,8 @@ sibing:addEffect(fk.TargetSpecifying, {
   anim_type = "offensive",
   can_trigger = function (self, event, target, player, data)
     return target == player and player:hasSkill(sibing.name) and
-      data.card.is_damage_card and data:isOnlyTarget(data.to) and not player.dead
+      data.card.is_damage_card and data:isOnlyTarget(data.to) and not player.dead and
+      player:usedEffectTimes(self.name, Player.HistoryTurn) == 0
   end,
   on_cost = function (self, event, target, player, data)
     local room = player.room

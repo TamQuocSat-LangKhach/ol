@@ -10,8 +10,8 @@ Fk:loadTranslationTable{
   ["#zonglue"] = "纵掠：你可以将一张牌当【杀】使用",
   ["#zonglue-invoke"] = "纵掠：是否获得 %dest 每个区域各一张牌？",
 
-  ["$zonglue1"] = "",
-  ["$zonglue2"] = "",
+  ["$zonglue1"] = "坑蒙拐骗不算本事，强取豪夺才痛快！",
+  ["$zonglue2"] = "钱、粮、金银珠宝，统统给我带走！",
 }
 
 local U = require "packages/utility/utility"

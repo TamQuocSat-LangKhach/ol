@@ -5,6 +5,7 @@ extension:loadSkillSkelsByPath("./packages/ol/pkg/ol_test/skills")
 
 Fk:loadTranslationTable{
   ["ol_test"] = "OL-测试服",
+  ["ol_evil"] = "魔",
 }
 
 General:new(extension, "dongtuna", "qun", 4):addSkills { "jianman" }
@@ -46,7 +47,7 @@ Fk:loadTranslationTable{
   ["ol__niufu"] = "牛辅",
   --["#ol__niufu"] = "",
 
-  ["~ol__niufu"] = "",
+  ["~ol__niufu"] = "哎呦，我的腰呀！",
 }
 
 General:new(extension, "ol__liuzhang", "qun", 3):addSkills { "fengwei", "zonghu" }
@@ -112,10 +113,10 @@ Fk:loadTranslationTable{
   ["ol__miheng"] = "祢衡",
   --["#ol__miheng"] = "",
 
-  ["~ol__miheng"] = "",
+  ["~ol__miheng"] = "天地虽大，难容我狂……",
 }
 
-General:new(extension, "ol__zhangmancheng", "qun", 5).hidden = true
+General:new(extension, "ol__zhangmancheng", "qun", 5):addSkills { "kuangxin", "leishi" }
 Fk:loadTranslationTable{
   ["ol__zhangmancheng"] = "张曼成",
   --["#ol__zhangmancheng"] = "",
@@ -123,12 +124,22 @@ Fk:loadTranslationTable{
   ["~ol__zhangmancheng"] = "",
 }
 
-General:new(extension, "ol__guanhai", "qun", 4).hidden = true
+General:new(extension, "ol__guanhai", "qun", 4):addSkills { "xiewei", "youque" }
 Fk:loadTranslationTable{
   ["ol__guanhai"] = "管亥",
   --["#ol__guanhai"] = "",
 
   ["~ol__guanhai"] = "",
+}
+
+local simayi = General:new(extension, "ol_evil__simayi", "wei", 3)
+simayi:addSkills { "guifu", "moubian" }
+simayi:addRelatedSkills { "zhouxi" }
+Fk:loadTranslationTable{
+  ["ol_evil__simayi"] = "魔司马懿",
+  ["#ol_evil__simayi"] = "无天的魔狼",
+
+  ["~ol_evil__simayi"] = "哈哈哈哈哈哈，天数…我还是输给了天数？",
 }
 
 return extension

@@ -4,11 +4,11 @@ local shanjia = fk.CreateSkill{
 
 Fk:loadTranslationTable{
   ["ol__shanjia"] = "缮甲",
-  [":ol__shanjia"] = "游戏开始时，你获得3个“败甲”标记。当你失去装备区内一张装备牌后，你移去1个“败甲”。出牌阶段限一次，你可以摸三张牌，"..
-  "并可以使用一张【杀】。然后你此阶段使用下X张手牌时，你弃置一张牌（X为“败甲”数）。若如此做，此阶段结束时，若你此阶段未因“败甲”弃置过牌或"..
+  [":ol__shanjia"] = "游戏开始时，你获得3个“损”标记。当你失去装备牌后，你移去1个“损”。出牌阶段限一次，你可以摸三张牌，"..
+  "并可以使用一张【杀】。然后你此阶段使用下X张手牌时，你弃置一张牌（X为“损”数）。若如此做，此阶段结束时，若你此阶段未因“缮甲”弃置过牌或"..
   "仅弃置过装备牌，你可以视为使用一张无距离限制的【杀】。",
 
-  ["@shanjia"] = "败甲",
+  ["@ol__shanjia"] = "损",
   ["#ol__shanjia"] = "缮甲：你可以摸三张牌，使用一张【杀】",
   ["#ol__shanjia-use"] = "缮甲：你可以使用一张【杀】",
   ["#ol__shanjia-slash"] = "缮甲：你可以视为使用一张无距离限制的【杀】",
@@ -18,7 +18,7 @@ Fk:loadTranslationTable{
 }
 
 shanjia:addLoseEffect(function (self, player, is_death)
-  player.room:setPlayerMark(player, "@shanjia", 0)
+  player.room:setPlayerMark(player, "@ol__shanjia", 0)
 end)
 
 shanjia:addEffect("active", {
@@ -48,8 +48,8 @@ shanjia:addEffect("active", {
       room:useCard(use)
     end
     if player.dead then return end
-    if not player.dead and player:getMark("@shanjia") > 0 then
-      room:setPlayerMark(player, "ol__shanjia_using-phase", player:getMark("@shanjia"))
+    if not player.dead and player:getMark("@ol__shanjia") > 0 then
+      room:setPlayerMark(player, "ol__shanjia_using-phase", player:getMark("@ol__shanjia"))
     end
   end,
 })
@@ -59,7 +59,7 @@ shanjia:addEffect(fk.GameStart, {
   end,
   on_cost = Util.TrueFunc,
   on_use = function (self, event, target, player, data)
-    player.room:addPlayerMark(player, "@shanjia", 3)
+    player.room:addPlayerMark(player, "@ol__shanjia", 3)
   end,
 })
 shanjia:addEffect(fk.AfterCardsMove, {
@@ -70,7 +70,7 @@ shanjia:addEffect(fk.AfterCardsMove, {
     for _, move in ipairs(data) do
       if move.from == player then
         for _, info in ipairs(move.moveInfo) do
-          if info.fromArea == Card.PlayerEquip then
+          if info.fromArea == Card.PlayerHand or info.fromArea == Card.PlayerEquip then
             i = i + 1
           end
         end
@@ -79,11 +79,11 @@ shanjia:addEffect(fk.AfterCardsMove, {
     return i
   end,
   can_trigger = function(self, event, target, player, data)
-    if player:getMark("@shanjia") > 0 then
+    if player:getMark("@ol__shanjia") > 0 then
       for _, move in ipairs(data) do
         if move.from == player then
           for _, info in ipairs(move.moveInfo) do
-            if info.fromArea == Card.PlayerEquip then
+            if info.fromArea == Card.PlayerHand or info.fromArea == Card.PlayerEquip then
               return true
             end
           end
@@ -93,7 +93,7 @@ shanjia:addEffect(fk.AfterCardsMove, {
   end,
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
-    player.room:removePlayerMark(player, "@shanjia", 1)
+    player.room:removePlayerMark(player, "@ol__shanjia", 1)
   end,
 })
 shanjia:addEffect(fk.CardUsing, {

@@ -326,6 +326,56 @@ Fk:loadTranslationTable{
   "<b>武器技能</b>：锁定技，当你使用【杀】指定一名角色为目标后，该角色不能使用点数小于此【杀】的【闪】以抵消此【杀】。",
 }
 
+local thunder_god_help = fk.CreateCard{
+  name = "&thunder_god_help",
+  type = Card.TypeTrick,
+  skill = "thunder_god_help_skill",
+  multiple_targets = true,
+}
+extension:addCardSpec("thunder_god_help", Card.Spade, 8)
+extension:addCardSpec("thunder_god_help", Card.Heart, 8)
+extension:addCardSpec("thunder_god_help", Card.Club, 8)
+extension:addCardSpec("thunder_god_help", Card.Diamond, 8)
+Fk:loadTranslationTable{
+  ["thunder_god_help"] = "雷公助我",
+  [":thunder_god_help"] = "锦囊牌<br/>"..
+  "<b>时机</b>：出牌阶段<br/>"..
+  "<b>目标</b>：所有角色<br/>"..
+  "<b>效果</b>：目标角色依次进行一次【闪电】判定，然后每有目标角色因此受到伤害，你摸一张牌。",
+
+  ["thunder_god_help_skill"] = "雷公助我",
+  ["#thunder_god_help_skill"] = "所有角色进行【闪电】判定，你摸因此造成伤害次数的牌",
+}
+
+local sharing_risk = fk.CreateCard{
+  name = "&sharing_risk",
+  type = Card.TypeTrick,
+  skill = "sharing_risk_skill",
+  multiple_targets = true,
+}
+extension:addCardSpec("sharing_risk", Card.Spade, 6)
+extension:addCardSpec("sharing_risk", Card.Heart, 6)
+extension:addCardSpec("sharing_risk", Card.Club, 6)
+extension:addCardSpec("sharing_risk", Card.Diamond, 6)
+Fk:loadTranslationTable{
+  ["sharing_risk"] = "有难同当",
+  [":sharing_risk"] = "锦囊牌<br/>"..
+  "<b>时机</b>：出牌阶段<br/>"..
+  "<b>目标</b>：所有角色<br/>"..
+  "<b>效果</b>：目标角色横置武将牌。",
+
+  ["sharing_risk_skill"] = "有难同当",
+  ["#sharing_risk_skill"] = "所有角色横置武将牌",
+}
+
+--两肋插刀 ♣10 ♠10 ♦10 ♥10
+--劝酒 ♥Q ♣Q ♠Q
+--落井下石 ♥7
+--兄弟齐心 ♠J ♦J
+--生死与共 ♦4 ♠4
+--红运当头 ♣5 ♦5 ♠5
+--无天无界 ♥K
+
 extension:loadCardSkels {
   honey_trap,
   daggar_in_smile,
@@ -357,6 +407,9 @@ extension:loadCardSkels {
   py_mirror,
 
   sizhao_sword,
+
+  thunder_god_help,
+  sharing_risk,
 }
 
 return extension

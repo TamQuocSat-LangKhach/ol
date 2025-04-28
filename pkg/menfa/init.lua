@@ -334,9 +334,7 @@ Fk:loadTranslationTable{
   ["~olz__yangxiu"] = "",
 }
 
-local yangzhong = General:new(extension, "olz__yangzhongh", "qun", 4)
-yangzhong:addSkills { "quhuo" }
-yangzhong.hidden = true
+General:new(extension, "olz__yangzhongh", "qun", 4):addSkills { "juetu", "kudu", "quhuo" }
 Fk:loadTranslationTable{
   ["olz__yangzhongh"] = "族杨众",
   --["#olz__yangzhongh"] = "",

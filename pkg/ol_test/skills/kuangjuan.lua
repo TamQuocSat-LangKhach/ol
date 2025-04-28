@@ -9,6 +9,9 @@ Fk:loadTranslationTable{
 
   ["#kuangjuan"] = "狂狷：选择一名角色，将手牌调整至与其相同",
   ["@@kuangjuan-inhand-turn"] = "狂狷",
+
+  ["$kuangjuan1"] = "规矩？那是给庸人定的！",
+  ["$kuangjuan2"] = "哈哈哈哈，世人皆迷，唯我独醒！",
 }
 
 kuangjuan:addEffect("active", {

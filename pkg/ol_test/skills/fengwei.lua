@@ -21,12 +21,13 @@ fengwei:addEffect(fk.RoundStart, {
   end,
   on_use = function (self, event, target, player, data)
     local room = player.room
-    local choice = room:askToChoice(player, {
-      choices = {"1", "2", "3", "4"},
+    local n = room:askToNumber(player, {
       skill_name = fengwei.name,
       prompt = "#fengwei-choice",
+      min = 1,
+      max = 4,
     })
-    player:drawCards(tonumber(choice), fengwei.name, "top", "@@fengwei-inhand-round")
+    player:drawCards(n, fengwei.name, "top", "@@fengwei-inhand-round")
   end,
 })
 fengwei:addEffect(fk.DamageInflicted, {
