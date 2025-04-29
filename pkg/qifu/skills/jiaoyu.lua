@@ -86,16 +86,18 @@ jiaoyu:addEffect(fk.DamageInflicted, {
 })
 jiaoyu:addEffect("prohibit", {
   prohibit_use = function(self, player, card)
-    if player:getMark("jiaoyu_self_prohibit-phase") > 0 then
-      return card and card.color ~= player:getMark("@jiaoyu-round")
-    else
-      local src = table.find(Fk:currentRoom().alive_players, function (p)
-        return p:getMark("jiaoyu_prohibit-phase") > 0
-      end)
-      if src and src ~= player then
-        return table.find(src:getCardIds("e"), function (id)
-          return card:compareColorWith(Fk:getCardById(id))
+    if card then
+      if player:getMark("jiaoyu_self_prohibit-phase") > 0 then
+        return card:getColorString() ~= player:getMark("@jiaoyu-round")
+      else
+        local src = table.find(Fk:currentRoom().alive_players, function (p)
+          return p:getMark("jiaoyu_prohibit-phase") > 0
         end)
+        if src and src ~= player then
+          return table.find(src:getCardIds("e"), function (id)
+            return card:compareColorWith(Fk:getCardById(id))
+          end)
+        end
       end
     end
   end,

@@ -44,7 +44,7 @@ dici:addEffect("active", {
       include_equip = false,
       skill_name = dici.name,
       prompt = "#dici-ask:"..player.id,
-      cancelable = true,
+      cancelable = false,
     })
     room:obtainCard(player, cards, false, fk.ReasonGive, target, dici.name)
     if target.dead then return end

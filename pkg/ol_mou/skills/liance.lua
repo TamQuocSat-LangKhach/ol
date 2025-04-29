@@ -18,9 +18,9 @@ liance:addEffect(fk.AfterCardsMove, {
         return p:getHandcardNum() >= player:getHandcardNum()
       end) then
       if player.room.current == player then
-        if player:getMark("liance1-round") == 0 then return end
+        if player:getMark("liance1-round") > 0 then return end
       else
-        if player:getMark("liance2-round") == 0 then return end
+        if player:getMark("liance2-round") > 0 then return end
       end
       for _, move in ipairs(data) do
         if move.to == player and move.toArea == Card.PlayerHand then

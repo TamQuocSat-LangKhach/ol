@@ -7,6 +7,7 @@ Fk:loadTranslationTable{
   [":zhouxi"] = "准备阶段，你从三个可造成伤害的技能中选择一个获得直到你下回合开始，受到你伤害的角色于本轮结束时可以视为对你使用一张【杀】",
 
   ["#zhouxi-choice"] = "骤袭：获得一个技能直到下回合开始",
+  ["#zhouxi-slash"] = "骤袭：是否视为对 %src 使用【杀】？",
 
   ["$zhouxi1"] = "你降，不降，都得死！",
   ["$zhouxi2"] = "我就像这夜，终将吞噬一切！",
@@ -56,6 +57,40 @@ zhouxi:addEffect(fk.TurnStart, {
     room:handleAddLoseSkills(player, "-"..table.concat(skills, "|-"))
     room:setPlayerMark(player, zhouxi.name, 0)
   end,
+})
+
+zhouxi:addEffect(fk.RoundEnd, {
+  anim_type = "negative",
+  can_trigger = function (self, event, target, player, data)
+    if player:hasSkill(zhouxi.name) then
+      local tos = {}
+      player.room.logic:getActualDamageEvents(1, function (e)
+        local damage = e.data
+        if damage.from == player and damage.to ~= player and not damage.to.dead then
+          table.insertIfNeed(tos, damage.to)
+        end
+      end, Player.HistoryRound)
+      if #tos > 0 then
+        player.room:sortByAction(tos)
+        event:setCostData(self, {tos = tos})
+        return true
+      end
+    end
+  end,
+  on_cost = Util.TrueFunc,
+  on_use = function (self, event, target, player, data)
+    local room = player.room
+    for _, p in ipairs(event:getCostData(self).tos) do
+      if player.dead then return end
+      if not p.dead and not p:isProhibited(player, Fk:cloneCard("slash")) and
+        room:askToSkillInvoke(p, {
+          skill_name = zhouxi.name,
+          prompt = "#zhouxi-slash:"..player.id,
+        }) then
+        room:useVirtualCard("slash", nil, p, player, zhouxi.name, true)
+      end
+    end
+  end
 })
 
 return zhouxi

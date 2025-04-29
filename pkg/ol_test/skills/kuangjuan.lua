@@ -34,13 +34,16 @@ kuangjuan:addEffect("active", {
     local target = effect.tos[1]
     local n = player:getHandcardNum() - target:getHandcardNum()
     if n > 0 then
-      room:askToDiscard(player, {
+      local cards = room:askToDiscard(player, {
         min_num = n,
         max_num = n,
         include_equip = false,
         skill_name = kuangjuan.name,
         cancelable = false,
       })
+      if #cards > 0 and not player.dead then
+        player:drawCards(#cards, kuangjuan.name, nil, "@@kuangjuan-inhand-turn")
+      end
     elseif n < 0 then
       player:drawCards(-n, kuangjuan.name, nil, "@@kuangjuan-inhand-turn")
     end
