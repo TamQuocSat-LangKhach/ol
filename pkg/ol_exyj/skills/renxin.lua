@@ -25,7 +25,7 @@ renxin:addEffect(fk.EnterDying, {
       skill_name = renxin.name,
       cancelable = true,
       pattern = ".|.|.|.|.|equip",
-      prompt = "#ol_ex__miji-invoke::"..target.id,
+      prompt = "#ol_ex__renxin-invoke::"..target.id,
       skip = true,
     })
     if #card > 0 then

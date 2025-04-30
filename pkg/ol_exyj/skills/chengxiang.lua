@@ -33,7 +33,7 @@ chengxiang:addEffect(fk.Damaged, {
       box_size = 0,
       max_limit = {num, num},
       min_limit = {0, 1},
-      poxi_type = "chengxiang_count",
+      poxi_type = "chengxiang",
       default_choice = {{}, {cards[1]}},
     })[2]
     local n = 0

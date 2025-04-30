@@ -13,17 +13,11 @@ miji:addEffect(fk.EventPhaseStart, {
     return player:hasSkill(miji.name) and target.phase == Player.Finish and player:isWounded() and
       (target == player or player:getMark("@@ol_ex__zhenlie-turn") > 0)
   end,
-  on_cost = function(self, event, target, player, data)
-    if target == player then
-      return player.room:askToSkillInvoke(player, { skill_name = miji.name })
-    end
-    return true
-  end,
   on_use = function(self, event, target, player, data)
     local room = player.room
     local n = player:getLostHp()
     player:drawCards(n, miji.name)
-    if player.dead or player:isNude() then return false end
+    if player.dead or player:isNude() or #room:getOtherPlayers(player, false) == 0 then return false end
     n = player:getLostHp()
     if n > 0 then
       room:askToYiji(player, {
