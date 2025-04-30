@@ -454,7 +454,7 @@ Fk:loadTranslationTable{
 }
 
 --天柱：潘凤x 诸葛诞√ 兀突骨√ 蹋顿√ 严白虎√ 李傕x 张济x 樊稠√ 郭汜x 沙摩柯x 丁原x 黄祖√ 高干√ 王双x 范疆张达√ 梁兴x 阿会喃√ 马玩√ 文钦√ 雅丹√ 张燕√
---何进√ 牛金√ 韩遂√ 李异√ 刘辟√ 轲比能√ 吴景x 马元义x 裴元绍√
+--何进√ 牛金√ 韩遂√ 李异√ 刘辟√ 轲比能√ 牛辅√ 吴景x 马元义x 裴元绍√
 local zhugedan = General:new(extension, "ol__zhugedan", "wei", 4)
 zhugedan:addSkills { "gongao", "ol__juyi" }
 zhugedan:addRelatedSkills { "benghuai", "ol__weizhong" }
@@ -648,6 +648,14 @@ Fk:loadTranslationTable{
   ["designer:ol__kebineng"] = "cyc",
 
   ["~ol__kebineng"] = "未驱青马饮于黄河，死难瞑目。",
+}
+
+General:new(extension, "ol__niufu", "qun", 4):addSkills { "shisuan", "zonglue" }
+Fk:loadTranslationTable{
+  ["ol__niufu"] = "牛辅",
+  ["#ol__niufu"] = "魔坦",
+
+  ["~ol__niufu"] = "哎呦，我的腰呀！",
 }
 
 General:new(extension, "ol__peiyuanshao", "qun", 4):addSkills { "fulve" }

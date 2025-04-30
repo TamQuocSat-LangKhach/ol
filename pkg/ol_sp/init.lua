@@ -139,4 +139,12 @@ for _, skel in ipairs(tianshu_skels) do
   table.insert(extension.skill_skels, skel)
 end
 
+General:new(extension, "ol__miheng", "qun", 3):addSkills { "kuangjuan", "feibian" }
+Fk:loadTranslationTable{
+  ["ol__miheng"] = "祢衡",
+  ["#ol__miheng"] = "狂才傲世",
+
+  ["~ol__miheng"] = "天地虽大，难容我狂……",
+}
+
 return extension

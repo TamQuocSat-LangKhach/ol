@@ -4,21 +4,17 @@ local zhouxi = fk.CreateSkill{
 
 Fk:loadTranslationTable{
   ["zhouxi"] = "骤袭",
-  [":zhouxi"] = "准备阶段，你从三个可造成伤害的技能中选择一个获得直到你下回合开始，受到你伤害的角色于本轮结束时可以视为对你使用一张【杀】",
+  [":zhouxi"] = "准备阶段，你从三个可造成伤害的技能中选择一个获得直到你下回合开始。受到你伤害的角色于本轮结束时视为对你使用一张【杀】。",
 
   ["#zhouxi-choice"] = "骤袭：获得一个技能直到下回合开始",
-  ["#zhouxi-slash"] = "骤袭：是否视为对 %src 使用【杀】？",
 
   ["$zhouxi1"] = "你降，不降，都得死！",
   ["$zhouxi2"] = "我就像这夜，终将吞噬一切！",
 }
 
 local zhouxi_skills = {
-  "ganglie", "fanjian", "quhu", "ol__xuehen", "xingwu", "benyu", "ol__sanyao", "ol__zhendu", "dingpan", "yeyan",
-  "ol_ex__tianxiang", "pingkou", "danshou", "xianzhou", "ex__ganglie", "wurong", "ol_ex__juece", "ty_ex__fencheng",
-  "ol__kuizhu", "shenshi", "cuike", "langxi", "lueming", "ol_ex__leiji", "ol_ex__qiangxi", "daoshu",
-  "zhongyun", "sp__xiaoguo", "xianshuai", "lanjiang", "xiongshu", "zhuihuan", "fenrui", "lieshi", "dianjun",
-  "tianjie", "jianhe", "zhefu", "duwu", "cuijue", "tanque", "hongtu", "xiongni", "shuzi", "jinglei",
+  "ol__sanyao", "daoshu", "ol__kuizhu", "jianhe", "zhefu", "shuzi", "quhu", "duwu",
+  "ol__zhendu", "ol__xuehen", "tianjie", "lieshi", "ol_ex__juece", "ol_ex__leiji", "ol_ex__qiangxi", "ex__ganglie",
 }
 
 zhouxi.zhouxi_skills = zhouxi_skills
@@ -82,11 +78,7 @@ zhouxi:addEffect(fk.RoundEnd, {
     local room = player.room
     for _, p in ipairs(event:getCostData(self).tos) do
       if player.dead then return end
-      if not p.dead and not p:isProhibited(player, Fk:cloneCard("slash")) and
-        room:askToSkillInvoke(p, {
-          skill_name = zhouxi.name,
-          prompt = "#zhouxi-slash:"..player.id,
-        }) then
+      if not p.dead then
         room:useVirtualCard("slash", nil, p, player, zhouxi.name, true)
       end
     end
