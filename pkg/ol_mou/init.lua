@@ -98,7 +98,7 @@ General:new(extension, "olmou__huaxiong", "qun", 6):addSkills { "bojue", "yangwe
 Fk:loadTranslationTable{
   ["olmou__huaxiong"] = "谋华雄",
   ["#olmou__huaxiong"] = "汜水关死神",
-  --["illustrator:olmou__huaxiong"] = "",
+  ["illustrator:olmou__huaxiong"] = "黯荧岛",
 
   ["~olmou__huaxiong"] = "我已连战三场，匹夫胜之不武！",
 }

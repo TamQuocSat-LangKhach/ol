@@ -7,9 +7,9 @@ Fk:loadTranslationTable{
   ["tiangong"] = "天公",
   [":tiangong"] = "锁定技，回合开始时，你视为使用一张<a href=':thunder_god_help'>【雷公助我】</a>；"..
   "回合结束时，你视为使用一张<a href=':sharing_risk'>【有难同当】</a>。<br>"..
-  "一名角色判定后，若为♠，你对另一名角色造成1点伤害。",
+  "一名角色判定后，若为♠，你对另一名角色造成1点雷电伤害。",
 
-  ["#tiangong-choose"] = "天公：对另一名角色造成1点伤害",
+  ["#tiangong-choose"] = "天公：对另一名角色造成1点雷电伤害",
 
   ["$tiangong1"] = "此番受天书教化，当你我兄弟显名之时！",
   ["$tiangong2"] = "天地人本同一元气，分为三体。你我兄弟亦然。",
@@ -73,6 +73,7 @@ tiangong:addEffect(fk.FinishJudge, {
       from = player,
       to = to,
       damage = 1,
+      damageType = fk.ThunderDamage,
       skillName = tiangong.name,
     }
   end,
