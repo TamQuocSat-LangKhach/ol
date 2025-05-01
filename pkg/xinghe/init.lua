@@ -133,6 +133,7 @@ General:new(extension, "ol__qinlang", "wei", 3):addSkills { "xianying" }
 Fk:loadTranslationTable{
   ["ol__qinlang"] = "秦朗",
   ["#ol__qinlang"] = "跼高蹐厚",
+  ["illustrator:ol__qinlang"] = "瞧不起我钟鱼鱼",
 
   ["~ol__qinlang"] = "我秦姓人，非属高门。",
 }
@@ -441,6 +442,7 @@ General:new(extension, "ol__hanfu", "qun", 4):addSkills { "shuzi", "kuangshou" }
 Fk:loadTranslationTable{
   ["ol__hanfu"] = "韩馥",
   ["#ol__hanfu"] = "挈瓶之知",
+  ["illustrator:ol__hanfu"] = "错落宇宙",
 
   ["~ol__hanfu"] = "本初，我可是请你吃过饭的！",
 }
@@ -1189,7 +1191,7 @@ General:new(extension, "caimao", "wei", 4):addSkills { "zuolian", "jingzhou" }
 Fk:loadTranslationTable{
   ["caimao"] = "蔡瑁",
   ["#caimao"] = "蛟海腾云",
-  ["illustrator:caimao"] = "depp",
+  ["illustrator:caimao"] = "错落宇宙",
   ["designer:caimao"] = "步穗",
 
   ["~caimao"] = "丞相！末将忠心耿耿呀！",
@@ -1209,6 +1211,7 @@ General:new(extension, "chenggongying", "qun", 4):addSkills { "kuangxiang" }
 Fk:loadTranslationTable{
   ["chenggongying"] = "成公英",
   ["#chenggongying"] = "尽欢竭忠",
+  ["illustrator:chenggongying"] = "匠人绘",
 
   ["~chenggongying"] = "假使英本主人在，实不来此也。",
 }

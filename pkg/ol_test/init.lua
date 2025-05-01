@@ -21,6 +21,7 @@ General:new(extension, "ol__peixiu", "wei", 4):addSkills { "maozhu", "jinlan" }
 Fk:loadTranslationTable{
   ["ol__peixiu"] = "裴秀",
   ["#ol__peixiu"] = "勋德茂著",
+  ["illustrator:ol__peixiu"] = "塔普",
 
   ["~ol__peixiu"] = "",
 }

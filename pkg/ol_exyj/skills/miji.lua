@@ -13,6 +13,15 @@ miji:addEffect(fk.EventPhaseStart, {
     return player:hasSkill(miji.name) and target.phase == Player.Finish and player:isWounded() and
       (target == player or player:getMark("@@ol_ex__zhenlie-turn") > 0)
   end,
+  on_cost = function (self, event, target, player, data)
+    if player:getMark("@@ol_ex__zhenlie-turn") > 0 then
+      return true
+    else
+      return player.room:askToSkillInvoke(player, {
+        skill_name = miji.name,
+      })
+    end
+  end,
   on_use = function(self, event, target, player, data)
     local room = player.room
     local n = player:getLostHp()

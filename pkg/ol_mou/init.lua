@@ -89,7 +89,7 @@ General:new(extension, "olmou__yuanshao", "qun", 4):addSkills { "hetao", "shenli
 Fk:loadTranslationTable{
   ["olmou__yuanshao"] = "谋袁绍",
   ["#olmou__yuanshao"] = "席卷八荒",
-  --["illustrator:olmou__yuanshao"] = "西国红云",
+  ["illustrator:olmou__yuanshao"] = "西国红云",
 
   ["~olmou__yuanshao"] = "众人合而无力，徒负大义也……",
 }
@@ -126,7 +126,7 @@ General:new(extension, "olmou__yuanshu", "qun", 4):addSkills { "jinming", "xiaos
 Fk:loadTranslationTable{
   ["olmou__yuanshu"] = "谋袁术",
   ["#olmou__yuanshu"] = "画脂镂冰",
-  --["illustrator:olmou__yuanshu"] = "",
+  ["illustrator:olmou__yuanshu"] = "七七",
 
   ["~olmou__yuanshu"] = "谋事在人，奈何成事不在人……",
 }

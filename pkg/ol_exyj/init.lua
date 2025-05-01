@@ -33,7 +33,7 @@ General:new(extension, "ol_ex__fazheng", "shu", 3):addSkills { "ol_ex__xuanhuo",
 Fk:loadTranslationTable{
   ["ol_ex__fazheng"] = "界法正",
   ["#ol_ex__fazheng"] = "明理审事",
-  --["illustrator:ol_ex__fazheng"] = "",
+  ["illustrator:ol_ex__fazheng"] = "君桓文化",
 
   ["~ol_ex__fazheng"] = "孝直不忠，不能佑主公复汉室了……",
 }
@@ -52,7 +52,7 @@ General:new(extension, "ol_ex__wuguotai", "wu", 3, 3, General.Female):addSkills 
 Fk:loadTranslationTable{
   ["ol_ex__wuguotai"] = "界吴国太",
   ["#ol_ex__wuguotai"] = "慈怀瑾瑜",
-  --["illustrator:ol_ex__wuguotai"] = "",
+  ["illustrator:ol_ex__wuguotai"] = "君桓文化",
 
   ["~ol_ex__wuguotai"] = "竖子，何以胞妹为饵乎？",
 }
@@ -181,7 +181,7 @@ General:new(extension, "ol_ex__caifuren", "qun", 3, 3, General.Female):addSkills
 Fk:loadTranslationTable{
   ["ol_ex__caifuren"] = "界蔡夫人",
   ["#ol_ex__caifuren"] = "怙恩恃宠",
-  --["illustrator:ol_ex__caifuren"] = "",
+  ["illustrator:ol_ex__caifuren"] = "匠人绘",
 
   ["$xianzhou_ol_ex__caifuren1"] = "今献州以降，请丞相善待我孤儿寡母。",
   ["$xianzhou_ol_ex__caifuren2"] = "我儿志短才疏，只求方寸之地安享富贵。",

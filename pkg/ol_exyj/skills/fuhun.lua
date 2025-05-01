@@ -18,6 +18,7 @@ fuhun:addEffect("viewas", {
   anim_type = "offensive",
   prompt = "#ol_ex__fuhun",
   pattern = "slash",
+  handly_pile = true,
   card_filter = function(self, player, to_select, selected)
     return #selected < 2
   end,
@@ -64,16 +65,16 @@ fuhun:addEffect(fk.HandleAskForPlayCard, {
   on_refresh = function(self, event, target, player, data)
     local room = player.room
     if not data.afterRequest then
-      room:setBanner("ol_ex__fuhun", data.eventData.card.color)
+      room:setBanner(fuhun.name, data.eventData.card.color)
     else
-      room:setBanner("ol_ex__fuhun", 0)
+      room:setBanner(fuhun.name, 0)
     end
   end,
 })
 
 fuhun:addEffect("prohibit", {
   prohibit_use = function(self, player, card)
-    local color = Fk:currentRoom():getBanner("ol_ex__fuhun")
+    local color = Fk:currentRoom():getBanner(fuhun.name)
     if card and color then
       local ids = Card:getIdList(card)
       return #ids == 0 or card.color ~= color or card.color == Card.NoColor or

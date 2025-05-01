@@ -262,7 +262,7 @@ General:new(extension, "wuhushangjiang", "shu", 4):addSkills { "huyi" }
 Fk:loadTranslationTable{
   ["wuhushangjiang"] = "魂·五虎",
   ["#wuhushangjiang"] = "蜀汉之魂",  --称号出自官盗2025尊享
-  --["illustrator:wuhushangjiang"] = "",
+  ["illustrator:wuhushangjiang"] = "琴琴琴酒GGGIN",
 
   --["~wuhushangjiang"] = "麦城残阳……洗长刀……",
   --["~wuhushangjiang"] = "当阳……空余声……",
