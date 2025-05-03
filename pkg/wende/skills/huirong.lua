@@ -13,7 +13,9 @@ Fk:loadTranslationTable{
   ["$huirong2"] = "花貌易改，福惠长存。",
 }
 
-huirong:addEffect(fk.GeneralAppeared, {
+local U = require "packages/utility/utility"
+
+huirong:addEffect(U.GeneralAppeared, {
   anim_type = "control",
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasShownSkill(huirong.name) and

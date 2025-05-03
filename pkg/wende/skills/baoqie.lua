@@ -13,7 +13,9 @@ Fk:loadTranslationTable{
   ["$baoqie2"] = "曹亡宝箧，尽露锋芒。",
 }
 
-baoqie:addEffect(fk.GeneralAppeared, {
+local U = require "packages/utility/utility"
+
+baoqie:addEffect(U.GeneralAppeared, {
   anim_type = "drawcard",
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasShownSkill(baoqie.name)

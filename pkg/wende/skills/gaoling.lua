@@ -13,7 +13,9 @@ Fk:loadTranslationTable{
   ["$gaoling2"] = "宣王之女，恩惠八方。",
 }
 
-gaoling:addEffect(fk.GeneralAppeared, {
+local U = require "packages/utility/utility"
+
+gaoling:addEffect(U.GeneralAppeared, {
   anim_type = "support",
   can_trigger = function(self, event, target, player, data)
     if target == player and player:hasShownSkill(gaoling.name) then

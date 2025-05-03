@@ -13,7 +13,9 @@ Fk:loadTranslationTable{
   ["$taoyin2"] = "隐忍数载，亦不坠青云之志！",
 }
 
-taoyin:addEffect(fk.GeneralAppeared, {
+local U = require "packages/utility/utility"
+
+taoyin:addEffect(U.GeneralAppeared, {
   anim_type = "control",
   can_trigger = function(self, event, target, player, data)
     if target == player and player:hasShownSkill(taoyin.name) then

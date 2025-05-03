@@ -68,7 +68,8 @@ tuishi:addEffect(fk.EventPhaseStart, {
     end
   end,
 })
-tuishi:addEffect(fk.GeneralAppeared, {
+local U = require "packages/utility/utility"
+tuishi:addEffect(U.GeneralAppeared, {
   can_refresh = function(self, event, target, player, data)
     if target == player and player:hasSkill(tuishi.name, true) then
       local turn_event = player.room.logic:getCurrentEvent():findParent(GameEvent.Turn)

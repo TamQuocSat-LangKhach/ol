@@ -13,7 +13,9 @@ Fk:loadTranslationTable{
   ["$shiren2"] = "开卷有益，识人有法",
 }
 
-shiren:addEffect(fk.GeneralAppeared, {
+local U = require "packages/utility/utility"
+
+shiren:addEffect(U.GeneralAppeared, {
   anim_type = "control",
   can_trigger = function(self, event, target, player, data)
     if target == player and player:hasShownSkill(shiren.name) then

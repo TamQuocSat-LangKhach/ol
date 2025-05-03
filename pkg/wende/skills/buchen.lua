@@ -13,7 +13,9 @@ Fk:loadTranslationTable{
   ["$buchen2"] = "巍巍隐帝，岂可为臣？",
 }
 
-buchen:addEffect(fk.GeneralAppeared, {
+local U = require "packages/utility/utility"
+
+buchen:addEffect(U.GeneralAppeared, {
   anim_type = "control",
   can_trigger = function(self, event, target, player, data)
     if target == player and player:hasShownSkill(buchen.name) then
