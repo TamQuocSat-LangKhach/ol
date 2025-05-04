@@ -77,7 +77,7 @@ qiaoshui:addEffect(fk.AfterCardTargetDeclared, {
       room:sendLog{
         type = "#AddTargetsBySkill",
         from = target.id,
-        to = tos,
+        to = table.map(tos, Util.IdMapper),
         arg = qiaoshui.name,
         arg2 = data.card:toLogString(),
       }

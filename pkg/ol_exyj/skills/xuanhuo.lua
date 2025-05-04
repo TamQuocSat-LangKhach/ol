@@ -48,6 +48,7 @@ xuanhuo:addEffect(fk.EventPhaseEnd, {
         bypass_times = true,
         bypass_distances = true,
       },
+      skill_name = xuanhuo.name,
     })
     if use then
       use.extraUse = true
