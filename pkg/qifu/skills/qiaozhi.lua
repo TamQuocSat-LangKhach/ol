@@ -19,7 +19,11 @@ qiaozhi:addEffect("active", {
   anim_type = "drawcard",
   card_num = 1,
   target_num = 0,
-  can_use = Util.TrueFunc,
+  can_use = function (self, player)
+    return not table.find(player:getCardIds("h"), function (id)
+      return Fk:getCardById(id):getMark("@@qiaozhi-inhand") > 0
+    end)
+  end,
   card_filter = function(self, player, to_select, selected)
     return #selected == 0 and not player:prohibitDiscard(to_select)
   end,
@@ -39,14 +43,6 @@ qiaozhi:addEffect("active", {
     })
     room:obtainCard(player, id, true, fk.ReasonJustMove, player, qiaozhi.name, "@@qiaozhi-inhand")
     room:cleanProcessingArea(cards, qiaozhi.name)
-  end,
-})
-qiaozhi:addEffect("invalidity", {
-  invalidity_func = function(self, from, skill)
-    return skill.name == qiaozhi.name and
-      table.find(from:getCardIds("h"), function (id)
-        return Fk:getCardById(id, true):getMark("@@qiaozhi-inhand") > 0
-      end)
   end,
 })
 

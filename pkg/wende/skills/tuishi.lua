@@ -16,6 +16,8 @@ Fk:loadTranslationTable{
   ["$tuishi2"] = "推令既出，焉敢不从？",
 }
 
+local U = require "packages/utility/utility"
+
 tuishi:addEffect(fk.EventPhaseStart, {
   anim_type = "offensive",
   can_trigger = function (self, event, target, player, data)
@@ -68,7 +70,7 @@ tuishi:addEffect(fk.EventPhaseStart, {
     end
   end,
 })
-local U = require "packages/utility/utility"
+
 tuishi:addEffect(U.GeneralAppeared, {
   can_refresh = function(self, event, target, player, data)
     if target == player and player:hasSkill(tuishi.name, true) then

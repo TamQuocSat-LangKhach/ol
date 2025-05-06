@@ -46,7 +46,7 @@ gaobian:addEffect(fk.TurnEnd, {
       end
     end, Player.HistoryTurn)
     local to = event:getCostData(self).tos[1]
-    if #cards == 0 or not room:askToUseRealCard(player, {
+    if #cards == 0 or not room:askToUseRealCard(to, {
       pattern = cards,
       skill_name = gaobian.name,
       prompt = "#gaobian-use",

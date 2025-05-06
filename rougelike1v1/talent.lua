@@ -1820,7 +1820,7 @@ rule:addRelatedSkill(fk.CreateTriggerSkill {
     end
     if hasTalent(player, "rouge_caochuanjiejian") then
       if data.card and data.card.trueName == "nullification" and data.responseToEvent and
-          data.toCard and U.hasFullRealCard(room, data.toCard) then
+          data.toCard and room:getCardArea(data.toCard) == Card.Processing then
         sendTalentLog(player, "rouge_caochuanjiejian")
         room:obtainCard(player, data.toCard, true, fk.ReasonJustMove)
       end

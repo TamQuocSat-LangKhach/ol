@@ -181,7 +181,7 @@ General:new(extension, "ol_ex__caifuren", "qun", 3, 3, General.Female):addSkills
 Fk:loadTranslationTable{
   ["ol_ex__caifuren"] = "界蔡夫人",
   ["#ol_ex__caifuren"] = "怙恩恃宠",
-  ["illustrator:ol_ex__caifuren"] = "匠人绘",
+  ["illustrator:ol_ex__caifuren"] = "黯荧岛",
 
   ["$xianzhou_ol_ex__caifuren1"] = "今献州以降，请丞相善待我孤儿寡母。",
   ["$xianzhou_ol_ex__caifuren2"] = "我儿志短才疏，只求方寸之地安享富贵。",

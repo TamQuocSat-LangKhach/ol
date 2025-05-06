@@ -22,18 +22,20 @@ zhiba_active:addEffect("active", {
   card_num = 0,
   card_filter = Util.FalseFunc,
   target_num = 1,
-  target_filter = function(self, to_select, selected)
-    if #selected == 0 and to_select ~= Self.id then
-      local target = to_select
-      return target:hasSkill("ol_ex__zhiba") and Self:canPindian(target) and
-      not table.contains(Self:getTableMark("ol_ex__zhiba_sources-phase"), to_select)
-    end
+  target_filter = function(self, player, to_select, selected)
+    return #selected == 0 and to_select ~= player and
+      to_select:hasSkill("ol_ex__zhiba") and player:canPindian(to_select) and
+      to_select:usedSkillTimes("ol_ex__zhiba", Player.HistoryPhase) == 0
   end,
   on_use = function(self, room, effect)
     local player = effect.from
     local target = effect.tos[1]
-    room:addTableMarkIfNeed(player, "ol_ex__zhiba_sources-phase", target.id)
-    if room:askToChoice(target, { choices = {"ol_ex__zhiba_accept", "ol_ex__zhiba_refuse"}, skill_name = zhiba_active.name, prompt = "#ol_ex__zhiba-ask:" .. player.id}) == "ol_ex__zhiba_accept" then
+    target:addSkillUseHistory("ol_ex__zhiba", Player.HistoryPhase)
+    if room:askToChoice(target, {
+      choices = {"ol_ex__zhiba_accept", "ol_ex__zhiba_refuse"},
+      skill_name = zhiba_active.name,
+      prompt = "#ol_ex__zhiba-ask:" .. player.id,
+    }) == "ol_ex__zhiba_accept" then
       player:pindian({target}, zhiba_active.name)
     end
   end,

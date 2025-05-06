@@ -31,6 +31,7 @@ liegong:addEffect(fk.TargetSpecified, {
   end,
   on_use = function(self, event, target, player, data)
     if data.to:getHandcardNum() <= player:getHandcardNum() then
+      data.use.disresponsiveList = data.use.disresponsiveList or {}
       table.insertIfNeed(data.use.disresponsiveList, data.to)
     end
     if data.to.hp >= player.hp then

@@ -39,6 +39,7 @@ luanwu:addEffect("active", {
           end)
         end)
         local use = room:askToUseCard(target, {
+          skill_name = luanwu.name,
           pattern = "slash",
           prompt = "#ol_ex__luanwu-use",
           cancelable = true,

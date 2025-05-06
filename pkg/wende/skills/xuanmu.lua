@@ -12,7 +12,9 @@ Fk:loadTranslationTable{
   ["$xuanmu1"] = "四门穆穆，八面莹澈。",
   ["$xuanmu2"] = "天色澄穆，心明清静。",
 }
+
 local U = require "packages/utility/utility"
+
 xuanmu:addEffect(U.GeneralAppeared, {
   anim_type = "defensive",
   can_trigger = function(self, event, target, player, data)

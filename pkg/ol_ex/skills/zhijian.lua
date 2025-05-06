@@ -13,8 +13,6 @@ Fk:loadTranslationTable {
   ["$ol_ex__zhijian2"] = "臣有言在喉，不吐不快。",
 }
 
-local U = require("packages/utility/utility")
-
 zhijian:addEffect("active", {
   anim_type = "support",
   prompt = "#ol_ex__zhijian",
@@ -25,7 +23,7 @@ zhijian:addEffect("active", {
   end,
   target_filter = function(self, player, to_select, selected, selected_cards)
     return #selected == 0 and #selected_cards == 1 and to_select ~= player and
-      U.canMoveCardIntoEquip(to_select, selected_cards[1], true)
+      to_select:canMoveCardIntoEquip(selected_cards[1], true)
   end,
   on_use = function(self, room, effect)
     local player = effect.from

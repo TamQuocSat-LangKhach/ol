@@ -46,7 +46,7 @@ qingzhong:addEffect(fk.EventPhaseEnd, {
       })[1]
     end
     if to ~= player then
-      room:swapAllCards(player, {player, to[1]}, qingzhong.name)
+      room:swapAllCards(player, {player, to}, qingzhong.name)
     end
   end,
 })
