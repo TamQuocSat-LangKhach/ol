@@ -311,7 +311,7 @@ Fk:loadTranslationTable{
   ["#olz__wangjiw"] = "寒花疏寂",
 }
 
---弘农杨氏：杨赐 杨修 杨众
+--弘农杨氏：杨赐 杨修 杨众 杨彪
 General:new(extension, "olz__yangci", "qun", 3):addSkills { "qieyi", "jianzhi", "quhuo" }
 Fk:loadTranslationTable{
   ["olz__yangci"] = "族杨赐",
@@ -343,6 +343,17 @@ Fk:loadTranslationTable{
   ["$quhuo_olz__yangzhongh1"] = "",
   ["$quhuo_olz__yangzhongh2"] = "",
   ["~olz__yangzhongh"] = "",
+}
+
+General:new(extension, "olz__yangbiao", "qun", 3):addSkills { "jiannan", "yichi", "quhuo" }
+Fk:loadTranslationTable{
+  ["olz__yangbiao"] = "族杨彪",
+  --["#olz__yangbiao"] = "",
+  --["illustrator:olz__yangbiao"] = "",
+
+  ["$quhuo_olz__yangbiao1"] = "",
+  ["$quhuo_olz__yangbiao2"] = "",
+  ["~olz__yangbiao"] = "",
 }
 
 return extension

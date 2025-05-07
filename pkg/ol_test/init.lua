@@ -116,4 +116,12 @@ Fk:loadTranslationTable{
   ["~ol__guanhai"] = "",
 }
 
+General:new(extension, "ol__caizhenji", "wei", 3, 3, General.Female):addSkills { "kedi", "cunze" }
+Fk:loadTranslationTable{
+  ["ol__caizhenji"] = "蔡贞姬",
+  --["#ol__caizhenji"] = "",
+
+  ["~ol__caizhenji"] = "",
+}
+
 return extension

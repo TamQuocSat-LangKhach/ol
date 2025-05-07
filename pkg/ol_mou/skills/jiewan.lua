@@ -4,11 +4,11 @@ local jiewan = fk.CreateSkill{
 
 Fk:loadTranslationTable{
   ["jiewan"] = "解腕",
-  [":jiewan"] = "每个准备阶段，你可以减1点体力上限或移除两张“谷”，然后你可以将一张手牌当无距离限制的【顺手牵羊】使用。每个结束阶段，"..
-  "若你的“谷”数与手牌数相同且你的体力上限不为全场唯一最多，你加1点体力上限。",
+  [":jiewan"] = "每个准备阶段，你可以减1点体力上限或移除两张“谷”，然后你可以将一张手牌当距离限制为X的【顺手牵羊】使用（X为你的“谷”数，至少为1）。"..
+  "每个结束阶段，若你的“谷”数与手牌数相同且你的体力上限不为全场唯一最多，你加1点体力上限。",
 
-  ["#jiewan-invoke"] = "解腕：移去两张“谷”，或不选“谷”减1点体力上限，然后将一张手牌当无距离限制的【顺手牵羊】使用",
-  ["#jiewan-use"] = "解腕：将一张手牌当无距离限制的【顺手牵羊】使用",
+  ["#jiewan-invoke"] = "解腕：移去两张“谷”，或不选“谷”减1点体力上限，然后将一张手牌当【顺手牵羊】使用",
+  ["#jiewan-use"] = "解腕：将一张手牌当【顺手牵羊】使用",
 }
 
 jiewan:addEffect(fk.EventPhaseStart, {
@@ -54,9 +54,6 @@ jiewan:addEffect(fk.EventPhaseStart, {
         skill_name = jiewan.name,
         prompt = "#jiewan-use",
         cancelable = true,
-        extra_data = {
-          bypass_distances = true,
-        },
         card_filter = {
           n = 1,
           cards = player:getHandlyIds(),
@@ -64,6 +61,14 @@ jiewan:addEffect(fk.EventPhaseStart, {
       })
     elseif target.phase == Player.Finish then
       room:changeMaxHp(player, 1)
+    end
+  end,
+})
+
+jiewan:addEffect("targetmod", {
+  distance_limit_func =  function(self, player, skill, card, to)
+    if card and card.skillName == jiewan.name then
+      return math.max(#player:getPile("dengai_grain") - 1, 0)
     end
   end,
 })
