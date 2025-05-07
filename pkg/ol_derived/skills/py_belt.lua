@@ -21,6 +21,7 @@ skill:addEffect(fk.TargetConfirmed, {
     }
     room:judge(judge)
     if judge:matchPattern() then
+      data.use.nullifiedTargets = data.use.nullifiedTargets or {}
       table.insertIfNeed(data.use.nullifiedTargets, player)
     end
   end,

@@ -49,7 +49,7 @@ local spec = {
     local room = player.room
     local num = #room.logic:getEventsOfScope(GameEvent.Turn, 5, Util.TrueFunc, Player.HistoryRound)
     player:drawCards(math.min(num, 5), zhendan.name)
-    room:invalidateSkill(player, "zhendan", "-round")
+    room:invalidateSkill(player, zhendan.name, "-round")
   end,
 }
 

@@ -580,7 +580,8 @@ for loop = 1, 30 do
           end
         end,
         [13] = function ()
-          table.insertIfNeed(data.nullifiedTargets, player.id)
+          data.nullifiedTargets = data.nullifiedTargets or {}
+          table.insertIfNeed(data.nullifiedTargets, player)
         end,
         [14] = function ()
           local to = event:getCostData(self).tos[1]
