@@ -45,7 +45,7 @@ guhuo:addEffect("viewas", {
       room:sendLog{
         type = "#guhuo_use",
         from = player.id,
-        to = targets,
+        to = table.map(targets, Util.IdMapper),
         arg = use.card.name,
         arg2 = guhuo.name,
       }

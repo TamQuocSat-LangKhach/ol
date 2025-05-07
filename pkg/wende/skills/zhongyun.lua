@@ -59,7 +59,7 @@ local zhongyun_spec = {
 zhongyun:addEffect(fk.Damaged, zhongyun_spec)
 zhongyun:addEffect(fk.HpRecover, zhongyun_spec)
 
-zhongyun:addEffect(fk.Damaged,{
+zhongyun:addEffect(fk.AfterCardsMove,{
   anim_type = "control",
   can_trigger = function (self, event, target, player, data)
     if player:hasSkill(zhongyun.name) and player.hp == player:getHandcardNum() and
