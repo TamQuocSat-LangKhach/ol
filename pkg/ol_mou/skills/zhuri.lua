@@ -14,7 +14,7 @@ Fk:loadTranslationTable{
   ["$zhuri2"] = "知天命而不顺，履穷途而强为。",
 }
 
-zhuri:addEffect(fk.EnterDying, {
+zhuri:addEffect(fk.EventPhaseEnd, {
   anim_type = "control",
   can_trigger = function(self, event, target, player, data)
     if target == player and player:hasSkill(zhuri.name) and
