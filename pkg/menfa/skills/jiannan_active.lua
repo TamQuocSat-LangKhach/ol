@@ -21,14 +21,7 @@ jiannan_active:addEffect("active", {
   target_num = 1,
   card_filter = Util.FalseFunc,
   target_filter = function (self, player, to_select, selected, selected_cards)
-    local n = tonumber(self.interaction.data[8])
-    if n == 2 or n == 4 then
-      return true
-    elseif n == 1 then
-      return not to_select:isNude()
-    elseif n == 3 then
-      return #to_select:getCardIds("e") > 0
-    end
+    return #selected == 0
   end,
 })
 

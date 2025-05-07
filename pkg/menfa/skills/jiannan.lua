@@ -13,7 +13,7 @@ Fk:loadTranslationTable{
   ["jiannan2"] = "摸两张牌",
   ["jiannan3"] = "重铸装备区所有牌",
   ["jiannan4"] = "其需将一张锦囊牌置于牌堆顶，否则失去1点体力",
-  ["#jiannan-ask"] = "间难：请将一张牌置于牌堆顶，否则失去1点体力",
+  ["#jiannan-put"] = "间难：请将一张锦囊牌置于牌堆顶，否则失去1点体力",
 }
 
 jiannan:addEffect(fk.EventPhaseStart, {
@@ -33,7 +33,6 @@ jiannan:addEffect(fk.AfterCardsMove, {
       not table.find(player.room.alive_players, function (p)
         return p.dying
       end) then
-      local yes = false
       for _, move in ipairs(data) do
         if move.from and (move.from:isKongcheng() or
           (move.extra_data and move.extra_data.jiannan and
@@ -42,27 +41,9 @@ jiannan:addEffect(fk.AfterCardsMove, {
           end))) then
           for _, info in ipairs(move.moveInfo) do
             if info.fromArea == Card.PlayerHand then
-              yes = true
-              break
+              return true
             end
           end
-        end
-      end
-      if yes then
-        if not table.contains(player:getTableMark("jiannan-turn"), 2) then
-          return true
-        elseif not table.contains(player:getTableMark("jiannan-turn"), 4) then
-          return true
-        elseif not table.contains(player:getTableMark("jiannan-turn"), 1) and
-          table.find(player.room.alive_players, function (p)
-            return not p:isNude()
-          end) then
-          return true
-        elseif not table.contains(player:getTableMark("jiannan-turn"), 3) and
-          table.find(player.room.alive_players, function (p)
-            return #p:getCardIds("e") > 0
-          end) then
-          return true
         end
       end
     end
@@ -77,29 +58,10 @@ jiannan:addEffect(fk.AfterCardsMove, {
     })
     if not (success and dat) then
       dat = {}
-      if not table.contains(player:getTableMark("jiannan-turn"), 2) then
-        dat.interaction = "jiannan2"
-        dat.targets = {player}
-      elseif not table.contains(player:getTableMark("jiannan-turn"), 4) then
-        dat.interaction = "jiannan4"
-        dat.targets = {player}
-      else
-        if not table.contains(player:getTableMark("jiannan-turn"), 1) then
-          local targets = table.filter(room.alive_players, function (p)
-            return not p:isNude()
-          end)
-          if #targets > 0 then
-            dat.interaction = "jiannan1"
-            dat.targets = {targets[1]}
-          else
-            targets = table.filter(room.alive_players, function (p)
-              return #p:getCardIds("e") > 0
-            end)
-            dat.interaction = "jiannan3"
-            dat.targets = {targets[1]}
-          end
-        end
-      end
+      dat.targets = {player}
+      dat.interaction = table.filter({1, 2, 3, 4}, function (i)
+        return not table.contains(player:getTableMark("jiannan-turn"), i)
+      end)
     end
     room:doIndicate(player, dat.targets)
     local to = dat.targets[1]
@@ -116,7 +78,9 @@ jiannan:addEffect(fk.AfterCardsMove, {
     elseif choice == 2 then
       to:drawCards(2, jiannan.name, nil, "@@jiannan-inhand-phase")
     elseif choice == 3 then
-      room:recastCard(to:getCardIds("e"), to, jiannan.name)
+      if #to:getCardIds("e") > 0 then
+        room:recastCard(to:getCardIds("e"), to, jiannan.name)
+      end
     elseif choice == 4 then
       local card = room:askToCards(to, {
         min_num = 1,
