@@ -68,9 +68,10 @@ shanjia:addEffect(fk.AfterCardsMove, {
   trigger_times = function(self, event, target, player, data)
     local i = 0
     for _, move in ipairs(data) do
-      if move.from == player then
+      if move.from == player and move.moveReason ~= fk.ReasonUse then
         for _, info in ipairs(move.moveInfo) do
-          if info.fromArea == Card.PlayerHand or info.fromArea == Card.PlayerEquip then
+          if (info.fromArea == Card.PlayerHand or info.fromArea == Card.PlayerEquip) and
+            Fk:getCardById(info.cardId).type == Card.TypeEquip then
             i = i + 1
           end
         end
@@ -79,19 +80,8 @@ shanjia:addEffect(fk.AfterCardsMove, {
     return i
   end,
   can_trigger = function(self, event, target, player, data)
-    if player:getMark("@ol__shanjia") > 0 then
-      for _, move in ipairs(data) do
-        if move.from == player then
-          for _, info in ipairs(move.moveInfo) do
-            if info.fromArea == Card.PlayerHand or info.fromArea == Card.PlayerEquip then
-              return true
-            end
-          end
-        end
-      end
-    end
+    return player:getMark("@ol__shanjia") > 0
   end,
-  on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     player.room:removePlayerMark(player, "@ol__shanjia", 1)
   end,
