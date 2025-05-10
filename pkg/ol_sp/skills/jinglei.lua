@@ -58,7 +58,7 @@ jinglei:addEffect(fk.CardUseFinished, {
       local cards = room:askToDiscard(to, {
         min_num = n,
         max_num = n,
-        include_equip = true,
+        include_equip = false,
         skill_name = jinglei.name,
         cancelable = false,
       })

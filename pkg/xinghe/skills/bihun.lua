@@ -25,8 +25,8 @@ bihun:addEffect(fk.TargetSpecifying, {
     if data:isOnlyTarget(data.to) and room:getCardArea(data.card) == Card.Processing then
       room:obtainCard(data.to, data.card, true, fk.ReasonJustMove, player, bihun.name)
     end
-    for _, p in ipairs(data.use.tos) do
-      data:cancelTarget(p)
+    for i = #data.use.tos, 1, -1 do
+      data:cancelTarget(data.use.tos[i])
     end
   end,
 })
