@@ -19,7 +19,7 @@ quhuo:addEffect(fk.AfterCardsMove, {
       local yes = false
       for _, move in ipairs(data) do
         if move.from == player and
-          not table.contains({fk.ReasonUse, fk.ReasonResonpse, fk.ReasonDiscard}, move.moveReason) then
+          not table.contains({fk.ReasonUse, fk.ReasonResponse, fk.ReasonDiscard}, move.moveReason) then
           for _, info in ipairs(move.moveInfo) do
             if info.fromArea == Card.PlayerHand and
               (Fk:getCardById(info.cardId).name == "analeptic" or Fk:getCardById(info.cardId).type == Card.TypeEquip) then
@@ -33,7 +33,7 @@ quhuo:addEffect(fk.AfterCardsMove, {
         local move_events = player.room.logic:getEventsOfScope(GameEvent.MoveCards, 1, function (e)
           for _, move in ipairs(e.data) do
             if move.from == player and
-              not table.contains({fk.ReasonUse, fk.ReasonResonpse, fk.ReasonDiscard}, move.moveReason) then
+              not table.contains({fk.ReasonUse, fk.ReasonResponse, fk.ReasonDiscard}, move.moveReason) then
               for _, info in ipairs(move.moveInfo) do
                 if info.fromArea == Card.PlayerHand and
                   (Fk:getCardById(info.cardId).name == "analeptic" or Fk:getCardById(info.cardId).type == Card.TypeEquip) then

@@ -33,7 +33,7 @@ siqi:addEffect(fk.AfterCardsMove, {
         end)
         if #moveEvents > 0 then
           for _, move in ipairs(moveEvents[1].data) do
-            if move.from == player and (move.moveReason == fk.ReasonUse or move.moveReason == fk.ReasonResonpse) then
+            if move.from == player and (move.moveReason == fk.ReasonUse or move.moveReason == fk.ReasonResponse) then
               for _, info in ipairs(move.moveInfo) do
                 if info.fromArea == Card.PlayerHand or info.fromArea == Card.PlayerEquip then
                   if table.removeOne(cards, info.cardId) then
@@ -56,7 +56,7 @@ siqi:addEffect(fk.AfterCardsMove, {
               table.insertIfNeed(cards, info.cardId)
             end
           end
-        elseif move.from == nil and (move.moveReason == fk.ReasonUse or move.moveReason == fk.ReasonResonpse) then
+        elseif move.from == nil and (move.moveReason == fk.ReasonUse or move.moveReason == fk.ReasonResponse) then
           for _, info in ipairs(move.moveInfo) do
             if info.fromArea == Card.Processing and table.removeOne(subcards, info.cardId) and
             Fk:getCardById(info.cardId, true).color == Card.Red then

@@ -16,12 +16,12 @@ yidu:addEffect(fk.CardUseFinished, {
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(yidu.name) and data.card.is_damage_card and
       table.find(data.tos, function (p)
-        return not (data.damageDealt and data.damageDealt[p]) and not p.damageDealt and not p:isKongcheng()
+        return not (data.damageDealt and data.damageDealt[p]) and not p.dead and not p:isKongcheng()
       end)
   end,
   on_trigger = function (self, event, target, player, data)
     local targets = table.filter(data.tos, function (p)
-      return not (data.damageDealt and data.damageDealt[p]) and not p.damageDealt
+      return not (data.damageDealt and data.damageDealt[p]) and not p.dead
     end)
     for _, p in ipairs(targets) do
       if not player:hasSkill(yidu.name) then return end
@@ -51,7 +51,6 @@ yidu:addEffect(fk.CardUseFinished, {
       max = 3,
       flag = "h",
       skill_name = yidu.name,
-      prompt = "#qqqqqq",
     })
     local yes = table.every(cards, function (id)
       return Fk:getCardById(id):compareColorWith(Fk:getCardById(cards[1]))

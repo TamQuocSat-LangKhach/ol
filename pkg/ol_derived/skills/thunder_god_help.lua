@@ -40,6 +40,7 @@ skill:addEffect("cardskill", {
         damage = 3,
         damageType = fk.ThunderDamage,
         skillName = "lightning_skill",
+        card = effect.card,
       }
     end
   end,

@@ -13,7 +13,8 @@ Fk:loadTranslationTable{
   ["$zhefu2"] = "履行不端者，当有此罚。",
 }
 
-local zhefu_spec = {
+local spec = {
+  anim_type = "offensive",
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(zhefu.name) and player.room.current ~= player and
       table.find(player.room:getOtherPlayers(player, false), function (p)
@@ -60,7 +61,7 @@ local zhefu_spec = {
   end,
 }
 
-zhefu:addEffect(fk.CardUseFinished, zhefu_spec)
-zhefu:addEffect(fk.CardRespondFinished, zhefu_spec)
+zhefu:addEffect(fk.CardUseFinished, spec)
+zhefu:addEffect(fk.CardRespondFinished, spec)
 
 return zhefu

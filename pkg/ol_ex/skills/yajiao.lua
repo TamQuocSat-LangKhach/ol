@@ -14,14 +14,12 @@ Fk:loadTranslationTable {
   ["$ol_ex__yajiao2"] = "一枪在手，贼军何足道哉！",
 }
 
-local U = require("packages/utility/utility")
-
 yajiao:addEffect(fk.AfterCardsMove, {
   anim_type = "support",
   can_trigger = function(self, event, target, player, data)
     if player:hasSkill(yajiao.name) and player.room:getCurrent() ~= player then
       for _, move in ipairs(data) do
-        if move.from == player and (move.moveReason == fk.ReasonUse or move.moveReason == fk.ReasonResonpse) and
+        if move.from == player and (move.moveReason == fk.ReasonUse or move.moveReason == fk.ReasonResponse) and
         table.find(move.moveInfo, function(info)
           return info.fromArea == Card.PlayerHand
         end) then
@@ -47,7 +45,7 @@ yajiao:addEffect(fk.AfterCardsMove, {
       else
         --改判的情况为将一张牌以打出的方式置入处理区，无上级打出事件，因此特殊处理
         for _, move in ipairs(data) do
-          if move.from == player and (move.moveReason == fk.ReasonUse or move.moveReason == fk.ReasonResonpse) and
+          if move.from == player and (move.moveReason == fk.ReasonUse or move.moveReason == fk.ReasonResponse) and
           #move.moveInfo == 1 then
             card_type = Fk:getCardById(move.moveInfo[1].cardId, true).type
             break

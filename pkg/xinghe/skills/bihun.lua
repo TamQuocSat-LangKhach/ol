@@ -14,20 +14,15 @@ Fk:loadTranslationTable{
 bihun:addEffect(fk.TargetSpecifying, {
   anim_type = "support",
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(bihun.name) and data.firstTarget and
-      player:getHandcardNum() > player:getMaxCards() and
-      table.find(data.use.tos, function (p)
-        return p ~= player
-      end)
+    return target == player and player:hasSkill(bihun.name) and
+      player:getHandcardNum() > player:getMaxCards() and data.to ~= player
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    if data:isOnlyTarget(data.to) and room:getCardArea(data.card) == Card.Processing then
+    if data.firstTarget and data:isOnlyTarget(data.to) and room:getCardArea(data.card) == Card.Processing then
       room:obtainCard(data.to, data.card, true, fk.ReasonJustMove, player, bihun.name)
     end
-    for i = #data.use.tos, 1, -1 do
-      data:cancelTarget(data.use.tos[i])
-    end
+    data:cancelTarget(data.to)
   end,
 })
 
