@@ -61,7 +61,7 @@ guifu:addEffect(fk.Damage, {
   on_refresh = function (self, event, target, player, data)
     local room = player.room
     if data.card then
-      room:addTableMarkIfNeed(player, "guifu_card_record", data.card.name)
+      room:addTableMarkIfNeed(player, "guifu_card_record", data.card.trueName)
     elseif Fk.skill_skels[data.skillName] then
       if Fk.skills[data.skillName] then
         room:addTableMarkIfNeed(player, "guifu_skill_record", data.skillName)
