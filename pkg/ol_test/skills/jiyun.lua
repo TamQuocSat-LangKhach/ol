@@ -4,11 +4,11 @@ local jiyun = fk.CreateSkill{
 
 Fk:loadTranslationTable{
   ["jiyun"] = "集运",
-  [":jiyun"] = "游戏开始时，将牌堆中不同类别的牌各一张置于你的武将牌上，称为“粮”。准备阶段，你可以令任意名角色各摸一张牌，当这些角色使用以此法"..
-  "摸到的牌结算结束后，若你的“粮”数少于3，将之作为“粮”置于你的武将牌上。",
+  [":jiyun"] = "游戏开始时，将牌堆中不同类别的牌各一张置于你的武将牌上，称为“粮”。准备阶段，你可以令至多X名角色各摸一张牌"..
+  "（X为你的“粮”数，至少为1），当这些角色使用以此法摸到的牌结算结束后，若你的“粮”数少于3，将之作为“粮”置于你的武将牌上。",
 
   ["ol__lifeng_liang"] = "粮",
-  ["#jiyun-choose"] = "集运：令任意名角色各摸一张牌，这些牌被使用后将置为“粮”",
+  ["#jiyun-choose"] = "集运：令至多%arg名角色各摸一张牌，这些牌被使用后将置为“粮”",
   ["@@jiyun-inhand"] = "集运",
 
   ["$jiyun1"] = "",
@@ -42,12 +42,13 @@ jiyun:addEffect(fk.EventPhaseStart, {
   end,
   on_cost = function (self, event, target, player, data)
     local room = player.room
+    local n = math.min(#player:getPile("ol__lifeng_liang"), 1)
     local tos = room:askToChoosePlayers(player, {
       skill_name = jiyun.name,
       min_num = 1,
-      max_num = 10,
+      max_num = n,
       targets = room.alive_players,
-      prompt = "#jiyun-choose",
+      prompt = "#jiyun-choose:::"..n,
       cancelable = true,
     })
     if #tos > 0 then

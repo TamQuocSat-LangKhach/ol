@@ -46,7 +46,7 @@ kudu:addEffect(fk.TurnEnd, {
   anim_type = "drawcard",
   is_delay_effect = true,
   can_trigger = function (self, event, target, player, data)
-    return target == player and player:getMark(kudu.name) ~= 0
+    return player:getMark(kudu.name) ~= 0
   end,
   on_use = function (self, event, target, player, data)
     local room = player.room

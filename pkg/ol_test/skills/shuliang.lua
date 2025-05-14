@@ -4,10 +4,10 @@ local shuliang = fk.CreateSkill{
 
 Fk:loadTranslationTable{
   ["ol__shuliang"] = "输粮",
-  [":ol__shuliang"] = "每回合限一次，你可以使用或打出一张“粮”。结束阶段，你可以将任意张“粮”分配给其他角色，然后摸X张牌（X为获得“粮”的角色数）。",
+  [":ol__shuliang"] = "每回合限一次，你可以使用或打出一张“粮”。结束阶段，你可以将任意张“粮”分配给其他角色，然后你摸一张牌。",
 
   ["#ol__shuliang"] = "输粮：你可以使用或打出一张“粮”",
-  ["#ol__shuliang-give"] = "输粮：将任意张“粮”分配给其他角色，然后摸获得“粮”角色数的牌",
+  ["#ol__shuliang-give"] = "输粮：将任意张“粮”分配给其他角色，然后摸一张牌",
 
   ["$ol__shuliang1"] = "",
   ["$ol__shuliang2"] = "",
@@ -80,13 +80,7 @@ shuliang:addEffect(fk.EventPhaseStart, {
     local result = event:getCostData(self).extra_data
     room:doYiji(result, player, shuliang.name)
     if not player.dead then
-      local n = 0
-      for _, ids in pairs(result) do
-        if #ids > 0 then
-          n = n + 1
-        end
-      end
-      player:drawCards(n, shuliang.name)
+      player:drawCards(1, shuliang.name)
     end
   end,
 })
