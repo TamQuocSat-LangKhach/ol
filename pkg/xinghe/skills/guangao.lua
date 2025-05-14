@@ -57,21 +57,21 @@ guangao:addEffect(fk.AfterCardTargetDeclared, {
     else
       room:notifySkillInvoked(player, guangao.name, "negative")
       room:doIndicate(target, {player})
-      data.extra_data = data.extra_data or {}
-      data.extra_data.guangao = data.extra_data.guangao or {}
-      table.insertIfNeed(data.extra_data.guangao, player.id)
     end
+    data.extra_data = data.extra_data or {}
+    data.extra_data.guangao = data.extra_data.guangao or {}
+    table.insertIfNeed(data.extra_data.guangao, player.id)
     data:addTarget(event:getCostData(self).tos[1])
   end,
 })
 guangao:addEffect(fk.TargetSpecified, {
   mute = true,
+  is_delay_effect = true,
   can_trigger = function (self, event, target, player, data)
     return player:hasSkill(guangao.name) and data.card.trueName == "slash" and data.firstTarget and
       data.extra_data and data.extra_data.guangao and table.contains(data.extra_data.guangao, player.id) and
       player:getHandcardNum() % 2 == 0
   end,
-  on_cost = Util.TrueFunc,
   on_use = function (self, event, target, player, data)
     local room = player.room
     player:drawCards(1, guangao.name)
