@@ -15,7 +15,7 @@ juejue:addEffect(fk.TargetSpecifying, {
   anim_type = "offensive",
   can_trigger = function (self, event, target, player, data)
     return target == player and player:hasSkill(juejue.name) and
-      player.room.current == player and data.use:IsUsingHandcard(player) and
+      player.room.current == player and data.use:isUsingHandcard(player) and
       data:isOnlyTarget(data.to) and data.to ~= player and
       data.extra_data and data.extra_data.juejue == player and
       not data.to.dead and not data.to:isNude()

@@ -10,7 +10,7 @@ Fk:loadTranslationTable{
 jingce:addEffect(fk.CardUsing, {
   can_trigger = function (self, event, target, player, data)
     return target == player and player:hasSkill(jingce.name) and
-      player.room.current == player and data.card.suit ~= Card.NoSuit and data:IsUsingHandcard(player) and
+      player.room.current == player and data.card.suit ~= Card.NoSuit and data:isUsingHandcard(player) and
       not table.contains(player:getTableMark("ol_ex__jingce-turn"), data.card.suit)
   end,
   on_cost = Util.TrueFunc,

@@ -21,7 +21,7 @@ huamu:addEffect(fk.CardUseFinished, {
   mute = true,
   derived_piles = {"huamu_yushu", "huamu_lingshan"},
   can_trigger = function(self, event, target, player, data)
-    if player ~= target or not player:hasSkill(huamu.name) or not data:IsUsingHandcard(player) then return end
+    if player ~= target or not player:hasSkill(huamu.name) or not data:isUsingHandcard(player) then return end
     local room = player.room
     local card_ids = Card:getIdList(data.card)
     if #card_ids == 0 then return end

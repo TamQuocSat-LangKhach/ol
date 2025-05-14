@@ -18,7 +18,7 @@ local quanbian_spec = {
   anim_type = "drawcard",
   can_trigger = function(self, event, target, player, data)
     if target == player and player:hasSkill(quanbian.name) and player.phase == Player.Play and
-      data.card.suit ~= Card.NoSuit and data:IsUsingHandcard(player) then
+      data.card.suit ~= Card.NoSuit and data:isUsingHandcard(player) then
       local card_suit = data.card.suit
       local room = player.room
       local logic = room.logic
@@ -28,14 +28,14 @@ local quanbian_spec = {
       if mark == 0 then
         logic:getEventsOfScope(GameEvent.UseCard, 1, function (e)
           local use = e.data
-          if use.from == player and use.card.suit == card_suit and e.data:IsUsingHandcard(player) then
+          if use.from == player and use.card.suit == card_suit and e.data:isUsingHandcard(player) then
             mark = e.id
             return true
           end
         end, Player.HistoryPhase)
         logic:getEventsOfScope(GameEvent.RespondCard, 1, function (e)
           local use = e.data
-          if use.from == player and use.card.suit == card_suit and e.data:IsUsingHandcard(player) then
+          if use.from == player and use.card.suit == card_suit and e.data:isUsingHandcard(player) then
             mark = (mark == 0) and e.id or math.min(e.id, mark)
             return true
           end
@@ -78,7 +78,7 @@ quanbian:addEffect(fk.CardResponding, quanbian_spec)
 quanbian:addEffect(fk.AfterCardUseDeclared, {
   can_refresh = function (self, event, target, player, data)
     return target == player and player:hasSkill(quanbian.name) and player.phase == Player.Play and
-      data.card.type ~= Card.TypeEquip and data:IsUsingHandcard(player)
+      data.card.type ~= Card.TypeEquip and data:isUsingHandcard(player)
   end,
   on_refresh = function (self, event, target, player, data)
     player.room:addPlayerMark(player, "quanbian-phase", 1)

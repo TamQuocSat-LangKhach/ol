@@ -19,7 +19,7 @@ Fk:loadTranslationTable{
 kedi:addEffect(fk.CardUseFinished, {
   anim_type = "support",
   can_trigger = function (self, event, target, player, data)
-    if target == player and player:hasSkill(kedi.name) and player.phase == Player.Play and data:IsUsingHandcard(player) and
+    if target == player and player:hasSkill(kedi.name) and player.phase == Player.Play and data:isUsingHandcard(player) and
       table.find(player.room.alive_players, function (p)
         return not p:isNude()
       end) and player:usedSkillTimes(kedi.name, Player.HistoryPhase) < 2 then

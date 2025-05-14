@@ -48,7 +48,7 @@ shefu:addEffect(fk.CardUsing, {
   can_trigger = function(self, event, target, player, data)
     return player:hasSkill(shefu.name) and target ~= player and player.room.current ~= player and
       (data.card.type == Card.TypeBasic or data.card.type == Card.TypeTrick) and
-      data:IsUsingHandcard(target) and
+      data:isUsingHandcard(target) and
       table.find(player:getPile("$shefu"), function (id)
         return Fk:getCardById(id):getMark("@shefu") == Fk:translate(data.card.trueName)
       end)

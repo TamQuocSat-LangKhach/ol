@@ -91,7 +91,7 @@ shanjia:addEffect(fk.CardUsing, {
   is_delay_effect = true,
   can_trigger = function (self, event, target, player, data)
     return target == player and player:getMark("ol__shanjia_using-phase") > 0 and
-      data:IsUsingHandcard(player)
+      data:isUsingHandcard(player)
   end,
   on_use = function (self, event, target, player, data)
     local room = player.room
