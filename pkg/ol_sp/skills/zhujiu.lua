@@ -30,9 +30,7 @@ zhujiu:addEffect("viewas", {
     return "#zhujiu:::"..(player:getMark("zhujiu-turn") + 1)
   end,
   handly_pile = true,
-  card_filter = function(self, player, to_select, selected)
-    return #selected < player:getMark("zhujiu-turn") + 1
-  end,
+  card_filter = Util.TrueFunc,
   view_as = function(self, player, cards)
     if #cards < player:getMark("zhujiu-turn") + 1 then return end
     local card = Fk:cloneCard("analeptic")
