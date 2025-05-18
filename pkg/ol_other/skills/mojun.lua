@@ -8,13 +8,11 @@ Fk:loadTranslationTable{
   [":mojun"] = "锁定技，当友方角色使用【杀】造成伤害后，你判定，若结果为黑色，友方角色各摸一张牌。",
 }
 
-local U = require "packages/utility/utility"
-
 mojun:addEffect(fk.Damage, {
   anim_type = "drawcard",
   can_trigger = function(self, event, target, player, data)
     return player:hasSkill(mojun.name) and data.from and
-      table.contains(U.GetFriends(player.room, player, true, true), data.from) and
+      data.from:isFriend(player) and
       data.card and data.card.trueName == "slash"
   end,
   on_use = function(self, event, target, player, data)
@@ -26,8 +24,8 @@ mojun:addEffect(fk.Damage, {
     }
     room:judge(judge)
     if judge:matchPattern() then
-      room:doIndicate(player, U.GetFriends(room, player))
-      for _, p in ipairs(U.GetFriends(room, player)) do
+      room:doIndicate(player, player:getFriends())
+      for _, p in ipairs(player:getFriends()) do
         if not p.dead then
           p:drawCards(1, mojun.name)
         end

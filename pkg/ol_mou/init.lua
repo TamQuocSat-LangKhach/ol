@@ -50,7 +50,7 @@ dongzhuo:addRelatedSkills { "ty_ex__fencheng", "benghuai" }
 Fk:loadTranslationTable{
   ["olmou__dongzhuo"] = "谋董卓",
   ["#olmou__dongzhuo"] = "翦覆四海",
-  --["illustrator:olmou__dongzhuo"] = "",
+  ["illustrator:olmou__dongzhuo"] = "黯荧岛",
 
   ["$ty_ex__fencheng_olmou__dongzhuo"] = "焚城为焰，炙脍犒三军！",
   ["~olmou__dongzhuo"] = "关东鼠辈，怎敢忤逆天命！",
@@ -116,7 +116,7 @@ General:new(extension, "olmou__zhangxiu", "qun", 4):addSkills { "zhuijiao", "cho
 Fk:loadTranslationTable{
   ["olmou__zhangxiu"] = "谋张绣",
   ["#olmou__zhangxiu"] = "枪啸风吟",
-  --["illustrator:olmou__zhangxiu"] = "",
+  ["illustrator:olmou__zhangxiu"] = "凯",
 
   ["~olmou__zhangxiu"] = "文和，可有良计……救我……",
 }

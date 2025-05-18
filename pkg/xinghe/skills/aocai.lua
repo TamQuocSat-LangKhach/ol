@@ -14,6 +14,7 @@ Fk:loadTranslationTable{
 
 aocai:addEffect("viewas", {
   anim_type = "special",
+  click_count = true,
   pattern = ".|.|.|.|.|basic",
   prompt = "#aocai",
   expand_pile = function(self, player)
