@@ -13,7 +13,9 @@ wuma:addEffect(fk.BeforeTurnOver, {
   can_trigger = function (self, event, target, player, data)
     return target == player and player:hasSkill(wuma.name) and player.faceup
   end,
-  on_use = Util.TrueFunc,
+  on_use = function (self, event, target, player, data)
+    data.prevented = true
+  end,
 })
 wuma:addEffect(fk.EventPhaseSkipping, {
   anim_type = "defensive",

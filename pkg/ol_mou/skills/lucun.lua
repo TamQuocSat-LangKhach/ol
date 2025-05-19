@@ -1,6 +1,5 @@
 local lucun = fk.CreateSkill{
   name = "lucun",
-  derived_piles = "olmou__zhangrang_lu",
 }
 
 Fk:loadTranslationTable{
@@ -23,6 +22,7 @@ local U = require "packages/utility/utility"
 lucun:addEffect("viewas", {
   pattern = ".",
   prompt = "#lucun",
+  derived_piles = "olmou__zhangrang_lu",
   interaction = function(self, player)
     local all_names = Fk:getAllCardNames("bt")
     local names = player:getViewAsCardNames(lucun.name, all_names, {}, player:getTableMark("lucun-round"))

@@ -17,7 +17,7 @@ jiejian:addEffect(fk.TargetSpecified, {
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(jiejian.name) and
       data.card.type ~= Card.TypeEquip and data.firstTarget and
-      #player.room.logic:getEventsOfScope(GameEvent.UseCard, 1, function(e)
+      #player.room.logic:getEventsOfScope(GameEvent.UseCard, 10, function(e)
         return e.data.from == player
       end, Player.HistoryTurn) == Fk:translate(data.card.trueName, "zh_CN"):len() and
       table.find(data.use.tos, function (p)
