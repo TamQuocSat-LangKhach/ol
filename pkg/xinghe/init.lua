@@ -668,7 +668,7 @@ Fk:loadTranslationTable{
   ["~ol__peiyuanshao"] = "莫伸手，伸手必被捉！",
 }
 
---女史：灵雎√ 关银屏√ 大乔小乔x 张星彩x 马云騄√ 董白√ 赵襄√ 花鬘x 张昌蒲x 杨婉x 郭槐√ 陆郁生√ 丁尚涴√ 李婉√ 胡金定√ 孙茹√ 董翓√ 阮慧x
+--女史：灵雎√ 关银屏√ 大乔小乔x 张星彩√ 马云騄√ 董白√ 赵襄√ 花鬘x 张昌蒲x 杨婉x 郭槐√ 陆郁生√ 丁尚涴√ 李婉√ 胡金定√ 孙茹√ 董翓√ 阮慧x
 General:new(extension, "ol__lingju", "qun", 3, 3, General.Female):addSkills { "ol__jieyuan", "ol__fenxin" }
 Fk:loadTranslationTable{
   ["ol__lingju"] = "灵雎",
@@ -686,6 +686,17 @@ Fk:loadTranslationTable{
   ["illustrator:ol__guanyinping"] = "光域鹿鸣",
 
   ["~ol__guanyinping"] = "红已花残，此仇未能报……",
+}
+
+General:new(extension, "ol__xingcai", "shu", 3, 3, General.Female):addSkills { "ol__shenxian", "qiangwu" }
+Fk:loadTranslationTable{
+  ["ol__xingcai"] = "张星彩",
+  ["#ol__xingcai"] = "敬哀皇后",
+  ["illustrator:ol__xingcai"] = "第七个桔子",
+
+  ["$qiangwu_ol__xingcai1"] = "国仇家恨，今日一并算清！",
+  ["$qiangwu_ol__xingcai2"] = "卫境汉土，凭我长枪！",
+  ["~ol__xingcai"] = "誓死我也要守卫这山河！",
 }
 
 General:new(extension, "mayunlu", "shu", 4, 4, General.Female):addSkills { "mashu", "fengpo" }

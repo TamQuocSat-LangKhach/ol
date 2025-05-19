@@ -56,7 +56,11 @@ jiane:addEffect(fk.CardEffectCancelledOut, {
       return is_from
     end
   end,
+  on_use = function (self, event, target, player, data)
+    player.room:setPlayerMark(player, "@@jiane_buff-turn", 1)
+  end,
 })
+
 jiane:addEffect(fk.PreCardUse, {
   can_refresh = Util.TrueFunc,
   on_refresh = function(self, event, target, player, data)
@@ -68,6 +72,7 @@ jiane:addEffect(fk.PreCardUse, {
     end
   end,
 })
+
 jiane:addEffect("prohibit", {
   is_prohibited = function(self, from, to, card)
     return to:getMark("@@jiane_buff-turn") > 0

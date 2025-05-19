@@ -15,7 +15,7 @@ Fk:loadTranslationTable{
   ["$zhongyun2"] = "明晰法理，通晓人情。",
 }
 
-local zhongyun_spec = {
+local spec = {
   anim_type = "control",
   can_trigger = function (self, event, target, player, data)
     return target == player and player:hasSkill(zhongyun.name) and player.hp == player:getHandcardNum() and
@@ -44,8 +44,7 @@ local zhongyun_spec = {
         damage = 1,
         skillName = zhongyun.name,
       }
-    end
-    if player:isWounded() then
+    elseif player:isWounded() then
       room:recover{
         who = player,
         num = 1,
@@ -56,8 +55,8 @@ local zhongyun_spec = {
   end,
 }
 
-zhongyun:addEffect(fk.Damaged, zhongyun_spec)
-zhongyun:addEffect(fk.HpRecover, zhongyun_spec)
+zhongyun:addEffect(fk.Damaged, spec)
+zhongyun:addEffect(fk.HpRecover, spec)
 
 zhongyun:addEffect(fk.AfterCardsMove,{
   anim_type = "control",

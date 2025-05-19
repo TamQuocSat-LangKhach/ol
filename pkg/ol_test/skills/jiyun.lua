@@ -42,7 +42,7 @@ jiyun:addEffect(fk.EventPhaseStart, {
   end,
   on_cost = function (self, event, target, player, data)
     local room = player.room
-    local n = math.min(#player:getPile("ol__lifeng_liang"), 1)
+    local n = math.max(#player:getPile("ol__lifeng_liang"), 1)
     local tos = room:askToChoosePlayers(player, {
       skill_name = jiyun.name,
       min_num = 1,

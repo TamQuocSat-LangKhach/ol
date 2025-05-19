@@ -17,6 +17,17 @@ Fk:loadTranslationTable{
   ["~ol__sunliang"] = "君不君，臣不臣，此国之悲……",
 }
 
+local guanqiujian = General:new(extension, "ol__guanqiujian", "wei", 4)
+guanqiujian:addSkills { "ol__zhengrong", "ol__hongju" }
+guanqiujian:addRelatedSkill("ol__qingce")
+Fk:loadTranslationTable{
+  ["ol__guanqiujian"] = "毌丘俭",
+  ["#ol__guanqiujian"] = "镌功铭征荣",
+  ["illustrator:ol__guanqiujian"] = "alien",
+
+  ["~ol__guanqiujian"] = "好谋而不达，此事必有隐患。",
+}
+
 General:new(extension, "ol__zhoufei", "wu", 3, 3, General.Female):addSkills { "ol__liangyin", "ol__kongsheng" }
 Fk:loadTranslationTable{
   ["ol__zhoufei"] = "周妃",
