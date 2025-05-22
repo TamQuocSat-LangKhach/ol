@@ -22,7 +22,7 @@ aichen:addEffect(fk.EnterDying, {
   on_use = function(self, event, target, player, data)
     local room = player.room
     local choices = table.filter({1, 2, 3, 4}, function (n)
-      return not table.contains(player:getTableMark("luochong_removed"))
+      return not table.contains(player:getTableMark("luochong_removed"), n)
     end)
     choices = table.map(choices, function (n)
       return "luochong"..n

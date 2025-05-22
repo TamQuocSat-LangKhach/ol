@@ -46,7 +46,7 @@ zongluan:addEffect(fk.EventPhaseStart, {
     local tos = room:askToChoosePlayers(to, {
       min_num = 1,
       max_num = 10,
-      targets = room.alive_players,
+      targets = targets,
       skill_name = zongluan.name,
       prompt = "#zongluan-slash",
       cancelable = false,

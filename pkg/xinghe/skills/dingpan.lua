@@ -48,7 +48,6 @@ dingpan:addEffect("active", {
     local choice = room:askToChoice(target, {
       choices = choices,
       skill_name = dingpan.name,
-      prompt = "#qqqqqq-choose",
     })
     if choice:startsWith("dingpan_discard") then
       local id = room:askToChooseCard(player, {

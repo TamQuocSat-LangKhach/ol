@@ -713,7 +713,7 @@ General:new(extension, "dongbai", "qun", 3, 3, General.Female):addSkills { "lian
 Fk:loadTranslationTable{
   ["dongbai"] = "董白",
   ["#dongbai"] = "魔姬",
-  ["illustrator:dongbai"] = "alien",
+  ["illustrator:dongbai"] = "SoniaTang",
 
   ["~dongbai"] = "放肆，我要让爷爷赐你们死罪！",
 }
