@@ -121,7 +121,7 @@ nishou:addEffect(fk.EventPhaseEnd, {
       })[1]
     end
     if to ~= player then
-      room:swapAllCards(player, {player, to[1]}, nishou.name)
+      room:swapAllCards(player, {player, to}, nishou.name)
     end
   end,
 })
