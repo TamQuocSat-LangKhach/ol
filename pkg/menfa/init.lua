@@ -326,12 +326,12 @@ Fk:loadTranslationTable{
 General:new(extension, "olz__yangxiu", "wei", 3):addSkills { "jiewu", "gaoshi", "quhuo" }
 Fk:loadTranslationTable{
   ["olz__yangxiu"] = "族杨修",
-  --["#olz__yangxiu"] = "",
+  ["#olz__yangxiu"] = "皓首邀终始",
   --["illustrator:olz__yangxiu"] = "",
 
-  ["$quhuo_olz__yangxiu1"] = "",
-  ["$quhuo_olz__yangxiu2"] = "",
-  ["~olz__yangxiu"] = "",
+  ["$quhuo_olz__yangxiu1"] = "非鱼非我，惟知君侯心意而已。",
+  ["$quhuo_olz__yangxiu2"] = "依我所教，答记方能无有疑惑。",
+  ["~olz__yangxiu"] = "空晓事而未见老，枉少作而愧对君……",
 }
 
 General:new(extension, "olz__yangzhongh", "qun", 4):addSkills { "juetu", "kudu", "quhuo" }
@@ -354,6 +354,29 @@ Fk:loadTranslationTable{
   ["$quhuo_olz__yangbiao1"] = "",
   ["$quhuo_olz__yangbiao2"] = "",
   ["~olz__yangbiao"] = "",
+}
+
+--吴郡陆氏：
+General:new(extension, "olz__lujing", "wu", 4):addSkills { "ol__tanfeng", "juewei", "zelie" }
+Fk:loadTranslationTable{
+  ["olz__lujing"] = "族陆景",
+  --["#olz__lujing"] = "",
+  --["illustrator:olz__lujing"] = "",
+
+  ["$zelie_olz__lujing1"] = "",
+  ["$zelie_olz__lujing2"] = "",
+  ["~olz__lujing"] = "",
+}
+
+General:new(extension, "olz__luji", "wu", 3):addSkills { "gailan", "fennu", "zelie" }
+Fk:loadTranslationTable{
+  ["olz__luji"] = "族陆绩",
+  --["#olz__luji"] = "",
+  --["illustrator:olz__luji"] = "",
+
+  ["$zelie_olz__luji1"] = "",
+  ["$zelie_olz__luji2"] = "",
+  ["~olz__luji"] = "",
 }
 
 return extension

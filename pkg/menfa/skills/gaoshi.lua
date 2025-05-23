@@ -8,6 +8,9 @@ Fk:loadTranslationTable{
   "然后可以使用展示的牌。若你因此使用了所有亮出牌，你摸两张牌，否则将其余牌置入弃牌堆。",
 
   ["#gaoshi-use"] = "高视：你可以使用这些牌",
+
+  ["$gaoshi1"] = "听风仰德，省览建安辞章。",
+  ["$gaoshi2"] = "杨宗显迹，高视魏京群英。",
 }
 
 gaoshi:addEffect(fk.EventPhaseStart, {

@@ -376,6 +376,22 @@ Fk:loadTranslationTable{
 --红运当头 ♣5 ♦5 ♠5
 --无天无界 ♥K
 
+local armillary_sphere = fk.CreateCard{
+  name = "&armillary_sphere",
+  type = Card.TypeEquip,
+  sub_type = Card.SubtypeTreasure,
+  equip_skill = "#armillary_sphere_skill",
+}
+extension:addCardSpec("armillary_sphere", Card.Diamond, 1)
+extension:addCardSpec("armillary_sphere", Card.Diamond, 3)
+extension:addCardSpec("armillary_sphere", Card.Diamond, 10)
+extension:addCardSpec("armillary_sphere", Card.Diamond, 12)
+Fk:loadTranslationTable{
+  ["armillary_sphere"] = "浑天仪",
+  [":armillary_sphere"] = "装备牌·宝物<br/>"..
+  "<b>宝物技能</b>：锁定技，你从装备区里失去此牌时，从牌堆中随机获得两张与此牌点数相同的锦囊牌。当你受到伤害时，销毁此牌并防止之。",
+}
+
 extension:loadCardSkels {
   honey_trap,
   daggar_in_smile,
@@ -410,6 +426,8 @@ extension:loadCardSkels {
 
   thunder_god_help,
   sharing_risk,
+
+  armillary_sphere,
 }
 
 return extension

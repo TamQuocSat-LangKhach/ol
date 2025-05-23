@@ -12,6 +12,9 @@ Fk:loadTranslationTable{
   ["#jiewu-invoke"] = "捷悟：是否展示 %dest 一张手牌，若与你使用的牌花色相同则摸牌",
   ["#jiewu-show"] = "捷悟：展示 %dest 一张手牌",
   ["#jiewu-ask"] = "捷悟：将 %dest 一张牌置于牌堆顶",
+
+  ["$jiewu1"] = "只此四字，绝、妙、好、辞。",
+  ["$jiewu2"] = "君侯，他日君若乘上高轩，我当为君揽辔策马！",
 }
 
 jiewu:addEffect(fk.EventPhaseStart, {
