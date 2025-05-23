@@ -51,7 +51,7 @@ xiongshu:addEffect(fk.EventPhaseStart, {
         include_equip = true,
         skill_name = xiongshu.name,
         prompt = "#xiongshu-cost::"..target.id..":"..n,
-        cancelable = false,
+        cancelable = true,
         skip = true,
       })
       if #cards > 0 then
