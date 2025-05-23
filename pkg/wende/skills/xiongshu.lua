@@ -46,8 +46,8 @@ xiongshu:addEffect(fk.EventPhaseStart, {
       end
     else
       local cards = room:askToDiscard(player, {
-        min_num = 1,
-        max_num = 1,
+        min_num = n,
+        max_num = n,
         include_equip = true,
         skill_name = xiongshu.name,
         prompt = "#xiongshu-cost::"..target.id..":"..n,
