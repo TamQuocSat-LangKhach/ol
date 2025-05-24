@@ -403,7 +403,7 @@ rule:addRelatedSkill(fk.CreateTriggerSkill {
       }
     end
 
-    for _, talent in ipairs(hasTalentStart(player, "rouge_fuyiqu__")) do
+    for _, talent in ipairs(RougeUtil.hasTalentStart(player, "rouge_fuyiqu__")) do
       sendTalentLog(player, talent)
       local name_splited = talent:split("rouge_fuyiqu__")
       local card_name = name_splited[#name_splited]
