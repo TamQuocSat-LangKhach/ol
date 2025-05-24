@@ -74,7 +74,7 @@ hongtu:addEffect(fk.EventPhaseEnd, {
       local hongtuSmall = (Fk:getCardById(ids[2]).number ~= Fk:getCardById(ids[3]).number)
       room:useCard(use)
       if not player.dead then
-        local handcards = player:getCardIds(Player.Hand)
+        local handcards = player:getCardIds("h")
         local to_discard = table.filter(ids, function (id)
           return table.contains(handcards, id) and not player:prohibitDiscard(id)
         end)

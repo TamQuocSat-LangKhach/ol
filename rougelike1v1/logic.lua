@@ -29,7 +29,7 @@ function Rouge1v1Logic:chooseGenerals()
   for _, g in ipairs(selected) do
     room:findGeneral(g)
   end
-  room:askForChooseKingdom(players)
+  room:askToChooseKingdom(players)
 
   for _, p in ipairs(players) do
     room:broadcastProperty(p, "general")

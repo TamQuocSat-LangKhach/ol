@@ -264,7 +264,11 @@ function RougeUtil.attachSkillToPlayer(player, skill_name)
   -- TODO: 忘记初始技能的地方
   local n = player:getMark("rougelike1v1_skill_num")
   if #mark >= n then
-    local tolose = room:askForChoice(player, mark, "rougelike1v1", "#rouge-lose", true)
+    local tolose = room:askToChoice(player, {
+        choices = mark,
+        skill_name = "rougelike1v1",
+        prompt = "#rouge-lose", true,
+      })
     room:handleAddLoseSkills(player, "-" .. tolose, nil, true)
     table.removeOne(mark, tolose)
   end

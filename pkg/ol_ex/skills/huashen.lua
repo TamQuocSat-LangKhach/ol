@@ -87,7 +87,7 @@ local function Dohuashen(player)
   player.gender = general.gender
   room:broadcastProperty(player, "gender")
   player.kingdom = general.kingdom
-  room:askForChooseKingdom({player})
+  room:askToChooseKingdom({player})
   room:broadcastProperty(player, "kingdom")
   local old_mark = player:getMark("@ol_ex__huashen_skill")
   if old_mark ~= 0 then

@@ -54,7 +54,7 @@ tairan:addEffect(fk.EventPhaseStart, {
       room:loseHp(player, n, tairan.name)
     end
     if not player.dead then
-      local cards = table.filter(player:getCardIds(Player.Hand), function (id)
+      local cards = table.filter(player:getCardIds("h"), function (id)
         return Fk:getCardById(id):getMark("@@tairan-inhand") > 0 and not player:prohibitDiscard(id)
       end)
       if #cards > 0 then

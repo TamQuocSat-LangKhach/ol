@@ -55,7 +55,7 @@ local tuishengUse = function(self, event, _, player, _)
   local dat = event:getCostData(self)
   if dat.choice == "tuisheng_push" then
     if not player:isKongcheng() then
-      player:addToPile("olmou__zhangrang_lu", player:getCardIds(Player.Hand), true, tuisheng.name, player)
+      player:addToPile("olmou__zhangrang_lu", player:getCardIds("h"), true, tuisheng.name, player)
       if player.dead then return false end
     end
     if player:isWounded() then

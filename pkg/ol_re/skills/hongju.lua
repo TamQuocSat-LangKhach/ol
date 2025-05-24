@@ -28,7 +28,7 @@ hongju:addEffect(fk.EventPhaseStart, {
       local piles = room:askToArrangeCards(player, {
         skill_name = hongju.name,
         card_map = {
-          player:getPile("$guanqiujian__glory"), player:getCardIds(Player.Hand),
+          player:getPile("$guanqiujian__glory"), player:getCardIds("h"),
           "$guanqiujian__glory", "$Hand"
         },
         prompt = "#ol__hongju-exchange",
