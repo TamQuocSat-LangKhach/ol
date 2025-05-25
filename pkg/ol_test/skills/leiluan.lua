@@ -30,7 +30,7 @@ leiluan:addEffect("viewas", {
   end,
   handly_pile = true,
   card_filter = function (self, player, to_select, selected)
-    return #selected < math.max(Self:getMark("leiluan_count"), 1)
+    return #selected < math.max(player:getMark("leiluan_count"), 1)
   end,
   view_as = function(self, player, cards)
     if not self.interaction.data or #cards ~= math.max(player:getMark("leiluan_count"), 1) then return end

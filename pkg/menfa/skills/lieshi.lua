@@ -4,11 +4,11 @@ local lieshi = fk.CreateSkill{
 
 Fk:loadTranslationTable{
   ["lieshi"] = "烈誓",
-  [":lieshi"] = "出牌阶段，你可以选择一项：1.废除判定区并受到你的1点火焰伤害；2.弃置所有【闪】；3.弃置所有【杀】。然后令一名其他角色选择执行另一项。",
+  [":lieshi"] = "出牌阶段，你可以选择一项：1.废除判定区并受到你的1点火焰伤害；2.弃置所有【闪】；3.弃置所有【杀】。然后令一名角色选择执行另一项。",
 
-  ["#lieshi"] = "烈誓：执行一项效果，然后令一名其他角色选择执行一项与你不同的效果",
-  ["#lieshi-choose"] = "烈誓：选择一名其他角色，令其选择执行与你不同的效果",
-  ["#lieshi-choice"] = "烈誓：选择：废除判定区并受到%src造成的1点火焰伤害，或弃置手牌区中所有的【杀】或【闪】",
+  ["#lieshi"] = "烈誓：执行一项效果，然后令一名角色选择执行一项与你不同的效果",
+  ["#lieshi-choose"] = "烈誓：选择一名角色，令其选择执行与你不同的效果",
+  ["#lieshi-choice"] = "烈誓：废除判定区并受到 %src 造成的1点火焰伤害，或弃置手牌中所有【杀】或【闪】",
   ["lieshi_damage"] = "废除判定区并受到1点火焰伤害",
   ["lieshi_slash"] = "弃置手牌区中所有的【杀】",
   ["lieshi_jink"] = "弃置手牌区中所有的【闪】",
@@ -52,11 +52,11 @@ lieshi:addEffect("active", {
     local to = player
     for i = 1, 2, 1 do
       if i == 2 then
-        if player.dead or #player.room:getOtherPlayers(player, false) == 0 then return end
+        if player.dead then return end
         to = room:askToChoosePlayers(player, {
           min_num = 1,
           max_num = 1,
-          targets = room:getOtherPlayers(player, false),
+          targets = room.alive_players,
           skill_name = lieshi.name,
           prompt = "#lieshi-choose",
           cancelable = false,

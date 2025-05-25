@@ -11,31 +11,54 @@ Fk:loadTranslationTable{
   ["$balong2"] = "穆王乘八牡，天地恣遨游。",
 }
 
-balong:addEffect(fk.HpChanged, {
+local spec = {
   anim_type = "drawcard",
   can_trigger = function(self, event, target, player, data)
     if target == player and player:hasSkill(balong.name) and not player:isKongcheng() and
       player:usedSkillTimes(balong.name, Player.HistoryTurn) == 0 then
-      local turn_event = player.room.logic:getCurrentEvent():findParent(GameEvent.Turn, true)
-      if turn_event == nil then return false end
-      local types = { Card.TypeBasic, Card.TypeEquip, Card.TypeTrick }
-      local num = {0, 0, 0}
-      for i = 1, 3, 1 do
-        num[i] = #table.filter(player:getCardIds("h"), function(id)
-          return Fk:getCardById(id).type == types[i]
-        end)
+      local hp_change_event = player.room.logic:getCurrentEvent():searchEvents(GameEvent.ChangeHp, 1, Util.TrueFunc)
+      if hp_change_event == nil then return false end
+      local dat = hp_change_event[1].data
+      if dat.extra_data and dat.extra_data.balong then
+        local types = { Card.TypeBasic, Card.TypeEquip, Card.TypeTrick }
+        local num = {0, 0, 0}
+        for i = 1, 3, 1 do
+          num[i] = #table.filter(player:getCardIds("h"), function(id)
+            return Fk:getCardById(id).type == types[i]
+          end)
+        end
+        return num[3] > num[1] and num[3] > num[2]
       end
-      if num[3] <= num[1] or num[3] <= num[2] then return false end
-      local changehp_events = player.room.logic:getEventsOfScope(GameEvent.ChangeHp, 1, function (e)
-        return e.data.who == player
-      end, Player.HistoryTurn)
-      return #changehp_events == 1 and changehp_events[1].data == data
     end
   end,
   on_use = function(self, event, target, player, data)
     player:showCards(player:getCardIds("h"))
-    if player:getHandcardNum() < #player.room.alive_players and not player.dead then
-      player:drawCards(#player.room.alive_players - player:getHandcardNum(), balong.name)
+    local n = #player.room.alive_players - player:getHandcardNum()
+    if n > 0 and not player.dead then
+      player:drawCards(n, balong.name)
+    end
+  end,
+}
+
+balong:addEffect(fk.Damaged, spec)
+balong:addEffect(fk.HpLost, spec)
+balong:addEffect(fk.HpRecover, spec)
+balong:addEffect(fk.MaxHpChanged, spec)
+
+balong:addEffect(fk.HpChanged, {
+  can_refresh = function (self, event, target, player, data)
+    return target == player and player:hasSkill(balong.name, true) and
+      player:usedSkillTimes(balong.name, Player.HistoryTurn) == 0
+  end,
+  on_refresh = function (self, event, target, player, data)
+    local turn_event = player.room.logic:getCurrentEvent():findParent(GameEvent.Turn, true)
+    if turn_event == nil then return false end
+    local changehp_events = player.room.logic:getEventsOfScope(GameEvent.ChangeHp, 1, function (e)
+      return e.data.who == player
+    end, Player.HistoryTurn)
+    if #changehp_events == 1 and changehp_events[1].data == data then
+      data.extra_data = data.extra_data or {}
+      data.extra_data.balong = true
     end
   end,
 })

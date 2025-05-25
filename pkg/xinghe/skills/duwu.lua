@@ -22,16 +22,8 @@ duwu:addEffect("active", {
     return not player:prohibitDiscard(to_select)
   end,
   target_filter = function(self, player, to_select, selected, selected_cards)
-    if #selected == 0 and to_select ~= player and to_select.hp > 0 then
-      if to_select.hp == #selected_cards then
-        --FIXME: 飞刀、飞坐骑
-        if table.contains(selected_cards, player:getEquipment(Card.SubtypeWeapon)) then
-          return player:distanceTo(to_select) == 1
-        else
-          return player:inMyAttackRange(to_select)
-        end
-      end
-    end
+    return #selected == 0 and to_select ~= player and to_select.hp > 0 and
+      to_select.hp == #selected_cards and player:inMyAttackRange(to_select, nil, selected_cards)
   end,
   on_use = function(self, room, effect)
     local player = effect.from

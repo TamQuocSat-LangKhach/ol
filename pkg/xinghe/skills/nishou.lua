@@ -34,6 +34,8 @@ local nishouFilter = function(player, id)
     if player:canUseTo(card, player) then
       table.insert(choices, "nishou_lightning")
     end
+  else
+    return {}
   end
   return choices
 end
@@ -45,30 +47,16 @@ nishou:addEffect(fk.AfterCardsMove, {
       for _, move in ipairs(data) do
         if move.from == player and move.toArea == Card.DiscardPile then
           for _, info in ipairs(move.moveInfo) do
-            if info.fromArea == Card.PlayerEquip and #nishouFilter(player, info.cardId) > 0 then
-              return true
+            if info.fromArea == Card.PlayerEquip then
+              if #nishouFilter(player, info.cardId) > 0 then
+                event:setCostData(self, {cards = {info.cardId}})
+                return true
+              else
+                return false
+              end
             end
           end
         end
-      end
-    end
-  end,
-  on_trigger = function(self, event, target, player, data)
-    local card_ids = {}
-    for _, move in ipairs(data) do
-      if move.from == player and move.toArea == Card.DiscardPile then
-        for _, info in ipairs(move.moveInfo) do
-          if info.fromArea == Card.PlayerEquip then
-            table.insertIfNeed(card_ids, info.cardId)
-          end
-        end
-      end
-    end
-    for _, id in ipairs(card_ids) do
-      if not player:hasSkill(nishou.name) then break end
-      if #nishouFilter(player, id) > 0 then
-        event:setCostData(self, {cards = {id}})
-        self:doCost(event, target, player, data)
       end
     end
   end,

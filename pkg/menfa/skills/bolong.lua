@@ -28,7 +28,7 @@ bolong:addEffect("active", {
   card_filter = Util.FalseFunc,
   target_filter = function(self, player, to_select, selected)
     if #selected == 0 and to_select ~= player then
-      return not player:isNude() or (not player:isKongcheng() and #to_select:getCardIds("he") >= Self:getHandcardNum())
+      return not player:isNude() or (not player:isKongcheng() and #to_select:getCardIds("he") >= player:getHandcardNum())
     end
   end,
   on_use = function(self, room, effect)

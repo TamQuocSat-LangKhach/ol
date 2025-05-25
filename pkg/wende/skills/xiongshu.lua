@@ -4,12 +4,10 @@ local xiongshu = fk.CreateSkill{
 
 Fk:loadTranslationTable{
   ["xiongshu"] = "凶竖",
-  [":xiongshu"] = "其他角色出牌阶段开始时，你可以弃置X张牌（X为本轮你发动此技能次数，不足则全弃，无牌则不弃），展示其一张手牌，"..
+  [":xiongshu"] = "其他角色出牌阶段开始时，你可以弃置X张牌（X为本轮你已发动此技能次数），展示其一张手牌，"..
   "你秘密猜测其于此阶段是否会使用与此牌同名的牌。此阶段结束时，若你猜对，你对其造成1点伤害；若你猜错，你获得此牌。",
 
-  ["#xiongshu-invoke"] = "凶竖：你可以展示 %dest 的一张手牌",
-  ["#xiongshu-cost"] = "凶竖：你可以弃置%arg张牌，展示 %dest 一张手牌",
-  ["#xiongshu-all"] = "凶竖：你可以弃置所有牌，展示 %dest 一张手牌",
+  ["#xiongshu-invoke"] = "凶竖：你可以弃置%arg张牌，展示 %dest 一张手牌",
   ["#xiongshu-choice"] = "凶竖：猜测 %dest 本阶段是否会使用 %arg",
 
   ["$xiongshu1"] = "怀志拥权，谁敢不服？",
@@ -20,28 +18,18 @@ xiongshu:addEffect(fk.EventPhaseStart, {
   anim_type = "control",
   can_trigger = function(self, event, target, player, data)
     return target ~= player and player:hasSkill(xiongshu.name) and target.phase == Player.Play and
-      not target:isKongcheng() and not target.dead
+      not target.dead and
+      #player:getCardIds("he") >= player:usedSkillTimes(xiongshu.name, Player.HistoryRound)
   end,
   on_cost = function(self, event, target, player, data)
     local room = player.room
     local n = player:usedSkillTimes(xiongshu.name, Player.HistoryRound)
-    local all = table.filter(player:getCardIds("he"), function(id)
-      return not player:prohibitDiscard(id)
-    end)
     if n == 0 then
       if room:askToSkillInvoke(player, {
         skill_name = xiongshu.name,
-        prompt = "#xiongshu-invoke::"..target.id,
+        prompt = "#xiongshu-invoke::"..target.id..":0",
       }) then
         event:setCostData(self, {tos = {target}, cards = {}})
-        return true
-      end
-    elseif #all <= n then
-      if room:askToSkillInvoke(player, {
-        skill_name = xiongshu.name,
-        prompt = "#xiongshu-all::"..target.id,
-      }) then
-        event:setCostData(self, {tos = {target}, cards = all})
         return true
       end
     else
@@ -50,7 +38,7 @@ xiongshu:addEffect(fk.EventPhaseStart, {
         max_num = n,
         include_equip = true,
         skill_name = xiongshu.name,
-        prompt = "#xiongshu-cost::"..target.id..":"..n,
+        prompt = "#xiongshu-invoke::"..target.id..":"..n,
         cancelable = true,
         skip = true,
       })

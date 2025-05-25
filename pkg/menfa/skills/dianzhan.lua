@@ -37,7 +37,7 @@ dianzhan:addEffect(fk.CardUseFinished, {
   anim_type = "drawcard",
   can_trigger = function(self, event, target, player, data)
     if target == player and player:hasSkill(dianzhan.name) and data.card.suit ~= Card.NoSuit and
-      #player:getTableMark("@dianzhan-round") < 4 then
+      player:usedSkillTimes(dianzhan.name, Player.HistoryRound) < 4 then
       local use_events = player.room.logic:getEventsOfScope(GameEvent.UseCard, 1, function (e)
         local use = e.data
         return use.from == player and use.card:compareSuitWith(data.card)
