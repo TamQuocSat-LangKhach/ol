@@ -54,19 +54,21 @@ shengong:addEffect("active", {
   anim_type = "support",
   prompt = "shengong",
   can_use = function(self, player)
-    return #player:getTableMark("shengong-phase") < 3
+    return #player:getTableMark("shengong-phase") < 4
   end,
   card_num = 1,
   target_num = 0,
   card_filter = function(self, player, to_select, selected)
     local card = Fk:getCardById(to_select)
-    if #selected == 0 and not player:prohibitDiscard(card) then
+    if #selected == 0 and not player:prohibitDiscard(card) and card.type == Card.TypeEquip then
       if table.contains(player:getTableMark("shengong-phase"), card.sub_type) then
         return false
       end
       if card.sub_type > 4 then
         return not table.contains(player:getTableMark("shengong-phase"), 5)
       end
+
+      return true
     end
   end,
   on_use = function(self, room, effect)
