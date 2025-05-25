@@ -6,7 +6,7 @@ Fk:loadTranslationTable{
   ["ol_ex__longdan"] = "龙胆",
   [":ol_ex__longdan"] = "你可以将一张【杀】当【闪】、【闪】当【杀】、【酒】当【桃】、【桃】当【酒】使用或打出。",
 
-  ["#ol_ex__longdan-viewas"] = "烈弓：将一张【杀】当【闪】、【闪】当【杀】、【酒】当【桃】、【桃】当【酒】使用或打出",
+  ["#ol_ex__longdan-viewas"] = "龙胆：将一张【杀】当【闪】、【闪】当【杀】、【酒】当【桃】、【桃】当【酒】使用或打出",
 
   ["$ol_ex__longdan1"] = "哼，有胆就先接我两招！",
   ["$ol_ex__longdan2"] = "龙游沙场，胆战群雄！",
@@ -52,5 +52,7 @@ longdan:addEffect("viewas", {
     return c
   end,
 })
+
+longdan:addAI(nil, "vs_skill")
 
 return longdan
