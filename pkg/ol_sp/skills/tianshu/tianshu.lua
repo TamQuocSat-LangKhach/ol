@@ -109,7 +109,7 @@ for loop = 1, 30 do
         elseif info == 22 then
           return event == fk.EventPhaseStart and target == player and player.phase == Player.Draw
         elseif info == 23 then
-          return event == fk.TargetConfirmed and target == player and data.card.type == Card.TypeTrick
+          return event == fk.TargetConfirmed and target == player and data.card:isCommonTrick()
         elseif info == 24 then
           return event == fk.ChainStateChanged and target.chained
         elseif info == 25 then

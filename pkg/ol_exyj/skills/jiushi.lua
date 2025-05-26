@@ -5,7 +5,7 @@ local jiushi = fk.CreateSkill{
 Fk:loadTranslationTable{
   ["ol_ex__jiushi"] = "酒诗",
   [":ol_ex__jiushi"] = "若你的武将牌正面朝上，你可以翻面视为使用一张【酒】。若你的武将牌背面朝上，你使用“落英”牌无距离限制且不可被响应。"..
-  "当你受到伤害时或当你于回合外发动〖落英〗累计获得至少X张牌后（X为你的体力上限），若你的武将牌背面朝上，你可以翻至正面。",
+  "当你受到伤害后，或当你于回合外发动〖落英〗累计获得至少X张牌后（X为你的体力上限），若你的武将牌背面朝上，你可以翻至正面。",
 
   ["#ol_ex__jiushi"] = "酒诗：你可以翻面，视为使用一张【酒】",
   ["@ol_ex__jiushi_count"] = "酒诗",
@@ -36,13 +36,23 @@ jiushi:addEffect("viewas", {
   end,
 })
 
-jiushi:addEffect(fk.DamageInflicted, {
-  anim_type = "masochism",
-  can_trigger = function (self, event, target, player, data)
-    return target == player and player:hasSkill(jiushi.name) and not player.faceup
+jiushi:addEffect(fk.Damaged, {
+  anim_type = "defensive",
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(jiushi.name) and (data.extra_data or {}).jiushi_check and not player.faceup
   end,
-  on_use = function (self, event, target, player, data)
+  on_use = function(self, event, target, player, data)
     player:turnOver()
+  end,
+})
+
+jiushi:addEffect(fk.DamageInflicted, {
+  can_refresh = function(self, event, target, player, data)
+    return target == player and not player.faceup
+  end,
+  on_refresh = function(self, event, target, player, data)
+    data.extra_data = data.extra_data or {}
+    data.extra_data.jiushi_check = true
   end,
 })
 

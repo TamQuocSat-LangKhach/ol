@@ -55,7 +55,9 @@ youlong:addEffect("viewas", {
   end,
   enabled_at_response = function(self, player, response)
     if response or #player:getAvailableEquipSlots() == 0 then return end
-    local all_names = Fk:getAllCardNames(player:getSwitchSkillState(youlong.name) == fk.SwitchYang and "t" or "b")
+    local state = player:getSwitchSkillState(youlong.name, false, true)
+    if player:getMark("youlong_"..state.."-round") > 0 then return end
+    local all_names = Fk:getAllCardNames(state == "yang" and "t" or "b")
     return #player:getViewAsCardNames(youlong.name, all_names, {}, player:getTableMark("@$youlong")) > 0
   end,
 })

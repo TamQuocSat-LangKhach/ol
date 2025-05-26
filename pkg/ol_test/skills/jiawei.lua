@@ -7,7 +7,6 @@ Fk:loadTranslationTable{
   [":jiawei"] = "【杀】被抵消的回合结束时，你可以将任意张手牌当【决斗】对本回合抵消过【杀】的一名角色使用。每轮限一次，若此【决斗】造成伤害，"..
   "你可以令你或当前回合角色将手牌摸至手牌上限（至多摸至5）。",
 
-  ["jiawei_viewas"] = "假威",
   ["#jiawei-use"] = "假威：你可以将任意张手牌当【决斗】对其中一名角色使用",
   ["#jiawei-choose"] = "假威：你可以令一名角色将手牌摸至手牌上限",
 
@@ -36,21 +35,29 @@ jiawei:addEffect(fk.TurnEnd, {
   end,
   on_cost = function (self, event, target, player, data)
     local room = player.room
-    local success, dat = room:askToUseActiveSkill(player, {
-      skill_name = "jiawei_viewas",
+    local use = room:askToUseVirtualCard(player, {
+      name = "duel",
+      skill_name = jiawei.name,
       prompt = "#jiawei-use",
+      cancelable = true,
       extra_data = {
         exclusive_targets = table.map(event:getCostData(self).tos, Util.IdMapper),
       },
+      card_filter = {
+        n = {1, 999},
+        cards = player:getHandlyIds(),
+      },
+      skip = true,
     })
-    if success and dat then
-      event:setCostData(self, {tos = dat.targets, cards = dat.cards})
+    if use then
+      event:setCostData(self, {extra_data = use})
       return true
     end
   end,
   on_use = function (self, event, target, player, data)
     local room = player.room
-    local use = room:useVirtualCard("duel", event:getCostData(self).cards, player, event:getCostData(self).tos, jiawei.name)
+    local use = event:getCostData(self).extra_data
+    room:useCard(use)
     if use and use.damageDealt and not player.dead and player:getMark("jiawei-round") == 0 then
       local targets = {}
       if player:getHandcardNum() < math.min(player:getMaxCards(), 5) then
@@ -77,5 +84,9 @@ jiawei:addEffect(fk.TurnEnd, {
     end
   end,
 })
+
+jiawei:addLoseEffect(function (self, player, is_death)
+  player.room:setPlayerMark(player, "jiawei-round", 0)
+end)
 
 return jiawei

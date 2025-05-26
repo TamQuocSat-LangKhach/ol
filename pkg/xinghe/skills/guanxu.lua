@@ -30,20 +30,41 @@ guanxu:addEffect("active", {
   on_use = function(self, room, effect)
     local player = effect.from
     local target = effect.tos[1]
+    local cards = room:getNCards(5)
     local result = room:askToPoxi(player, {
       poxi_type = "guanxu_exchange",
       data = {
-        { "Top", room:getNCards(5) },
+        { "Top", cards },
         { target.general, target:getCardIds("h") },
       },
       cancelable = true,
     })
     if #result ~= 2 then return end
-    local cards1, cards2 = {result[1]}, {result[2]}
+    local id1, id2 = result[1], result[2]
     if table.contains(target:getCardIds("h"), result[2]) then
-      cards1, cards2 = {result[2]}, {result[1]}
+      id1, id2 = result[2], result[1]
     end
-    room:swapCardsWithPile(target, cards1, cards2, guanxu.name, "Top", false, player)
+    local moves = {}
+    table.insert(moves, {
+      ids = {id1},
+      from = target,
+      toArea = Card.DrawPile,
+      moveReason = fk.ReasonJustMove,
+      skillName = guanxu.name,
+      proposer = player,
+      moveVisible = false,
+      drawPilePosition = table.indexOf(cards, id2),
+    })
+    table.insert(moves, {
+      ids = {id2},
+      to = target,
+      toArea = Card.PlayerHand,
+      moveReason = fk.ReasonJustMove,
+      skillName = guanxu.name,
+      proposer = player,
+      moveVisible = false,
+    })
+    room:moveCards(table.unpack(moves))
     if player.dead or target.dead then return end
 
     local check = {{}, {}, {}, {}}
