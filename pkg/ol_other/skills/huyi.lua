@@ -5,10 +5,11 @@ local huyi = fk.CreateSkill{
 Fk:loadTranslationTable{
   ["huyi"] = "虎翼",
   [":huyi"] = "游戏开始时，你从三个五虎将技能中选择一个获得。当你使用或打出一张基本牌后，若你因本技能获得的技能总数小于5，你随机获得一个"..
-  "描述中包含此牌名的五虎将技能。回合结束时，你可以选择失去一个以此法获得的技能。",
+  "描述中包含此牌名的五虎将技能。回合结束时，你可以选择失去一个以此法获得的技能，观看一名其他角色的三张随机手牌并获得其中一张牌。",
 
   ["#huyi-choose"] = "虎翼：选择获得一个五虎技能",
   ["#huyi-invoke"] = "虎翼：你可以失去一个五虎技能",
+  ["#huyi-choosePlayer"] = "虎翼：请选择一名其他角色，随机观看其三张手牌并获得其中一张",
 
   ["$huyi1"] = "青龙啸赤月，长刀行千里。",
   ["$huyi2"] = "矛取敌将首，声震当阳桥。",
@@ -123,10 +124,39 @@ huyi:addEffect(fk.TurnEnd, {
     end
   end,
   on_use = function (self, event, target, player, data)
+    ---@type string
+    local skillName = huyi.name
     local room = player.room
     local skill = event:getCostData(self).choice
-    room:removeTableMark(player, huyi.name, skill)
+    room:removeTableMark(player, skillName, skill)
     room:handleAddLoseSkills(player, "-"..skill)
+
+    local availableTargets = table.filter(room:getOtherPlayers(player), function(p) return not p:isKongcheng() end)
+    if #availableTargets == 0 then
+      return false
+    end
+
+    local to = room:askToChoosePlayers(
+      player,
+      {
+        targets = availableTargets,
+        min_num = 1,
+        max_num = 1,
+        prompt = "#huyi-choosePlayer",
+        skill_name = skillName,
+        cancelable = false,
+      }
+    )[1]
+
+    local cid = room:askToChooseCard(
+      player,
+      {
+        target = to,
+        flag = { card_data = { { to.general, table.random(to:getCardIds("h"), 3) } } },
+        skill_name = skillName,
+      }
+    )
+    room:obtainCard(player, cid, false, fk.ReasonPrey, player, skillName)
   end,
 })
 
