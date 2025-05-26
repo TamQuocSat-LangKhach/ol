@@ -60,11 +60,17 @@ longlin:addEffect(fk.TargetSpecified, {
 
 longlin:addEffect(fk.Damage, {
   can_refresh = function(self, event, target, player, data)
-    if data.card and data.card.trueName == "duel" and table.contains(data.card.skillNames, longlin.name) and
-      data.to == player and not data.to.dead then
-      local skill_event = player.room.logic:getCurrentEvent():findParent(GameEvent.SkillEffect)
-      if skill_event and skill_event.data.skill.name == longlin.name and skill_event.data.who == player then
-        return true
+    if target == player and data.card and data.card.trueName == "duel" and
+      table.contains(data.card.skillNames, longlin.name) and not data.to.dead then
+      local e = player.room.logic:getCurrentEvent().parent
+      while e do
+        if e.event == GameEvent.SkillEffect then
+          local dat = e.data
+          if dat.skill.name == longlin.name and dat.who == player then
+            return true
+          end
+        end
+        e = e.parent
       end
     end
   end,

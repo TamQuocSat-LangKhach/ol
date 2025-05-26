@@ -9,6 +9,7 @@ Fk:loadTranslationTable{
 
   ["#guifu"] = "诡伏：将一张“诡伏”【闪】当一种记录的牌使用",
   ["@@guifu-inhand"] = "诡伏",
+  ["@[guifu]"] = "诡伏",
 
   ["$guifu1"] = "天命在我，何须急于一时。",
   ["$guifu2"] = "天数已定，如渊潜龙！",
@@ -60,11 +61,21 @@ guifu:addEffect(fk.Damage, {
   end,
   on_refresh = function (self, event, target, player, data)
     local room = player.room
+    local mark = player:getMark("@[guifu]")
+    if mark == 0 then
+      mark = { value = {} }
+    end
     if data.card then
-      room:addTableMarkIfNeed(player, "guifu_card_record", data.card.trueName)
+      if room:addTableMarkIfNeed(player, "guifu_card_record", data.card.trueName) then
+        table.insert(mark.value, data.card.trueName)
+        room:setPlayerMark(player, "@[guifu]", mark)
+      end
     elseif Fk.skill_skels[data.skillName] then
       if Fk.skills[data.skillName] then
-        room:addTableMarkIfNeed(player, "guifu_skill_record", data.skillName)
+        if room:addTableMarkIfNeed(player, "guifu_skill_record", data.skillName) then
+          table.insert(mark.value, data.skillName)
+          room:setPlayerMark(player, "@[guifu]", mark)
+        end
       end
     end
   end,
@@ -102,11 +113,23 @@ guifu:addEffect("maxcards", {
   end,
 })
 
+Fk:addQmlMark{
+  name = "guifu",
+  qml_path = function(name, value, p)
+    return "packages/ol/qml/guifu"
+  end,
+  how_to_show = function(name, value, p)
+    if type(value) ~= "table" then return " " end
+    return #value.value
+  end,
+}
+
 guifu:addLoseEffect(function (self, player, is_death)
   local room = player.room
   room:setPlayerMark(player, "guifu_card_record", 0)
   room:setPlayerMark(player, "guifu_skill_record", 0)
   room:setPlayerMark(player, "guifu-turn", 0)
+  room:setPlayerMark(player, "@[guifu]", 0)
 end)
 
 return guifu

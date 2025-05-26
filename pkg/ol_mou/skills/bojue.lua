@@ -4,8 +4,8 @@ local bojue = fk.CreateSkill{
 
 Fk:loadTranslationTable{
   ["bojue"] = "搏决",
-  [":bojue"] = "出牌阶段限两次，你可以与一名其他角色同时选择摸或弃置一张牌，若你与其牌数因此变化之和为：0，你与其弃置对方一张牌；2，你与其"..
-  "视为对对方使用一张【杀】。",
+  [":bojue"] = "出牌阶段限两次，你可以与一名其他角色同时选择摸或弃置一张牌，若你与其手牌数因此变化之和为：0，你与其弃置对方一张牌；"..
+  "2，你与其视为对对方使用一张【杀】。",
 
   ["#bojue"] = "搏决：与一名角色同时选择摸或弃一张牌，根据双方选择执行效果",
   ["#bojue-ask"] = "搏决：与 %src 同时选择摸或弃一张牌",
@@ -55,17 +55,21 @@ bojue:addEffect("active", {
           if not p.dead then
             p:drawCards(1, bojue.name)  --FIXME: 万恶的BeforeDrawCard时机
           end
-        else
-          n = n - 1
+        elseif not p.dead then
           local replyCard = result.card
-          table.insert(moves, {
-            ids = replyCard.subcards,
-            from = p,
-            toArea = Card.DiscardPile,
-            moveReason = fk.ReasonDiscard,
-            proposer = p,
-            skillName = bojue.name,
-          })
+          if table.contains(p:getCardIds("h"), replyCard.subcards[1]) then
+            n = n - 1
+          end
+          if table.contains(p:getCardIds("he"), replyCard.subcards[1]) then
+            table.insert(moves, {
+              ids = replyCard.subcards,
+              from = p,
+              toArea = Card.DiscardPile,
+              moveReason = fk.ReasonDiscard,
+              proposer = p,
+              skillName = bojue.name,
+            })
+          end
         end
       end
     end
