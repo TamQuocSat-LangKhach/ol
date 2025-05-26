@@ -68,7 +68,7 @@ fudao:addEffect(fk.TurnEnd, {
     local room = player.room
     if room:askToSkillInvoke(player, {
       skill_name = fudao.name,
-      prompt = "#ol__fudao-invoke",
+      prompt = "#ol__fudao-invoke::"..target.id,
     }) then
       event:setCostData(self, {tos = {target}})
       return true

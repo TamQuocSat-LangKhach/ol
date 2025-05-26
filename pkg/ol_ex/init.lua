@@ -67,6 +67,17 @@ Fk:loadTranslationTable{
   ["~ol_ex__lvmeng"] = "以后……就交给年轻人了……",
 }
 
+General:new(extension, "ol_ex__lidian", "wei", 3):addSkills { "xunxun", "ol_ex__wangxi" }
+Fk:loadTranslationTable{
+  ["ol_ex__lidian"] = "界李典",
+  ["#ol_ex__lidian"] = "深明大义",
+  ["illustrator:ol_ex__lidian"] = "魔奇士",
+
+  ["$xunxun_ol_ex__lidian1"] = "怠慢之处，还望包涵。",
+  ["$xunxun_ol_ex__lidian2"] = "严以律己，宽待将兵。",
+  ["~ol_ex__lidian"] = "丞相知遇，此生无憾也！",
+}
+
 General:new(extension, "ol_ex__huaxiong", "qun", 6):addSkills { "ol_ex__yaowu", "shizhan" }
 Fk:loadTranslationTable{
   ["ol_ex__huaxiong"] = "界华雄",
