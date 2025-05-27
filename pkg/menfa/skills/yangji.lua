@@ -47,7 +47,8 @@ local spec = {
         break
       end
     end
-    if last and table.contains(room.discard_pile, last) and Fk:getCardById(last).suit == Card.Spade and
+    if last and Fk:getCardById(last).suit == Card.Spade and
+      table.contains({Card.DiscardPile, Card.PlayerEquip}, room:getCardArea(last)) and
       not room.current.dead and not table.contains(room.current.sealedSlots, Player.JudgeSlot) and
       not room.current:hasDelayedTrick("indulgence") then
       local card = Fk:cloneCard("indulgence")

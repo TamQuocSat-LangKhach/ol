@@ -6,7 +6,7 @@ local luanwu = fk.CreateSkill {
 Fk:loadTranslationTable {
   ["ol_ex__luanwu"] = "乱武",
   [":ol_ex__luanwu"] = "限定技，出牌阶段，你可以令所有其他角色依次选择一项：1.对距离最小的另一名角色使用【杀】；2.失去1点体力。"..
-  "最后，你可以视为使用一张【杀】。",
+  "最后，你可以视为使用一张无距离次数限制的【杀】。",
 
   ["#ol_ex__luanwu"] = "乱武：令所有其他角色选择：对距离最近的角色出杀，或失去1点体力",
   ["#ol_ex__luanwu-use"] = "乱武：对距离最近的一名角色使用一张【杀】，否则失去1点体力",
@@ -62,6 +62,8 @@ luanwu:addEffect("active", {
       skill_name = luanwu.name,
       prompt = "#ol_ex__luanwu-slash",
       extra_data = {
+        bypass_distances = true,
+        bypass_times = true,
         extraUse = true,
       }
     })

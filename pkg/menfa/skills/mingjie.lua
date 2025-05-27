@@ -55,13 +55,13 @@ mingjie:addEffect(fk.AfterCardTargetDeclared, {
   is_delay_effect = true,
   can_trigger = function (self, event, target, player, data)
     return target == player and not player.dead and (data.card.type == Card.TypeBasic or data.card:isCommonTrick()) and
-      table.find(data:getExtraTargets({bypass_distances = true}), function (p)
+      table.find(data:getExtraTargets(), function (p)
         return table.contains(p:getTableMark("@@mingjiew"), player.id)
       end)
   end,
   on_cost = function(self, event, target, player, data)
     local room = player.room
-    local targets = table.filter(data:getExtraTargets({bypass_distances = true}), function (p)
+    local targets = table.filter(data:getExtraTargets(), function (p)
       return table.contains(p:getTableMark("@@mingjiew"), player.id)
     end)
     local tos = room:askToChoosePlayers(player, {

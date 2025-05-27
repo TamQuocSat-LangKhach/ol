@@ -95,7 +95,7 @@ bojue:addEffect("active", {
         })
         room:throwCard(card, bojue.name, player, target)
       end
-    elseif n == 2 then
+    elseif n == 2 or n == -2 then
       if not player.dead and not target.dead then
         room:useVirtualCard("slash", nil, player, target, bojue.name, true)
       end

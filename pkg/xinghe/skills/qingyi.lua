@@ -38,7 +38,7 @@ qingyi:addEffect("active", {
         players = targets,
         min_num = 1,
         max_num = 1,
-        includeEquip = true,
+        include_equip = true,
         cancelable = false,
         pattern = ".|.|.|hand,equip",
         skill_name = qingyi.name,

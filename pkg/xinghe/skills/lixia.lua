@@ -45,7 +45,7 @@ lixia:addEffect(fk.EventPhaseStart, {
           target:drawCards(2, lixia.name)
         end
       else
-        if target:isWounded() and not target.dead then
+        if not target.dead then
           room:recover {
             num = 1,
             skillName = lixia.name,
@@ -56,7 +56,7 @@ lixia:addEffect(fk.EventPhaseStart, {
       end
     end
     if player.dead then return end
-    local num = tonumber(player:getMark("@shixie_distance")) - 1
+    local num = tonumber(player:getMark("@shixie_distance")) - #result
     room:setPlayerMark(player,"@shixie_distance", num > 0 and "+"..num or num)
   end,
 })
