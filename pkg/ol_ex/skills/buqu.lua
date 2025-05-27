@@ -28,7 +28,7 @@ buqu:addEffect(fk.AskForPeaches, {
     local success = true
     for _, id in pairs(player:getPile("ol_ex__buqu_scar")) do
       if id ~= card then
-        if Fk:getCardById(id).number == Fk:getCardById(id).number then
+        if Fk:getCardById(id).number == Fk:getCardById(card).number then
           success = false
           break
         end
@@ -44,7 +44,7 @@ buqu:addEffect(fk.AskForPeaches, {
         }
       end
     else
-      room:throwCard(card, buqu.name, player)
+      room:moveCardTo(card, Card.DiscardPile, nil, fk.ReasonPutIntoDiscardPile, buqu.name, nil, true, player)
     end
   end,
 })
