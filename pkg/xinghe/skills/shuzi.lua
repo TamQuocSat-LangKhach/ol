@@ -84,6 +84,7 @@ shuzi:addEffect("active", {
           cancelable = true,
         })
         if #to > 0 then
+          to = to[1]
           room:askToMoveCardInBoard(player, {
             target_one = to,
             target_two = target,

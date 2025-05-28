@@ -46,8 +46,9 @@ choulie:addEffect(fk.TurnStart, {
     room:setPlayerMark(player, "choulie-turn", to.id)
   end,
 })
+
 choulie:addEffect(fk.EventPhaseStart, {
-  anim_type = "offensive",
+  mute = true,
   is_delay_effect = true,
   can_trigger = function(self, event, target, player, data)
     if target == player and player:usedSkillTimes(choulie.name, Player.HistoryTurn) > 0 and
@@ -74,6 +75,8 @@ choulie:addEffect(fk.EventPhaseStart, {
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
+    player:broadcastSkillInvoke(choulie.name)
+    room:notifySkillInvoked(player, choulie.name, "offensive")
     local to = room:getPlayerById(player:getMark("choulie-turn"))
     room:throwCard(event:getCostData(self).cards, choulie.name, player, player)
     if not to.dead then

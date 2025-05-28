@@ -53,7 +53,7 @@ kuansai:addEffect(fk.TargetSpecified, {
         include_equip = true,
         skill_name = kuansai.name,
         prompt = "#kuansai-give:"..player.id,
-        cancelable = not player:isWounded(),
+        cancelable = player:isWounded(),
       })
       if #card > 0 then
         room:moveCardTo(card, Player.Hand, player, fk.ReasonGive, kuansai.name, nil, false, to)

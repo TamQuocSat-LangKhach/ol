@@ -40,7 +40,7 @@ guanbian:addEffect(fk.AfterSkillEffect, {
   mute = true,
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(guanbian.name) and
-      (data.skill.name == "xiongni" or data.skill.name == "fengshang")
+      (data.skill:getSkeleton().name == "xiongni" or data.skill:getSkeleton().name == "fengshang")
   end,
   on_use = function(self, event, target, player, data)
     player.room:handleAddLoseSkills(player, "-guanbian")

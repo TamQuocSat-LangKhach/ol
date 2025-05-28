@@ -17,8 +17,9 @@ weimu:addEffect(fk.DamageInflicted, {
     return target == player and player:hasSkill(weimu.name) and player.room.current == player
   end,
   on_use = function(self, event, target, player, data)
+    local n = data.damage
     data:preventDamage()
-    player:drawCards(data.damage * 2, weimu.name)
+    player:drawCards(n * 2, weimu.name)
   end,
 })
 

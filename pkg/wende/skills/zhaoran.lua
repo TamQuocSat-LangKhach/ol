@@ -57,6 +57,7 @@ zhaoran:addEffect(fk.AfterCardsMove, {
       if #suits > 0 then
         player.room:setPlayerMark(player, "@zhaoran-phase", mark)
         event:setCostData(self, {extra_data = #suits})
+        return true
       end
     end
   end,
