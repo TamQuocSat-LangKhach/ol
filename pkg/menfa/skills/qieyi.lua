@@ -9,6 +9,9 @@ Fk:loadTranslationTable{
 
   ["@qieyi-turn"] = "切议",
   ["#qieyi-ask"] = "切议：请将一张牌置于牌堆顶",
+
+  ["$qieyi1"] = "张角将成祸患，何不庙胜先分之、弱之？",
+  ["$qieyi2"] = "昔授尚书于华光，今剖石壁于朝堂。",
 }
 
 local U = require "packages/utility/utility"

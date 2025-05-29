@@ -78,7 +78,7 @@ for loop = 1, 30 do
             end
           end
         elseif info == 14 then
-          return event == fk.CardEffectCancelledOut and data.card
+          return event == fk.CardEffectCancelledOut and target == player and data.card
         elseif info == 15 then
           return event == fk.Deathed and target ~= player
         elseif info == 16 then

@@ -27,7 +27,7 @@ goude:addEffect(fk.TurnEnd, {
         if p.kingdom == player.kingdom then
           local events = room.logic:getEventsOfScope(GameEvent.MoveCards, 1, function(e)
             for _, move in ipairs(e.data) do
-              if move.to == p and move.toArea == Player.Hand and move.moveReason == fk.ReasonDraw and #move.moveInfo == 1 then
+              if move.to == p and move.moveReason == fk.ReasonDraw and #move.moveInfo == 1 then
                 return true
               elseif move.moveReason == fk.ReasonDiscard and move.proposer == p and #move.moveInfo == 1 then
                 for _, info in ipairs(move.moveInfo) do
@@ -41,7 +41,7 @@ goude:addEffect(fk.TurnEnd, {
           if #events > 0 then return true end
           events = room.logic:getEventsOfScope(GameEvent.UseCard, 1, function(e)
             local use = e.data
-            return use.from == p and use.card.trueName == "slash" and use.card:getEffectiveId() == nil
+            return use.from == p and use.card.trueName == "slash" and #Card:getIdList(use.card) == 0
           end, Player.HistoryTurn)
           if #events > 0 then return true end
           events = room.logic:getEventsOfScope(GameEvent.ChangeProperty, 1, function(e)
@@ -67,7 +67,7 @@ goude:addEffect(fk.TurnEnd, {
         if table.contains(choices, "draw1") then
           events = room.logic:getEventsOfScope(GameEvent.MoveCards, 1, function(e)
             for _, move in ipairs(e.data) do
-              if move.to == p and move.toArea == Player.Hand and move.moveReason == fk.ReasonDraw and #move.moveInfo == 1 then
+              if move.to == p and move.moveReason == fk.ReasonDraw and #move.moveInfo == 1 then
                 return true
               end
             end
@@ -79,9 +79,6 @@ goude:addEffect(fk.TurnEnd, {
         if table.contains(choices, "goude2") then
           events = room.logic:getEventsOfScope(GameEvent.MoveCards, 1, function(e)
             for _, move in ipairs(e.data) do
-              if move.to == p and move.toArea == Player.Hand and move.moveReason == fk.ReasonDraw and #move.moveInfo == 1 then
-                return true
-              end
               if move.moveReason == fk.ReasonDiscard and move.proposer == p and #move.moveInfo == 1 then
                 for _, info in ipairs(move.moveInfo) do
                   if info.fromArea == Card.PlayerHand then
@@ -98,7 +95,7 @@ goude:addEffect(fk.TurnEnd, {
         if table.contains(choices, "goude3") then
           events = room.logic:getEventsOfScope(GameEvent.UseCard, 1, function(e)
             local use = e.data
-            return use.from == p and use.card.trueName == "slash" and use.card:getEffectiveId() == nil
+            return use.from == p and use.card.trueName == "slash" and #Card:getIdList(use.card) == 0
           end, Player.HistoryTurn)
           if #events > 0 then
             table.removeOne(choices, "goude3")
@@ -116,54 +113,51 @@ goude:addEffect(fk.TurnEnd, {
       end
     end
     if #choices == 1 then return end
-    local choice
-    while choice ~= "Cancel" do
-      choice = room:askToChoice(player, {
+    local choice = room:askToChoice(player, {
         choices = choices,
         skill_name = goude.name,
         prompt = "#goude-choice",
         all_choices = {"draw1", "goude2", "goude3", "goude4", "Cancel"},
       })
-      if choice == "draw1" or choice == "goude4" then
-        event:setCostData(self, {choice = choice})
+    if choice == "draw1" or choice == "goude4" then
+      event:setCostData(self, {choice = choice})
+      return true
+    elseif choice == "goude2" then
+      local targets = table.filter(room.alive_players, function(p)
+        return not p:isKongcheng()
+      end)
+      if not table.find(player:getCardIds("h"), function (id)
+        return not player:prohibitDiscard(id)
+      end) then
+        table.removeOne(targets, player)
+      end
+      local to = room:askToChoosePlayers(player, {
+        min_num = 1,
+        max_num = 1,
+        targets = targets,
+        skill_name = goude.name,
+        prompt = "#goude-choose",
+        cancelable = true,
+      })
+      if #to > 0 then
+        event:setCostData(self, {tos = to, choice = choice})
         return true
-      elseif choice == "goude2" then
-        local targets = table.filter(room.alive_players, function(p)
-          return not p:isKongcheng()
-        end)
-        if not table.find(player:getCardIds("h"), function (id)
-          return not player:prohibitDiscard(id)
-        end) then
-          table.removeOne(targets, player)
-        end
-        local to = room:askToChoosePlayers(player, {
-          min_num = 1,
-          max_num = 1,
-          targets = targets,
-          skill_name = goude.name,
-          prompt = "#goude-choose",
-          cancelable = true,
-        })
-        if #to > 0 then
-          event:setCostData(self, {tos = to, choice = choice})
-          return true
-        end
-      elseif choice == "goude3" then
-        local use = room:askToUseVirtualCard(player, {
-          name = "slash",
-          skill_name = goude.name,
-          prompt = "#goude-slash",
-          cancelable = true,
-          extra_data = {
-            bypass_times = true,
-            extraUse = true,
-          },
-          skip = true,
-        })
-        if use then
-          event:setCostData(self, {choice = choice, extra_data = use})
-          return true
-        end
+      end
+    elseif choice == "goude3" then
+      local use = room:askToUseVirtualCard(player, {
+        name = "slash",
+        skill_name = goude.name,
+        prompt = "#goude-slash",
+        cancelable = true,
+        extra_data = {
+          bypass_times = true,
+          extraUse = true,
+        },
+        skip = true,
+      })
+      if use then
+        event:setCostData(self, {choice = choice, extra_data = use})
+        return true
       end
     end
   end,

@@ -315,12 +315,12 @@ Fk:loadTranslationTable{
 General:new(extension, "olz__yangci", "qun", 3):addSkills { "qieyi", "jianzhi", "quhuo" }
 Fk:loadTranslationTable{
   ["olz__yangci"] = "族杨赐",
-  --["#olz__yangci"] = "",
+  ["#olz__yangci"] = "固世笃忠贞",
   --["illustrator:olz__yangci"] = "",
 
-  ["$quhuo_olz__yangci1"] = "",
-  ["$quhuo_olz__yangci2"] = "",
-  ["~olz__yangci"] = "",
+  ["$quhuo_olz__yangci1"] = "为师为父，所在授业解惑。",
+  ["$quhuo_olz__yangci2"] = "荧惑守心，宋景退殿，唯德可祛蛇变。",
+  ["~olz__yangci"] = "泰山颓，梁木坏，哲人菱。",
 }
 
 General:new(extension, "olz__yangxiu", "wei", 3):addSkills { "jiewu", "gaoshi", "quhuo" }

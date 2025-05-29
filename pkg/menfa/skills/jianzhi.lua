@@ -10,6 +10,9 @@ Fk:loadTranslationTable{
 
   ["#jianzhi-choice"] = "谏直：选择要进行判定的次数",
   ["#jianzhi-give"] = "谏直：将这些牌分配给任意角色，点“取消”自己保留",
+
+  ["$jianzhi1"] = "昔虹贯牛山，管仲谏桓公无近妃宫。",
+  ["$jianzhi2"] = "老臣三尺讲席未冷，岂容佞言惑君？",
 }
 
 jianzhi:addEffect(fk.EventPhaseStart, {
