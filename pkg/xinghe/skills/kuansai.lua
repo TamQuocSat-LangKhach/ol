@@ -38,14 +38,12 @@ kuansai:addEffect(fk.TargetSpecified, {
     local room = player.room
     local to = event:getCostData(self).tos[1]
     if to:isNude() then
-      if player:isWounded() then
-        room:recover{
-          who = player,
-          num = 1,
-          recoverBy = player,
-          skillName = kuansai.name,
-        }
-      end
+      room:recover{
+        who = player,
+        num = 1,
+        recoverBy = player,
+        skillName = kuansai.name,
+      }
     else
       local card = room:askToCards(to, {
         min_num = 1,

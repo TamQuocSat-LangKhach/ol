@@ -76,7 +76,7 @@ choulie:addEffect(fk.EventPhaseStart, {
   on_use = function(self, event, target, player, data)
     local room = player.room
     player:broadcastSkillInvoke(choulie.name)
-    room:notifySkillInvoked(player, choulie.name, "offensive")
+    --room:notifySkillInvoked(player, choulie.name, "offensive")
     local to = room:getPlayerById(player:getMark("choulie-turn"))
     room:throwCard(event:getCostData(self).cards, choulie.name, player, player)
     if not to.dead then

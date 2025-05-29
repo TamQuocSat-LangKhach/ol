@@ -30,7 +30,7 @@ shenchong:addEffect("active", {
     local player = effect.from
     local target = effect.tos[1]
     room:addTableMarkIfNeed(player, shenchong.name, target.id)
-    room:handleAddLoseSkills(target, "m_feiyang|m_bahu")
+    room:handleAddLoseSkills(target, "ol_feiyang&|m_bahu")
   end,
 })
 
@@ -65,7 +65,7 @@ shenchong:addEffect(fk.Death, {
     for _, p in ipairs(tos) do
       if not p.dead then
         local skills = p:getSkillNameList()
-        table.insert(skills, "m_feiyang")
+        table.insert(skills, "ol_feiyang&")
         table.insert(skills, "m_bahu")
         room:handleAddLoseSkills(p, "-"..table.concat(skills, "|-"))
       end

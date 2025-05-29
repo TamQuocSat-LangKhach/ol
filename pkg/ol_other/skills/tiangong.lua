@@ -25,7 +25,7 @@ tiangong:addEffect(fk.TurnStart, {
     local room = player.room
     local card = Fk:cloneCard("thunder_god_help")
     card.skillName = tiangong.name
-    local targets = card:getAvailableTargets(player)
+    local targets = card:getDefaultTarget(player)
     room:sortByAction(targets)
     room:useVirtualCard("thunder_god_help", nil, player, targets, tiangong.name)
   end,
@@ -41,7 +41,7 @@ tiangong:addEffect(fk.TurnEnd, {
     local room = player.room
     local card = Fk:cloneCard("sharing_risk")
     card.skillName = tiangong.name
-    local targets = card:getAvailableTargets(player)
+    local targets = card:getDefaultTarget(player)
     room:sortByAction(targets)
     room:useVirtualCard("sharing_risk", nil, player, targets, tiangong.name)
   end,

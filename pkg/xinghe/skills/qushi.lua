@@ -73,7 +73,8 @@ qushi:addEffect(fk.EventPhaseStart, {
     local n = math.min(#players, 5)
     if not yes or n == 0 then return end
     room:sortByAction(targets)
-    for _, p in ipairs(targets) do
+    for _, id in ipairs(targets) do
+      local p = room:getPlayerById(id)
       if not p.dead then
         p:drawCards(n, qushi.name)
       end

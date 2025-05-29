@@ -32,7 +32,7 @@ jinzhi:addEffect("viewas", {
       not player:prohibitDiscard(to_select)
   end,
   view_as = function(self, player, cards)
-    if #cards < player:usedSkillTimes(jinzhi.name, Player.HistoryRound) + 1 then return end
+    if #cards ~= player:usedSkillTimes(jinzhi.name, Player.HistoryRound) + 1 then return end
     local card = Fk:cloneCard(self.interaction.data)
     card.skillName = jinzhi.name
     self.cost_data = cards
@@ -45,10 +45,10 @@ jinzhi:addEffect("viewas", {
     end
   end,
   enabled_at_play = function(self, player)
-    return #player:getCardIds("he") >= player:usedSkillTimes(jinzhi.name, Player.HistoryRound) + 1
+    return #player:getCardIds("he") > player:usedSkillTimes(jinzhi.name, Player.HistoryRound)
   end,
   enabled_at_response = function(self, player, response)
-    return #player:getCardIds("he") >= player:usedSkillTimes(jinzhi.name, Player.HistoryRound) + 1
+    return #player:getCardIds("he") > player:usedSkillTimes(jinzhi.name, Player.HistoryRound)
   end,
 })
 

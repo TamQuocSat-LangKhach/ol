@@ -74,6 +74,8 @@ shensu:addEffect(fk.EventPhaseChanging, {
     local room = player.room
     data.skipped = true
     if data.phase == Player.Play then
+      player:skip(Player.Draw)
+    elseif data.phase == Player.Play then
       room:throwCard(event:getCostData(self).cards, shensu.name, player, player)
     end
     if player.dead then return end

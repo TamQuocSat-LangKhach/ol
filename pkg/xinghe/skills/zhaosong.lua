@@ -192,6 +192,7 @@ zhaosong:addEffect(fk.AfterCardTargetDeclared, {
     end
   end,
   on_use = function(self, event, target, player, data)
+    player.room:removePlayerMark(player, "@@zuofen_song", 1)
     for _, p in ipairs(event:getCostData(self).tos) do
       data:addTarget(p)
     end

@@ -4,8 +4,8 @@ local zhubei = fk.CreateSkill{
 
 Fk:loadTranslationTable{
   ["zhubei"] = "逐北",
-  [":zhubei"] = "出牌阶段各限一次，你可以选择一名其他角色，令其将至少X张牌当【杀】或【决斗】对你使用（X为所有角色本回合使用基本牌数+1）。"..
-  "若你以此法受到伤害后，你可以获得伤害牌；若你未以此法受到伤害，你回复1点体力，然后可以与其交换手牌。",
+  [":zhubei"] = "出牌阶段限两次，你可以选择一名其他角色，令其将至少X张牌当【杀】或【决斗】对你使用（不能选择本阶段以此法选择过的牌名，"..
+  "X为所有角色本回合使用基本牌数+1）。若你以此法受到伤害后，你可以获得伤害牌；若你未以此法受到伤害，你回复1点体力，然后可以与其交换手牌。",
 
   ["#zhubei"] = "逐北：令一名角色将至少%arg张牌当【杀】或【决斗】对你使用",
   ["#zhubei-use"] = "逐北：请将至少%arg张牌当【杀】或【决斗】对 %src 使用",
@@ -24,7 +24,8 @@ zhubei:addEffect("active", {
   card_num = 0,
   target_num = 1,
   can_use = function(self, player)
-    return player:getMark("zhubei_slash-phase") == 0 or player:getMark("zhubei_duel-phase") == 0
+    return (player:getMark("zhubei_slash-phase") == 0 or player:getMark("zhubei_duel-phase") == 0) and
+      player:usedSkillTimes(zhubei.name, Player.HistoryPhase) < 2
   end,
   card_filter = Util.FalseFunc,
   target_filter = function(self, player, to_select, selected, selected_cards)

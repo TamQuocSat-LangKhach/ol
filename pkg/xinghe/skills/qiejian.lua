@@ -104,7 +104,7 @@ qiejian:addEffect(fk.AfterCardsMove, {
       return #p:getCardIds("ej") > 0
     end)
     if #tos > 0 then
-      tos = room:askToChoosePlayers(player, {
+      local p = room:askToChoosePlayers(player, {
         min_num = 1,
         max_num = 1,
         targets = tos,
@@ -112,18 +112,23 @@ qiejian:addEffect(fk.AfterCardsMove, {
         prompt = "#qiejian-choose::"..to.id,
         cancelable = true,
       })
+      if #p > 0 then
+        p = p[1]
+        local id = room:askToChooseCard(player, {
+          target = p,
+          flag = "ej",
+          skill_name = qiejian.name,
+        })
+        room:throwCard(id, qiejian.name, p, player)
+        return
+      end
     end
-    if #tos > 0 then
-      local id = room:askToChooseCard(player, {
-        target = tos[1],
-        flag = "ej",
-        skill_name = qiejian.name,
-      })
-      room:throwCard(id, qiejian.name, to, player)
-    else
-      room:addTableMarkIfNeed(player, "qiejian_prohibit-round", to.id)
-    end
+    room:addTableMarkIfNeed(player, "qiejian_prohibit-round", to.id)
   end,
 })
+
+qiejian:addLoseEffect(function (self, player, is_death)
+  player.room:setPlayerMark(player, "qiejian_prohibit-round", 0)
+end)
 
 return qiejian
